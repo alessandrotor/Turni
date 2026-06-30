@@ -7,11 +7,11 @@ export default function NavBar({ view, onNavigate }) {
       </div>
       <div className="navbar-links">
         <button
-          className={`nav-link ${view === 'week' ? 'active' : ''}`}
-          onClick={() => onNavigate('week')}
+          className={`nav-link ${view === 'calendar' ? 'active' : ''}`}
+          onClick={() => onNavigate('calendar')}
         >
           <span className="nav-icon">📅</span>
-          <span>Settimana</span>
+          <span>Calendario</span>
         </button>
         <button
           className={`nav-link ${view === 'settings' ? 'active' : ''}`}

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import useLocalStorage from './hooks/useLocalStorage';
-import { getWeekStart, formatDate, addWeeks } from './utils/dates';
-import WeekView from './components/WeekView';
+import { formatDate, getMonthStart } from './utils/dates';
+import CalendarView from './components/CalendarView';
 import Settings from './components/Settings';
 import ShiftForm from './components/ShiftForm';
 import NavBar from './components/NavBar';
@@ -14,8 +14,8 @@ const DEFAULT_SETTINGS = {
 export default function App() {
   const [shifts, setShifts] = useLocalStorage('turni_shifts', {});
   const [settings, setSettings] = useLocalStorage('turni_settings', DEFAULT_SETTINGS);
-  const [view, setView] = useState('week');
-  const [currentWeek, setCurrentWeek] = useState(() => getWeekStart(new Date()));
+  const [view, setView] = useState('calendar');
+  const [currentMonth, setCurrentMonth] = useState(() => getMonthStart(new Date()));
   const [modal, setModal] = useState(null); // null | {type:'add',date} | {type:'edit',shift}
 
   const addShift = useCallback((shiftData) => {
@@ -35,13 +35,13 @@ export default function App() {
     });
   }, [setShifts]);
 
-  const weekShifts = useCallback((weekStart) => {
-    const days = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(weekStart);
-      d.setDate(d.getDate() + i);
-      return formatDate(d);
+  const monthShifts = useCallback((monthDate) => {
+    const y = monthDate.getFullYear();
+    const m = monthDate.getMonth();
+    return Object.values(shifts).filter(s => {
+      const d = new Date(s.date);
+      return d.getFullYear() === y && d.getMonth() === m;
     });
-    return Object.values(shifts).filter(s => days.includes(s.date));
   }, [shifts]);
 
   const handleSaveShift = useCallback((shiftData) => {
@@ -55,14 +55,11 @@ export default function App() {
       <NavBar view={view} onNavigate={setView} />
 
       <main className="main-content">
-        {view === 'week' && (
-          <WeekView
-            currentWeek={currentWeek}
-            onWeekChange={setCurrentWeek}
-            onWeekPrev={() => setCurrentWeek(w => addWeeks(w, -1))}
-            onWeekNext={() => setCurrentWeek(w => addWeeks(w, 1))}
-            onWeekReset={() => setCurrentWeek(getWeekStart(new Date()))}
-            shifts={weekShifts(currentWeek)}
+        {view === 'calendar' && (
+          <CalendarView
+            currentMonth={currentMonth}
+            onMonthChange={setCurrentMonth}
+            shifts={monthShifts(currentMonth)}
             onAddShift={(date) => setModal({ type: 'add', date })}
             onEditShift={(shift) => setModal({ type: 'edit', shift })}
             onDeleteShift={deleteShift}

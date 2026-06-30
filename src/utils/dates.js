@@ -85,3 +85,29 @@ export function isCurrentWeek(weekStart) {
   const thisWeek = getWeekStart(new Date());
   return formatDate(weekStart) === formatDate(thisWeek);
 }
+
+export function getMonthStart(date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+export function getDaysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+export function addMonths(date, n) {
+  return new Date(date.getFullYear(), date.getMonth() + n, 1);
+}
+
+export function isCurrentMonth(date) {
+  const now = new Date();
+  return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+}
+
+const MONTH_NAMES_FULL = [
+  'Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno',
+  'Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre',
+];
+
+export function formatMonthYear(date) {
+  return `${MONTH_NAMES_FULL[date.getMonth()]} ${date.getFullYear()}`;
+}
