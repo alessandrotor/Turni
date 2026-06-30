@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   formatDate, formatMonthYear, isToday, isWeekend,
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth,
 } from '../utils/dates';
 import { calcShiftMinutes, calcPay, formatCurrency } from '../utils/pay';
 import { generateMonthlySummary } from '../services/ai';
+import { parseShiftsFromImage } from '../services/gemini';
+import ImportModal from './ImportModal';
 
 const DAY_HEADERS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
@@ -20,11 +22,17 @@ export default function CalendarView({
   shifts,
   onAddShift,
   onEditShift,
+  onImportShifts,
   settings,
 }) {
   const [aiSummary, setAiSummary] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(null);
+
+  const [importParsed, setImportParsed] = useState(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError] = useState(null);
+  const fileInputRef = useRef();
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
@@ -51,6 +59,28 @@ export default function CalendarView({
   const pay = calcPay(totalHours, settings.hourlyRate);
 
   const hasApiKey = !!import.meta.env.VITE_ANTHROPIC_API_KEY;
+  const hasGeminiKey = !!import.meta.env.VITE_GEMINI_API_KEY;
+
+  async function handleImportFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setImportLoading(true);
+    setImportError(null);
+    try {
+      const parsed = await parseShiftsFromImage(file);
+      setImportParsed(parsed);
+    } catch (err) {
+      setImportError(err.message || 'Errore durante l\'analisi dell\'immagine');
+    } finally {
+      setImportLoading(false);
+    }
+  }
+
+  function handleImportConfirm(parsedShifts) {
+    onImportShifts(parsedShifts);
+    setImportParsed(null);
+  }
 
   async function handleAISummary() {
     setAiLoading(true);
@@ -96,6 +126,27 @@ export default function CalendarView({
           ›
         </button>
       </div>
+
+      {/* Import bar */}
+      {hasGeminiKey && (
+        <div className="import-bar">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleImportFile}
+          />
+          <button
+            className="btn-import"
+            onClick={() => fileInputRef.current.click()}
+            disabled={importLoading}
+          >
+            {importLoading ? '⏳ Analisi in corso…' : '📤 Importa turni da immagine'}
+          </button>
+          {importError && <span className="import-error">{importError}</span>}
+        </div>
+      )}
 
       {/* Calendar grid */}
       <div className="cal-grid">
@@ -186,6 +237,14 @@ export default function CalendarView({
           {aiSummary && <p className="ai-summary-text">{aiSummary}</p>}
         </div>
       </div>
+
+      {importParsed && (
+        <ImportModal
+          shifts={importParsed}
+          onConfirm={handleImportConfirm}
+          onClose={() => setImportParsed(null)}
+        />
+      )}
     </div>
   );
 }

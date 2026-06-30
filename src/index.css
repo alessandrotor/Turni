@@ -288,6 +288,96 @@ input, select, textarea { font: inherit; }
   color: var(--c-text);
 }
 
+/* ── Import bar ─────────────────────────────────────────────────── */
+.import-bar {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex-wrap: wrap;
+}
+
+.btn-import {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .45rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: .85rem;
+  font-weight: 600;
+  background: var(--c-bg);
+  color: var(--c-text-2);
+  border: 1.5px solid var(--c-border);
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.btn-import:hover {
+  background: var(--c-primary-light);
+  border-color: var(--c-primary);
+  color: var(--c-primary);
+}
+.btn-import:disabled { opacity: .55; cursor: not-allowed; }
+
+.import-error {
+  font-size: .82rem;
+  color: var(--c-danger);
+}
+
+/* Import modal */
+.import-body {
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  max-height: 55dvh;
+  overflow-y: auto;
+}
+
+.import-intro {
+  font-size: .9rem;
+  color: var(--c-text-2);
+}
+
+.import-list {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+
+.import-row {
+  display: grid;
+  grid-template-columns: 70px 1fr auto auto;
+  align-items: center;
+  gap: .5rem;
+  padding: .4rem .6rem;
+  background: var(--c-bg);
+  border-radius: var(--radius-sm);
+  font-size: .85rem;
+}
+
+.import-row-date {
+  color: var(--c-text);
+  white-space: nowrap;
+}
+
+.import-row-times {
+  color: var(--c-text-2);
+}
+
+.import-row-break {
+  font-size: .78rem;
+  color: var(--c-muted);
+}
+
+.import-row-hours {
+  font-weight: 700;
+  color: var(--c-primary-dark);
+  white-space: nowrap;
+}
+
+.import-row-note {
+  font-size: .8rem;
+}
+
 /* ── Week view ──────────────────────────────────────────────────── */
 .week-view {
   max-width: 640px;

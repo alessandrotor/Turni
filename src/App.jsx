@@ -44,6 +44,17 @@ export default function App() {
     });
   }, [shifts]);
 
+  const importShifts = useCallback((parsedShifts) => {
+    setShifts(prev => {
+      const next = { ...prev };
+      parsedShifts.forEach(shiftData => {
+        const id = Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+        next[id] = { ...shiftData, id, breakMinutes: shiftData.breakMinutes || 0, note: shiftData.note || '' };
+      });
+      return next;
+    });
+  }, [setShifts]);
+
   const handleSaveShift = useCallback((shiftData) => {
     if (modal?.type === 'add') addShift(shiftData);
     else updateShift(shiftData);
@@ -63,6 +74,7 @@ export default function App() {
             onAddShift={(date) => setModal({ type: 'add', date })}
             onEditShift={(shift) => setModal({ type: 'edit', shift })}
             onDeleteShift={deleteShift}
+            onImportShifts={importShifts}
             settings={settings}
           />
         )}
