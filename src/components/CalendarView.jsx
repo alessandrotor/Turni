@@ -59,7 +59,7 @@ export default function CalendarView({
   const pay = calcPay(totalHours, settings.hourlyRate);
 
   const hasApiKey = !!import.meta.env.VITE_ANTHROPIC_API_KEY;
-  const hasGeminiKey = !!import.meta.env.VITE_GEMINI_API_KEY;
+  const hasGeminiKey = !!import.meta.env.VITE_GROQ_API_KEY;
 
   async function handleImportFile(e) {
     const file = e.target.files?.[0];
