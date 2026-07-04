@@ -863,6 +863,14 @@ input, select, textarea { font: inherit; }
 }
 .btn-secondary:hover { background: var(--c-border); }
 
+.btn-danger-ghost {
+  background: transparent;
+  color: var(--c-danger);
+  border: 1.5px solid var(--c-danger-light);
+  margin-top: .25rem;
+}
+.btn-danger-ghost:hover { background: var(--c-danger-light); }
+
 /* ── Settings page ──────────────────────────────────────────────── */
 .settings-page {
   max-width: 540px;

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import useLocalStorage from './hooks/useLocalStorage';
-import { formatDate, getMonthStart } from './utils/dates';
+import { getMonthStart, parseDate } from './utils/dates';
 import CalendarView from './components/CalendarView';
 import Settings from './components/Settings';
 import ShiftForm from './components/ShiftForm';
@@ -39,7 +39,7 @@ export default function App() {
     const y = monthDate.getFullYear();
     const m = monthDate.getMonth();
     return Object.values(shifts).filter(s => {
-      const d = new Date(s.date);
+      const d = parseDate(s.date);
       return d.getFullYear() === y && d.getMonth() === m;
     });
   }, [shifts]);
@@ -88,6 +88,7 @@ export default function App() {
         <ShiftForm
           modal={modal}
           onSave={handleSaveShift}
+          onDelete={(id) => { deleteShift(id); setModal(null); }}
           onClose={() => setModal(null)}
         />
       )}

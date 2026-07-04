@@ -30,7 +30,7 @@ function getInitialState(modal) {
   };
 }
 
-export default function ShiftForm({ modal, onSave, onClose }) {
+export default function ShiftForm({ modal, onSave, onDelete, onClose }) {
   const [form, setForm] = useState(() => getInitialState(modal));
   const [customBreak, setCustomBreak] = useState(false);
 
@@ -184,6 +184,16 @@ export default function ShiftForm({ modal, onSave, onClose }) {
               {isEdit ? 'Salva modifiche' : 'Aggiungi turno'}
             </button>
           </div>
+
+          {isEdit && onDelete && (
+            <button
+              type="button"
+              className="btn btn-danger-ghost btn--full"
+              onClick={() => onDelete(modal.shift.id)}
+            >
+              🗑 Elimina turno
+            </button>
+          )}
         </form>
       </div>
     </div>
