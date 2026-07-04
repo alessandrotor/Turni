@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Turni</string>
+    <string name="title_activity_main">Turni</string>
+    <string name="package_name">com.alessandrotor.turni</string>
+    <string name="custom_url_scheme">com.alessandrotor.turni</string>
+</resources>
