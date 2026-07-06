@@ -3,7 +3,7 @@ import {
   formatDate, formatMonthYear, isToday, isWeekend,
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth,
 } from '../utils/dates';
-import { calcShiftMinutes, calcPay, formatCurrency } from '../utils/pay';
+import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
 import { generateMonthlySummary } from '../services/ai';
 import { parseShiftsFromImage } from '../services/gemini';
 import ImportModal from './ImportModal';
@@ -55,8 +55,7 @@ export default function CalendarView({
 
   // Monthly totals
   const totalMins = shifts.reduce((sum, s) => sum + calcShiftMinutes(s), 0);
-  const totalHours = totalMins / 60;
-  const pay = calcPay(totalHours, settings.hourlyRate);
+  const pay = calcTotalPay(shifts, settings);
 
   const hasApiKey = !!import.meta.env.VITE_ANTHROPIC_API_KEY;
   const hasGeminiKey = !!import.meta.env.VITE_GROQ_API_KEY;
@@ -213,7 +212,12 @@ export default function CalendarView({
           {pay !== null && (
             <div className="summary-item">
               <span className="summary-label">Retribuzione stimata</span>
-              <span className="summary-value diff-positive">{formatCurrency(pay)}</span>
+              <span className="summary-value diff-positive">{formatCurrency(pay.total)}</span>
+              {pay.surcharge > 0 && (
+                <span className="summary-sublabel">
+                  di cui maggiorazioni {formatCurrency(pay.surcharge)}
+                </span>
+              )}
             </div>
           )}
         </div>

@@ -9,6 +9,7 @@ import NavBar from './components/NavBar';
 const DEFAULT_SETTINGS = {
   hourlyRate: 0,
   expectedWeeklyHours: 40,
+  sundaySurchargePct: 0,
 };
 
 export default function App() {

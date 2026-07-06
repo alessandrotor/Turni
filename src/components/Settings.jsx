@@ -5,6 +5,7 @@ export default function Settings({ settings, onSave }) {
   const [form, setForm] = useState({
     hourlyRate: settings.hourlyRate ?? 0,
     expectedWeeklyHours: settings.expectedWeeklyHours ?? 40,
+    sundaySurchargePct: settings.sundaySurchargePct ?? 0,
   });
   const [saved, setSaved] = useState(false);
 
@@ -18,6 +19,7 @@ export default function Settings({ settings, onSave }) {
     onSave({
       hourlyRate: parseFloat(form.hourlyRate) || 0,
       expectedWeeklyHours: parseFloat(form.expectedWeeklyHours) || 0,
+      sundaySurchargePct: parseFloat(form.sundaySurchargePct) || 0,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -94,6 +96,34 @@ export default function Settings({ settings, onSave }) {
               value={form.expectedWeeklyHours || ''}
               onChange={set('expectedWeeklyHours')}
             />
+          </div>
+        </section>
+
+        {/* Maggiorazioni */}
+        <section className="settings-section">
+          <h2 className="settings-section-title">📈 Maggiorazioni</h2>
+          <p className="settings-section-desc">
+            La maggiorazione domenicale viene applicata automaticamente ai turni di domenica.
+            Per altre maggiorazioni (festivi, notturni, straordinari) puoi indicare una
+            percentuale manuale direttamente sul singolo turno.
+          </p>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="sunday-surcharge">Maggiorazione domenicale (%)</label>
+            <div className="input-with-symbol">
+              <span className="input-symbol">%</span>
+              <input
+                id="sunday-surcharge"
+                type="number"
+                className="form-input form-input--with-symbol"
+                min="0"
+                max="200"
+                step="0.5"
+                placeholder="es. 30"
+                value={form.sundaySurchargePct || ''}
+                onChange={set('sundaySurchargePct')}
+              />
+            </div>
           </div>
         </section>
 

@@ -2,7 +2,7 @@ import {
   getWeekDays, formatDate, formatDayShort, formatDayNumber,
   formatWeekRange, formatMinutes, isToday, isWeekend, isCurrentWeek,
 } from '../utils/dates';
-import { calcShiftMinutes, calcWeekTotals, calcPay, formatCurrency } from '../utils/pay';
+import { calcShiftMinutes, calcWeekTotals, calcTotalPay, formatCurrency } from '../utils/pay';
 
 export default function WeekView({
   currentWeek, onWeekPrev, onWeekNext, onWeekReset,
@@ -10,10 +10,9 @@ export default function WeekView({
 }) {
   const days = getWeekDays(currentWeek);
   const { workedMinutes } = calcWeekTotals(shifts);
-  const workedHours = workedMinutes / 60;
   const expectedMinutes = (settings.expectedWeeklyHours || 0) * 60;
   const diffMinutes = workedMinutes - expectedMinutes;
-  const pay = calcPay(workedHours, settings.hourlyRate);
+  const pay = calcTotalPay(shifts, settings);
   const isThisWeek = isCurrentWeek(currentWeek);
 
   const shiftsByDate = {};
@@ -153,8 +152,11 @@ function WeekSummary({ workedMinutes, expectedMinutes, diffMinutes, pay, hourlyR
       {pay !== null ? (
         <div className="summary-pay">
           <span className="summary-pay-label">Paga stimata</span>
-          <span className="summary-pay-value">{formatCurrency(pay)}</span>
+          <span className="summary-pay-value">{formatCurrency(pay.total)}</span>
           <span className="summary-pay-rate">@ {formatCurrency(hourlyRate)}/h</span>
+          {pay.surcharge > 0 && (
+            <span className="summary-pay-rate">di cui maggiorazioni {formatCurrency(pay.surcharge)}</span>
+          )}
         </div>
       ) : (
         <div className="summary-pay summary-pay--empty">

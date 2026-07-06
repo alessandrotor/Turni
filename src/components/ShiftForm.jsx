@@ -10,6 +10,14 @@ const BREAK_PRESETS = [
   { label: '1 ora', value: 60 },
 ];
 
+const SURCHARGE_PRESETS = [
+  { label: 'Nessuna', value: 0 },
+  { label: '10%', value: 10 },
+  { label: '15%', value: 15 },
+  { label: '30%', value: 30 },
+  { label: '50%', value: 50 },
+];
+
 function getInitialState(modal) {
   if (modal.type === 'edit') {
     const s = modal.shift;
@@ -18,6 +26,7 @@ function getInitialState(modal) {
       startTime: s.startTime,
       endTime: s.endTime,
       breakMinutes: s.breakMinutes ?? 0,
+      surchargePct: s.surchargePct ?? 0,
       note: s.note ?? '',
     };
   }
@@ -26,6 +35,7 @@ function getInitialState(modal) {
     startTime: '08:00',
     endTime: '16:00',
     breakMinutes: 0,
+    surchargePct: 0,
     note: '',
   };
 }
@@ -33,6 +43,9 @@ function getInitialState(modal) {
 export default function ShiftForm({ modal, onSave, onDelete, onClose }) {
   const [form, setForm] = useState(() => getInitialState(modal));
   const [customBreak, setCustomBreak] = useState(false);
+  const [customSurcharge, setCustomSurcharge] = useState(
+    () => !SURCHARGE_PRESETS.some(p => p.value === Number(getInitialState(modal).surchargePct)),
+  );
 
   useEffect(() => {
     const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -56,6 +69,11 @@ export default function ShiftForm({ modal, onSave, onDelete, onClose }) {
     setForm(f => ({ ...f, breakMinutes: val }));
   };
 
+  const handleSurchargePreset = (val) => {
+    setCustomSurcharge(false);
+    setForm(f => ({ ...f, surchargePct: val }));
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const shift = {
@@ -64,6 +82,7 @@ export default function ShiftForm({ modal, onSave, onDelete, onClose }) {
       startTime: form.startTime,
       endTime: form.endTime,
       breakMinutes: Number(form.breakMinutes) || 0,
+      surchargePct: Number(form.surchargePct) || 0,
       note: form.note.trim(),
     };
     onSave(shift);
@@ -161,6 +180,47 @@ export default function ShiftForm({ modal, onSave, onDelete, onClose }) {
                 />
               </div>
             )}
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Maggiorazione (%)</label>
+            <div className="break-presets">
+              {SURCHARGE_PRESETS.map(p => (
+                <button
+                  key={p.value}
+                  type="button"
+                  className={`break-preset-btn ${!customSurcharge && Number(form.surchargePct) === p.value ? 'active' : ''}`}
+                  onClick={() => handleSurchargePreset(p.value)}
+                >
+                  {p.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                className={`break-preset-btn ${customSurcharge ? 'active' : ''}`}
+                onClick={() => setCustomSurcharge(true)}
+              >
+                Altra
+              </button>
+            </div>
+            {customSurcharge && (
+              <div className="form-row form-row--compact">
+                <input
+                  type="number"
+                  className="form-input"
+                  min="0"
+                  max="200"
+                  step="0.5"
+                  placeholder="% maggiorazione"
+                  value={form.surchargePct}
+                  onChange={(e) => setForm(f => ({ ...f, surchargePct: e.target.value }))}
+                />
+              </div>
+            )}
+            <p className="form-hint">
+              Per festivi, notturni, straordinari… La maggiorazione domenicale delle
+              Impostazioni si applica automaticamente e si somma a questa.
+            </p>
           </div>
 
           <div className="form-group">
