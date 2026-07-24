@@ -1,12 +1,27 @@
 import { useState } from 'react';
-import { formatCurrency } from '../utils/pay';
+import { formatCurrency, parseNum } from '../utils/pay';
+
+// Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
+const toInput = (n) => {
+  if (n === '' || n == null) return '';
+  const num = Number(n);
+  if (!num) return '';
+  return String(num).replace('.', ',');
+};
+
+const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 export default function Settings({ settings, onSave }) {
   const [form, setForm] = useState({
-    hourlyRate: settings.hourlyRate ?? 0,
+    hourlyRate: toInput(settings.hourlyRate),
     expectedWeeklyHours: settings.expectedWeeklyHours ?? 40,
     sundaySurchargePct: settings.sundaySurchargePct ?? 0,
-    priorTaxableIncome: settings.priorTaxableIncome ?? 0,
+    priorTaxableIncome: toInput(settings.priorTaxableIncome),
+    rateChanges: (Array.isArray(settings.rateChanges) ? settings.rateChanges : []).map(c => ({
+      id: c.id ?? genId(),
+      date: c.date ?? '',
+      rate: toInput(c.rate),
+    })),
   });
   const [saved, setSaved] = useState(false);
 
@@ -15,20 +30,45 @@ export default function Settings({ settings, onSave }) {
     setSaved(false);
   };
 
+  const addRateChange = () => {
+    setForm(f => ({ ...f, rateChanges: [...f.rateChanges, { id: genId(), date: '', rate: '' }] }));
+    setSaved(false);
+  };
+
+  const updateRateChange = (id, field) => (e) => {
+    const value = e.target.value;
+    setForm(f => ({
+      ...f,
+      rateChanges: f.rateChanges.map(c => (c.id === id ? { ...c, [field]: value } : c)),
+    }));
+    setSaved(false);
+  };
+
+  const removeRateChange = (id) => {
+    setForm(f => ({ ...f, rateChanges: f.rateChanges.filter(c => c.id !== id) }));
+    setSaved(false);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    const rateChanges = form.rateChanges
+      .filter(c => c.date && parseNum(c.rate) > 0)
+      .map(c => ({ id: c.id, date: c.date, rate: parseNum(c.rate) }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
     onSave({
-      hourlyRate: parseFloat(form.hourlyRate) || 0,
-      expectedWeeklyHours: parseFloat(form.expectedWeeklyHours) || 0,
-      sundaySurchargePct: parseFloat(form.sundaySurchargePct) || 0,
-      priorTaxableIncome: parseFloat(form.priorTaxableIncome) || 0,
+      hourlyRate: parseNum(form.hourlyRate),
+      expectedWeeklyHours: parseNum(form.expectedWeeklyHours),
+      sundaySurchargePct: parseNum(form.sundaySurchargePct),
+      priorTaxableIncome: parseNum(form.priorTaxableIncome),
+      rateChanges,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
 
-  const hourlyRate = parseFloat(form.hourlyRate) || 0;
-  const weeklyPay = hourlyRate * (parseFloat(form.expectedWeeklyHours) || 0);
+  const hourlyRate = parseNum(form.hourlyRate);
+  const weeklyPay = hourlyRate * parseNum(form.expectedWeeklyHours);
   const monthlyPay = weeklyPay * 4.33;
 
   return (
@@ -41,7 +81,8 @@ export default function Settings({ settings, onSave }) {
         <section className="settings-section">
           <h2 className="settings-section-title">💰 Paga oraria</h2>
           <p className="settings-section-desc">
-            Inserisci la tua paga oraria lorda per calcolare la retribuzione stimata.
+            Inserisci la tua paga oraria lorda iniziale per calcolare la retribuzione stimata.
+            Puoi usare la virgola per i decimali (es. 9,3542).
           </p>
 
           <div className="form-group">
@@ -50,13 +91,11 @@ export default function Settings({ settings, onSave }) {
               <span className="input-symbol">€</span>
               <input
                 id="hourly-rate"
-                type="number"
+                type="text"
+                inputMode="decimal"
                 className="form-input form-input--with-symbol"
-                min="0"
-                max="999"
-                step="0.01"
                 placeholder="0,00"
-                value={form.hourlyRate || ''}
+                value={form.hourlyRate}
                 onChange={set('hourlyRate')}
               />
             </div>
@@ -65,7 +104,7 @@ export default function Settings({ settings, onSave }) {
           {hourlyRate > 0 && (
             <div className="pay-preview">
               <div className="pay-preview-row">
-                <span>Per {form.expectedWeeklyHours}h/settimana:</span>
+                <span>Per {parseNum(form.expectedWeeklyHours)}h/settimana:</span>
                 <strong>{formatCurrency(weeklyPay)}</strong>
               </div>
               <div className="pay-preview-row">
@@ -77,6 +116,63 @@ export default function Settings({ settings, onSave }) {
               </p>
             </div>
           )}
+        </section>
+
+        {/* Aumenti di paga durante l'anno */}
+        <section className="settings-section">
+          <h2 className="settings-section-title">📈 Aumenti di paga</h2>
+          <p className="settings-section-desc">
+            Hai avuto un aumento durante l'anno? Aggiungilo qui indicando la data di
+            decorrenza e la nuova paga oraria. I turni <strong>prima</strong> di quella data
+            mantengono la paga precedente, quelli <strong>dal</strong> giorno indicato usano la
+            nuova. La paga qui sopra è quella valida all'inizio.
+          </p>
+
+          {form.rateChanges.length > 0 && (
+            <div className="rate-changes">
+              {form.rateChanges.map(c => (
+                <div key={c.id} className="rate-change-row">
+                  <div className="rate-change-fields">
+                    <div className="form-group">
+                      <label className="form-label form-label--sm">Dal giorno</label>
+                      <input
+                        type="date"
+                        className="form-input"
+                        value={c.date}
+                        onChange={updateRateChange(c.id, 'date')}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label form-label--sm">Nuova paga (€/ora)</label>
+                      <div className="input-with-symbol">
+                        <span className="input-symbol">€</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          className="form-input form-input--with-symbol"
+                          placeholder="0,00"
+                          value={c.rate}
+                          onChange={updateRateChange(c.id, 'rate')}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="rate-change-remove"
+                    onClick={() => removeRateChange(c.id)}
+                    aria-label="Rimuovi aumento"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button type="button" className="btn btn-secondary btn--full" onClick={addRateChange}>
+            + Aggiungi aumento
+          </button>
         </section>
 
         {/* Ore previste */}
@@ -129,28 +225,28 @@ export default function Settings({ settings, onSave }) {
           </div>
         </section>
 
-        {/* Bonus busta paga */}
+        {/* Reddito e bonus Renzi */}
         <section className="settings-section">
-          <h2 className="settings-section-title">💶 Bonus in busta paga</h2>
+          <h2 className="settings-section-title">💶 Reddito e bonus Renzi</h2>
           <p className="settings-section-desc">
-            Nel calendario vedi quanto puoi ancora guadagnare prima di superare la soglia
-            del trattamento integrativo. Il reddito viene calcolato dai turni dell'anno.
-            Se hai iniziato a inserire i turni a metà anno, indica qui quanto avevi già
-            guadagnato (lordo) prima, così il conto resta corretto.
+            Nel calendario vedi il tuo <strong>reddito totale</strong> dell'anno (calcolato dai
+            turni) e quanto puoi ancora guadagnare prima di superare le soglie del trattamento
+            integrativo (ex bonus Renzi), che nel 2026 si calcola proprio sul reddito complessivo.
+            Se hai iniziato a inserire i turni a metà anno, indica qui il reddito lordo già
+            maturato prima, così il totale resta corretto.
           </p>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="prior-income">Reddito già maturato da inizio anno</label>
+            <label className="form-label" htmlFor="prior-income">Reddito lordo già maturato da inizio anno</label>
             <div className="input-with-symbol">
               <span className="input-symbol">€</span>
               <input
                 id="prior-income"
-                type="number"
+                type="text"
+                inputMode="decimal"
                 className="form-input form-input--with-symbol"
-                min="0"
-                step="100"
-                placeholder="0"
-                value={form.priorTaxableIncome || ''}
+                placeholder="0,00"
+                value={form.priorTaxableIncome}
                 onChange={set('priorTaxableIncome')}
               />
             </div>

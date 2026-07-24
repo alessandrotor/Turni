@@ -232,9 +232,9 @@ export default function CalendarView({
         {bonus.status !== BONUS_STATUS.ATTESA && (
           <div className="bonus-strip">
             <div className="bonus-strip-head">
-              <span className="bonus-strip-title">💶 Bonus busta paga</span>
+              <span className="bonus-strip-title">💶 Reddito e bonus Renzi</span>
               <span className="bonus-strip-income">
-                Reddito {currentMonth.getFullYear()}: {fmt0(bonus.income)}
+                Reddito totale {currentMonth.getFullYear()}: <strong>{fmt0(bonus.income)}</strong>
               </span>
             </div>
 

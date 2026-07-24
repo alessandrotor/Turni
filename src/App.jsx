@@ -12,6 +12,7 @@ const DEFAULT_SETTINGS = {
   expectedWeeklyHours: 40,
   sundaySurchargePct: 0,
   priorTaxableIncome: 0,
+  rateChanges: [],
 };
 
 export default function App() {

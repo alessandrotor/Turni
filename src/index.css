@@ -1041,3 +1041,44 @@ input, select, textarea { font: inherit; }
   color: var(--c-danger);
   font-weight: 600;
 }
+
+/* ── Aumenti di paga ────────────────────────────────────────────── */
+.rate-changes {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  margin-bottom: .75rem;
+}
+
+.rate-change-row {
+  display: flex;
+  align-items: flex-end;
+  gap: .5rem;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: .6rem;
+}
+
+.rate-change-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.form-label--sm {
+  font-size: .72rem;
+}
+
+.rate-change-remove {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2.4rem;
+  border-radius: var(--radius-sm);
+  color: var(--c-danger);
+  background: var(--c-danger-light);
+  font-size: .85rem;
+  font-weight: 700;
+}
