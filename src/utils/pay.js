@@ -1,4 +1,4 @@
-import { minutesDiff, parseDate } from './dates';
+import { minutesDiff, parseDate, getWeekStart, formatDate } from './dates';
 
 export function calcShiftMinutes(shift) {
   const total = minutesDiff(shift.startTime, shift.endTime);
@@ -36,29 +36,27 @@ export function parseNum(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
-// Paga oraria valida per una certa data, tenendo conto degli aumenti.
-// settings.rateChanges: [{ date:'YYYY-MM-DD', rate:Number }] — dal giorno
-// indicato (incluso) vale la nuova paga; prima vale la paga oraria base.
+// Paga oraria valida per una certa data.
+// settings.hourlyRate è la paga ATTUALE. settings.previousRates elenca le
+// paghe precedenti a un aumento: [{ until:'YYYY-MM-DD', rate:Number }] —
+// i turni fino a quella data (inclusa) usano quella paga; gli altri l'attuale.
 export function getRateForDate(dateStr, settings) {
-  const base = Number(settings?.hourlyRate) || 0;
-  const changes = Array.isArray(settings?.rateChanges) ? settings.rateChanges : [];
-  let rate = base;
-  let bestDate = null;
-  for (const ch of changes) {
-    if (!ch?.date) continue;
-    if (ch.date <= dateStr && (bestDate === null || ch.date > bestDate)) {
-      bestDate = ch.date;
-      rate = Number(ch.rate) || 0;
-    }
+  const current = Number(settings?.hourlyRate) || 0;
+  const prev = Array.isArray(settings?.previousRates) ? settings.previousRates : [];
+  const sorted = prev
+    .filter(p => p?.until)
+    .sort((a, b) => String(a.until).localeCompare(String(b.until)));
+  for (const p of sorted) {
+    if (dateStr <= p.until) return Number(p.rate) || 0;
   }
-  return rate;
+  return current;
 }
 
-// Esiste almeno una paga oraria configurata (base o un aumento)?
+// Esiste almeno una paga oraria configurata (attuale o precedente)?
 export function hasAnyRate(settings) {
   if ((Number(settings?.hourlyRate) || 0) > 0) return true;
-  const changes = Array.isArray(settings?.rateChanges) ? settings.rateChanges : [];
-  return changes.some(ch => (Number(ch?.rate) || 0) > 0);
+  const prev = Array.isArray(settings?.previousRates) ? settings.previousRates : [];
+  return prev.some(p => (Number(p?.rate) || 0) > 0);
 }
 
 export function isSunday(dateStr) {
@@ -74,6 +72,49 @@ export function getShiftSurchargePct(shift, settings) {
   return pct;
 }
 
+// Calcola la paga di ogni turno tenendo conto della maggiorazione straordinari:
+// le ore che, all'interno della settimana (lun-dom), superano le ore da
+// contratto ricevono la maggiorazione straordinari. Serve l'insieme completo
+// dei turni per raggruppare correttamente per settimana.
+// Ritorna una mappa { [shiftId]: { base, surcharge, overtimeMinutes } }.
+export function computePayByShift(allShifts, settings) {
+  const thresholdMin = (Number(settings?.expectedWeeklyHours) || 0) * 60;
+  const otPct = Number(settings?.overtimeSurchargePct) || 0;
+  const applyOvertime = thresholdMin > 0 && otPct > 0;
+
+  const weeks = new Map();
+  for (const s of allShifts) {
+    const wk = formatDate(getWeekStart(parseDate(s.date)));
+    if (!weeks.has(wk)) weeks.set(wk, []);
+    weeks.get(wk).push(s);
+  }
+
+  const result = {};
+  for (const weekShifts of weeks.values()) {
+    weekShifts.sort((a, b) => (a.date + (a.startTime || '')).localeCompare(b.date + (b.startTime || '')));
+    let cumMin = 0;
+    for (const s of weekShifts) {
+      const m = calcShiftMinutes(s);
+      const ratePerMin = getRateForDate(s.date, settings) / 60;
+      const pct = getShiftSurchargePct(s, settings);
+
+      let overtimeMin = 0;
+      if (applyOvertime) {
+        const after = cumMin + m;
+        overtimeMin = Math.max(0, after - Math.max(thresholdMin, cumMin));
+      }
+
+      const shiftBase = m * ratePerMin;
+      const overtimeBase = overtimeMin * ratePerMin;
+      const surcharge = shiftBase * (pct / 100) + overtimeBase * (otPct / 100);
+
+      result[s.id] = { base: shiftBase, surcharge, overtimeMinutes: overtimeMin };
+      cumMin += m;
+    }
+  }
+  return result;
+}
+
 export function calcShiftPay(shift, settings) {
   const rate = getRateForDate(shift.date, settings);
   if (rate <= 0) return null;
@@ -82,16 +123,19 @@ export function calcShiftPay(shift, settings) {
 }
 
 // Totale paga con dettaglio maggiorazioni. Ritorna null se nessuna paga
-// oraria è configurata. Ogni turno usa la paga valida alla sua data.
-export function calcTotalPay(shifts, settings) {
+// oraria è configurata. `allShifts` (default = shifts) fornisce il contesto
+// settimanale per il calcolo degli straordinari.
+export function calcTotalPay(shifts, settings, allShifts = shifts) {
   if (!hasAnyRate(settings)) return null;
+  const byShift = computePayByShift(allShifts, settings);
   let base = 0;
   let surcharge = 0;
   shifts.forEach(s => {
-    const rate = getRateForDate(s.date, settings);
-    const shiftBase = calcShiftHours(s) * rate;
-    base += shiftBase;
-    surcharge += shiftBase * getShiftSurchargePct(s, settings) / 100;
+    const p = byShift[s.id];
+    if (p) {
+      base += p.base;
+      surcharge += p.surcharge;
+    }
   });
   return { base, surcharge, total: base + surcharge };
 }

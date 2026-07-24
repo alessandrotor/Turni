@@ -11,8 +11,9 @@ const DEFAULT_SETTINGS = {
   hourlyRate: 0,
   expectedWeeklyHours: 40,
   sundaySurchargePct: 0,
+  overtimeSurchargePct: 0,
   priorTaxableIncome: 0,
-  rateChanges: [],
+  previousRates: [],
 };
 
 export default function App() {
@@ -53,7 +54,7 @@ export default function App() {
   const annualGross = useCallback((monthDate) => {
     const y = monthDate.getFullYear();
     const yearShifts = Object.values(shifts).filter(s => parseDate(s.date).getFullYear() === y);
-    const pay = calcTotalPay(yearShifts, settings);
+    const pay = calcTotalPay(yearShifts, settings, yearShifts);
     const fromShifts = pay ? pay.total : 0;
     return fromShifts + (Number(settings.priorTaxableIncome) || 0);
   }, [shifts, settings]);
@@ -90,6 +91,7 @@ export default function App() {
             onDeleteShift={deleteShift}
             onImportShifts={importShifts}
             settings={settings}
+            allShifts={Object.values(shifts)}
             annualGross={annualGross(currentMonth)}
           />
         )}

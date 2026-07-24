@@ -25,6 +25,7 @@ export default function CalendarView({
   onEditShift,
   onImportShifts,
   settings,
+  allShifts,
   annualGross,
 }) {
   const [aiSummary, setAiSummary] = useState(null);
@@ -57,7 +58,7 @@ export default function CalendarView({
 
   // Monthly totals
   const totalMins = shifts.reduce((sum, s) => sum + calcShiftMinutes(s), 0);
-  const pay = calcTotalPay(shifts, settings);
+  const pay = calcTotalPay(shifts, settings, allShifts || shifts);
 
   // Bonus busta paga: quanto manca alla soglia (reddito annuo dai turni)
   const bonus = calcBonusMargin(annualGross);
