@@ -6,6 +6,7 @@ export default function Settings({ settings, onSave }) {
     hourlyRate: settings.hourlyRate ?? 0,
     expectedWeeklyHours: settings.expectedWeeklyHours ?? 40,
     sundaySurchargePct: settings.sundaySurchargePct ?? 0,
+    priorTaxableIncome: settings.priorTaxableIncome ?? 0,
   });
   const [saved, setSaved] = useState(false);
 
@@ -20,6 +21,7 @@ export default function Settings({ settings, onSave }) {
       hourlyRate: parseFloat(form.hourlyRate) || 0,
       expectedWeeklyHours: parseFloat(form.expectedWeeklyHours) || 0,
       sundaySurchargePct: parseFloat(form.sundaySurchargePct) || 0,
+      priorTaxableIncome: parseFloat(form.priorTaxableIncome) || 0,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -122,6 +124,34 @@ export default function Settings({ settings, onSave }) {
                 placeholder="es. 30"
                 value={form.sundaySurchargePct || ''}
                 onChange={set('sundaySurchargePct')}
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Bonus busta paga */}
+        <section className="settings-section">
+          <h2 className="settings-section-title">💶 Bonus in busta paga</h2>
+          <p className="settings-section-desc">
+            Nel calendario vedi quanto puoi ancora guadagnare prima di superare la soglia
+            del trattamento integrativo. Il reddito viene calcolato dai turni dell'anno.
+            Se hai iniziato a inserire i turni a metà anno, indica qui quanto avevi già
+            guadagnato (lordo) prima, così il conto resta corretto.
+          </p>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="prior-income">Reddito già maturato da inizio anno</label>
+            <div className="input-with-symbol">
+              <span className="input-symbol">€</span>
+              <input
+                id="prior-income"
+                type="number"
+                className="form-input form-input--with-symbol"
+                min="0"
+                step="100"
+                placeholder="0"
+                value={form.priorTaxableIncome || ''}
+                onChange={set('priorTaxableIncome')}
               />
             </div>
           </div>

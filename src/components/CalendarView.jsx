@@ -4,6 +4,7 @@ import {
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth,
 } from '../utils/dates';
 import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
+import { calcBonusMargin, BONUS_CONST, BONUS_STATUS } from '../utils/bonus';
 import { generateMonthlySummary } from '../services/ai';
 import { parseShiftsFromImage } from '../services/gemini';
 import ImportModal from './ImportModal';
@@ -24,6 +25,7 @@ export default function CalendarView({
   onEditShift,
   onImportShifts,
   settings,
+  annualGross,
 }) {
   const [aiSummary, setAiSummary] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -56,6 +58,10 @@ export default function CalendarView({
   // Monthly totals
   const totalMins = shifts.reduce((sum, s) => sum + calcShiftMinutes(s), 0);
   const pay = calcTotalPay(shifts, settings);
+
+  // Bonus busta paga: quanto manca alla soglia (reddito annuo dai turni)
+  const bonus = calcBonusMargin(annualGross);
+  const fmt0 = (n) => formatCurrency(Math.round(n));
 
   const hasApiKey = !!import.meta.env.VITE_ANTHROPIC_API_KEY;
   const hasGeminiKey = !!import.meta.env.VITE_GROQ_API_KEY;
@@ -221,6 +227,48 @@ export default function CalendarView({
             </div>
           )}
         </div>
+
+        {/* Bonus busta paga: quanto manca alla soglia */}
+        {bonus.status !== BONUS_STATUS.ATTESA && (
+          <div className="bonus-strip">
+            <div className="bonus-strip-head">
+              <span className="bonus-strip-title">💶 Bonus busta paga</span>
+              <span className="bonus-strip-income">
+                Reddito {currentMonth.getFullYear()}: {fmt0(bonus.income)}
+              </span>
+            </div>
+
+            {bonus.status === BONUS_STATUS.PIENO && (
+              <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
+                <span className="bonus-strip-label">
+                  {bonus.nearThreshold ? '⚠️ Sei vicino alla soglia' : 'Puoi ancora guadagnare'}
+                </span>
+                <span className="bonus-strip-value">{fmt0(bonus.marginToFull)}</span>
+                <span className="bonus-strip-note">
+                  prima di superare i {formatCurrency(BONUS_CONST.SOGLIA_BONUS_PIENO)} e uscire dal bonus pieno
+                </span>
+              </div>
+            )}
+
+            {bonus.status === BONUS_STATUS.PARZIALE && (
+              <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
+                <span className="bonus-strip-label">Puoi ancora guadagnare</span>
+                <span className="bonus-strip-value">{fmt0(bonus.marginToMax)}</span>
+                <span className="bonus-strip-note">
+                  prima di superare i {formatCurrency(BONUS_CONST.SOGLIA_BONUS_MAX)} e perdere del tutto il bonus
+                </span>
+              </div>
+            )}
+
+            {bonus.status === BONUS_STATUS.OLTRE && (
+              <div className="bonus-strip-body bonus-strip-body--danger">
+                <span className="bonus-strip-note">
+                  🚨 Reddito oltre i {formatCurrency(BONUS_CONST.SOGLIA_BONUS_MAX)}: il bonus non spetta.
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* AI section */}
         <div className="ai-panel">
