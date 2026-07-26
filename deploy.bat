@@ -30,13 +30,17 @@ copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "Turni.apk" || goto 
 
 echo.
 echo [5/5] Installazione sul telefono...
+set TARGET=
 if exist "phone.txt" (
   set /p PHONE=<phone.txt
   echo Connessione wireless a !PHONE! ...
   "%ADB%" connect !PHONE!
+  REM -s: installa SOLO su questo dispositivo (evita "more than one device"
+  REM quando il telefono e' visto sia via IP:porta sia via mDNS)
+  set TARGET=-s !PHONE!
 )
 "%ADB%" devices
-"%ADB%" install -r "Turni.apk" || goto :error
+"%ADB%" !TARGET! install -r "Turni.apk" || goto :error
 
 echo.
 echo ============================================================
