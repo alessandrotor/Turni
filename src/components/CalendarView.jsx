@@ -9,6 +9,7 @@ import { calcNetMonthly, projectAnnualGross, monthlyBaseGross, EXTRA_MONTHS, TAX
 import { ENABLE_NET_CALC } from '../config/features';
 import { generateMonthlySummary } from '../services/ai';
 import { parseShiftsFromImage } from '../services/gemini';
+import { exportShiftsExcel, exportShiftsPDF } from '../services/export';
 import ImportModal from './ImportModal';
 
 const DAY_HEADERS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
@@ -41,6 +42,8 @@ export default function CalendarView({
   const [showNetDetail, setShowNetDetail] = useState(false);
   const [pendingImportFile, setPendingImportFile] = useState(null);
   const [nameInput, setNameInput] = useState('');
+  const [exportBusy, setExportBusy] = useState(false);
+  const [exportError, setExportError] = useState(null);
   const fileInputRef = useRef();
 
   const year = currentMonth.getFullYear();
@@ -175,6 +178,19 @@ export default function CalendarView({
   function handleImportConfirm(parsedShifts) {
     onImportShifts(parsedShifts);
     setImportParsed(null);
+  }
+
+  async function handleExport(format) {
+    setExportBusy(true);
+    setExportError(null);
+    try {
+      if (format === 'xlsx') await exportShiftsExcel(shifts, currentMonth);
+      else await exportShiftsPDF(shifts, currentMonth);
+    } catch (e) {
+      setExportError(e.message || 'Errore durante l\'esportazione');
+    } finally {
+      setExportBusy(false);
+    }
   }
 
   async function handleAISummary() {
@@ -317,6 +333,28 @@ export default function CalendarView({
             </div>
           )}
         </div>
+
+        {/* Esporta i turni del mese */}
+        <div className="export-bar">
+          <span className="export-label">Esporta il mese:</span>
+          <button
+            type="button"
+            className="btn-export"
+            disabled={shifts.length === 0 || exportBusy}
+            onClick={() => handleExport('xlsx')}
+          >
+            📊 Excel
+          </button>
+          <button
+            type="button"
+            className="btn-export"
+            disabled={shifts.length === 0 || exportBusy}
+            onClick={() => handleExport('pdf')}
+          >
+            📄 PDF
+          </button>
+        </div>
+        {exportError && <p className="import-error">{exportError}</p>}
 
         {/* Netto stimato del mese — beta (gated dal feature flag) */}
         {showNetPanel && (
