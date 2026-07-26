@@ -961,3 +961,124 @@ input, select, textarea { font: inherit; }
 .settings-footer {
   padding: .25rem 0;
 }
+
+/* ── Bonus busta paga: striscia nel calendario ──────────────────── */
+.bonus-strip {
+  margin-top: 1rem;
+  border-top: 1px solid var(--c-border);
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+
+.bonus-strip-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .25rem;
+}
+
+.bonus-strip-title {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--c-text);
+}
+
+.bonus-strip-income {
+  font-size: .78rem;
+  color: var(--c-text-2);
+}
+
+.bonus-strip-body {
+  background: var(--c-primary-light);
+  border: 1px solid var(--c-primary);
+  border-radius: var(--radius);
+  padding: .85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  text-align: center;
+}
+
+.bonus-strip-body--warn {
+  background: var(--c-warning-light);
+  border-color: var(--c-warning);
+}
+
+.bonus-strip-body--danger {
+  background: var(--c-danger-light);
+  border-color: var(--c-danger);
+}
+
+.bonus-strip-label {
+  font-size: .76rem;
+  font-weight: 600;
+  color: var(--c-text-2);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.bonus-strip-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--c-primary);
+  line-height: 1.1;
+}
+
+.bonus-strip-body--warn .bonus-strip-value {
+  color: var(--c-warning);
+}
+
+.bonus-strip-note {
+  font-size: .8rem;
+  color: var(--c-text-2);
+  line-height: 1.4;
+}
+
+.bonus-strip-body--danger .bonus-strip-note {
+  color: var(--c-danger);
+  font-weight: 600;
+}
+
+/* ── Aumenti di paga ────────────────────────────────────────────── */
+.rate-changes {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  margin-bottom: .75rem;
+}
+
+.rate-change-row {
+  display: flex;
+  align-items: flex-end;
+  gap: .5rem;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: .6rem;
+}
+
+.rate-change-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.form-label--sm {
+  font-size: .72rem;
+}
+
+.rate-change-remove {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2.4rem;
+  border-radius: var(--radius-sm);
+  color: var(--c-danger);
+  background: var(--c-danger-light);
+  font-size: .85rem;
+  font-weight: 700;
+}

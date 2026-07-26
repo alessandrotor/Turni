@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import useLocalStorage from './hooks/useLocalStorage';
 import { getMonthStart, parseDate } from './utils/dates';
+import { calcTotalPay } from './utils/pay';
 import CalendarView from './components/CalendarView';
 import Settings from './components/Settings';
 import ShiftForm from './components/ShiftForm';
@@ -10,6 +11,9 @@ const DEFAULT_SETTINGS = {
   hourlyRate: 0,
   expectedWeeklyHours: 40,
   sundaySurchargePct: 0,
+  overtimeSurchargePct: 0,
+  priorTaxableIncome: 0,
+  previousRates: [],
 };
 
 export default function App() {
@@ -45,6 +49,16 @@ export default function App() {
     });
   }, [shifts]);
 
+  // Reddito annuo lordo maturato dai turni dell'anno visualizzato,
+  // più il montante fiscale già maturato prima di usare l'app.
+  const annualGross = useCallback((monthDate) => {
+    const y = monthDate.getFullYear();
+    const yearShifts = Object.values(shifts).filter(s => parseDate(s.date).getFullYear() === y);
+    const pay = calcTotalPay(yearShifts, settings, yearShifts);
+    const fromShifts = pay ? pay.total : 0;
+    return fromShifts + (Number(settings.priorTaxableIncome) || 0);
+  }, [shifts, settings]);
+
   const importShifts = useCallback((parsedShifts) => {
     setShifts(prev => {
       const next = { ...prev };
@@ -77,6 +91,8 @@ export default function App() {
             onDeleteShift={deleteShift}
             onImportShifts={importShifts}
             settings={settings}
+            allShifts={Object.values(shifts)}
+            annualGross={annualGross(currentMonth)}
           />
         )}
 
