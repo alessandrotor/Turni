@@ -19,6 +19,7 @@ export default function Settings({ settings, onSave }) {
     sundaySurchargePct: settings.sundaySurchargePct ?? 0,
     overtimeSurchargePct: settings.overtimeSurchargePct ?? 0,
     priorTaxableIncome: toInput(settings.priorTaxableIncome),
+    workerName: settings.workerName ?? '',
     hasTredicesima: !!settings.hasTredicesima,
     hasQuattordicesima: !!settings.hasQuattordicesima,
     previousRates: (Array.isArray(settings.previousRates) ? settings.previousRates : []).map(c => ({
@@ -73,6 +74,7 @@ export default function Settings({ settings, onSave }) {
       sundaySurchargePct: parseNum(form.sundaySurchargePct),
       overtimeSurchargePct: parseNum(form.overtimeSurchargePct),
       priorTaxableIncome: parseNum(form.priorTaxableIncome),
+      workerName: form.workerName.trim(),
       hasTredicesima: form.hasTredicesima,
       hasQuattordicesima: form.hasQuattordicesima,
       previousRates,
@@ -368,6 +370,28 @@ export default function Settings({ settings, onSave }) {
             </div>
           </section>
         )}
+
+        {/* Import turni da foto (AI) */}
+        <section className="settings-section">
+          <h2 className="settings-section-title">🤖 Import turni da foto</h2>
+          <p className="settings-section-desc">
+            Quando importi i turni da una foto, il foglio può contenere più persone.
+            Indica il tuo nome così l'AI estrae <strong>solo i tuoi</strong> turni. Lascia
+            vuoto per importare tutti i turni presenti nell'immagine.
+          </p>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="worker-name">Il tuo nome sul foglio turni</label>
+            <input
+              id="worker-name"
+              type="text"
+              className="form-input"
+              placeholder="Es. Mario Rossi"
+              value={form.workerName}
+              onChange={set('workerName')}
+            />
+          </div>
+        </section>
 
         {/* CCNL - placeholder futuro */}
         <section className="settings-section settings-section--future">

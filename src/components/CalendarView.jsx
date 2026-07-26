@@ -3,7 +3,7 @@ import {
   formatDate, formatMonthYear, isToday, isWeekend,
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth,
 } from '../utils/dates';
-import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
+import { calcShiftMinutes, calcTotalPay, formatCurrency, isSunday } from '../utils/pay';
 import { calcBonusMargin, BONUS_CONST, BONUS_STATUS } from '../utils/bonus';
 import { calcNetMonthly, projectAnnualGross, monthlyBaseGross, EXTRA_MONTHS, TAX_2026 } from '../utils/net';
 import { ENABLE_NET_CALC } from '../config/features';
@@ -27,6 +27,7 @@ export default function CalendarView({
   onEditShift,
   onImportShifts,
   settings,
+  onUpdateSettings,
   allShifts,
   annualGross,
 }) {
@@ -38,6 +39,8 @@ export default function CalendarView({
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState(null);
   const [showNetDetail, setShowNetDetail] = useState(false);
+  const [pendingImportFile, setPendingImportFile] = useState(null);
+  const [nameInput, setNameInput] = useState('');
   const fileInputRef = useRef();
 
   const year = currentMonth.getFullYear();
@@ -93,23 +96,71 @@ export default function CalendarView({
   const addizionaliPct = (addRegPct + addComPct).toFixed(2).replace('.', ',');
   const showNetPanel = ENABLE_NET_CALC && pay !== null && netBasis > 0 && monthGross > 0;
 
+  // Contesto numerico per il riepilogo AI (cose utili al lavoratore).
+  const workedDays = new Set(shifts.map(s => s.date)).size;
+  const dayNums = [...new Set(shifts.map(s => Number(s.date.slice(8, 10))))].sort((a, b) => a - b);
+  let maxConsecutive = 0, run = 0, prevDay = null;
+  for (const d of dayNums) {
+    run = (prevDay !== null && d === prevDay + 1) ? run + 1 : 1;
+    if (run > maxConsecutive) maxConsecutive = run;
+    prevDay = d;
+  }
+  const summaryContext = {
+    totalHours: totalMins / 60,
+    shiftsCount: shifts.length,
+    overtimeHours: pay?.overtimeMinutes ? pay.overtimeMinutes / 60 : 0,
+    sundaysWorked: shifts.filter(s => isSunday(s.date)).length,
+    shiftsWithSurcharge: shifts.filter(s =>
+      (isSunday(s.date) && (Number(settings.sundaySurchargePct) || 0) > 0) || (Number(s.surchargePct) || 0) > 0
+    ).length,
+    workedDays,
+    restDays: daysInMonth - workedDays,
+    maxConsecutive,
+    bonusRenzi: {
+      status: bonus.status,
+      marginToFull: bonus.marginToFull,
+      marginToMax: bonus.marginToMax,
+      income: bonus.income,
+    },
+    ...(pay ? { gross: monthGross, surcharge: pay.surcharge } : {}),
+    ...(netMonth ? { net: monthNet, trattenute: monthTrattenute, bonus: monthBonus } : {}),
+  };
+
   const hasGeminiKey = !!import.meta.env.VITE_GEMINI_API_KEY;
   const hasApiKey = hasGeminiKey || !!import.meta.env.VITE_ANTHROPIC_API_KEY;
 
-  async function handleImportFile(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    e.target.value = '';
+  async function runImport(file, name) {
     setImportLoading(true);
     setImportError(null);
     try {
-      const parsed = await parseShiftsFromImage(file);
+      const parsed = await parseShiftsFromImage(file, name);
       setImportParsed(parsed);
     } catch (err) {
       setImportError(err.message || 'Errore durante l\'analisi dell\'immagine');
     } finally {
       setImportLoading(false);
     }
+  }
+
+  function handleImportFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    // Prima volta: chiedi il nome sul foglio e salvalo. Dopo, usa quello salvato.
+    if (!settings.workerName) {
+      setPendingImportFile(file);
+      setNameInput('');
+      return;
+    }
+    runImport(file, settings.workerName);
+  }
+
+  function handleNameSubmit() {
+    const name = nameInput.trim();
+    if (name && onUpdateSettings) onUpdateSettings({ workerName: name });
+    const file = pendingImportFile;
+    setPendingImportFile(null);
+    if (file) runImport(file, name);
   }
 
   function handleImportConfirm(parsedShifts) {
@@ -122,7 +173,7 @@ export default function CalendarView({
     setAiError(null);
     setAiSummary(null);
     try {
-      const text = await generateMonthlySummary(shifts, currentMonth, settings);
+      const text = await generateMonthlySummary(shifts, currentMonth, settings, summaryContext);
       setAiSummary(text);
     } catch (e) {
       setAiError(e.message || 'Errore durante la generazione del riepilogo');
@@ -258,48 +309,6 @@ export default function CalendarView({
           )}
         </div>
 
-        {/* Bonus busta paga: quanto manca alla soglia */}
-        {bonus.status !== BONUS_STATUS.ATTESA && (
-          <div className="bonus-strip">
-            <div className="bonus-strip-head">
-              <span className="bonus-strip-title">💶 Reddito e bonus Renzi</span>
-              <span className="bonus-strip-income">
-                Reddito totale {currentMonth.getFullYear()}: <strong>{fmt0(bonus.income)}</strong>
-              </span>
-            </div>
-
-            {bonus.status === BONUS_STATUS.PIENO && (
-              <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
-                <span className="bonus-strip-label">
-                  {bonus.nearThreshold ? '⚠️ Sei vicino alla soglia' : 'Puoi ancora guadagnare'}
-                </span>
-                <span className="bonus-strip-value">{fmt0(bonus.marginToFull)}</span>
-                <span className="bonus-strip-note">
-                  prima di superare i {formatCurrency(BONUS_CONST.SOGLIA_BONUS_PIENO)} e uscire dal bonus pieno
-                </span>
-              </div>
-            )}
-
-            {bonus.status === BONUS_STATUS.PARZIALE && (
-              <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
-                <span className="bonus-strip-label">Puoi ancora guadagnare</span>
-                <span className="bonus-strip-value">{fmt0(bonus.marginToMax)}</span>
-                <span className="bonus-strip-note">
-                  prima di superare i {formatCurrency(BONUS_CONST.SOGLIA_BONUS_MAX)} e perdere del tutto il bonus
-                </span>
-              </div>
-            )}
-
-            {bonus.status === BONUS_STATUS.OLTRE && (
-              <div className="bonus-strip-body bonus-strip-body--danger">
-                <span className="bonus-strip-note">
-                  🚨 Reddito oltre i {formatCurrency(BONUS_CONST.SOGLIA_BONUS_MAX)}: il bonus non spetta.
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Netto stimato del mese — beta (gated dal feature flag) */}
         {showNetPanel && (
           <div className="net-strip">
@@ -387,6 +396,48 @@ export default function CalendarView({
           </div>
         )}
 
+        {/* Bonus busta paga: quanto manca alla soglia (sotto al netto mensile) */}
+        {bonus.status !== BONUS_STATUS.ATTESA && (
+          <div className="bonus-strip">
+            <div className="bonus-strip-head">
+              <span className="bonus-strip-title">💶 Reddito e bonus Renzi</span>
+              <span className="bonus-strip-income">
+                Reddito totale {currentMonth.getFullYear()}: <strong>{fmt0(bonus.income)}</strong>
+              </span>
+            </div>
+
+            {bonus.status === BONUS_STATUS.PIENO && (
+              <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
+                <span className="bonus-strip-label">
+                  {bonus.nearThreshold ? '⚠️ Sei vicino alla soglia' : 'Puoi ancora guadagnare'}
+                </span>
+                <span className="bonus-strip-value">{fmt0(bonus.marginToFull)}</span>
+                <span className="bonus-strip-note">
+                  prima di superare i {formatCurrency(BONUS_CONST.SOGLIA_BONUS_PIENO)} e uscire dal bonus pieno
+                </span>
+              </div>
+            )}
+
+            {bonus.status === BONUS_STATUS.PARZIALE && (
+              <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
+                <span className="bonus-strip-label">Puoi ancora guadagnare</span>
+                <span className="bonus-strip-value">{fmt0(bonus.marginToMax)}</span>
+                <span className="bonus-strip-note">
+                  prima di superare i {formatCurrency(BONUS_CONST.SOGLIA_BONUS_MAX)} e perdere del tutto il bonus
+                </span>
+              </div>
+            )}
+
+            {bonus.status === BONUS_STATUS.OLTRE && (
+              <div className="bonus-strip-body bonus-strip-body--danger">
+                <span className="bonus-strip-note">
+                  🚨 Reddito oltre i {formatCurrency(BONUS_CONST.SOGLIA_BONUS_MAX)}: il bonus non spetta.
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* AI section */}
         <div className="ai-panel">
           {hasApiKey ? (
@@ -413,6 +464,35 @@ export default function CalendarView({
           onConfirm={handleImportConfirm}
           onClose={() => setImportParsed(null)}
         />
+      )}
+
+      {pendingImportFile && (
+        <div className="modal-overlay" onClick={() => setPendingImportFile(null)}>
+          <div className="modal name-modal" onClick={e => e.stopPropagation()}>
+            <h2 className="modal-title">Il tuo nome sul foglio</h2>
+            <p className="modal-desc">
+              Il foglio turni può contenere più persone. Indica il tuo nome così l'AI
+              estrae solo i tuoi turni. Lo salviamo nelle impostazioni (potrai cambiarlo lì).
+            </p>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Es. Mario Rossi"
+              value={nameInput}
+              autoFocus
+              onChange={e => setNameInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleNameSubmit(); }}
+            />
+            <div className="name-modal-actions">
+              <button type="button" className="btn btn-secondary" onClick={() => setPendingImportFile(null)}>
+                Annulla
+              </button>
+              <button type="button" className="btn btn-primary" onClick={handleNameSubmit}>
+                {nameInput.trim() ? 'Salva e continua' : 'Importa tutti'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -21,6 +21,8 @@ const DEFAULT_SETTINGS = {
   // Mensilità aggiuntive (dipendono dal CCNL)
   hasTredicesima: false,
   hasQuattordicesima: false,
+  // Nome del lavoratore sul foglio turni (per import AI da immagine collettiva)
+  workerName: '',
 };
 
 export default function App() {
@@ -29,6 +31,11 @@ export default function App() {
   const [view, setView] = useState('calendar');
   const [currentMonth, setCurrentMonth] = useState(() => getMonthStart(new Date()));
   const [modal, setModal] = useState(null); // null | {type:'add',date} | {type:'edit',shift}
+
+  // Aggiorna solo alcuni campi delle impostazioni (es. workerName dal modal import)
+  const updateSettings = useCallback((patch) => {
+    setSettings(prev => ({ ...prev, ...patch }));
+  }, [setSettings]);
 
   const addShift = useCallback((shiftData) => {
     const id = Date.now().toString(36) + Math.random().toString(36).slice(2);
@@ -101,6 +108,7 @@ export default function App() {
             onDeleteShift={deleteShift}
             onImportShifts={importShifts}
             settings={settings}
+            onUpdateSettings={updateSettings}
             allShifts={Object.values(shifts)}
             annualGross={annualGross(currentMonth)}
           />

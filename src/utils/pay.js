@@ -130,14 +130,16 @@ export function calcTotalPay(shifts, settings, allShifts = shifts) {
   const byShift = computePayByShift(allShifts, settings);
   let base = 0;
   let surcharge = 0;
+  let overtimeMinutes = 0;
   shifts.forEach(s => {
     const p = byShift[s.id];
     if (p) {
       base += p.base;
       surcharge += p.surcharge;
+      overtimeMinutes += p.overtimeMinutes;
     }
   });
-  return { base, surcharge, total: base + surcharge };
+  return { base, surcharge, total: base + surcharge, overtimeMinutes };
 }
 
 export function formatCurrency(amount) {
