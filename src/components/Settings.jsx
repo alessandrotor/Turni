@@ -20,6 +20,9 @@ export default function Settings({ settings, onSave }) {
     overtimeSurchargePct: settings.overtimeSurchargePct ?? 0,
     priorTaxableIncome: toInput(settings.priorTaxableIncome),
     workerName: settings.workerName ?? '',
+    onCall: !!settings.onCall,
+    annualGrossManual: toInput(settings.annualGrossManual),
+    dailyOvertimeThreshold: settings.dailyOvertimeThreshold ?? '',
     hasTredicesima: !!settings.hasTredicesima,
     hasQuattordicesima: !!settings.hasQuattordicesima,
     previousRates: (Array.isArray(settings.previousRates) ? settings.previousRates : []).map(c => ({
@@ -75,6 +78,9 @@ export default function Settings({ settings, onSave }) {
       overtimeSurchargePct: parseNum(form.overtimeSurchargePct),
       priorTaxableIncome: parseNum(form.priorTaxableIncome),
       workerName: form.workerName.trim(),
+      onCall: form.onCall,
+      annualGrossManual: parseNum(form.annualGrossManual),
+      dailyOvertimeThreshold: parseNum(form.dailyOvertimeThreshold),
       hasTredicesima: form.hasTredicesima,
       hasQuattordicesima: form.hasQuattordicesima,
       previousRates,
@@ -194,27 +200,78 @@ export default function Settings({ settings, onSave }) {
           </button>
         </section>
 
-        {/* Ore previste */}
+        {/* Ore previste / lavoro a chiamata */}
         <section className="settings-section">
-          <h2 className="settings-section-title">📋 Ore settimanali previste</h2>
-          <p className="settings-section-desc">
-            Quante ore dovresti lavorare ogni settimana secondo il tuo contratto.
-            Le ore oltre questa soglia vengono conteggiate come straordinari.
-          </p>
+          <h2 className="settings-section-title">📋 Orario di lavoro</h2>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="expected-hours">Ore settimanali</label>
+          <label className="check-row">
             <input
-              id="expected-hours"
-              type="number"
-              className="form-input"
-              min="0"
-              max="84"
-              step="0.5"
-              value={form.expectedWeeklyHours || ''}
-              onChange={set('expectedWeeklyHours')}
+              type="checkbox"
+              checked={form.onCall}
+              onChange={setCheck('onCall')}
             />
-          </div>
+            <span>Lavoratore a chiamata (senza ore settimanali fisse)</span>
+          </label>
+
+          {!form.onCall ? (
+            <>
+              <p className="settings-section-desc">
+                Quante ore dovresti lavorare ogni settimana secondo il tuo contratto.
+                Le ore oltre questa soglia vengono conteggiate come straordinari.
+              </p>
+              <div className="form-group">
+                <label className="form-label" htmlFor="expected-hours">Ore settimanali</label>
+                <input
+                  id="expected-hours"
+                  type="number"
+                  className="form-input"
+                  min="0"
+                  max="84"
+                  step="0.5"
+                  value={form.expectedWeeklyHours || ''}
+                  onChange={set('expectedWeeklyHours')}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="settings-section-desc">
+                Senza ore fisse, lo straordinario e il reddito annuo vanno impostati a mano.
+                Lo straordinario scatta per le ore che superano la soglia <strong>giornaliera</strong>.
+                Il reddito annuo serve solo a stimare l'aliquota fiscale; se lo lasci vuoto viene
+                stimato annualizzando i turni che hai inserito.
+              </p>
+              <div className="form-group">
+                <label className="form-label" htmlFor="daily-ot">Soglia straordinario giornaliera (ore)</label>
+                <input
+                  id="daily-ot"
+                  type="number"
+                  className="form-input"
+                  min="0"
+                  max="24"
+                  step="0.5"
+                  placeholder="es. 8"
+                  value={form.dailyOvertimeThreshold || ''}
+                  onChange={set('dailyOvertimeThreshold')}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="annual-manual">Reddito annuo lordo stimato (opzionale)</label>
+                <div className="input-with-symbol">
+                  <span className="input-symbol">€</span>
+                  <input
+                    id="annual-manual"
+                    type="text"
+                    inputMode="decimal"
+                    className="form-input form-input--with-symbol"
+                    placeholder="es. 14000"
+                    value={form.annualGrossManual}
+                    onChange={set('annualGrossManual')}
+                  />
+                </div>
+              </div>
+            </>
+          )}
         </section>
 
         {/* Maggiorazioni */}
@@ -222,9 +279,9 @@ export default function Settings({ settings, onSave }) {
           <h2 className="settings-section-title">📈 Maggiorazioni</h2>
           <p className="settings-section-desc">
             La maggiorazione domenicale viene applicata automaticamente ai turni di domenica.
-            La maggiorazione straordinari si applica automaticamente alle ore che superano le
-            ore settimanali da contratto. Per altre maggiorazioni (festivi, notturni) puoi
-            indicare una percentuale manuale sul singolo turno.
+            La maggiorazione straordinari si applica automaticamente alle ore oltre la soglia
+            {form.onCall ? ' giornaliera' : ' settimanale da contratto'}. Per altre maggiorazioni
+            (festivi, notturni) puoi indicare una percentuale manuale sul singolo turno.
           </p>
 
           <div className="form-group">
@@ -264,7 +321,9 @@ export default function Settings({ settings, onSave }) {
               />
             </div>
             <p className="form-hint">
-              Applicata alle ore oltre le {weeklyHours || 0}h settimanali da contratto.
+              {form.onCall
+                ? `Applicata alle ore oltre le ${parseNum(form.dailyOvertimeThreshold) || 0}h giornaliere.`
+                : `Applicata alle ore oltre le ${weeklyHours || 0}h settimanali da contratto.`}
             </p>
           </div>
         </section>

@@ -3,7 +3,7 @@ import {
   formatDate, formatMonthYear, isToday, isWeekend,
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth,
 } from '../utils/dates';
-import { calcShiftMinutes, calcTotalPay, formatCurrency, isSunday } from '../utils/pay';
+import { calcShiftMinutes, calcTotalPay, formatCurrency, isSunday, annualizeFromShifts } from '../utils/pay';
 import { calcBonusMargin, BONUS_CONST, BONUS_STATUS } from '../utils/bonus';
 import { calcNetMonthly, projectAnnualGross, monthlyBaseGross, EXTRA_MONTHS, TAX_2026 } from '../utils/net';
 import { ENABLE_NET_CALC } from '../config/features';
@@ -76,8 +76,17 @@ export default function CalendarView({
   // L'IRPEF, progressiva e annuale, usa come riferimento il reddito annuo pieno
   // (proiezione da contratto + 13ª/14ª); se il contratto non è impostato si
   // ripiega sul reddito maturato.
-  const projectedAnnual = ENABLE_NET_CALC ? projectAnnualGross(settings) : 0;
-  const netBasis = projectedAnnual > 0 ? projectedAnnual : annualGross;
+  // Reddito annuo di riferimento per l'aliquota fiscale:
+  //  - a chiamata: reddito annuo manuale se impostato, altrimenti annualizzato dai turni;
+  //  - contratto: proiezione da ore settimanali × paga (+13ª/14ª), con fallback al maturato.
+  let netBasis;
+  if (settings.onCall) {
+    const manual = Number(settings.annualGrossManual) || 0;
+    netBasis = manual > 0 ? manual : annualizeFromShifts(allShifts || shifts, year, settings);
+  } else {
+    const projectedAnnual = ENABLE_NET_CALC ? projectAnnualGross(settings) : 0;
+    netBasis = projectedAnnual > 0 ? projectedAnnual : annualGross;
+  }
   // Mensilità aggiuntiva che cade in questo mese (quattordicesima a giu, tredicesima a dic).
   const extraThisMonth = ENABLE_NET_CALC
     ? monthlyBaseGross(settings) * (

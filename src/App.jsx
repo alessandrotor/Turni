@@ -23,6 +23,10 @@ const DEFAULT_SETTINGS = {
   hasQuattordicesima: false,
   // Nome del lavoratore sul foglio turni (per import AI da immagine collettiva)
   workerName: '',
+  // Lavoratore a chiamata (senza ore settimanali fisse)
+  onCall: false,
+  annualGrossManual: 0,      // reddito annuo lordo stimato (per aliquota fiscale)
+  dailyOvertimeThreshold: 0, // ore/giorno oltre cui scatta lo straordinario
 };
 
 export default function App() {
