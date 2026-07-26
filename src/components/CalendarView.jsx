@@ -93,8 +93,8 @@ export default function CalendarView({
   const addizionaliPct = (addRegPct + addComPct).toFixed(2).replace('.', ',');
   const showNetPanel = ENABLE_NET_CALC && pay !== null && netBasis > 0 && monthGross > 0;
 
-  const hasApiKey = !!import.meta.env.VITE_ANTHROPIC_API_KEY;
-  const hasGeminiKey = !!import.meta.env.VITE_GROQ_API_KEY;
+  const hasGeminiKey = !!import.meta.env.VITE_GEMINI_API_KEY;
+  const hasApiKey = hasGeminiKey || !!import.meta.env.VITE_ANTHROPIC_API_KEY;
 
   async function handleImportFile(e) {
     const file = e.target.files?.[0];
@@ -399,7 +399,7 @@ export default function CalendarView({
             </button>
           ) : (
             <p className="ai-hint">
-              Aggiungi <code>VITE_ANTHROPIC_API_KEY</code> in <code>.env.local</code> per il riepilogo AI con Claude Opus.
+              Aggiungi <code>VITE_GEMINI_API_KEY</code> in <code>.env.local</code> per il riepilogo AI con Google Gemini (gratuito).
             </p>
           )}
           {aiError && <p className="ai-error">{aiError}</p>}

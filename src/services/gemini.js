@@ -1,9 +1,9 @@
-import Groq from 'groq-sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-function getClient() {
-  const apiKey = import.meta.env.VITE_GROQ_API_KEY;
-  if (!apiKey) throw new Error('Chiave API mancante: aggiungi VITE_GROQ_API_KEY in .env.local');
-  return new Groq({ apiKey, dangerouslyAllowBrowser: true });
+function getModel() {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  if (!apiKey) throw new Error('Chiave API mancante: aggiungi VITE_GEMINI_API_KEY in .env.local');
+  return new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: 'gemini-flash-latest' });
 }
 
 function fileToBase64(file) {
@@ -16,23 +16,11 @@ function fileToBase64(file) {
 }
 
 export async function parseShiftsFromImage(imageFile) {
-  const client = getClient();
+  const model = getModel();
   const base64 = await fileToBase64(imageFile);
   const currentYear = new Date().getFullYear();
 
-  const response = await client.chat.completions.create({
-    model: 'meta-llama/llama-4-scout-17b-16e-instruct',
-    max_tokens: 1024,
-    messages: [{
-      role: 'user',
-      content: [
-        {
-          type: 'image_url',
-          image_url: { url: `data:${imageFile.type};base64,${base64}` },
-        },
-        {
-          type: 'text',
-          text: `Analizza questa immagine di un foglio turni di lavoro.
+  const prompt = `Analizza questa immagine di un foglio turni di lavoro.
 Estrai TUTTI i turni presenti e restituisci SOLO un array JSON valido, senza testo aggiuntivo né markdown.
 
 Formato richiesto:
@@ -45,13 +33,14 @@ Regole:
 - startTime / endTime: formato 24h HH:MM.
 - breakMinutes: numero intero (0 se non specificato).
 - note: tipo turno o nota libera, stringa vuota se assente.
-- Includi solo righe con orario di lavoro valido, ignora intestazioni e totali.`,
-        },
-      ],
-    }],
-  });
+- Includi solo righe con orario di lavoro valido, ignora intestazioni e totali.`;
 
-  const text = response.choices[0].message.content.trim();
+  const result = await model.generateContent([
+    { text: prompt },
+    { inlineData: { mimeType: imageFile.type, data: base64 } },
+  ]);
+
+  const text = result.response.text().trim();
   const jsonMatch = text.match(/\[[\s\S]*\]/);
   if (!jsonMatch) throw new Error('Nessun turno riconosciuto nell\'immagine');
 
