@@ -1164,6 +1164,49 @@ input, select, textarea { font: inherit; }
   margin-top: .05rem;
 }
 
+/* Netto: raggruppamento a "busta paga" */
+.net-line--head {
+  font-weight: 700;
+  font-size: .95rem;
+}
+
+.net-group-label {
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--c-muted);
+  margin-top: .55rem;
+  padding-top: .5rem;
+  border-top: 1px solid var(--c-border);
+}
+
+.net-line--ded,
+.net-line--bonus {
+  padding-left: .85rem;
+  font-size: .86rem;
+  color: var(--c-text-2);
+}
+
+.net-line--ded > span:last-child { color: var(--c-danger); font-weight: 600; }
+.net-line--bonus > span:last-child { color: var(--c-success); font-weight: 600; }
+
+.net-subnote {
+  padding-left: .85rem;
+  margin-top: -.2rem;
+  font-size: .72rem;
+  font-style: italic;
+  color: var(--c-muted);
+}
+
+.net-line--subtotal {
+  padding-left: .85rem;
+  margin-top: .3rem;
+  font-weight: 700;
+  color: var(--c-text);
+}
+.net-line--subtotal > span:last-child { color: var(--c-danger); }
+
 .net-line--total {
   font-weight: 800;
   font-size: 1rem;
@@ -1179,6 +1222,14 @@ input, select, textarea { font: inherit; }
   font-style: italic;
   line-height: 1.4;
   margin-top: .1rem;
+}
+
+.app-footer {
+  text-align: center;
+  padding: 1.25rem 0 .5rem;
+  font-size: .72rem;
+  color: var(--c-muted);
+  letter-spacing: .03em;
 }
 
 .settings-section--beta {

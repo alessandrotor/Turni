@@ -335,39 +335,52 @@ export default function CalendarView({
 
             {showNetDetail && (
               <div className="net-detail">
-                <div className="net-line"><span>Lordo del mese</span><span>{fmt0(netMonth.gross)}</span></div>
-                <div className="net-line net-line--sub">
-                  <span>− Contributi IVS ({(TAX_2026.ALIQUOTA_IVS * 100).toFixed(2).replace('.', ',')}%)</span>
+                {/* Punto di partenza: un solo lordo */}
+                <div className="net-line net-line--head">
+                  <span>Lordo del mese</span><span>{fmt0(netMonth.gross)}</span>
+                </div>
+
+                {/* Cosa viene tolto */}
+                <div className="net-group-label">Trattenute (tolte dal lordo)</div>
+                <div className="net-line net-line--ded">
+                  <span>Contributi IVS ({(TAX_2026.ALIQUOTA_IVS * 100).toFixed(2).replace('.', ',')}%)</span>
                   <span>−{fmt0(netMonth.contributi)}</span>
                 </div>
-                <div className="net-line net-line--sub"><span>= Imponibile</span><span>{fmt0(netMonth.imponibile)}</span></div>
-                <div className="net-line net-line--sub">
-                  <span>IRPEF lorda ({netMonth.imponibile > 0 ? (netMonth.irpefLorda / netMonth.imponibile * 100).toFixed(0) : 0}%)</span>
-                  <span>{fmt0(netMonth.irpefLorda)}</span>
+                <div className="net-line net-line--ded">
+                  <span>IRPEF netta</span><span>−{fmt0(netMonth.irpefNetta)}</span>
                 </div>
-                <div className="net-line net-line--sub"><span>− Detrazioni lavoro/cuneo</span><span>−{fmt0(netMonth.detrazioni)}</span></div>
-                <div className="net-line net-line--sub"><span>= IRPEF netta</span><span>−{fmt0(netMonth.irpefNetta)}</span></div>
+                <div className="net-subnote">
+                  = IRPEF lorda {fmt0(netMonth.irpefLorda)} ({netMonth.imponibile > 0 ? (netMonth.irpefLorda / netMonth.imponibile * 100).toFixed(0) : 0}% dell'imponibile) − detrazioni {fmt0(netMonth.detrazioni)}
+                </div>
                 {(netMonth.addRegionale + netMonth.addComunale) > 0 && (
-                  <div className="net-line net-line--sub">
-                    <span>− Addizionali reg./com. ({addizionaliPct}%)</span>
+                  <div className="net-line net-line--ded">
+                    <span>Addizionali reg./com. ({addizionaliPct}%)</span>
                     <span>−{fmt0(netMonth.addRegionale + netMonth.addComunale)}</span>
                   </div>
                 )}
-                <div className="net-line net-line--strong">
-                  <span>= Trattenute ({(netMonth.trattenute / netMonth.gross * 100).toFixed(1)}% del lordo)</span>
+                <div className="net-line net-line--subtotal">
+                  <span>Totale trattenute ({(netMonth.trattenute / netMonth.gross * 100).toFixed(1)}%)</span>
                   <span>−{fmt0(netMonth.trattenute)}</span>
                 </div>
-                {netMonth.trattamentoIntegrativo > 0 && (
-                  <div className="net-line net-line--sub"><span>+ Trattamento integrativo</span><span>+{fmt0(netMonth.trattamentoIntegrativo)}</span></div>
+
+                {/* Cosa viene aggiunto, in fondo */}
+                {netMonth.bonus > 0 && (
+                  <>
+                    <div className="net-group-label">Bonus (aggiunti in busta)</div>
+                    {netMonth.trattamentoIntegrativo > 0 && (
+                      <div className="net-line net-line--bonus"><span>Trattamento integrativo</span><span>+{fmt0(netMonth.trattamentoIntegrativo)}</span></div>
+                    )}
+                    {netMonth.bonusCuneo > 0 && (
+                      <div className="net-line net-line--bonus"><span>Cuneo fiscale</span><span>+{fmt0(netMonth.bonusCuneo)}</span></div>
+                    )}
+                  </>
                 )}
-                {netMonth.bonusCuneo > 0 && (
-                  <div className="net-line net-line--sub"><span>+ Bonus cuneo fiscale</span><span>+{fmt0(netMonth.bonusCuneo)}</span></div>
-                )}
-                <div className="net-line net-line--total"><span>Netto del mese stimato</span><span>{fmt0(netMonth.net)}</span></div>
+
+                <div className="net-line net-line--total"><span>Netto del mese</span><span>{fmt0(netMonth.net)}</span></div>
                 <p className="net-disclaimer">
                   Stima indicativa (fiscalità 2026), calcolata sul mese. Non sostituisce la busta
-                  paga né il conguaglio. L'IRPEF lorda usa l'aliquota del reddito annuo stimato
-                  (contratto + 13ª/14ª); le detrazioni la riducono all'IRPEF netta.
+                  paga né il conguaglio. L'IRPEF netta = aliquota lorda (sul reddito annuo stimato,
+                  contratto + 13ª/14ª) meno le detrazioni da lavoro dipendente.
                 </p>
               </div>
             )}

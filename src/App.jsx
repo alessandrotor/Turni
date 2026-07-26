@@ -109,6 +109,8 @@ export default function App() {
         {view === 'settings' && (
           <Settings settings={settings} onSave={setSettings} />
         )}
+
+        <footer className="app-footer">v{__APP_VERSION__}</footer>
       </main>
 
       {modal && (
