@@ -5,7 +5,7 @@ import {
 } from '../utils/dates';
 import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
 import { calcBonusMargin, BONUS_CONST, BONUS_STATUS } from '../utils/bonus';
-import { calcNetAnnual } from '../utils/net';
+import { calcNetAnnual, projectAnnualGross } from '../utils/net';
 import { ENABLE_NET_CALC } from '../config/features';
 import { generateMonthlySummary } from '../services/ai';
 import { parseShiftsFromImage } from '../services/gemini';
@@ -69,13 +69,19 @@ export default function CalendarView({
 
   // Netto stimato del mese (beta): tassazione progressiva calcolata sull'anno
   // e riportata al mese tramite l'aliquota effettiva netto/lordo.
-  const netAnn = ENABLE_NET_CALC ? calcNetAnnual(annualGross, settings) : null;
-  const netRatio = netAnn && annualGross > 0 ? netAnn.net / annualGross : 0;
+  // L'aliquota va calcolata sul reddito annuo PIENO (proiezione dal contratto),
+  // non su quello maturato finora: l'IRPEF è progressiva e annuale, quindi un
+  // reddito parziale falserebbe l'aliquota verso lo zero. Se il contratto non è
+  // impostato si ripiega sul reddito maturato.
+  const projectedAnnual = ENABLE_NET_CALC ? projectAnnualGross(settings) : 0;
+  const netBasis = projectedAnnual > 0 ? projectedAnnual : annualGross;
+  const netAnn = ENABLE_NET_CALC ? calcNetAnnual(netBasis, settings) : null;
+  const netRatio = netAnn && netBasis > 0 ? netAnn.net / netBasis : 0;
   const monthGross = pay ? pay.total : 0;
   const monthNet = monthGross * netRatio;
   const monthTrattenute = monthGross - monthNet;
   const effectiveRatePct = (1 - netRatio) * 100;
-  const showNetPanel = ENABLE_NET_CALC && pay !== null && annualGross > 0 && monthGross > 0;
+  const showNetPanel = ENABLE_NET_CALC && pay !== null && netBasis > 0 && monthGross > 0;
 
   const hasApiKey = !!import.meta.env.VITE_ANTHROPIC_API_KEY;
   const hasGeminiKey = !!import.meta.env.VITE_GROQ_API_KEY;

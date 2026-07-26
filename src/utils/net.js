@@ -115,6 +115,28 @@ function trattamentoIntegrativo(reddito, irpef, detLavoro, detrTotali) {
   return Math.min(T.TI_MASSIMO, Math.max(0, diff));
 }
 
+// Settimane retribuite in un anno (convenzione standard).
+export const WEEKS_PER_YEAR = 52;
+
+/**
+ * Stima del reddito annuo lordo pieno a partire dal contratto:
+ * ore settimanali previste × paga oraria × 52.
+ *
+ * Serve per calcolare l'aliquota IRPEF effettiva su base annua. La tassazione
+ * è progressiva e annuale: se la si applicasse al reddito solo maturato finora
+ * (parziale a inizio/metà anno) tutto cadrebbe nelle fasce basse — IRPEF
+ * azzerata dalle detrazioni e bonus cuneo ri-aggiunto — falsando l'aliquota
+ * verso lo zero. La proiezione full-year evita questo errore.
+ *
+ * @param {object} settings hourlyRate ed expectedWeeklyHours
+ * @returns {number} reddito annuo lordo stimato (0 se dati insufficienti)
+ */
+export function projectAnnualGross(settings = {}) {
+  const rate = Math.max(0, Number(settings.hourlyRate) || 0);
+  const weeklyHours = Math.max(0, Number(settings.expectedWeeklyHours) || 0);
+  return rate * weeklyHours * WEEKS_PER_YEAR;
+}
+
 /**
  * Calcola la stima del netto annuo.
  * @param {number} grossAnnual reddito lordo annuo da lavoro dipendente
