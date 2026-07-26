@@ -2,10 +2,10 @@
 REM ============================================================
 REM  deploy.bat - Aggiorna e installa Turni sul telefono
 REM  Catena: build web -> cap sync -> APK debug -> Turni.apk -> adb install
-REM  Prerequisiti sul telefono: Opzioni sviluppatore + Debug USB attivo,
-REM  telefono collegato via cavo (o via Wi-Fi, vedi note in fondo).
+REM  Wireless: esegui prima wifi-setup.bat una volta (crea phone.txt).
+REM  In alternativa via cavo: Debug USB attivo e telefono collegato.
 REM ============================================================
-setlocal
+setlocal enabledelayedexpansion
 
 set ADB=%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe
 if not exist "%ADB%" set ADB=adb
@@ -30,6 +30,11 @@ copy /Y "android\app\build\outputs\apk\debug\app-debug.apk" "Turni.apk" || goto 
 
 echo.
 echo [5/5] Installazione sul telefono...
+if exist "phone.txt" (
+  set /p PHONE=<phone.txt
+  echo Connessione wireless a !PHONE! ...
+  "%ADB%" connect !PHONE!
+)
 "%ADB%" devices
 "%ADB%" install -r "Turni.apk" || goto :error
 
@@ -42,13 +47,10 @@ goto :end
 :error
 echo.
 echo !!! ERRORE durante il passo precedente. Controlla il messaggio sopra.
-echo     - Nessun dispositivo? Collega il cavo e attiva il Debug USB.
-echo     - "unauthorized"? Sblocca il telefono e accetta il popup di autorizzazione.
+echo     - Nessun dispositivo? Esegui wifi-setup.bat (o collega il cavo).
+echo     - "unauthorized"? Sblocca il telefono e accetta il popup.
+echo     - Wi-Fi non risponde? Riesegui wifi-setup.bat: la porta puo' cambiare.
 exit /b 1
 
 :end
-REM Note Wi-Fi (una volta, telefono collegato via cavo):
-REM   adb tcpip 5555
-REM   adb connect IP_DEL_TELEFONO:5555
-REM Poi puoi staccare il cavo e rilanciare questo script senza cavo.
 endlocal
