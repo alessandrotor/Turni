@@ -19,24 +19,34 @@ echo   3. Tocca "Abbina dispositivo con codice di abbinamento"
 echo      (mostra un IP:PORTA e un codice di 6 cifre)
 echo.
 set /p PAIRADDR="Inserisci IP:PORTA di ABBINAMENTO (es. 192.168.1.50:37123): "
+set /p PAIRCODE="Inserisci il CODICE di 6 cifre: "
 echo.
-echo Ora inserisci il codice di 6 cifre quando adb lo chiede:
-"%ADB%" pair %PAIRADDR%
+echo Abbinamento in corso...
+"%ADB%" pair %PAIRADDR% %PAIRCODE%
 if errorlevel 1 (
   echo.
-  echo !!! Abbinamento fallito. Riprova: il codice/porta scadono in fretta.
+  echo !!! Abbinamento fallito.
+  echo     - Codice/porta scadono in ~1 minuto: rigenerali e riprova subito.
+  echo     - Controlla di aver copiato bene IP:PORTA e le 6 cifre.
+  echo.
+  pause
   exit /b 1
 )
 
 echo.
+echo Abbinamento OK.
 echo Torna alla schermata principale di "Debug wireless" del telefono
 echo e leggi il campo "Indirizzo IP e porta" (PORTA DIVERSA da quella sopra).
 echo.
 set /p CONNADDR="Inserisci IP:PORTA di CONNESSIONE (es. 192.168.1.50:41567): "
+echo.
+echo Connessione in corso...
 "%ADB%" connect %CONNADDR%
 if errorlevel 1 (
   echo.
   echo !!! Connessione fallita. Verifica IP:PORTA e la rete Wi-Fi.
+  echo.
+  pause
   exit /b 1
 )
 
@@ -46,4 +56,6 @@ echo ============================================================
 echo  ABBINATO! Indirizzo salvato in phone.txt
 echo  Da ora usa solo deploy.bat (build + installazione wireless).
 echo ============================================================
+echo.
+pause
 endlocal

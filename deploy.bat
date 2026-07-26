@@ -50,7 +50,11 @@ echo !!! ERRORE durante il passo precedente. Controlla il messaggio sopra.
 echo     - Nessun dispositivo? Esegui wifi-setup.bat (o collega il cavo).
 echo     - "unauthorized"? Sblocca il telefono e accetta il popup.
 echo     - Wi-Fi non risponde? Riesegui wifi-setup.bat: la porta puo' cambiare.
+echo.
+pause
 exit /b 1
 
 :end
+echo.
+pause
 endlocal
