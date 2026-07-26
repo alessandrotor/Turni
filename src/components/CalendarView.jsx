@@ -5,7 +5,7 @@ import {
 } from '../utils/dates';
 import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
 import { calcBonusMargin, BONUS_CONST, BONUS_STATUS } from '../utils/bonus';
-import { calcNetAnnual, projectAnnualGross } from '../utils/net';
+import { calcNetMonthly, projectAnnualGross, monthlyBaseGross, EXTRA_MONTHS } from '../utils/net';
 import { ENABLE_NET_CALC } from '../config/features';
 import { generateMonthlySummary } from '../services/ai';
 import { parseShiftsFromImage } from '../services/gemini';
@@ -67,20 +67,27 @@ export default function CalendarView({
   const bonus = calcBonusMargin(annualGross);
   const fmt0 = (n) => formatCurrency(Math.round(n));
 
-  // Netto stimato del mese (beta): tassazione progressiva calcolata sull'anno
-  // e riportata al mese tramite l'aliquota effettiva netto/lordo.
-  // L'aliquota va calcolata sul reddito annuo PIENO (proiezione dal contratto),
-  // non su quello maturato finora: l'IRPEF è progressiva e annuale, quindi un
-  // reddito parziale falserebbe l'aliquota verso lo zero. Se il contratto non è
-  // impostato si ripiega sul reddito maturato.
+  // Netto stimato del mese (beta): calcolato PARTENDO DAL MESE, come una busta
+  // paga. Trattenute (contributi + IRPEF + addizionali) e bonus (trattamento
+  // integrativo + cuneo) sono voci separate: il bonus non abbatte le trattenute.
+  // L'IRPEF, progressiva e annuale, usa come riferimento il reddito annuo pieno
+  // (proiezione da contratto + 13ª/14ª); se il contratto non è impostato si
+  // ripiega sul reddito maturato.
   const projectedAnnual = ENABLE_NET_CALC ? projectAnnualGross(settings) : 0;
   const netBasis = projectedAnnual > 0 ? projectedAnnual : annualGross;
-  const netAnn = ENABLE_NET_CALC ? calcNetAnnual(netBasis, settings) : null;
-  const netRatio = netAnn && netBasis > 0 ? netAnn.net / netBasis : 0;
-  const monthGross = pay ? pay.total : 0;
-  const monthNet = monthGross * netRatio;
-  const monthTrattenute = monthGross - monthNet;
-  const effectiveRatePct = (1 - netRatio) * 100;
+  // Mensilità aggiuntiva che cade in questo mese (quattordicesima a giu, tredicesima a dic).
+  const extraThisMonth = ENABLE_NET_CALC
+    ? monthlyBaseGross(settings) * (
+        (settings.hasQuattordicesima && month === EXTRA_MONTHS.quattordicesima ? 1 : 0)
+        + (settings.hasTredicesima && month === EXTRA_MONTHS.tredicesima ? 1 : 0)
+      )
+    : 0;
+  const monthGross = (pay ? pay.total : 0) + extraThisMonth;
+  const netMonth = ENABLE_NET_CALC ? calcNetMonthly(monthGross, netBasis, settings) : null;
+  const monthNet = netMonth ? netMonth.net : 0;
+  const monthTrattenute = netMonth ? netMonth.trattenute : 0;
+  const monthBonus = netMonth ? netMonth.bonus : 0;
+  const effectiveRatePct = monthGross > 0 ? (monthTrattenute / monthGross) * 100 : 0;
   const showNetPanel = ENABLE_NET_CALC && pay !== null && netBasis > 0 && monthGross > 0;
 
   const hasApiKey = !!import.meta.env.VITE_ANTHROPIC_API_KEY;
@@ -305,7 +312,13 @@ export default function CalendarView({
               <span className="net-strip-value">{fmt0(monthNet)}</span>
               <span className="bonus-strip-note">
                 trattenute stimate {fmt0(monthTrattenute)} · aliquota effettiva {effectiveRatePct.toFixed(1)}%
+                {monthBonus > 0 && <> · bonus +{fmt0(monthBonus)}</>}
               </span>
+              {extraThisMonth > 0 && (
+                <span className="bonus-strip-note">
+                  include {month === EXTRA_MONTHS.tredicesima ? 'tredicesima' : 'quattordicesima'} (+{fmt0(extraThisMonth)} lordi)
+                </span>
+              )}
             </div>
 
             <button
@@ -314,31 +327,29 @@ export default function CalendarView({
               onClick={() => setShowNetDetail(v => !v)}
               aria-expanded={showNetDetail}
             >
-              {showNetDetail ? 'Nascondi dettaglio annuo ▲' : 'Come è calcolato? ▼'}
+              {showNetDetail ? 'Nascondi dettaglio ▲' : 'Come è calcolato? ▼'}
             </button>
 
             {showNetDetail && (
               <div className="net-detail">
-                <div className="net-line"><span>Lordo annuo</span><span>{fmt0(netAnn.gross)}</span></div>
-                <div className="net-line net-line--sub"><span>− Contributi IVS (9,19%)</span><span>−{fmt0(netAnn.contributi)}</span></div>
-                <div className="net-line net-line--sub"><span>= Imponibile</span><span>{fmt0(netAnn.imponibile)}</span></div>
-                <div className="net-line net-line--sub"><span>− IRPEF netta</span><span>−{fmt0(netAnn.irpefNetta)}</span></div>
-                {(netAnn.addRegionale + netAnn.addComunale) > 0 && (
+                <div className="net-line"><span>Lordo del mese</span><span>{fmt0(netMonth.gross)}</span></div>
+                <div className="net-line net-line--sub"><span>− Contributi IVS (9,19%)</span><span>−{fmt0(netMonth.contributi)}</span></div>
+                <div className="net-line net-line--sub"><span>− IRPEF</span><span>−{fmt0(netMonth.irpef)}</span></div>
+                {(netMonth.addRegionale + netMonth.addComunale) > 0 && (
                   <div className="net-line net-line--sub">
                     <span>− Addizionali reg./com.</span>
-                    <span>−{fmt0(netAnn.addRegionale + netAnn.addComunale)}</span>
+                    <span>−{fmt0(netMonth.addRegionale + netMonth.addComunale)}</span>
                   </div>
                 )}
-                {netAnn.trattamentoIntegrativo > 0 && (
-                  <div className="net-line net-line--sub"><span>+ Trattamento integrativo</span><span>+{fmt0(netAnn.trattamentoIntegrativo)}</span></div>
+                <div className="net-line net-line--sub net-line--strong"><span>= Trattenute</span><span>−{fmt0(netMonth.trattenute)}</span></div>
+                {netMonth.bonus > 0 && (
+                  <div className="net-line net-line--sub"><span>+ Bonus (tratt. integrativo + cuneo)</span><span>+{fmt0(netMonth.bonus)}</span></div>
                 )}
-                {netAnn.bonusCuneo > 0 && (
-                  <div className="net-line net-line--sub"><span>+ Bonus cuneo fiscale</span><span>+{fmt0(netAnn.bonusCuneo)}</span></div>
-                )}
-                <div className="net-line net-line--total"><span>Netto annuo stimato</span><span>{fmt0(netAnn.net)}</span></div>
+                <div className="net-line net-line--total"><span>Netto del mese stimato</span><span>{fmt0(netMonth.net)}</span></div>
                 <p className="net-disclaimer">
-                  Stima indicativa (fiscalità 2026). Non sostituisce la busta paga né il conguaglio.
-                  Il netto del mese applica al lordo del mese l'aliquota effettiva annua.
+                  Stima indicativa (fiscalità 2026), calcolata sul mese. Non sostituisce la busta
+                  paga né il conguaglio. L'IRPEF usa l'aliquota effettiva del reddito annuo stimato
+                  (contratto + 13ª/14ª).
                 </p>
               </div>
             )}

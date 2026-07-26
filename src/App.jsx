@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import useLocalStorage from './hooks/useLocalStorage';
 import { getMonthStart, parseDate } from './utils/dates';
 import { calcTotalPay } from './utils/pay';
+import { monthlyBaseGross, receivedExtraMonthsCount } from './utils/net';
 import CalendarView from './components/CalendarView';
 import Settings from './components/Settings';
 import ShiftForm from './components/ShiftForm';
@@ -17,6 +18,9 @@ const DEFAULT_SETTINGS = {
   // Beta netto: aliquote addizionali IRPEF (%)
   addRegionalePct: 1.23,
   addComunalePct: 0,
+  // Mensilità aggiuntive (dipendono dal CCNL)
+  hasTredicesima: false,
+  hasQuattordicesima: false,
 };
 
 export default function App() {
@@ -59,7 +63,10 @@ export default function App() {
     const yearShifts = Object.values(shifts).filter(s => parseDate(s.date).getFullYear() === y);
     const pay = calcTotalPay(yearShifts, settings, yearShifts);
     const fromShifts = pay ? pay.total : 0;
-    return fromShifts + (Number(settings.priorTaxableIncome) || 0);
+    // Mensilità aggiuntive già arrivate entro il mese visualizzato (es. a luglio
+    // la quattordicesima di giugno è già stata incassata).
+    const extras = monthlyBaseGross(settings) * receivedExtraMonthsCount(settings, monthDate.getMonth());
+    return fromShifts + (Number(settings.priorTaxableIncome) || 0) + extras;
   }, [shifts, settings]);
 
   const importShifts = useCallback((parsedShifts) => {

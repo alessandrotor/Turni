@@ -118,23 +118,47 @@ function trattamentoIntegrativo(reddito, irpef, detLavoro, detrTotali) {
 // Settimane retribuite in un anno (convenzione standard).
 export const WEEKS_PER_YEAR = 52;
 
+// Mesi (indice 0-11) in cui arrivano le mensilità aggiuntive.
+export const EXTRA_MONTHS = {
+  quattordicesima: 5,  // giugno
+  tredicesima: 11,     // dicembre
+};
+
+// Retribuzione mensile "base" da contratto: ore settimanali × paga oraria × (52/12).
+// Serve come importo indicativo della tredicesima/quattordicesima (≈ una mensilità).
+export function monthlyBaseGross(settings = {}) {
+  const rate = Math.max(0, Number(settings.hourlyRate) || 0);
+  const weeklyHours = Math.max(0, Number(settings.expectedWeeklyHours) || 0);
+  return rate * weeklyHours * (WEEKS_PER_YEAR / 12);
+}
+
+// Numero di mensilità aggiuntive attive (tredicesima e/o quattordicesima).
+export function extraMonthsCount(settings = {}) {
+  return (settings.hasTredicesima ? 1 : 0) + (settings.hasQuattordicesima ? 1 : 0);
+}
+
+// Mensilità aggiuntive GIÀ arrivate entro il mese indicato (indice 0-11).
+// A luglio (6) la quattordicesima di giugno (5) è già arrivata; la tredicesima no.
+export function receivedExtraMonthsCount(settings = {}, monthIndex = 11) {
+  let n = 0;
+  if (settings.hasQuattordicesima && monthIndex >= EXTRA_MONTHS.quattordicesima) n += 1;
+  if (settings.hasTredicesima && monthIndex >= EXTRA_MONTHS.tredicesima) n += 1;
+  return n;
+}
+
 /**
  * Stima del reddito annuo lordo pieno a partire dal contratto:
- * ore settimanali previste × paga oraria × 52.
+ * (ore settimanali × paga oraria × 52) + tredicesima/quattordicesima.
  *
- * Serve per calcolare l'aliquota IRPEF effettiva su base annua. La tassazione
- * è progressiva e annuale: se la si applicasse al reddito solo maturato finora
- * (parziale a inizio/metà anno) tutto cadrebbe nelle fasce basse — IRPEF
- * azzerata dalle detrazioni e bonus cuneo ri-aggiunto — falsando l'aliquota
- * verso lo zero. La proiezione full-year evita questo errore.
+ * Serve come riferimento per l'aliquota IRPEF effettiva: la tassazione è
+ * progressiva e annuale, quindi va ancorata al reddito annuo pieno (incluse
+ * le mensilità aggiuntive), non a quello maturato finora nell'anno.
  *
- * @param {object} settings hourlyRate ed expectedWeeklyHours
+ * @param {object} settings hourlyRate, expectedWeeklyHours, has(Tre|Quattor)dicesima
  * @returns {number} reddito annuo lordo stimato (0 se dati insufficienti)
  */
 export function projectAnnualGross(settings = {}) {
-  const rate = Math.max(0, Number(settings.hourlyRate) || 0);
-  const weeklyHours = Math.max(0, Number(settings.expectedWeeklyHours) || 0);
-  return rate * weeklyHours * WEEKS_PER_YEAR;
+  return monthlyBaseGross(settings) * (12 + extraMonthsCount(settings));
 }
 
 /**
@@ -190,5 +214,54 @@ export function calcNetAnnual(grossAnnual, settings = {}) {
     trattamentoIntegrativo: ti,
     bonusCuneo: cuneo,
     net,
+  };
+}
+
+/**
+ * Stima del netto del MESE, partendo dal lordo mensile — come una busta paga.
+ *
+ * Trattenute e bonus sono voci SEPARATE (il bonus non riduce le trattenute):
+ *   - Trattenute = contributi IVS (9,19%) + IRPEF + addizionali  → sempre ≥ 9,19%
+ *   - Bonus      = trattamento integrativo + cuneo (quota mensile)
+ *   - Netto      = lordo − trattenute + bonus
+ *
+ * Contributi e addizionali si applicano direttamente al lordo del mese.
+ * L'IRPEF è progressiva e annuale: si usa l'aliquota IRPEF effettiva ricavata
+ * dal reddito annuo di riferimento (`annualGrossRef`, es. proiezione da
+ * contratto + 13ª/14ª) applicata all'imponibile del mese.
+ *
+ * @param {number} monthGross lordo del mese (turni + eventuale mensilità agg.)
+ * @param {number} annualGrossRef reddito annuo lordo di riferimento (per aliquote IRPEF/bonus)
+ * @param {object} settings addRegionalePct / addComunalePct
+ */
+export function calcNetMonthly(monthGross, annualGrossRef, settings = {}) {
+  const T = TAX_2026;
+  const gross = Math.max(0, Number(monthGross) || 0);
+  const ann = calcNetAnnual(annualGrossRef, settings);
+
+  const contributi = gross * T.ALIQUOTA_IVS;
+  const imponibile = gross - contributi;
+
+  // Aliquota IRPEF effettiva annua applicata all'imponibile del mese.
+  const irpefRate = ann.imponibile > 0 ? ann.irpefNetta / ann.imponibile : 0;
+  const irpef = imponibile * irpefRate;
+
+  // Addizionali: stessa aliquota sull'imponibile del mese, dovute solo con imposta netta.
+  const pctOr = (v, def) => (Number.isFinite(Number(v)) ? Number(v) : def);
+  const aliqReg = pctOr(settings.addRegionalePct, T.ADD_REGIONALE_DEFAULT) / 100;
+  const aliqCom = pctOr(settings.addComunalePct, T.ADD_COMUNALE_DEFAULT) / 100;
+  const addRegionale = ann.irpefNetta > 0 ? imponibile * aliqReg : 0;
+  const addComunale = ann.irpefNetta > 0 ? imponibile * aliqCom : 0;
+
+  const trattenute = contributi + irpef + addRegionale + addComunale;
+
+  // Bonus (trattamento integrativo + cuneo): quota mensile del totale annuo.
+  const bonus = (ann.trattamentoIntegrativo + ann.bonusCuneo) / 12;
+
+  const net = gross - trattenute + bonus;
+
+  return {
+    gross, contributi, imponibile, irpef,
+    addRegionale, addComunale, trattenute, bonus, net,
   };
 }

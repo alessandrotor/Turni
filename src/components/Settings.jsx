@@ -19,6 +19,8 @@ export default function Settings({ settings, onSave }) {
     sundaySurchargePct: settings.sundaySurchargePct ?? 0,
     overtimeSurchargePct: settings.overtimeSurchargePct ?? 0,
     priorTaxableIncome: toInput(settings.priorTaxableIncome),
+    hasTredicesima: !!settings.hasTredicesima,
+    hasQuattordicesima: !!settings.hasQuattordicesima,
     previousRates: (Array.isArray(settings.previousRates) ? settings.previousRates : []).map(c => ({
       id: c.id ?? genId(),
       until: c.until ?? '',
@@ -31,6 +33,11 @@ export default function Settings({ settings, onSave }) {
 
   const set = (field) => (e) => {
     setForm(f => ({ ...f, [field]: e.target.value }));
+    setSaved(false);
+  };
+
+  const setCheck = (field) => (e) => {
+    setForm(f => ({ ...f, [field]: e.target.checked }));
     setSaved(false);
   };
 
@@ -66,6 +73,8 @@ export default function Settings({ settings, onSave }) {
       sundaySurchargePct: parseNum(form.sundaySurchargePct),
       overtimeSurchargePct: parseNum(form.overtimeSurchargePct),
       priorTaxableIncome: parseNum(form.priorTaxableIncome),
+      hasTredicesima: form.hasTredicesima,
+      hasQuattordicesima: form.hasQuattordicesima,
       previousRates,
       addRegionalePct: parseNum(form.addRegionalePct),
       addComunalePct: parseNum(form.addComunalePct),
@@ -284,6 +293,35 @@ export default function Settings({ settings, onSave }) {
               />
             </div>
           </div>
+        </section>
+
+        {/* Tredicesima e quattordicesima */}
+        <section className="settings-section">
+          <h2 className="settings-section-title">🎁 Tredicesima e quattordicesima</h2>
+          <p className="settings-section-desc">
+            Attiva le mensilità aggiuntive previste dal tuo CCNL. La <strong>tredicesima</strong>
+            arriva a dicembre, la <strong>quattordicesima</strong> a giugno; ciascuna vale circa una
+            mensilità (ore settimanali × paga oraria). Vengono incluse nel reddito annuo (quindi
+            nell'aliquota fiscale) e mostrate nel mese in cui arrivano.
+          </p>
+
+          <label className="check-row">
+            <input
+              type="checkbox"
+              checked={form.hasTredicesima}
+              onChange={setCheck('hasTredicesima')}
+            />
+            <span>Tredicesima (dicembre)</span>
+          </label>
+
+          <label className="check-row">
+            <input
+              type="checkbox"
+              checked={form.hasQuattordicesima}
+              onChange={setCheck('hasQuattordicesima')}
+            />
+            <span>Quattordicesima (giugno)</span>
+          </label>
         </section>
 
         {/* Addizionali IRPEF — beta netto (gated dal feature flag) */}
