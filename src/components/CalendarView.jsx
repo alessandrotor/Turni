@@ -5,6 +5,8 @@ import {
 } from '../utils/dates';
 import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
 import { calcBonusMargin, BONUS_CONST, BONUS_STATUS } from '../utils/bonus';
+import { calcNetAnnual } from '../utils/net';
+import { ENABLE_NET_CALC } from '../config/features';
 import { generateMonthlySummary } from '../services/ai';
 import { parseShiftsFromImage } from '../services/gemini';
 import ImportModal from './ImportModal';
@@ -35,6 +37,7 @@ export default function CalendarView({
   const [importParsed, setImportParsed] = useState(null);
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState(null);
+  const [showNetDetail, setShowNetDetail] = useState(false);
   const fileInputRef = useRef();
 
   const year = currentMonth.getFullYear();
@@ -63,6 +66,16 @@ export default function CalendarView({
   // Bonus busta paga: quanto manca alla soglia (reddito annuo dai turni)
   const bonus = calcBonusMargin(annualGross);
   const fmt0 = (n) => formatCurrency(Math.round(n));
+
+  // Netto stimato del mese (beta): tassazione progressiva calcolata sull'anno
+  // e riportata al mese tramite l'aliquota effettiva netto/lordo.
+  const netAnn = ENABLE_NET_CALC ? calcNetAnnual(annualGross, settings) : null;
+  const netRatio = netAnn && annualGross > 0 ? netAnn.net / annualGross : 0;
+  const monthGross = pay ? pay.total : 0;
+  const monthNet = monthGross * netRatio;
+  const monthTrattenute = monthGross - monthNet;
+  const effectiveRatePct = (1 - netRatio) * 100;
+  const showNetPanel = ENABLE_NET_CALC && pay !== null && annualGross > 0 && monthGross > 0;
 
   const hasApiKey = !!import.meta.env.VITE_ANTHROPIC_API_KEY;
   const hasGeminiKey = !!import.meta.env.VITE_GROQ_API_KEY;
@@ -266,6 +279,61 @@ export default function CalendarView({
                 <span className="bonus-strip-note">
                   🚨 Reddito oltre i {formatCurrency(BONUS_CONST.SOGLIA_BONUS_MAX)}: il bonus non spetta.
                 </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Netto stimato del mese — beta (gated dal feature flag) */}
+        {showNetPanel && (
+          <div className="net-strip">
+            <div className="bonus-strip-head">
+              <span className="bonus-strip-title">🧪 Netto stimato del mese <span className="beta-tag">beta</span></span>
+              <span className="bonus-strip-income">
+                Lordo del mese: <strong>{fmt0(monthGross)}</strong>
+              </span>
+            </div>
+
+            <div className="net-strip-body">
+              <span className="bonus-strip-label">Netto stimato del mese</span>
+              <span className="net-strip-value">{fmt0(monthNet)}</span>
+              <span className="bonus-strip-note">
+                trattenute stimate {fmt0(monthTrattenute)} · aliquota effettiva {effectiveRatePct.toFixed(1)}%
+              </span>
+            </div>
+
+            <button
+              type="button"
+              className="net-toggle"
+              onClick={() => setShowNetDetail(v => !v)}
+              aria-expanded={showNetDetail}
+            >
+              {showNetDetail ? 'Nascondi dettaglio annuo ▲' : 'Come è calcolato? ▼'}
+            </button>
+
+            {showNetDetail && (
+              <div className="net-detail">
+                <div className="net-line"><span>Lordo annuo</span><span>{fmt0(netAnn.gross)}</span></div>
+                <div className="net-line net-line--sub"><span>− Contributi IVS (9,19%)</span><span>−{fmt0(netAnn.contributi)}</span></div>
+                <div className="net-line net-line--sub"><span>= Imponibile</span><span>{fmt0(netAnn.imponibile)}</span></div>
+                <div className="net-line net-line--sub"><span>− IRPEF netta</span><span>−{fmt0(netAnn.irpefNetta)}</span></div>
+                {(netAnn.addRegionale + netAnn.addComunale) > 0 && (
+                  <div className="net-line net-line--sub">
+                    <span>− Addizionali reg./com.</span>
+                    <span>−{fmt0(netAnn.addRegionale + netAnn.addComunale)}</span>
+                  </div>
+                )}
+                {netAnn.trattamentoIntegrativo > 0 && (
+                  <div className="net-line net-line--sub"><span>+ Trattamento integrativo</span><span>+{fmt0(netAnn.trattamentoIntegrativo)}</span></div>
+                )}
+                {netAnn.bonusCuneo > 0 && (
+                  <div className="net-line net-line--sub"><span>+ Bonus cuneo fiscale</span><span>+{fmt0(netAnn.bonusCuneo)}</span></div>
+                )}
+                <div className="net-line net-line--total"><span>Netto annuo stimato</span><span>{fmt0(netAnn.net)}</span></div>
+                <p className="net-disclaimer">
+                  Stima indicativa (fiscalità 2026). Non sostituisce la busta paga né il conguaglio.
+                  Il netto del mese applica al lordo del mese l'aliquota effettiva annua.
+                </p>
               </div>
             )}
           </div>

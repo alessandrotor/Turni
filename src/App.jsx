@@ -14,6 +14,9 @@ const DEFAULT_SETTINGS = {
   overtimeSurchargePct: 0,
   priorTaxableIncome: 0,
   previousRates: [],
+  // Beta netto: aliquote addizionali IRPEF (%)
+  addRegionalePct: 1.23,
+  addComunalePct: 0,
 };
 
 export default function App() {

@@ -1082,3 +1082,97 @@ input, select, textarea { font: inherit; }
   font-size: .85rem;
   font-weight: 700;
 }
+
+/* ── Netto stimato (beta) ───────────────────────────────────────── */
+.net-strip {
+  margin-top: 1rem;
+  border-top: 1px solid var(--c-border);
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+
+.beta-tag {
+  display: inline-block;
+  margin-left: .3rem;
+  padding: .05rem .4rem;
+  border-radius: 99px;
+  background: var(--c-warning-light);
+  color: var(--c-warning);
+  font-size: .62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  vertical-align: middle;
+}
+
+.net-strip-body {
+  background: var(--c-success-light);
+  border: 1px solid var(--c-success);
+  border-radius: var(--radius);
+  padding: .85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+  text-align: center;
+}
+
+.net-strip-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--c-success);
+  line-height: 1.1;
+}
+
+.net-toggle {
+  align-self: flex-start;
+  font-size: .8rem;
+  font-weight: 600;
+  color: var(--c-primary);
+  padding: .1rem 0;
+}
+
+.net-detail {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  padding: .85rem 1rem;
+}
+
+.net-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: .88rem;
+  color: var(--c-text);
+}
+
+.net-line--sub {
+  padding-left: .75rem;
+  font-size: .82rem;
+  color: var(--c-text-2);
+}
+
+.net-line--total {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--c-success);
+  border-top: 1px solid var(--c-border);
+  padding-top: .5rem;
+  margin-top: .1rem;
+}
+
+.net-disclaimer {
+  font-size: .72rem;
+  color: var(--c-muted);
+  font-style: italic;
+  line-height: 1.4;
+  margin-top: .1rem;
+}
+
+.settings-section--beta {
+  border: 1px dashed var(--c-warning);
+}

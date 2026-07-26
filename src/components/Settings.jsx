@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { formatCurrency, parseNum } from '../utils/pay';
+import { ENABLE_NET_CALC } from '../config/features';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
 const toInput = (n) => {
@@ -23,6 +24,8 @@ export default function Settings({ settings, onSave }) {
       until: c.until ?? '',
       rate: toInput(c.rate),
     })),
+    addRegionalePct: toInput(settings.addRegionalePct),
+    addComunalePct: toInput(settings.addComunalePct),
   });
   const [saved, setSaved] = useState(false);
 
@@ -64,6 +67,8 @@ export default function Settings({ settings, onSave }) {
       overtimeSurchargePct: parseNum(form.overtimeSurchargePct),
       priorTaxableIncome: parseNum(form.priorTaxableIncome),
       previousRates,
+      addRegionalePct: parseNum(form.addRegionalePct),
+      addComunalePct: parseNum(form.addComunalePct),
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -280,6 +285,51 @@ export default function Settings({ settings, onSave }) {
             </div>
           </div>
         </section>
+
+        {/* Addizionali IRPEF — beta netto (gated dal feature flag) */}
+        {ENABLE_NET_CALC && (
+          <section className="settings-section settings-section--beta">
+            <h2 className="settings-section-title">🧪 Addizionali IRPEF (beta)</h2>
+            <p className="settings-section-desc">
+              Usate per la stima del netto. Variano in base alla tua residenza:
+              l'addizionale regionale va da ~1,23% a ~3,33%, la comunale da 0% a ~0,9%.
+              Imposta le aliquote del tuo Comune/Regione per una stima più precisa.
+            </p>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label" htmlFor="add-reg">Addizionale regionale (%)</label>
+                <div className="input-with-symbol">
+                  <span className="input-symbol">%</span>
+                  <input
+                    id="add-reg"
+                    type="text"
+                    inputMode="decimal"
+                    className="form-input form-input--with-symbol"
+                    placeholder="1,23"
+                    value={form.addRegionalePct}
+                    onChange={set('addRegionalePct')}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="add-com">Addizionale comunale (%)</label>
+                <div className="input-with-symbol">
+                  <span className="input-symbol">%</span>
+                  <input
+                    id="add-com"
+                    type="text"
+                    inputMode="decimal"
+                    className="form-input form-input--with-symbol"
+                    placeholder="0,00"
+                    value={form.addComunalePct}
+                    onChange={set('addComunalePct')}
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* CCNL - placeholder futuro */}
         <section className="settings-section settings-section--future">
