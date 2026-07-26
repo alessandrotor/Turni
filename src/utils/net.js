@@ -242,9 +242,13 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}) {
   const contributi = gross * T.ALIQUOTA_IVS;
   const imponibile = gross - contributi;
 
-  // Aliquota IRPEF effettiva annua applicata all'imponibile del mese.
-  const irpefRate = ann.imponibile > 0 ? ann.irpefNetta / ann.imponibile : 0;
-  const irpef = imponibile * irpefRate;
+  // IRPEF esplicita: quota del mese sull'imponibile annuo di riferimento,
+  // applicata sia alla lorda sia alle detrazioni (così vale l'identità
+  // lorda − detrazioni = netta ed è tutto visibile in busta paga).
+  const ratio = ann.imponibile > 0 ? imponibile / ann.imponibile : 0;
+  const irpefLorda = ann.irpefLorda * ratio;
+  const detrazioni = (ann.detrazioneLavoro + ann.detrazioneCuneo) * ratio;
+  const irpefNetta = Math.max(0, irpefLorda - detrazioni);
 
   // Addizionali: stessa aliquota sull'imponibile del mese, dovute solo con imposta netta.
   const pctOr = (v, def) => (Number.isFinite(Number(v)) ? Number(v) : def);
@@ -253,15 +257,20 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}) {
   const addRegionale = ann.irpefNetta > 0 ? imponibile * aliqReg : 0;
   const addComunale = ann.irpefNetta > 0 ? imponibile * aliqCom : 0;
 
-  const trattenute = contributi + irpef + addRegionale + addComunale;
+  const trattenute = contributi + irpefNetta + addRegionale + addComunale;
 
   // Bonus (trattamento integrativo + cuneo): quota mensile del totale annuo.
-  const bonus = (ann.trattamentoIntegrativo + ann.bonusCuneo) / 12;
+  // Voci separate, aggiunte SOLO alla fine: non riducono le trattenute.
+  const trattamentoIntegrativo = ann.trattamentoIntegrativo / 12;
+  const bonusCuneo = ann.bonusCuneo / 12;
+  const bonus = trattamentoIntegrativo + bonusCuneo;
 
   const net = gross - trattenute + bonus;
 
   return {
-    gross, contributi, imponibile, irpef,
-    addRegionale, addComunale, trattenute, bonus, net,
+    gross, contributi, imponibile,
+    irpefLorda, detrazioni, irpefNetta,
+    addRegionale, addComunale, trattenute,
+    trattamentoIntegrativo, bonusCuneo, bonus, net,
   };
 }
