@@ -491,6 +491,12 @@ export default function CalendarView({
               </span>
             </div>
 
+            {(Number(settings.priorTaxableIncome) || 0) > 0 && (
+              <span className="bonus-strip-note">
+                = montante {fmt0(Number(settings.priorTaxableIncome) || 0)} + turni {fmt0(bonus.income - (Number(settings.priorTaxableIncome) || 0))} · il montante NON deve includere i turni inseriti
+              </span>
+            )}
+
             {bonus.status === BONUS_STATUS.PIENO && (
               <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
                 <span className="bonus-strip-label">

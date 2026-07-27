@@ -334,15 +334,17 @@ export default function Settings({ settings, onSave }) {
         <section className="settings-section">
           <h2 className="settings-section-title">💶 Reddito e bonus Renzi</h2>
           <p className="settings-section-desc">
-            Nel calendario vedi il tuo <strong>reddito totale</strong> dell'anno (calcolato dai
-            turni) e quanto puoi ancora guadagnare prima di superare le soglie del trattamento
-            integrativo (ex bonus Renzi), che nel 2026 si calcola proprio sul reddito complessivo.
-            Se hai iniziato a inserire i turni a metà anno, indica qui il reddito lordo già
-            maturato prima, così il totale resta corretto.
+            Nel calendario vedi il tuo <strong>reddito totale</strong> dell'anno e quanto puoi
+            ancora guadagnare prima di superare le soglie del trattamento integrativo (ex bonus
+            Renzi). Il reddito totale è: <strong>questo campo + i turni che inserisci</strong>.
+            Quindi qui va SOLO il lordo dei periodi <strong>non</strong> coperti dai turni
+            inseriti — <strong>non</strong> includere il reddito dei turni che aggiungi, altrimenti
+            viene contato due volte. Esempio: se inserisci i turni da luglio, metti qui solo il
+            lordo di gennaio–giugno. Se inserisci tutti i turni dell'anno, lascia 0.
           </p>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="prior-income">Reddito lordo già maturato da inizio anno</label>
+            <label className="form-label" htmlFor="prior-income">Reddito lordo maturato PRIMA dei turni inseriti</label>
             <div className="input-with-symbol">
               <span className="input-symbol">€</span>
               <input
