@@ -511,7 +511,8 @@ export default function CalendarView({
           </div>
         )}
 
-        {/* AI section */}
+        {/* AI section — Riepilogo AI temporaneamente disattivato (test import da immagine).
+            Per riattivarlo, togliere il commento a questo blocco.
         <div className="ai-panel">
           {hasApiKey ? (
             <button
@@ -529,6 +530,7 @@ export default function CalendarView({
           {aiError && <p className="ai-error">{aiError}</p>}
           {aiSummary && <p className="ai-summary-text">{aiSummary}</p>}
         </div>
+        */}
       </div>
 
       {importParsed && (
