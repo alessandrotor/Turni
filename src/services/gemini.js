@@ -96,9 +96,9 @@ Allineamento: incrocia con attenzione la riga della persona con la colonna del g
       responseMimeType: 'application/json',
       responseSchema,
       maxOutputTokens: MAX_OUTPUT_TOKENS,
-      // Alta risoluzione immagine: compensa la minor efficacia del modello 3-flash
-      // sull'OCR dei fogli turni (più token immagine, ma migliore accuratezza).
-      mediaResolution: MediaResolution.MEDIA_RESOLUTION_HIGH,
+      // Risoluzione LOW: sui test (tabella + conversazione) l'accuratezza è
+      // identica ad HIGH/MID ma con meno token immagine (prompt ~600 vs ~1400).
+      mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW,
     },
   });
 
@@ -137,11 +137,11 @@ Allineamento: incrocia con attenzione la riga della persona con la colonna del g
   // Mappa allo schema turni dell'app; conserva i campi di provenienza.
   const shifts = raw
     .map(t => ({
-      date: t.data,
+      date: toIsoDate(t.data),
       startTime: t.ora_inizio,
       endTime: t.ora_fine,
       breakMinutes: 0,
-      note: t.codice_turno || '',
+      note: cleanNote(t.codice_turno),
       _codice: t.codice_turno,
       _testoGrezzo: t.testo_grezzo,
       _riga: t.riga_identificata,
@@ -150,4 +150,23 @@ Allineamento: incrocia con attenzione la riga della persona con la colonna del g
     .filter(s => s.date && s.startTime && s.endTime);
 
   return { shifts, usage };
+}
+
+// Normalizza la data a ISO YYYY-MM-DD. Il modello a volte restituisce
+// DD/MM/YYYY (o con . / -); l'app usa e ordina per stringa ISO.
+function toIsoDate(d) {
+  const s = String(d || '').trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  const m = s.match(/^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{4})$/);
+  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  return s;
+}
+
+// Nota del turno: tiene sigle/luoghi (es. "CASSA", "Museo Napoleonico") ma
+// scarta il valore se è solo orari/numeri (es. "12,00 16,50"), che sul foglio
+// a tabella il modello a volte mette per errore nel codice turno.
+function cleanNote(code) {
+  const s = String(code || '').trim();
+  if (!s) return '';
+  return /^[\d\s.,:h–-]+$/.test(s) ? '' : s;
 }
