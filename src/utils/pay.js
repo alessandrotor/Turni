@@ -149,19 +149,6 @@ export function calcTotalPay(shifts, settings, allShifts = shifts) {
   return { base, surcharge, total: base + surcharge, overtimeMinutes };
 }
 
-// Stima del reddito annuo lordo annualizzando i turni già inseriti nell'anno:
-// (lordo dei turni dell'anno) / (mesi con almeno un turno) × 12.
-// Serve ai lavoratori a chiamata come base per l'aliquota fiscale quando non
-// hanno un reddito annuo dichiarato a mano. Ritorna 0 se non stimabile.
-export function annualizeFromShifts(allShifts, year, settings) {
-  const yearShifts = (allShifts || []).filter(s => parseDate(s.date).getFullYear() === year);
-  const pay = calcTotalPay(yearShifts, settings, yearShifts);
-  if (!pay) return 0;
-  const months = new Set(yearShifts.map(s => s.date.slice(0, 7))).size;
-  if (months === 0) return 0;
-  return (pay.total / months) * 12;
-}
-
 export function formatCurrency(amount) {
   return amount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
 }

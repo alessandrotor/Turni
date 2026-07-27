@@ -3,7 +3,7 @@ import {
   formatDate, formatMonthYear, isToday, isWeekend,
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth,
 } from '../utils/dates';
-import { calcShiftMinutes, calcTotalPay, formatCurrency, isSunday, annualizeFromShifts } from '../utils/pay';
+import { calcShiftMinutes, calcTotalPay, formatCurrency, isSunday } from '../utils/pay';
 import { calcBonusMargin, BONUS_CONST, BONUS_STATUS } from '../utils/bonus';
 import { calcNetMonthly, projectAnnualGross, monthlyBaseGross, EXTRA_MONTHS, TAX_2026 } from '../utils/net';
 import { ENABLE_NET_CALC } from '../config/features';
@@ -85,7 +85,16 @@ export default function CalendarView({
   let netBasis;
   if (settings.onCall) {
     const manual = Number(settings.annualGrossManual) || 0;
-    netBasis = manual > 0 ? manual : annualizeFromShifts(allShifts || shifts, year, settings);
+    if (manual > 0) {
+      netBasis = manual;
+    } else {
+      // Annualizza il reddito maturato (montante + turni, già in annualGross) sui
+      // mesi trascorsi dell'anno corrente. Include il montante e non gonfia il
+      // reddito annualizzando un singolo mese.
+      const now = new Date();
+      const monthsElapsed = year === now.getFullYear() ? now.getMonth() + 1 : 12;
+      netBasis = monthsElapsed > 0 ? (annualGross * 12) / monthsElapsed : annualGross;
+    }
   } else {
     const projectedAnnual = ENABLE_NET_CALC ? projectAnnualGross(settings) : 0;
     netBasis = projectedAnnual > 0 ? projectedAnnual : annualGross;
@@ -394,6 +403,12 @@ export default function CalendarView({
                 {/* Stile busta paga: un solo lordo in cima */}
                 <div className="net-line net-line--head">
                   <span>Lordo del mese</span><span>{fmt0(netMonth.gross)}</span>
+                </div>
+                <div className="net-subnote">
+                  Aliquota IRPEF e bonus stimati su un reddito annuo di {fmt0(netBasis)}
+                  {settings.onCall
+                    ? (Number(settings.annualGrossManual) > 0 ? ' (impostato a mano)' : ' (annualizzato dal reddito maturato: montante + turni)')
+                    : ''}. Il trattamento integrativo spetta solo fino a ~15.900€/anno.
                 </div>
 
                 <div className="net-group-label">Trattenute</div>
