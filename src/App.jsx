@@ -27,6 +27,7 @@ const DEFAULT_SETTINGS = {
   onCall: false,
   annualGrossManual: 0,      // reddito annuo lordo stimato (per aliquota fiscale)
   dailyOvertimeThreshold: 0, // ore/giorno oltre cui scatta lo straordinario
+  tfrInBusta: false,         // aggiungi la quota TFR come anticipo sul netto
 };
 
 export default function App() {

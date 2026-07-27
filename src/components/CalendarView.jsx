@@ -107,10 +107,11 @@ export default function CalendarView({
       )
     : 0;
   const monthGross = (pay ? pay.total : 0) + extraThisMonth;
-  const netMonth = ENABLE_NET_CALC ? calcNetMonthly(monthGross, netBasis, settings) : null;
+  const netMonth = ENABLE_NET_CALC ? calcNetMonthly(monthGross, netBasis, settings, daysInMonth) : null;
   const monthNet = netMonth ? netMonth.net : 0;
   const monthTrattenute = netMonth ? netMonth.trattenute : 0;
   const monthBonus = netMonth ? netMonth.bonus : 0;
+  const monthTfr = netMonth ? netMonth.tfr : 0;
   const effectiveRatePct = monthGross > 0 ? (monthTrattenute / monthGross) * 100 : 0;
   const addRegPct = Number.isFinite(Number(settings.addRegionalePct)) ? Number(settings.addRegionalePct) : TAX_2026.ADD_REGIONALE_DEFAULT;
   const addComPct = Number.isFinite(Number(settings.addComunalePct)) ? Number(settings.addComunalePct) : TAX_2026.ADD_COMUNALE_DEFAULT;
@@ -381,6 +382,7 @@ export default function CalendarView({
               <span className="bonus-strip-note">
                 trattenute {fmt0(monthTrattenute)} ({effectiveRatePct.toFixed(1)}% del lordo)
                 {monthBonus > 0 && <> · bonus +{fmt0(monthBonus)}</>}
+                {monthTfr > 0 && <> · TFR +{fmt0(monthTfr)}</>}
               </span>
               {extraThisMonth > 0 && (
                 <span className="bonus-strip-note">
@@ -403,12 +405,6 @@ export default function CalendarView({
                 {/* Stile busta paga: un solo lordo in cima */}
                 <div className="net-line net-line--head">
                   <span>Lordo del mese</span><span>{fmt0(netMonth.gross)}</span>
-                </div>
-                <div className="net-subnote">
-                  Aliquota IRPEF e bonus stimati su un reddito annuo di {fmt0(netBasis)}
-                  {settings.onCall
-                    ? (Number(settings.annualGrossManual) > 0 ? ' (impostato a mano)' : ' (annualizzato dal reddito maturato: montante + turni)')
-                    : ''}. Il trattamento integrativo spetta solo fino a ~15.900€/anno.
                 </div>
 
                 <div className="net-group-label">Trattenute</div>
@@ -444,15 +440,18 @@ export default function CalendarView({
                   <span>−{fmt0(netMonth.trattenute)}</span>
                 </div>
 
-                {/* Competenze aggiuntive (quote mensili di importi annui) */}
-                {netMonth.bonus > 0 && (
+                {/* Competenze aggiuntive (quote mensili) */}
+                {(netMonth.bonus > 0 || netMonth.tfr > 0) && (
                   <>
-                    <div className="net-group-label">Bonus in busta (a parte)</div>
+                    <div className="net-group-label">Competenze in busta (a parte)</div>
                     {netMonth.trattamentoIntegrativo > 0 && (
                       <div className="net-line net-line--bonus"><span>Trattamento integrativo (quota mese)</span><span>+{fmt0(netMonth.trattamentoIntegrativo)}</span></div>
                     )}
                     {netMonth.bonusCuneo > 0 && (
-                      <div className="net-line net-line--bonus"><span>Cuneo fiscale (quota mese)</span><span>+{fmt0(netMonth.bonusCuneo)}</span></div>
+                      <div className="net-line net-line--bonus"><span>Indennità 207/2024 (quota mese)</span><span>+{fmt0(netMonth.bonusCuneo)}</span></div>
+                    )}
+                    {netMonth.tfr > 0 && (
+                      <div className="net-line net-line--bonus"><span>Anticipo TFR (quota mese)</span><span>+{fmt0(netMonth.tfr)}</span></div>
                     )}
                   </>
                 )}
@@ -460,9 +459,10 @@ export default function CalendarView({
                 <div className="net-line net-line--total"><span>Netto del mese</span><span>{fmt0(netMonth.net)}</span></div>
                 <p className="net-disclaimer">
                   Stima indicativa (fiscalità 2026). Le trattenute sono quelle vere della busta paga
-                  (contributi + IRPEF netta + addizionali). Il trattamento integrativo (€1.200/anno) e
-                  il cuneo sono importi annui: qui vedi la quota mensile (÷12). Non sostituisce la busta
-                  paga né il conguaglio.
+                  (contributi + IRPEF netta + addizionali). Trattamento integrativo (€1.200/anno) e
+                  Indennità 207/2024 sono importi annui rapportati ai giorni del mese (÷365).
+                  {netMonth.tfr > 0 && ' L\'anticipo TFR è ~6,91% del lordo (tassazione separata).'}
+                  {' '}Non sostituisce la busta paga né il conguaglio.
                 </p>
               </div>
             )}

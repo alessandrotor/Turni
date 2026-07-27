@@ -229,12 +229,15 @@ export function calcNetAnnual(grossAnnual, settings = {}) {
  * L'IRPEF è progressiva e annuale: si usa l'aliquota IRPEF effettiva ricavata
  * dal reddito annuo di riferimento (`annualGrossRef`, es. proiezione da
  * contratto + 13ª/14ª) applicata all'imponibile del mese.
+ * Trattamento integrativo e indennità (L. 207/2024) sono rapportati ai giorni
+ * del mese (giorni di calendario / 365), come in busta paga.
  *
  * @param {number} monthGross lordo del mese (turni + eventuale mensilità agg.)
  * @param {number} annualGrossRef reddito annuo lordo di riferimento (per aliquote IRPEF/bonus)
- * @param {object} settings addRegionalePct / addComunalePct
+ * @param {object} settings addRegionalePct / addComunalePct / tfrInBusta
+ * @param {number} monthDays giorni di calendario del mese (per la prorata di TI/indennità)
  */
-export function calcNetMonthly(monthGross, annualGrossRef, settings = {}) {
+export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthDays = 365 / 12) {
   const T = TAX_2026;
   const gross = Math.max(0, Number(monthGross) || 0);
   const ann = calcNetAnnual(annualGrossRef, settings);
@@ -259,18 +262,25 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}) {
 
   const trattenute = contributi + irpefNetta + addRegionale + addComunale;
 
-  // Bonus (trattamento integrativo + cuneo): quota mensile del totale annuo.
-  // Voci separate, aggiunte SOLO alla fine: non riducono le trattenute.
-  const trattamentoIntegrativo = ann.trattamentoIntegrativo / 12;
-  const bonusCuneo = ann.bonusCuneo / 12;
+  // Trattamento integrativo e indennità (L. 207/2024): quota del mese rapportata
+  // ai giorni (giorni di calendario / 365), come in busta paga. Voci separate,
+  // aggiunte SOLO alla fine: non riducono le trattenute.
+  const dayFraction = monthDays / 365;
+  const trattamentoIntegrativo = ann.trattamentoIntegrativo * dayFraction;
+  const bonusCuneo = ann.bonusCuneo * dayFraction;
   const bonus = trattamentoIntegrativo + bonusCuneo;
 
-  const net = gross - trattenute + bonus;
+  // Anticipo TFR in busta (opzionale): quota che matura sul lordo (1/13,5 meno lo
+  // 0,50% al Fondo di garanzia ≈ 6,91%). Esclusa da IRPEF/contributi: si aggiunge
+  // come anticipo sul netto.
+  const tfr = settings.tfrInBusta ? gross * (1 / 13.5 - 0.005) : 0;
+
+  const net = gross - trattenute + bonus + tfr;
 
   return {
     gross, contributi, imponibile,
     irpefLorda, detrazioni, irpefNetta,
     addRegionale, addComunale, trattenute,
-    trattamentoIntegrativo, bonusCuneo, bonus, net,
+    trattamentoIntegrativo, bonusCuneo, bonus, tfr, net,
   };
 }

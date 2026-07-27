@@ -25,6 +25,7 @@ export default function Settings({ settings, onSave }) {
     dailyOvertimeThreshold: settings.dailyOvertimeThreshold ?? '',
     hasTredicesima: !!settings.hasTredicesima,
     hasQuattordicesima: !!settings.hasQuattordicesima,
+    tfrInBusta: !!settings.tfrInBusta,
     previousRates: (Array.isArray(settings.previousRates) ? settings.previousRates : []).map(c => ({
       id: c.id ?? genId(),
       until: c.until ?? '',
@@ -83,6 +84,7 @@ export default function Settings({ settings, onSave }) {
       dailyOvertimeThreshold: parseNum(form.dailyOvertimeThreshold),
       hasTredicesima: form.hasTredicesima,
       hasQuattordicesima: form.hasQuattordicesima,
+      tfrInBusta: form.tfrInBusta,
       previousRates,
       addRegionalePct: parseNum(form.addRegionalePct),
       addComunalePct: parseNum(form.addComunalePct),
@@ -382,6 +384,26 @@ export default function Settings({ settings, onSave }) {
               onChange={setCheck('hasQuattordicesima')}
             />
             <span>Quattordicesima (giugno)</span>
+          </label>
+        </section>
+
+        {/* TFR in busta */}
+        <section className="settings-section">
+          <h2 className="settings-section-title">💼 TFR in busta (anticipo)</h2>
+          <p className="settings-section-desc">
+            Se hai scelto di ricevere il TFR mensilmente in busta invece di accantonarlo,
+            attiva questa opzione. Viene aggiunta al netto una quota di circa il
+            <strong> 6,91%</strong> del lordo (1/13,5 meno lo 0,50% del Fondo di garanzia).
+            Il TFR ha tassazione separata: è una stima indicativa.
+          </p>
+
+          <label className="check-row">
+            <input
+              type="checkbox"
+              checked={form.tfrInBusta}
+              onChange={setCheck('tfrInBusta')}
+            />
+            <span>Aggiungi la quota TFR in busta (anticipo sul netto)</span>
           </label>
         </section>
 
