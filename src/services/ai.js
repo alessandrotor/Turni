@@ -22,7 +22,7 @@ async function summaryWithGemini(prompt) {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) throw new Error('Chiave API mancante: aggiungi VITE_GEMINI_API_KEY in .env.local');
   const ai = new GoogleGenAI({ apiKey });
-  const response = await ai.models.generateContent({ model: 'gemini-flash-latest', contents: prompt });
+  const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: prompt });
   return response.text;
 }
 

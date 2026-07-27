@@ -1,10 +1,11 @@
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI, Type, MediaResolution } from '@google/genai';
 
 // SDK ufficiale mantenuto (@google/genai). Supporta structured output
 // (responseSchema/responseMimeType), thinkingConfig/thinkingBudget e restituisce
 // thoughtsTokenCount nel usageMetadata (a differenza del vecchio generative-ai).
 
-const MODEL = 'gemini-flash-latest';
+// BRANCH flash-lite: modello fissato a Gemini 3 Flash (NON 3.6).
+const MODEL = 'gemini-3-flash-preview';
 
 // Tetto di sicurezza generoso: NON stringere sotto il fabbisogno reale — su un
 // modello "thinking" un cap basso troncherebbe il ragionamento e perderebbe
@@ -95,6 +96,9 @@ Allineamento: incrocia con attenzione la riga della persona con la colonna del g
       responseMimeType: 'application/json',
       responseSchema,
       maxOutputTokens: MAX_OUTPUT_TOKENS,
+      // Alta risoluzione immagine: compensa la minor efficacia del modello 3-flash
+      // sull'OCR dei fogli turni (più token immagine, ma migliore accuratezza).
+      mediaResolution: MediaResolution.MEDIA_RESOLUTION_HIGH,
     },
   });
 
