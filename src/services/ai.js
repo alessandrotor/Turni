@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { calcShiftMinutes } from '../utils/pay';
 import { formatMonthYear } from '../utils/dates';
 
@@ -21,9 +21,9 @@ async function summaryWithAnthropic(prompt) {
 async function summaryWithGemini(prompt) {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) throw new Error('Chiave API mancante: aggiungi VITE_GEMINI_API_KEY in .env.local');
-  const model = new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: 'gemini-flash-latest' });
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+  const ai = new GoogleGenAI({ apiKey });
+  const response = await ai.models.generateContent({ model: 'gemini-flash-latest', contents: prompt });
+  return response.text;
 }
 
 // Formatta un importo in euro per il prompt (senza dipendere da Intl nel testo).

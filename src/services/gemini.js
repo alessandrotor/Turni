@@ -1,49 +1,44 @@
-import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import { GoogleGenAI, Type } from '@google/genai';
 
-// NB: SDK @google/generative-ai v0.24.1 (deprecato). Supporta responseSchema /
-// responseMimeType e le metriche usage promptTokenCount/candidatesTokenCount/
-// totalTokenCount, ma NON supporta thinkingConfig/thinkingBudget. I thinking
-// token (thoughtsTokenCount), se restituiti dall'API, compaiono comunque nel
-// usageMetadata grezzo loggato sotto (per questo logghiamo l'oggetto intero).
+// SDK ufficiale mantenuto (@google/genai). Supporta structured output
+// (responseSchema/responseMimeType), thinkingConfig/thinkingBudget e restituisce
+// thoughtsTokenCount nel usageMetadata (a differenza del vecchio generative-ai).
 
 const MODEL = 'gemini-flash-latest';
 
-// Tetto di sicurezza generoso: NON stringere sotto il fabbisogno reale
-// (thinking + output condividono il budget su questo SDK; un cap basso
-// troncherebbe il ragionamento e degraderebbe l'accuratezza dell'OCR).
+// Tetto di sicurezza generoso: NON stringere sotto il fabbisogno reale — su un
+// modello "thinking" un cap basso troncherebbe il ragionamento e perderebbe
+// turni. Il thinking si controlla semmai con thinkingConfig (vedi sotto).
 const MAX_OUTPUT_TOKENS = 65536;
 
+// Budget di thinking: lasciato al DEFAULT del modello per ora. Prima misuriamo
+// thoughtsTokenCount reale (log sotto), poi si decide un valore. Per applicarlo:
+//   config.thinkingConfig = { thinkingBudget: N }   // N>0, NON azzerare
+// (serve ragionamento spaziale per allineare riga/colonna).
+
 // Schema strutturato: array di turni con campi di provenienza per la
-// validazione deterministica lato app (riga/colonna/testo grezzo). Nessun
-// campo di testo libero oltre a questi, nessun riepilogo narrativo.
+// validazione deterministica lato app. Niente testo libero oltre a questi.
 const responseSchema = {
-  type: SchemaType.ARRAY,
+  type: Type.ARRAY,
   items: {
-    type: SchemaType.OBJECT,
+    type: Type.OBJECT,
     properties: {
-      data: { type: SchemaType.STRING, description: 'Data del turno in ISO YYYY-MM-DD' },
-      ora_inizio: { type: SchemaType.STRING, description: 'Ora di inizio HH:MM (24h), vuoto se assente' },
-      ora_fine: { type: SchemaType.STRING, description: 'Ora di fine HH:MM (24h), vuoto se assente' },
-      codice_turno: { type: SchemaType.STRING, description: 'Sigla grezza della cella, es. "M", "P", "R"' },
-      testo_grezzo: { type: SchemaType.STRING, description: 'Contenuto esatto della cella così com\'è nell\'immagine' },
-      riga_identificata: { type: SchemaType.STRING, description: 'Etichetta della riga associata all\'utente' },
-      intestazione_colonna: { type: SchemaType.STRING, description: 'Intestazione della colonna da cui deriva la data' },
+      data: { type: Type.STRING, description: 'Data del turno in ISO YYYY-MM-DD' },
+      ora_inizio: { type: Type.STRING, description: 'Ora di inizio HH:MM (24h), vuoto se assente' },
+      ora_fine: { type: Type.STRING, description: 'Ora di fine HH:MM (24h), vuoto se assente' },
+      codice_turno: { type: Type.STRING, description: 'Sigla grezza della cella, es. "M", "P", "R"' },
+      testo_grezzo: { type: Type.STRING, description: 'Contenuto esatto della cella così com\'è nell\'immagine' },
+      riga_identificata: { type: Type.STRING, description: 'Etichetta della riga associata all\'utente' },
+      intestazione_colonna: { type: Type.STRING, description: 'Intestazione della colonna da cui deriva la data' },
     },
     required: ['data', 'ora_inizio', 'ora_fine', 'codice_turno', 'testo_grezzo', 'riga_identificata', 'intestazione_colonna'],
   },
 };
 
-function getModel() {
+function getClient() {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) throw new Error('Chiave API mancante: aggiungi VITE_GEMINI_API_KEY in .env.local');
-  return new GoogleGenerativeAI(apiKey).getGenerativeModel({
-    model: MODEL,
-    generationConfig: {
-      responseMimeType: 'application/json',
-      responseSchema,
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
-    },
-  });
+  return new GoogleGenAI({ apiKey });
 }
 
 function fileToBase64(file) {
@@ -56,8 +51,7 @@ function fileToBase64(file) {
 }
 
 // Log della ripartizione token: prompt (immagine+testo), output effettivo,
-// thinking (se presente nel grezzo) e totale. Serve per decidere dove
-// intervenire senza ottimizzare alla cieca.
+// thinking e totale — per decidere dove intervenire senza ottimizzare alla cieca.
 function logUsage(response) {
   try {
     const u = response?.usageMetadata || {};
@@ -72,7 +66,7 @@ function logUsage(response) {
 }
 
 export async function parseShiftsFromImage(imageFile, workerName = '') {
-  const model = getModel();
+  const ai = getClient();
   const base64 = await fileToBase64(imageFile);
   const currentYear = new Date().getFullYear();
 
@@ -81,8 +75,6 @@ export async function parseShiftsFromImage(imageFile, workerName = '') {
     ? `\nIl foglio contiene i turni di PIÙ persone: estrai SOLO quelli di "${name}". Individua la sua riga (match parziale, ignora maiuscole/accenti), riporta l'etichetta trovata in "riga_identificata" e ignora tutte le altre persone.`
     : '\nRiporta in "riga_identificata" l\'etichetta della riga da cui provengono i turni (vuoto se non applicabile).';
 
-  // System prompt: task + allineamento riga/colonna + formati irregolari.
-  // La FORMA dell'output è definita dallo schema: qui niente esempi JSON.
   const prompt = `Sei un estrattore di turni da un'immagine di un foglio turni (griglia con persone sulle righe e giorni sulle colonne).
 
 Per ogni turno di lavoro con orario valido, deriva:
@@ -93,35 +85,53 @@ ${nameRule}
 
 Allineamento: incrocia con attenzione la riga della persona con la colonna del giorno; non spostarti di riga/colonna. Gestisci immagini irregolari: screenshot WhatsApp, foto storte o ruotate, colonne non perfettamente allineate, celle unite. Ignora intestazioni, totali, legende e celle vuote/di riposo senza orario.`;
 
-  const result = await model.generateContent([
-    { text: prompt },
-    { inlineData: { mimeType: imageFile.type, data: base64 } },
-  ]);
+  const response = await ai.models.generateContent({
+    model: MODEL,
+    contents: [
+      { text: prompt },
+      { inlineData: { mimeType: imageFile.type, data: base64 } },
+    ],
+    config: {
+      responseMimeType: 'application/json',
+      responseSchema,
+      maxOutputTokens: MAX_OUTPUT_TOKENS,
+    },
+  });
 
-  const response = result.response;
   logUsage(response);
 
+  // Ripartizione token esposta anche all'app (pannello debug beta).
+  const u = response?.usageMetadata || {};
+  const finishReason = response?.candidates?.[0]?.finishReason ?? null;
+  const usage = {
+    prompt: u.promptTokenCount ?? null,
+    output: u.candidatesTokenCount ?? null,
+    thinking: u.thoughtsTokenCount ?? null,
+    total: u.totalTokenCount ?? null,
+    finishReason: finishReason ? String(finishReason) : null,
+    model: MODEL,
+  };
+
   // Troncamento esplicito: non parsare un JSON parziale (perderebbe turni).
-  const finishReason = response?.candidates?.[0]?.finishReason;
-  if (finishReason === 'MAX_TOKENS') {
+  if (String(finishReason) === 'MAX_TOKENS') {
     throw new Error('Risposta troncata (MAX_TOKENS): aumenta maxOutputTokens. Nessun turno importato per non perdere dati.');
   }
 
-  const text = response.text().trim();
+  const text = (response.text || '').trim();
+  if (!text) throw new Error('Nessuna risposta dal modello (possibile blocco o quota).');
+
   let raw;
   try {
     raw = JSON.parse(text);
   } catch {
-    // Fallback difensivo se, nonostante lo schema, arrivasse testo extra.
     const m = text.match(/\[[\s\S]*\]/);
     if (!m) throw new Error('Nessun turno riconosciuto nell\'immagine');
     raw = JSON.parse(m[0]);
   }
   if (!Array.isArray(raw) || raw.length === 0) throw new Error('Nessun turno trovato');
 
-  // Mappa allo schema turni dell'app; conserva i campi di provenienza per
-  // eventuale validazione lato app.
-  return raw
+  // Mappa allo schema turni dell'app; conserva i campi di provenienza.
+  const shifts = raw
     .map(t => ({
       date: t.data,
       startTime: t.ora_inizio,
@@ -134,4 +144,6 @@ Allineamento: incrocia con attenzione la riga della persona con la colonna del g
       _colonna: t.intestazione_colonna,
     }))
     .filter(s => s.date && s.startTime && s.endTime);
+
+  return { shifts, usage };
 }

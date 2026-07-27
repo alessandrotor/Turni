@@ -1273,6 +1273,29 @@ input, select, textarea { font: inherit; }
   margin-top: .1rem;
 }
 
+.debug-usage {
+  flex-basis: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem .9rem;
+  align-items: center;
+  margin-top: .5rem;
+  padding: .5rem .7rem;
+  font-size: .74rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--c-text-2);
+  background: var(--c-warning-light);
+  border: 1px dashed var(--c-warning);
+  border-radius: var(--radius-sm);
+}
+.debug-usage-tag {
+  font-weight: 800;
+  color: var(--c-warning);
+  letter-spacing: .03em;
+}
+.debug-usage strong { color: var(--c-text); }
+.debug-usage-meta { color: var(--c-muted); margin-left: auto; }
+
 .export-bar {
   display: flex;
   align-items: center;

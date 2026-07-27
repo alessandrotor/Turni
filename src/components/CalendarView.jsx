@@ -42,6 +42,7 @@ export default function CalendarView({
   const [showNetDetail, setShowNetDetail] = useState(false);
   const [pendingImportFile, setPendingImportFile] = useState(null);
   const [nameInput, setNameInput] = useState('');
+  const [importUsage, setImportUsage] = useState(null);
   const [exportBusy, setExportBusy] = useState(false);
   const [exportError, setExportError] = useState(null);
   const fileInputRef = useRef();
@@ -155,7 +156,8 @@ export default function CalendarView({
     setImportLoading(true);
     setImportError(null);
     try {
-      const parsed = await parseShiftsFromImage(file, name);
+      const { shifts: parsed, usage } = await parseShiftsFromImage(file, name);
+      setImportUsage(usage);
       setImportParsed(parsed);
     } catch (err) {
       setImportError(err.message || 'Errore durante l\'analisi dell\'immagine');
@@ -266,6 +268,16 @@ export default function CalendarView({
             {importLoading ? '⏳ Analisi in corso…' : '📤 Importa turni da immagine'}
           </button>
           {importError && <span className="import-error">{importError}</span>}
+          {importUsage && (
+            <div className="debug-usage">
+              <span className="debug-usage-tag">🐛 DEBUG token</span>
+              <span>prompt <strong>{importUsage.prompt ?? '—'}</strong></span>
+              <span>output <strong>{importUsage.output ?? '—'}</strong></span>
+              <span>thinking <strong>{importUsage.thinking ?? '—'}</strong></span>
+              <span>totale <strong>{importUsage.total ?? '—'}</strong></span>
+              <span className="debug-usage-meta">{importUsage.model} · {importUsage.finishReason || 'STOP'}</span>
+            </div>
+          )}
         </div>
       )}
 
