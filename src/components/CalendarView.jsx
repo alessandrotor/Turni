@@ -74,13 +74,16 @@ export default function CalendarView({
   const bonus = calcBonusMargin(annualGross);
   const fmt0 = (n) => formatCurrency(Math.round(n));
 
-  // Montante + confine automatico: composizione del reddito e avviso discrepanza.
+  // Montante + confine automatico (granularità MESE): composizione del reddito e avviso.
   const montante = Number(settings.priorTaxableIncome) || 0;
   const priorDate = settings.priorIncomeDate || '';
-  const priorDateIt = priorDate ? priorDate.split('-').reverse().join('/') : '';
+  const priorMonth = priorDate.slice(0, 7); // 'YYYY-MM'
+  const priorMonthLabel = priorMonth
+    ? formatMonthYear(new Date(Number(priorMonth.slice(0, 4)), Number(priorMonth.slice(5, 7)) - 1, 1))
+    : '';
   let shiftsCovered = 0;
-  if (montante > 0 && priorDate && priorDate.slice(0, 4) === String(year)) {
-    const covered = (allShifts || []).filter(s => s.date.slice(0, 4) === String(year) && s.date <= priorDate);
+  if (montante > 0 && priorMonth && priorMonth.slice(0, 4) === String(year)) {
+    const covered = (allShifts || []).filter(s => s.date.slice(0, 4) === String(year) && s.date.slice(0, 7) <= priorMonth);
     const yearAll = (allShifts || []).filter(s => s.date.slice(0, 4) === String(year));
     const p = calcTotalPay(covered, settings, yearAll);
     shiftsCovered = p ? p.total : 0;
@@ -507,12 +510,12 @@ export default function CalendarView({
 
             {montante > 0 && (
               <span className="bonus-strip-note">
-                = montante {fmt0(montante)}{priorDateIt && ` (al ${priorDateIt})`} + turni {fmt0(bonus.income - montante)}
+                = montante {fmt0(montante)}{priorMonthLabel && ` (fino a ${priorMonthLabel})`} + turni {fmt0(bonus.income - montante)}
               </span>
             )}
             {montanteMismatch && (
               <span className="bonus-strip-note bonus-strip-note--warn">
-                ⚠️ Montante dichiarato {fmt0(montante)} diverso dai turni fino al {priorDateIt} ({fmt0(shiftsCovered)}). Normale se include altri redditi o paghe diverse.
+                ⚠️ Montante dichiarato {fmt0(montante)} diverso dai turni fino a {priorMonthLabel} ({fmt0(shiftsCovered)}). Normale se include altri redditi o paghe diverse.
               </span>
             )}
 

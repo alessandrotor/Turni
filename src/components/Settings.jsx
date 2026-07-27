@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { formatCurrency, parseNum } from '../utils/pay';
+import { formatMonthYear } from '../utils/dates';
 import { ENABLE_NET_CALC } from '../config/features';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
@@ -345,15 +346,15 @@ export default function Settings({ settings, onSave }) {
           <p className="settings-section-desc">
             Nel calendario vedi il tuo <strong>reddito totale</strong> dell'anno e quanto puoi
             ancora guadagnare prima di superare le soglie del trattamento integrativo (ex bonus
-            Renzi). Inserisci il <strong>lordo totale già guadagnato quest'anno fino ad oggi</strong>:
-            l'app registra la data di oggi come riferimento e da lì in poi <strong>aggiunge
-            automaticamente</strong> i turni che inserisci, senza contare due volte quelli già
-            compresi. Può includere anche redditi da altri lavori. Se inserisci tutti i turni
-            dell'anno da zero, lascia 0.
+            Renzi). Inserisci il <strong>lordo totale già guadagnato quest'anno fino a questo mese</strong>:
+            l'app registra il <strong>mese corrente</strong> come riferimento e dai mesi successivi
+            <strong>aggiunge automaticamente</strong> i turni che inserisci, senza contare due volte
+            quelli già compresi. Può includere anche redditi da altri lavori. Se inserisci tutti i
+            turni dell'anno da zero, lascia 0.
           </p>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="prior-income">Reddito lordo già guadagnato quest'anno (fino ad oggi)</label>
+            <label className="form-label" htmlFor="prior-income">Reddito lordo già guadagnato quest'anno (fino a questo mese)</label>
             <div className="input-with-symbol">
               <span className="input-symbol">€</span>
               <input
@@ -368,8 +369,8 @@ export default function Settings({ settings, onSave }) {
             </div>
             {settings.priorIncomeDate && parseNum(form.priorTaxableIncome) > 0 && (
               <p className="form-hint">
-                Riferimento registrato al {settings.priorIncomeDate.split('-').reverse().join('/')}:
-                i turni con data successiva vengono sommati. Cambia l'importo per aggiornare la data.
+                Riferimento: {formatMonthYear(new Date(Number(settings.priorIncomeDate.slice(0, 4)), Number(settings.priorIncomeDate.slice(5, 7)) - 1, 1))}.
+                I turni dei mesi successivi vengono sommati. Cambia l'importo per aggiornare il mese.
               </p>
             )}
           </div>

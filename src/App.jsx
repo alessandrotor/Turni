@@ -74,14 +74,16 @@ export default function App() {
   const annualGross = useCallback((monthDate) => {
     const y = monthDate.getFullYear();
     const yearShifts = Object.values(shifts).filter(s => parseDate(s.date).getFullYear() === y);
-    // Confine automatico: il montante rappresenta il reddito fino alla data in cui è
-    // stato impostato. I turni con data ≤ confine sono già inclusi nel montante e NON
-    // vanno ri-sommati (evita il doppio conteggio); si contano solo quelli dopo.
+    // Confine automatico a granularità MESE: il montante rappresenta il reddito fino
+    // al mese in cui è stato impostato. I turni dei mesi ≤ mese di riferimento sono già
+    // inclusi nel montante e NON vanno ri-sommati (evita il doppio conteggio); si
+    // contano solo quelli dei mesi successivi.
     const montante = Number(settings.priorTaxableIncome) || 0;
     const cutoff = settings.priorIncomeDate || '';
+    const cutoffMonth = cutoff.slice(0, 7); // 'YYYY-MM'
     const sameYear = cutoff && Number(cutoff.slice(0, 4)) === y;
     const useCutoff = montante > 0 && sameYear;
-    const counted = useCutoff ? yearShifts.filter(s => s.date > cutoff) : yearShifts;
+    const counted = useCutoff ? yearShifts.filter(s => s.date.slice(0, 7) > cutoffMonth) : yearShifts;
     const pay = calcTotalPay(counted, settings, yearShifts);
     const fromShifts = pay ? pay.total : 0;
     // Mensilità aggiuntive già arrivate entro il mese visualizzato (es. a luglio
