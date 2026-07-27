@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS = {
   sundaySurchargePct: 0,
   overtimeSurchargePct: 0,
   priorTaxableIncome: 0,
+  priorIncomeDate: '',       // data (ISO) in cui è stato impostato il montante (confine turni)
   previousRates: [],
   // Beta netto: aliquote addizionali IRPEF (%)
   addRegionalePct: 1.23,
@@ -73,12 +74,21 @@ export default function App() {
   const annualGross = useCallback((monthDate) => {
     const y = monthDate.getFullYear();
     const yearShifts = Object.values(shifts).filter(s => parseDate(s.date).getFullYear() === y);
-    const pay = calcTotalPay(yearShifts, settings, yearShifts);
+    // Confine automatico: il montante rappresenta il reddito fino alla data in cui è
+    // stato impostato. I turni con data ≤ confine sono già inclusi nel montante e NON
+    // vanno ri-sommati (evita il doppio conteggio); si contano solo quelli dopo.
+    const montante = Number(settings.priorTaxableIncome) || 0;
+    const cutoff = settings.priorIncomeDate || '';
+    const sameYear = cutoff && Number(cutoff.slice(0, 4)) === y;
+    const useCutoff = montante > 0 && sameYear;
+    const counted = useCutoff ? yearShifts.filter(s => s.date > cutoff) : yearShifts;
+    const pay = calcTotalPay(counted, settings, yearShifts);
     const fromShifts = pay ? pay.total : 0;
     // Mensilità aggiuntive già arrivate entro il mese visualizzato (es. a luglio
     // la quattordicesima di giugno è già stata incassata).
     const extras = monthlyBaseGross(settings) * receivedExtraMonthsCount(settings, monthDate.getMonth());
-    return fromShifts + (Number(settings.priorTaxableIncome) || 0) + extras;
+    const applyMontante = montante > 0 && (!cutoff || sameYear);
+    return fromShifts + (applyMontante ? montante : 0) + extras;
   }, [shifts, settings]);
 
   const importShifts = useCallback((parsedShifts) => {

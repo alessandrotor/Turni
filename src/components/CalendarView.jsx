@@ -74,6 +74,20 @@ export default function CalendarView({
   const bonus = calcBonusMargin(annualGross);
   const fmt0 = (n) => formatCurrency(Math.round(n));
 
+  // Montante + confine automatico: composizione del reddito e avviso discrepanza.
+  const montante = Number(settings.priorTaxableIncome) || 0;
+  const priorDate = settings.priorIncomeDate || '';
+  const priorDateIt = priorDate ? priorDate.split('-').reverse().join('/') : '';
+  let shiftsCovered = 0;
+  if (montante > 0 && priorDate && priorDate.slice(0, 4) === String(year)) {
+    const covered = (allShifts || []).filter(s => s.date.slice(0, 4) === String(year) && s.date <= priorDate);
+    const yearAll = (allShifts || []).filter(s => s.date.slice(0, 4) === String(year));
+    const p = calcTotalPay(covered, settings, yearAll);
+    shiftsCovered = p ? p.total : 0;
+  }
+  const montanteMismatch = montante > 0 && shiftsCovered > 0
+    && Math.abs(montante - shiftsCovered) > Math.max(500, 0.30 * shiftsCovered);
+
   // Netto stimato del mese (beta): calcolato PARTENDO DAL MESE, come una busta
   // paga. Trattenute (contributi + IRPEF + addizionali) e bonus (trattamento
   // integrativo + cuneo) sono voci separate: il bonus non abbatte le trattenute.
@@ -491,9 +505,14 @@ export default function CalendarView({
               </span>
             </div>
 
-            {(Number(settings.priorTaxableIncome) || 0) > 0 && (
+            {montante > 0 && (
               <span className="bonus-strip-note">
-                = montante {fmt0(Number(settings.priorTaxableIncome) || 0)} + turni {fmt0(bonus.income - (Number(settings.priorTaxableIncome) || 0))} · il montante NON deve includere i turni inseriti
+                = montante {fmt0(montante)}{priorDateIt && ` (al ${priorDateIt})`} + turni {fmt0(bonus.income - montante)}
+              </span>
+            )}
+            {montanteMismatch && (
+              <span className="bonus-strip-note bonus-strip-note--warn">
+                ⚠️ Montante dichiarato {fmt0(montante)} diverso dai turni fino al {priorDateIt} ({fmt0(shiftsCovered)}). Normale se include altri redditi o paghe diverse.
               </span>
             )}
 

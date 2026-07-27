@@ -1064,6 +1064,10 @@ input, select, textarea { font: inherit; }
   font-weight: 600;
 }
 
+.bonus-strip-note--warn {
+  color: var(--c-warning);
+}
+
 /* ── Aumenti di paga ────────────────────────────────────────────── */
 .rate-changes {
   display: flex;

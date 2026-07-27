@@ -72,12 +72,21 @@ export default function Settings({ settings, onSave }) {
       .map(c => ({ id: c.id, until: c.until, rate: parseNum(c.rate) }))
       .sort((a, b) => a.until.localeCompare(b.until));
 
+    // Montante: se il valore cambia, registra la data di riferimento (confine turni).
+    const newMontante = parseNum(form.priorTaxableIncome);
+    const oldMontante = Number(settings.priorTaxableIncome) || 0;
+    let priorIncomeDate = settings.priorIncomeDate || '';
+    if (newMontante !== oldMontante) {
+      priorIncomeDate = newMontante > 0 ? new Date().toISOString().slice(0, 10) : '';
+    }
+
     onSave({
       hourlyRate: parseNum(form.hourlyRate),
       expectedWeeklyHours: parseNum(form.expectedWeeklyHours),
       sundaySurchargePct: parseNum(form.sundaySurchargePct),
       overtimeSurchargePct: parseNum(form.overtimeSurchargePct),
-      priorTaxableIncome: parseNum(form.priorTaxableIncome),
+      priorTaxableIncome: newMontante,
+      priorIncomeDate,
       workerName: form.workerName.trim(),
       onCall: form.onCall,
       annualGrossManual: parseNum(form.annualGrossManual),
@@ -336,15 +345,15 @@ export default function Settings({ settings, onSave }) {
           <p className="settings-section-desc">
             Nel calendario vedi il tuo <strong>reddito totale</strong> dell'anno e quanto puoi
             ancora guadagnare prima di superare le soglie del trattamento integrativo (ex bonus
-            Renzi). Il reddito totale è: <strong>questo campo + i turni che inserisci</strong>.
-            Quindi qui va SOLO il lordo dei periodi <strong>non</strong> coperti dai turni
-            inseriti — <strong>non</strong> includere il reddito dei turni che aggiungi, altrimenti
-            viene contato due volte. Esempio: se inserisci i turni da luglio, metti qui solo il
-            lordo di gennaio–giugno. Se inserisci tutti i turni dell'anno, lascia 0.
+            Renzi). Inserisci il <strong>lordo totale già guadagnato quest'anno fino ad oggi</strong>:
+            l'app registra la data di oggi come riferimento e da lì in poi <strong>aggiunge
+            automaticamente</strong> i turni che inserisci, senza contare due volte quelli già
+            compresi. Può includere anche redditi da altri lavori. Se inserisci tutti i turni
+            dell'anno da zero, lascia 0.
           </p>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="prior-income">Reddito lordo maturato PRIMA dei turni inseriti</label>
+            <label className="form-label" htmlFor="prior-income">Reddito lordo già guadagnato quest'anno (fino ad oggi)</label>
             <div className="input-with-symbol">
               <span className="input-symbol">€</span>
               <input
@@ -357,6 +366,12 @@ export default function Settings({ settings, onSave }) {
                 onChange={set('priorTaxableIncome')}
               />
             </div>
+            {settings.priorIncomeDate && parseNum(form.priorTaxableIncome) > 0 && (
+              <p className="form-hint">
+                Riferimento registrato al {settings.priorIncomeDate.split('-').reverse().join('/')}:
+                i turni con data successiva vengono sommati. Cambia l'importo per aggiornare la data.
+              </p>
+            )}
           </div>
         </section>
 
