@@ -73,12 +73,16 @@ export default function Settings({ settings, onSave }) {
       .map(c => ({ id: c.id, until: c.until, rate: parseNum(c.rate) }))
       .sort((a, b) => a.until.localeCompare(b.until));
 
-    // Montante: se il valore cambia, registra la data di riferimento (confine turni).
+    // Montante: registra il mese di riferimento (confine turni). Va impostato al PRIMO
+    // salvataggio con montante > 0 (anche se l'importo non cambia) e ogni volta che
+    // l'importo cambia. Azzerato se il montante va a 0.
     const newMontante = parseNum(form.priorTaxableIncome);
     const oldMontante = Number(settings.priorTaxableIncome) || 0;
     let priorIncomeDate = settings.priorIncomeDate || '';
-    if (newMontante !== oldMontante) {
-      priorIncomeDate = newMontante > 0 ? new Date().toISOString().slice(0, 10) : '';
+    if (newMontante <= 0) {
+      priorIncomeDate = '';
+    } else if (newMontante !== oldMontante || !priorIncomeDate) {
+      priorIncomeDate = new Date().toISOString().slice(0, 10);
     }
 
     onSave({
