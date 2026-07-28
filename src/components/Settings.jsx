@@ -32,6 +32,11 @@ export default function Settings({ settings, onSave }) {
       until: c.until ?? '',
       rate: toInput(c.rate),
     })),
+    fixedMonthlyItems: (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : []).map(v => ({
+      id: v.id ?? genId(),
+      label: v.label ?? '',
+      amount: toInput(v.amount),
+    })),
     addRegionalePct: toInput(settings.addRegionalePct),
     addComunalePct: toInput(settings.addComunalePct),
     addizionaliAltrove: !!settings.addizionaliAltrove,
@@ -68,12 +73,35 @@ export default function Settings({ settings, onSave }) {
     setSaved(false);
   };
 
+  const addFixedItem = () => {
+    setForm(f => ({ ...f, fixedMonthlyItems: [...f.fixedMonthlyItems, { id: genId(), label: '', amount: '' }] }));
+    setSaved(false);
+  };
+
+  const updateFixedItem = (id, field) => (e) => {
+    const value = e.target.value;
+    setForm(f => ({
+      ...f,
+      fixedMonthlyItems: f.fixedMonthlyItems.map(v => (v.id === id ? { ...v, [field]: value } : v)),
+    }));
+    setSaved(false);
+  };
+
+  const removeFixedItem = (id) => {
+    setForm(f => ({ ...f, fixedMonthlyItems: f.fixedMonthlyItems.filter(v => v.id !== id) }));
+    setSaved(false);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const previousRates = form.previousRates
       .filter(c => c.until && parseNum(c.rate) > 0)
       .map(c => ({ id: c.id, until: c.until, rate: parseNum(c.rate) }))
       .sort((a, b) => a.until.localeCompare(b.until));
+
+    const fixedMonthlyItems = form.fixedMonthlyItems
+      .filter(v => parseNum(v.amount) > 0)
+      .map(v => ({ id: v.id, label: (v.label || '').trim() || 'Voce fissa', amount: parseNum(v.amount) }));
 
     // Montante: registra il mese di riferimento (confine turni). Va impostato al PRIMO
     // salvataggio con montante > 0 (anche se l'importo non cambia) e ogni volta che
@@ -102,6 +130,8 @@ export default function Settings({ settings, onSave }) {
       hasQuattordicesima: form.hasQuattordicesima,
       tfrInBusta: form.tfrInBusta,
       previousRates,
+      fixedMonthlyItems,
+      monthlyBonus: settings.monthlyBonus || {}, // gestito dal calendario, va preservato
       addRegionalePct: parseNum(form.addRegionalePct),
       addComunalePct: parseNum(form.addComunalePct),
       addizionaliAltrove: form.addizionaliAltrove,
@@ -217,6 +247,64 @@ export default function Settings({ settings, onSave }) {
 
           <button type="button" className="btn btn-secondary btn--full" onClick={addPreviousRate}>
             + Aggiungi paga precedente
+          </button>
+        </section>
+
+        {/* Voci fisse mensili */}
+        <section className="settings-section">
+          <h2 className="settings-section-title">➕ Voci fisse mensili</h2>
+          <p className="settings-section-desc">
+            Importi che ricevi <strong>ogni mese</strong> oltre ai turni (indennità di
+            flessibilità, superminimo, elemento fisso…). Vengono <strong>sommati al lordo del
+            mese</strong> nella stima del netto. Il bonus che varia mese per mese si imposta invece
+            dal calendario.
+          </p>
+
+          {form.fixedMonthlyItems.length > 0 && (
+            <div className="rate-changes">
+              {form.fixedMonthlyItems.map(v => (
+                <div key={v.id} className="rate-change-row">
+                  <div className="rate-change-fields">
+                    <div className="form-group">
+                      <label className="form-label form-label--sm">Descrizione</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="es. Indennità flessibilità"
+                        value={v.label}
+                        onChange={updateFixedItem(v.id, 'label')}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label form-label--sm">Importo mensile (€)</label>
+                      <div className="input-with-symbol">
+                        <span className="input-symbol">€</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          className="form-input form-input--with-symbol"
+                          placeholder="0,00"
+                          value={v.amount}
+                          onChange={updateFixedItem(v.id, 'amount')}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="rate-change-remove"
+                    onClick={() => removeFixedItem(v.id)}
+                    aria-label="Rimuovi voce fissa"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button type="button" className="btn btn-secondary btn--full" onClick={addFixedItem}>
+            + Aggiungi voce fissa
           </button>
         </section>
 

@@ -3,7 +3,7 @@ import {
   formatDate, formatMonthYear, isToday, isWeekend,
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth,
 } from '../utils/dates';
-import { calcShiftMinutes, calcTotalPay, formatCurrency, isSunday } from '../utils/pay';
+import { calcShiftMinutes, calcTotalPay, formatCurrency, isSunday, parseNum } from '../utils/pay';
 import { calcBonusMargin, BONUS_CONST, BONUS_STATUS } from '../utils/bonus';
 import { calcNetMonthly, projectAnnualGross, monthlyBaseGross, EXTRA_MONTHS, TAX_2026 } from '../utils/net';
 import { ENABLE_NET_CALC } from '../config/features';
@@ -125,7 +125,12 @@ export default function CalendarView({
         + (settings.hasTredicesima && month === EXTRA_MONTHS.tredicesima ? 1 : 0)
       )
     : 0;
-  const monthGross = (pay ? pay.total : 0) + extraThisMonth;
+  // Voci fisse mensili (ricorrenti) e bonus del singolo mese: sommati al lordo.
+  const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+  const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
+    .reduce((s, v) => s + (Number(v.amount) || 0), 0);
+  const perMonthBonus = Number(settings.monthlyBonus?.[monthKey]) || 0;
+  const monthGross = (pay ? pay.total : 0) + extraThisMonth + fixedMonthlyTotal + perMonthBonus;
   const netMonth = ENABLE_NET_CALC ? calcNetMonthly(monthGross, netBasis, settings, daysInMonth) : null;
   const monthNet = netMonth ? netMonth.net : 0;
   const monthTrattenute = netMonth ? netMonth.trattenute : 0;
@@ -211,6 +216,15 @@ export default function CalendarView({
   function handleImportConfirm(parsedShifts) {
     onImportShifts(parsedShifts);
     setImportParsed(null);
+  }
+
+  function handleMonthBonusChange(e) {
+    if (!onUpdateSettings) return;
+    const amount = parseNum(e.target.value);
+    const map = { ...(settings.monthlyBonus || {}) };
+    if (amount > 0) map[monthKey] = amount;
+    else delete map[monthKey];
+    onUpdateSettings({ monthlyBonus: map });
   }
 
   async function handleExport(format) {
@@ -422,6 +436,32 @@ export default function CalendarView({
                   include {month === EXTRA_MONTHS.tredicesima ? 'tredicesima' : 'quattordicesima'} (+{fmt0(extraThisMonth)} lordi)
                 </span>
               )}
+              {(fixedMonthlyTotal > 0 || perMonthBonus > 0) && (
+                <span className="bonus-strip-note">
+                  include {fixedMonthlyTotal > 0 ? `voci fisse +${fmt0(fixedMonthlyTotal)}` : ''}
+                  {fixedMonthlyTotal > 0 && perMonthBonus > 0 ? ' · ' : ''}
+                  {perMonthBonus > 0 ? `bonus del mese +${fmt0(perMonthBonus)}` : ''}
+                </span>
+              )}
+            </div>
+
+            <div className="month-bonus-row">
+              <label className="month-bonus-label" htmlFor="month-bonus">
+                Bonus di {formatMonthYear(currentMonth)} <span className="month-bonus-hint">(solo questo mese)</span>
+              </label>
+              <div className="input-with-symbol month-bonus-input">
+                <span className="input-symbol">€</span>
+                <input
+                  key={monthKey}
+                  id="month-bonus"
+                  type="text"
+                  inputMode="decimal"
+                  className="form-input form-input--with-symbol"
+                  placeholder="0,00"
+                  defaultValue={perMonthBonus ? String(perMonthBonus).replace('.', ',') : ''}
+                  onBlur={handleMonthBonusChange}
+                />
+              </div>
             </div>
 
             <button

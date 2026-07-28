@@ -26,6 +26,9 @@ const DEFAULT_SETTINGS = {
   hasQuattordicesima: false,
   // Nome del lavoratore sul foglio turni (per import AI da immagine collettiva)
   workerName: '',
+  // Voci fisse mensili (indennità, superminimo...) e bonus per singolo mese
+  fixedMonthlyItems: [],   // [{ id, label, amount }] ricorrenti ogni mese
+  monthlyBonus: {},        // { 'YYYY-MM': importo } bonus del singolo mese
   // Lavoratore a chiamata (senza ore settimanali fisse)
   onCall: false,
   annualGrossManual: 0,      // reddito annuo lordo stimato (per aliquota fiscale)
