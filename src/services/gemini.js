@@ -96,6 +96,8 @@ Allineamento: incrocia con attenzione la riga della persona con la colonna del g
       responseMimeType: 'application/json',
       responseSchema,
       maxOutputTokens: MAX_OUTPUT_TOKENS,
+      // Estrazione deterministica: stessa immagine → stesso risultato.
+      temperature: 0,
       // Risoluzione LOW: sui test (tabella + conversazione) l'accuratezza è
       // identica ad HIGH/MID ma con meno token immagine (prompt ~600 vs ~1400).
       mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW,
@@ -114,6 +116,7 @@ Allineamento: incrocia con attenzione la riga della persona con la colonna del g
     total: u.totalTokenCount ?? null,
     finishReason: finishReason ? String(finishReason) : null,
     model: MODEL,
+    resolution: 'LOW',
   };
 
   // Troncamento esplicito: non parsare un JSON parziale (perderebbe turni).

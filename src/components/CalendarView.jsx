@@ -10,6 +10,7 @@ import { ENABLE_NET_CALC } from '../config/features';
 import { generateMonthlySummary } from '../services/ai';
 import { parseShiftsFromImage } from '../services/gemini';
 import { exportShiftsExcel, exportShiftsPDF } from '../services/export';
+import { sendImportTelemetry } from '../services/telemetry';
 import ImportModal from './ImportModal';
 
 const DAY_HEADERS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
@@ -172,12 +173,15 @@ export default function CalendarView({
   async function runImport(file, name) {
     setImportLoading(true);
     setImportError(null);
+    const meta = { named: !!name, imageBytes: file?.size ?? null, imageType: file?.type ?? null };
     try {
       const { shifts: parsed, usage } = await parseShiftsFromImage(file, name);
       setImportUsage(usage);
       setImportParsed(parsed);
+      sendImportTelemetry({ ok: true, ...usage, shifts: parsed.length, ...meta });
     } catch (err) {
       setImportError(err.message || 'Errore durante l\'analisi dell\'immagine');
+      sendImportTelemetry({ ok: false, error: String(err.message || err), ...meta });
     } finally {
       setImportLoading(false);
     }
