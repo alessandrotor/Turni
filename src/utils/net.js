@@ -245,12 +245,14 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   const contributi = gross * T.ALIQUOTA_IVS;
   const imponibile = gross - contributi;
 
-  // IRPEF esplicita: quota del mese sull'imponibile annuo di riferimento,
-  // applicata sia alla lorda sia alle detrazioni (così vale l'identità
-  // lorda − detrazioni = netta ed è tutto visibile in busta paga).
+  // IRPEF come in busta paga:
+  //  - IRPEF LORDA = quota del mese sull'imponibile annuo (scala col reddito del mese);
+  //  - DETRAZIONI da lavoro dipendente = importo annuo rapportato ai GIORNI del mese
+  //    (giorni/365), NON alla quota di imponibile. È così che le calcola il sostituto
+  //    d'imposta (verificato su busta reale: 1.955 × 31/365 = 166,04).
   const ratio = ann.imponibile > 0 ? imponibile / ann.imponibile : 0;
   const irpefLorda = ann.irpefLorda * ratio;
-  const detrazioni = (ann.detrazioneLavoro + ann.detrazioneCuneo) * ratio;
+  const detrazioni = (ann.detrazioneLavoro + ann.detrazioneCuneo) * (monthDays / 365);
   const irpefNetta = Math.max(0, irpefLorda - detrazioni);
 
   // Addizionali: stessa aliquota sull'imponibile del mese, dovute solo con imposta netta.
