@@ -34,6 +34,8 @@ export default function Settings({ settings, onSave }) {
     })),
     addRegionalePct: toInput(settings.addRegionalePct),
     addComunalePct: toInput(settings.addComunalePct),
+    addizionaliAltrove: !!settings.addizionaliAltrove,
+    noTrattamentoIntegrativo: !!settings.noTrattamentoIntegrativo,
   });
   const [saved, setSaved] = useState(false);
 
@@ -102,6 +104,8 @@ export default function Settings({ settings, onSave }) {
       previousRates,
       addRegionalePct: parseNum(form.addRegionalePct),
       addComunalePct: parseNum(form.addComunalePct),
+      addizionaliAltrove: form.addizionaliAltrove,
+      noTrattamentoIntegrativo: form.noTrattamentoIntegrativo,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -471,6 +475,24 @@ export default function Settings({ settings, onSave }) {
                 </div>
               </div>
             </div>
+
+            <label className="check-row">
+              <input
+                type="checkbox"
+                checked={form.addizionaliAltrove}
+                onChange={setCheck('addizionaliAltrove')}
+              />
+              <span>Addizionali già trattenute da un altro datore (non applicarle → 0)</span>
+            </label>
+
+            <label className="check-row">
+              <input
+                type="checkbox"
+                checked={form.noTrattamentoIntegrativo}
+                onChange={setCheck('noTrattamentoIntegrativo')}
+              />
+              <span>Trattamento integrativo non erogato in busta (va a conguaglio)</span>
+            </label>
           </section>
         )}
 

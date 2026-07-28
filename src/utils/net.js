@@ -254,19 +254,23 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   const irpefNetta = Math.max(0, irpefLorda - detrazioni);
 
   // Addizionali: stessa aliquota sull'imponibile del mese, dovute solo con imposta netta.
+  // Se già trattenute da un altro datore (conguaglio a saldo altrove), sono 0 in questa busta.
   const pctOr = (v, def) => (Number.isFinite(Number(v)) ? Number(v) : def);
   const aliqReg = pctOr(settings.addRegionalePct, T.ADD_REGIONALE_DEFAULT) / 100;
   const aliqCom = pctOr(settings.addComunalePct, T.ADD_COMUNALE_DEFAULT) / 100;
-  const addRegionale = ann.irpefNetta > 0 ? imponibile * aliqReg : 0;
-  const addComunale = ann.irpefNetta > 0 ? imponibile * aliqCom : 0;
+  const addDovute = !settings.addizionaliAltrove && ann.irpefNetta > 0;
+  const addRegionale = addDovute ? imponibile * aliqReg : 0;
+  const addComunale = addDovute ? imponibile * aliqCom : 0;
 
   const trattenute = contributi + irpefNetta + addRegionale + addComunale;
 
   // Trattamento integrativo e indennità (L. 207/2024): quota del mese rapportata
   // ai giorni (giorni di calendario / 365), come in busta paga. Voci separate,
   // aggiunte SOLO alla fine: non riducono le trattenute.
+  // Il TI può non essere erogato in busta (il software paghe lo rimanda a conguaglio
+  // in base alle proiezioni): interruttore `noTrattamentoIntegrativo`.
   const dayFraction = monthDays / 365;
-  const trattamentoIntegrativo = ann.trattamentoIntegrativo * dayFraction;
+  const trattamentoIntegrativo = settings.noTrattamentoIntegrativo ? 0 : ann.trattamentoIntegrativo * dayFraction;
   const bonusCuneo = ann.bonusCuneo * dayFraction;
   const bonus = trattamentoIntegrativo + bonusCuneo;
 

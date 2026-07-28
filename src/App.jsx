@@ -19,6 +19,8 @@ const DEFAULT_SETTINGS = {
   // Beta netto: aliquote addizionali IRPEF (%)
   addRegionalePct: 1.23,
   addComunalePct: 0,
+  addizionaliAltrove: false,        // addizionali già trattenute da altro datore → 0
+  noTrattamentoIntegrativo: false,  // TI non erogato in busta (va a conguaglio)
   // Mensilità aggiuntive (dipendono dal CCNL)
   hasTredicesima: false,
   hasQuattordicesima: false,
