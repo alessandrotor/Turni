@@ -916,14 +916,16 @@ input, select, textarea { font: inherit; }
   gap: 1rem;
 }
 
+/* Sezione a fisarmonica: <details>/<summary>. NB niente display:flex sul
+   details (romperebbe il toggle su WebView): spaziatura via margini dei figli. */
 .settings-section {
   background: var(--c-card);
   border-radius: var(--radius);
   padding: 1.1rem 1.1rem;
   box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
-  gap: .85rem;
+}
+.settings-section > *:not(summary) {
+  margin-top: .85rem;
 }
 
 .settings-section--future {
@@ -934,6 +936,22 @@ input, select, textarea { font: inherit; }
 .settings-section-title {
   font-size: 1rem;
   font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+}
+.settings-section-title::-webkit-details-marker { display: none; }
+.settings-section-title::after {
+  content: '▾';
+  color: var(--c-muted);
+  font-weight: 400;
+  transition: transform .15s ease;
+}
+.settings-section:not([open]) > .settings-section-title::after {
+  transform: rotate(-90deg);
 }
 
 .settings-section-desc {

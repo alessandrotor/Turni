@@ -153,8 +153,8 @@ export default function Settings({ settings, onSave }) {
       <form onSubmit={handleSubmit} className="settings-form">
 
         {/* Paga oraria attuale */}
-        <section className="settings-section">
-          <h2 className="settings-section-title">💰 Paga oraria</h2>
+        <details className="settings-section" open>
+          <summary className="settings-section-title">💰 Paga oraria</summary>
           <p className="settings-section-desc">
             Inserisci la tua paga oraria lorda <strong>attuale</strong>. È quella usata per i
             turni di oggi e futuri. Se durante l'anno hai avuto un aumento, registra le paghe
@@ -192,11 +192,11 @@ export default function Settings({ settings, onSave }) {
               </p>
             </div>
           )}
-        </section>
+        </details>
 
         {/* Paghe precedenti (aumenti) */}
-        <section className="settings-section">
-          <h2 className="settings-section-title">🔄 Paghe precedenti (aumenti)</h2>
+        <details className="settings-section">
+          <summary className="settings-section-title">🔄 Paghe precedenti (aumenti)</summary>
           <p className="settings-section-desc">
             Hai avuto un aumento durante l'anno? Elenca qui le paghe che avevi <strong>prima</strong>,
             indicando fino a quale giorno erano in vigore. I turni <strong>fino a</strong> quella data
@@ -248,11 +248,11 @@ export default function Settings({ settings, onSave }) {
           <button type="button" className="btn btn-secondary btn--full" onClick={addPreviousRate}>
             + Aggiungi paga precedente
           </button>
-        </section>
+        </details>
 
         {/* Voci fisse mensili */}
-        <section className="settings-section">
-          <h2 className="settings-section-title">➕ Voci fisse mensili</h2>
+        <details className="settings-section">
+          <summary className="settings-section-title">➕ Voci fisse mensili</summary>
           <p className="settings-section-desc">
             Importi che ricevi <strong>ogni mese</strong> oltre ai turni (indennità di
             flessibilità, superminimo, elemento fisso…). Vengono <strong>sommati al lordo del
@@ -306,11 +306,11 @@ export default function Settings({ settings, onSave }) {
           <button type="button" className="btn btn-secondary btn--full" onClick={addFixedItem}>
             + Aggiungi voce fissa
           </button>
-        </section>
+        </details>
 
         {/* Ore previste / lavoro a chiamata */}
-        <section className="settings-section">
-          <h2 className="settings-section-title">📋 Orario di lavoro</h2>
+        <details className="settings-section">
+          <summary className="settings-section-title">📋 Orario di lavoro</summary>
 
           <label className="check-row">
             <input
@@ -380,11 +380,11 @@ export default function Settings({ settings, onSave }) {
               </div>
             </>
           )}
-        </section>
+        </details>
 
         {/* Maggiorazioni */}
-        <section className="settings-section">
-          <h2 className="settings-section-title">📈 Maggiorazioni</h2>
+        <details className="settings-section">
+          <summary className="settings-section-title">📈 Maggiorazioni</summary>
           <p className="settings-section-desc">
             La maggiorazione domenicale viene applicata automaticamente ai turni di domenica.
             La maggiorazione straordinari si applica automaticamente alle ore oltre la soglia
@@ -434,11 +434,11 @@ export default function Settings({ settings, onSave }) {
                 : `Applicata alle ore oltre le ${weeklyHours || 0}h settimanali da contratto.`}
             </p>
           </div>
-        </section>
+        </details>
 
         {/* Reddito e bonus Renzi */}
-        <section className="settings-section">
-          <h2 className="settings-section-title">💶 Reddito e bonus Renzi</h2>
+        <details className="settings-section">
+          <summary className="settings-section-title">💶 Reddito e bonus Renzi</summary>
           <p className="settings-section-desc">
             Nel calendario vedi il tuo <strong>reddito totale</strong> dell'anno e quanto puoi
             ancora guadagnare prima di superare le soglie del trattamento integrativo (ex bonus
@@ -470,11 +470,11 @@ export default function Settings({ settings, onSave }) {
               </p>
             )}
           </div>
-        </section>
+        </details>
 
         {/* Tredicesima e quattordicesima */}
-        <section className="settings-section">
-          <h2 className="settings-section-title">🎁 Tredicesima e quattordicesima</h2>
+        <details className="settings-section">
+          <summary className="settings-section-title">🎁 Tredicesima e quattordicesima</summary>
           <p className="settings-section-desc">
             Attiva le mensilità aggiuntive previste dal tuo CCNL. La <strong>tredicesima</strong>
             arriva a dicembre, la <strong>quattordicesima</strong> a giugno; ciascuna vale circa una
@@ -499,11 +499,11 @@ export default function Settings({ settings, onSave }) {
             />
             <span>Quattordicesima (giugno)</span>
           </label>
-        </section>
+        </details>
 
         {/* TFR in busta */}
-        <section className="settings-section">
-          <h2 className="settings-section-title">💼 TFR in busta (anticipo)</h2>
+        <details className="settings-section">
+          <summary className="settings-section-title">💼 TFR in busta (anticipo)</summary>
           <p className="settings-section-desc">
             Se hai scelto di ricevere il TFR mensilmente in busta invece di accantonarlo,
             attiva questa opzione. Viene aggiunta al netto una quota di circa il
@@ -519,12 +519,12 @@ export default function Settings({ settings, onSave }) {
             />
             <span>Aggiungi la quota TFR in busta (anticipo sul netto)</span>
           </label>
-        </section>
+        </details>
 
         {/* Addizionali IRPEF — beta netto (gated dal feature flag) */}
         {ENABLE_NET_CALC && (
-          <section className="settings-section settings-section--beta">
-            <h2 className="settings-section-title">🧪 Addizionali IRPEF (beta)</h2>
+          <details className="settings-section settings-section--beta">
+            <summary className="settings-section-title">🧪 Addizionali IRPEF (beta)</summary>
             <p className="settings-section-desc">
               Usate per la stima del netto. Variano in base alla tua residenza:
               l'addizionale regionale va da ~1,23% a ~3,33%, la comunale da 0% a ~0,9%.
@@ -581,12 +581,12 @@ export default function Settings({ settings, onSave }) {
               />
               <span>Trattamento integrativo non erogato in busta (va a conguaglio)</span>
             </label>
-          </section>
+          </details>
         )}
 
         {/* Import turni da foto (AI) */}
-        <section className="settings-section">
-          <h2 className="settings-section-title">🤖 Import turni da foto</h2>
+        <details className="settings-section">
+          <summary className="settings-section-title">🤖 Import turni da foto</summary>
           <p className="settings-section-desc">
             Quando importi i turni da una foto, il foglio può contenere più persone.
             Indica il tuo nome così l'AI estrae <strong>solo i tuoi</strong> turni. Lascia
@@ -604,11 +604,11 @@ export default function Settings({ settings, onSave }) {
               onChange={set('workerName')}
             />
           </div>
-        </section>
+        </details>
 
         {/* CCNL - placeholder futuro */}
-        <section className="settings-section settings-section--future">
-          <h2 className="settings-section-title">📜 CCNL (prossimamente)</h2>
+        <details className="settings-section settings-section--future">
+          <summary className="settings-section-title">📜 CCNL (prossimamente)</summary>
           <p className="settings-section-desc">
             In futuro sarà possibile selezionare il Contratto Collettivo Nazionale di Lavoro
             per calcolare automaticamente la paga con le relative indennità (notturno, festivo, straordinario).
@@ -619,7 +619,7 @@ export default function Settings({ settings, onSave }) {
               <option>— Non disponibile —</option>
             </select>
           </div>
-        </section>
+        </details>
 
         <div className="settings-footer">
           <button type="submit" className="btn btn-primary btn--full">
