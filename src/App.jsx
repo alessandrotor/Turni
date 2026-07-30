@@ -20,7 +20,8 @@ const DEFAULT_SETTINGS = {
   addRegionalePct: 1.23,
   addComunalePct: 0,
   addizionaliAltrove: false,        // addizionali già trattenute da altro datore → 0
-  noTrattamentoIntegrativo: false,  // TI non erogato in busta (va a conguaglio)
+  noTrattamentoIntegrativo: false,  // override: forza esclusione TI (va a conguaglio)
+  tiProjectionMode: 'stimato',      // 'stimato' | 'ytd' — proiezione per la decisione TI
   // Mensilità aggiuntive (dipendono dal CCNL)
   hasTredicesima: false,
   hasQuattordicesima: false,

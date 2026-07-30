@@ -41,6 +41,7 @@ export default function Settings({ settings, onSave }) {
     addComunalePct: toInput(settings.addComunalePct),
     addizionaliAltrove: !!settings.addizionaliAltrove,
     noTrattamentoIntegrativo: !!settings.noTrattamentoIntegrativo,
+    tiProjectionMode: settings.tiProjectionMode === 'ytd' ? 'ytd' : 'stimato',
   });
   const [saved, setSaved] = useState(false);
 
@@ -136,6 +137,7 @@ export default function Settings({ settings, onSave }) {
       addComunalePct: parseNum(form.addComunalePct),
       addizionaliAltrove: form.addizionaliAltrove,
       noTrattamentoIntegrativo: form.noTrattamentoIntegrativo,
+      tiProjectionMode: form.tiProjectionMode,
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -573,13 +575,30 @@ export default function Settings({ settings, onSave }) {
               <span>Addizionali già trattenute da un altro datore (non applicarle → 0)</span>
             </label>
 
+            <div className="form-group">
+              <label className="form-label" htmlFor="ti-mode">Trattamento integrativo — proiezione automatica</label>
+              <select
+                id="ti-mode"
+                className="form-input"
+                value={form.tiProjectionMode}
+                onChange={set('tiProjectionMode')}
+              >
+                <option value="stimato">Reddito annuo stimato (contratto/RAL + voci fisse + bonus)</option>
+                <option value="ytd">Dinamica dal maturato (annualizza il guadagnato finora)</option>
+              </select>
+              <p className="form-hint">
+                Il TI viene incluso o escluso da solo in base a questa proiezione (soglie 15.000/28.000€
+                e capienza), come fa un software paghe. Il dettaglio del netto mostra la decisione.
+              </p>
+            </div>
+
             <label className="check-row">
               <input
                 type="checkbox"
                 checked={form.noTrattamentoIntegrativo}
                 onChange={setCheck('noTrattamentoIntegrativo')}
               />
-              <span>Trattamento integrativo non erogato in busta (va a conguaglio)</span>
+              <span>Forza esclusione TI (override, va a conguaglio)</span>
             </label>
           </details>
         )}

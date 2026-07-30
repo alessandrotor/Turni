@@ -218,6 +218,31 @@ export function calcNetAnnual(grossAnnual, settings = {}) {
 }
 
 /**
+ * Decisione automatica sul trattamento integrativo (come un software paghe),
+ * data la proiezione di reddito annuo `annualGrossRef`. Applica le regole ufficiali
+ * (fasce + capienza) e restituisce importo annuo, se incluso e il motivo (per la UI).
+ */
+export function tiDecision(annualGrossRef, settings = {}) {
+  const T = TAX_2026;
+  const ann = calcNetAnnual(annualGrossRef, settings);
+  const imp = ann.imponibile;
+  const override = !!settings.noTrattamentoIntegrativo;
+  const incluso = !override && ann.trattamentoIntegrativo > 0;
+
+  let motivo;
+  if (override) motivo = 'escluso (forzato, a conguaglio)';
+  else if (imp > T.TI_SOGLIA_MAX) motivo = `reddito stimato oltre ${T.TI_SOGLIA_MAX}€ → escluso`;
+  else if (imp <= T.TI_SOGLIA_PIENO) motivo = incluso
+    ? 'reddito stimato ≤ 15.000€ con capienza → incluso'
+    : 'reddito stimato ≤ 15.000€ ma senza capienza → escluso';
+  else motivo = incluso
+    ? 'fascia 15.000–28.000€, detrazioni eccedenti → incluso'
+    : 'fascia 15.000–28.000€, imposta ≥ detrazioni → escluso';
+
+  return { importoAnnuo: incluso ? ann.trattamentoIntegrativo : 0, incluso, motivo, redditoStimato: imp };
+}
+
+/**
  * Stima del netto del MESE, partendo dal lordo mensile — come una busta paga.
  *
  * Trattenute e bonus sono voci SEPARATE (il bonus non riduce le trattenute):

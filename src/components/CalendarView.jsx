@@ -5,7 +5,7 @@ import {
 } from '../utils/dates';
 import { calcShiftMinutes, calcTotalPay, formatCurrency, isSunday, parseNum } from '../utils/pay';
 import { calcBonusMargin, BONUS_CONST, BONUS_STATUS } from '../utils/bonus';
-import { calcNetMonthly, projectAnnualGross, monthlyBaseGross, EXTRA_MONTHS, TAX_2026 } from '../utils/net';
+import { calcNetMonthly, projectAnnualGross, monthlyBaseGross, EXTRA_MONTHS, TAX_2026, tiDecision } from '../utils/net';
 import { ENABLE_NET_CALC } from '../config/features';
 import { generateMonthlySummary } from '../services/ai';
 import { parseShiftsFromImage } from '../services/gemini';
@@ -98,26 +98,49 @@ export default function CalendarView({
   // L'IRPEF, progressiva e annuale, usa come riferimento il reddito annuo pieno
   // (proiezione da contratto + 13ª/14ª); se il contratto non è impostato si
   // ripiega sul reddito maturato.
-  // Reddito annuo di riferimento per l'aliquota fiscale:
-  //  - a chiamata: reddito annuo manuale se impostato, altrimenti annualizzato dai turni;
-  //  - contratto: proiezione da ore settimanali × paga (+13ª/14ª), con fallback al maturato.
+  // Voci fisse mensili (ricorrenti) e bonus (per singolo mese): sommati al lordo,
+  // e inclusi nella proiezione annua (possono far superare le soglie del TI).
+  const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+  const mm = String(month + 1).padStart(2, '0');
+  const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
+    .reduce((s, v) => s + (Number(v.amount) || 0), 0);
+  const perMonthBonus = Number(settings.monthlyBonus?.[monthKey]) || 0;
+  const bonusMap = settings.monthlyBonus || {};
+  const bonusYearAll = Object.entries(bonusMap)
+    .filter(([k]) => k.slice(0, 4) === String(year))
+    .reduce((s, [, v]) => s + (Number(v) || 0), 0);
+  const bonusYTD = Object.entries(bonusMap)
+    .filter(([k]) => k.slice(0, 4) === String(year) && k.slice(5, 7) <= mm)
+    .reduce((s, [, v]) => s + (Number(v) || 0), 0);
+
+  // Reddito annuo di riferimento (aliquota IRPEF + decisione automatica TI):
+  //  - 'stimato': stima annua (contratto/RAL/a chiamata) + voci fisse ×12 + bonus dell'anno;
+  //  - 'ytd': reddito maturato (montante+turni+voci fisse+bonus finora) annualizzato sui mesi trascorsi.
+  const fixedAnnual = fixedMonthlyTotal * 12;
   let netBasis;
-  if (settings.onCall) {
-    const manual = Number(settings.annualGrossManual) || 0;
-    if (manual > 0) {
-      netBasis = manual;
-    } else {
-      // Annualizza il reddito maturato (montante + turni, già in annualGross) sui
-      // mesi trascorsi dell'anno corrente. Include il montante e non gonfia il
-      // reddito annualizzando un singolo mese.
-      const now = new Date();
-      const monthsElapsed = year === now.getFullYear() ? now.getMonth() + 1 : 12;
-      netBasis = monthsElapsed > 0 ? (annualGross * 12) / monthsElapsed : annualGross;
-    }
+  if ((settings.tiProjectionMode || 'stimato') === 'ytd') {
+    const now = new Date();
+    const monthsElapsed = year === now.getFullYear() ? now.getMonth() + 1 : 12;
+    const cumulativo = annualGross + fixedMonthlyTotal * monthsElapsed + bonusYTD;
+    netBasis = monthsElapsed > 0 ? (cumulativo * 12) / monthsElapsed : cumulativo;
   } else {
-    const projectedAnnual = ENABLE_NET_CALC ? projectAnnualGross(settings) : 0;
-    netBasis = projectedAnnual > 0 ? projectedAnnual : annualGross;
+    let base;
+    if (settings.onCall) {
+      const manual = Number(settings.annualGrossManual) || 0;
+      if (manual > 0) {
+        base = manual;
+      } else {
+        const now = new Date();
+        const monthsElapsed = year === now.getFullYear() ? now.getMonth() + 1 : 12;
+        base = monthsElapsed > 0 ? (annualGross * 12) / monthsElapsed : annualGross;
+      }
+    } else {
+      const projectedAnnual = ENABLE_NET_CALC ? projectAnnualGross(settings) : 0;
+      base = projectedAnnual > 0 ? projectedAnnual : annualGross;
+    }
+    netBasis = base + fixedAnnual + bonusYearAll;
   }
+
   // Mensilità aggiuntiva che cade in questo mese (quattordicesima a giu, tredicesima a dic).
   const extraThisMonth = ENABLE_NET_CALC
     ? monthlyBaseGross(settings) * (
@@ -125,17 +148,13 @@ export default function CalendarView({
         + (settings.hasTredicesima && month === EXTRA_MONTHS.tredicesima ? 1 : 0)
       )
     : 0;
-  // Voci fisse mensili (ricorrenti) e bonus del singolo mese: sommati al lordo.
-  const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
-  const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
-    .reduce((s, v) => s + (Number(v.amount) || 0), 0);
-  const perMonthBonus = Number(settings.monthlyBonus?.[monthKey]) || 0;
   const monthGross = (pay ? pay.total : 0) + extraThisMonth + fixedMonthlyTotal + perMonthBonus;
   const netMonth = ENABLE_NET_CALC ? calcNetMonthly(monthGross, netBasis, settings, daysInMonth) : null;
   const monthNet = netMonth ? netMonth.net : 0;
   const monthTrattenute = netMonth ? netMonth.trattenute : 0;
   const monthBonus = netMonth ? netMonth.bonus : 0;
   const monthTfr = netMonth ? netMonth.tfr : 0;
+  const tiInfo = ENABLE_NET_CALC ? tiDecision(netBasis, settings) : null;
   const effectiveRatePct = monthGross > 0 ? (monthTrattenute / monthGross) * 100 : 0;
   const addRegPct = Number.isFinite(Number(settings.addRegionalePct)) ? Number(settings.addRegionalePct) : TAX_2026.ADD_REGIONALE_DEFAULT;
   const addComPct = Number.isFinite(Number(settings.addComunalePct)) ? Number(settings.addComunalePct) : TAX_2026.ADD_COMUNALE_DEFAULT;
@@ -527,6 +546,12 @@ export default function CalendarView({
                       <div className="net-line net-line--bonus"><span>Anticipo TFR (quota mese)</span><span>+{fmt0(netMonth.tfr)}</span></div>
                     )}
                   </>
+                )}
+
+                {tiInfo && (
+                  <div className="net-subnote">
+                    TI automatico: {tiInfo.motivo} · reddito annuo stimato {fmt0(tiInfo.redditoStimato)}
+                  </div>
                 )}
 
                 <div className="net-line net-line--total"><span>Netto del mese</span><span>{fmt0(netMonth.net)}</span></div>
