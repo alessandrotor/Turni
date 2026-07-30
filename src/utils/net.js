@@ -321,9 +321,16 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   const bonus = trattamentoIntegrativo + bonusCuneo;
 
   // Anticipo TFR in busta (opzionale): quota che matura sul lordo (1/13,5 meno lo
-  // 0,50% al Fondo di garanzia ≈ 6,91%). Esclusa da IRPEF/contributi: si aggiunge
-  // come anticipo sul netto.
-  const tfr = settings.tfrInBusta ? gross * (1 / 13.5 - 0.005) : 0;
+  // 0,50% al Fondo di garanzia ≈ 6,91%). NON è soggetto a IRPEF ordinaria/contributi,
+  // ma a TASSAZIONE SEPARATA (aliquota media, senza addizionali): a differenza di TI e
+  // cuneo — che sono esenti — qui l'imposta va sottratta. Aliquota stimata (default 23%,
+  // dove cade quasi sempre il reddito di riferimento del TFR) o impostabile a mano.
+  const tfrLordo = settings.tfrInBusta ? gross * (1 / 13.5 - 0.005) : 0;
+  const aliqTfr = Number.isFinite(Number(settings.tfrTaxRate)) && settings.tfrTaxRate !== ''
+    ? Number(settings.tfrTaxRate) / 100
+    : 0.23;
+  const tfrImposta = tfrLordo * aliqTfr;
+  const tfr = tfrLordo - tfrImposta;
 
   const net = gross - trattenute + bonus + tfr;
 
@@ -331,6 +338,7 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
     gross, contributi, imponibile,
     irpefLorda, detrazioni, irpefNetta,
     addRegionale, addComunale, trattenute,
-    trattamentoIntegrativo, bonusCuneo, bonus, tfr, net,
+    trattamentoIntegrativo, bonusCuneo, bonus,
+    tfrLordo, tfrImposta, aliqTfr, tfr, net,
   };
 }

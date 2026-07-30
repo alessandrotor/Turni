@@ -35,6 +35,7 @@ const DEFAULT_SETTINGS = {
   annualGrossManual: 0,      // reddito annuo lordo stimato (per aliquota fiscale)
   dailyOvertimeThreshold: 0, // ore/giorno oltre cui scatta lo straordinario
   tfrInBusta: false,         // aggiungi la quota TFR come anticipo sul netto
+  tfrTaxRate: '',            // aliquota tassazione separata TFR (%) — vuoto = default 23%
 };
 
 export default function App() {

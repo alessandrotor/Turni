@@ -33,6 +33,7 @@ export default function Settings({ settings, onSave }) {
     hasTredicesima: !!settings.hasTredicesima,
     hasQuattordicesima: !!settings.hasQuattordicesima,
     tfrInBusta: !!settings.tfrInBusta,
+    tfrTaxRate: settings.tfrTaxRate === '' || settings.tfrTaxRate == null ? '' : toInput(settings.tfrTaxRate),
     previousRates: (Array.isArray(settings.previousRates) ? settings.previousRates : []).map(c => ({
       id: c.id ?? genId(),
       until: c.until ?? '',
@@ -138,6 +139,7 @@ export default function Settings({ settings, onSave }) {
       hasTredicesima: form.hasTredicesima,
       hasQuattordicesima: form.hasQuattordicesima,
       tfrInBusta: form.tfrInBusta,
+      tfrTaxRate: form.tfrTaxRate === '' ? '' : parseNum(form.tfrTaxRate),
       previousRates,
       fixedMonthlyItems,
       monthlyBonus: settings.monthlyBonus || {}, // gestito dal calendario, va preservato
@@ -541,6 +543,28 @@ export default function Settings({ settings, onSave }) {
             />
             <span>Aggiungi la quota TFR in busta (anticipo sul netto)</span>
           </label>
+
+          {form.tfrInBusta && (
+            <div className="form-group">
+              <label className="form-label" htmlFor="tfr-tax">Aliquota TFR — tassazione separata (%)</label>
+              <div className="input-with-symbol">
+                <span className="input-symbol">%</span>
+                <input
+                  id="tfr-tax"
+                  type="text"
+                  inputMode="decimal"
+                  className="form-input form-input--with-symbol"
+                  placeholder="23"
+                  value={form.tfrTaxRate}
+                  onChange={set('tfrTaxRate')}
+                />
+              </div>
+              <p className="form-hint">
+                Il TFR è tassato a parte con l'aliquota media dei tuoi redditi (niente addizionali).
+                Se la conosci dalla busta mettila qui; vuoto = stima al 23%.
+              </p>
+            </div>
+          )}
         </details>
 
         {/* Addizionali IRPEF — beta netto (gated dal feature flag) */}

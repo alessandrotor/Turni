@@ -559,7 +559,12 @@ export default function CalendarView({
                       <div className="net-line net-line--bonus"><span>Indennità 207/2024 (quota mese)</span><span>+{fmt0(netMonth.bonusCuneo)}</span></div>
                     )}
                     {netMonth.tfr > 0 && (
-                      <div className="net-line net-line--bonus"><span>Anticipo TFR (quota mese)</span><span>+{fmt0(netMonth.tfr)}</span></div>
+                      <>
+                        <div className="net-line net-line--bonus"><span>Anticipo TFR (quota mese)</span><span>+{fmt0(netMonth.tfr)}</span></div>
+                        <div className="net-subnote">
+                          lordo {fmt0(netMonth.tfrLordo)} − imposta separata ~{(netMonth.aliqTfr * 100).toFixed(0)}% {fmt0(netMonth.tfrImposta)}
+                        </div>
+                      </>
                     )}
                   </>
                 )}
@@ -575,7 +580,7 @@ export default function CalendarView({
                   Stima indicativa (fiscalità 2026). Le trattenute sono quelle vere della busta paga
                   (contributi + IRPEF netta + addizionali). Trattamento integrativo (€1.200/anno) e
                   Indennità 207/2024 sono importi annui rapportati ai giorni del mese (÷365).
-                  {netMonth.tfr > 0 && ' L\'anticipo TFR è ~6,91% del lordo (tassazione separata).'}
+                  {netMonth.tfr > 0 && ` L'anticipo TFR è ~6,91% del lordo, tassato a parte (tassazione separata ~${(netMonth.aliqTfr * 100).toFixed(0)}%, stima).`}
                   {' '}Non sostituisce la busta paga né il conguaglio.
                 </p>
               </div>
