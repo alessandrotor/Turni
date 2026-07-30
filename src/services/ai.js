@@ -1,10 +1,14 @@
-import Anthropic from '@anthropic-ai/sdk';
+// NOTA: modulo attualmente NON referenziato — il riepilogo AI nel calendario è
+// disattivato. Restando fuori dal grafo degli import, l'SDK Anthropic non
+// finisce nel bundle (pesava ~150 KB nel chunk principale). Se si riattiva la
+// funzione, tenere l'import di Anthropic dinamico come qui sotto.
 import { GoogleGenAI } from '@google/genai';
 import { calcShiftMinutes } from '../utils/pay';
 import { formatMonthYear } from '../utils/dates';
 
 // Riepilogo mensile via Claude (opt-in, se presente la chiave Anthropic).
 async function summaryWithAnthropic(prompt) {
+  const { default: Anthropic } = await import('@anthropic-ai/sdk');
   const client = new Anthropic({
     apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
     dangerouslyAllowBrowser: true,

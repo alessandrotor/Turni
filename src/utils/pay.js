@@ -24,6 +24,8 @@ export function calcPay(workedHours, hourlyRate) {
 
 // Parsing robusto di numeri all'italiana: accetta "7123,28", "17.213,28"
 // e anche "7123.28". La virgola, se presente, è il separatore decimale.
+// Senza virgola, i punti che formano gruppi da tre cifre sono migliaia
+// ("17.213" → 17213); un punto isolato resta decimale ("7123.28" → 7123.28).
 export function parseNum(v) {
   if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
   if (v == null) return 0;
@@ -31,6 +33,8 @@ export function parseNum(v) {
   if (s === '') return 0;
   if (s.includes(',')) {
     s = s.replace(/\./g, '').replace(',', '.'); // punto = migliaia, virgola = decimali
+  } else if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) {
+    s = s.replace(/\./g, ''); // solo gruppi da tre cifre: separatore di migliaia
   }
   const n = parseFloat(s);
   return Number.isFinite(n) ? n : 0;
@@ -115,7 +119,14 @@ export function computePayByShift(allShifts, settings) {
       const overtimeBase = overtimeMin * ratePerMin;
       const surcharge = shiftBase * (pct / 100) + overtimeBase * (otPct / 100);
 
-      result[s.id] = { base: shiftBase, surcharge, overtimeMinutes: overtimeMin };
+      result[s.id] = {
+        base: shiftBase,
+        surcharge,
+        overtimeMinutes: overtimeMin,
+        // Nessuna paga applicabile a questa data: il turno vale 0 € e va
+        // segnalato, altrimenti il totale è silenziosamente sottostimato.
+        missingRate: ratePerMin <= 0 && m > 0,
+      };
       cumMin += m;
     }
   }
@@ -138,25 +149,20 @@ export function calcTotalPay(shifts, settings, allShifts = shifts) {
   let base = 0;
   let surcharge = 0;
   let overtimeMinutes = 0;
+  let shiftsWithoutRate = 0;
   shifts.forEach(s => {
     const p = byShift[s.id];
     if (p) {
       base += p.base;
       surcharge += p.surcharge;
       overtimeMinutes += p.overtimeMinutes;
+      if (p.missingRate) shiftsWithoutRate += 1;
     }
   });
-  return { base, surcharge, total: base + surcharge, overtimeMinutes };
+  return { base, surcharge, total: base + surcharge, overtimeMinutes, shiftsWithoutRate };
 }
 
 export function formatCurrency(amount) {
-  return amount.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
-}
-
-// Struttura predisposta per futura integrazione CCNL
-// eslint-disable-next-line no-unused-vars
-export function calcCCNLPay(_shifts, _ccnlCode, _level) {
-  // TODO: implementare calcolo con tabelle CCNL
-  // es. CCNL Commercio, Metalmeccanici, Sanità...
-  throw new Error('Calcolo CCNL non ancora implementato');
+  const n = Number.isFinite(Number(amount)) ? Number(amount) : 0;
+  return n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
 }

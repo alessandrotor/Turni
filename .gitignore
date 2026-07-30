@@ -3,4 +3,6 @@ dist
 .env.local
 .env
 Turni.apk
+Turni.zip
 phone.txt
+tests/

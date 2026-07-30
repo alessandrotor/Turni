@@ -118,6 +118,19 @@ function trattamentoIntegrativo(reddito, irpef, detLavoro, detrTotali) {
 // Settimane retribuite in un anno (convenzione standard).
 export const WEEKS_PER_YEAR = 52;
 
+// Conversioni lordo ↔ imponibile fiscale. Le soglie di legge (15.000/28.000 per
+// il trattamento integrativo, 20.000/40.000 per il cuneo) sono definite sul
+// REDDITO COMPLESSIVO, che per un dipendente è il lordo al netto dei contributi
+// IVS. Chi ragiona in lordo (come l'utente che somma i turni) ha bisogno di
+// queste due funzioni per confrontare mele con mele.
+export function grossToTaxable(gross) {
+  return Math.max(0, Number(gross) || 0) * (1 - TAX_2026.ALIQUOTA_IVS);
+}
+
+export function taxableToGross(taxable) {
+  return Math.max(0, Number(taxable) || 0) / (1 - TAX_2026.ALIQUOTA_IVS);
+}
+
 // Mesi (indice 0-11) in cui arrivano le mensilità aggiuntive.
 export const EXTRA_MONTHS = {
   quattordicesima: 5,  // giugno
@@ -126,7 +139,11 @@ export const EXTRA_MONTHS = {
 
 // Retribuzione mensile "base" da contratto: ore settimanali × paga oraria × (52/12).
 // Serve come importo indicativo della tredicesima/quattordicesima (≈ una mensilità).
+// Per un lavoratore a chiamata non esiste un orario contrattuale: le ore
+// settimanali rimaste in memoria da una configurazione precedente darebbero una
+// mensilità inventata, quindi vale 0.
 export function monthlyBaseGross(settings = {}) {
+  if (settings.onCall) return 0;
   const rate = Math.max(0, Number(settings.hourlyRate) || 0);
   const weeklyHours = Math.max(0, Number(settings.expectedWeeklyHours) || 0);
   return rate * weeklyHours * (WEEKS_PER_YEAR / 12);
@@ -192,9 +209,11 @@ export function calcNetAnnual(grossAnnual, settings = {}) {
   const pctOr = (v, def) => (Number.isFinite(Number(v)) ? Number(v) : def);
   const aliqReg = pctOr(settings.addRegionalePct, T.ADD_REGIONALE_DEFAULT) / 100;
   const aliqCom = pctOr(settings.addComunalePct, T.ADD_COMUNALE_DEFAULT) / 100;
-  // Le addizionali sono dovute solo se c'è imposta netta
-  const addRegionale = irpefNetta > 0 ? imponibile * aliqReg : 0;
-  const addComunale = irpefNetta > 0 ? imponibile * aliqCom : 0;
+  // Le addizionali sono dovute solo se c'è imposta netta, e solo se non sono
+  // già trattenute da un altro datore (stessa regola del calcolo mensile).
+  const addDovute = !settings.addizionaliAltrove && irpefNetta > 0;
+  const addRegionale = addDovute ? imponibile * aliqReg : 0;
+  const addComunale = addDovute ? imponibile * aliqCom : 0;
 
   const ti = trattamentoIntegrativo(imponibile, lorda, detLav, detrTotali);
   const cuneo = bonusCuneo(imponibile, imponibile);

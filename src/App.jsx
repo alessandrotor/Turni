@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import useLocalStorage from './hooks/useLocalStorage';
 import { getMonthStart, parseDate } from './utils/dates';
 import { calcTotalPay } from './utils/pay';
@@ -39,10 +39,19 @@ const DEFAULT_SETTINGS = {
 
 export default function App() {
   const [shifts, setShifts] = useLocalStorage('turni_shifts', {});
-  const [settings, setSettings] = useLocalStorage('turni_settings', DEFAULT_SETTINGS);
+  const [storedSettings, setSettings] = useLocalStorage('turni_settings', DEFAULT_SETTINGS);
   const [view, setView] = useState('calendar');
   const [currentMonth, setCurrentMonth] = useState(() => getMonthStart(new Date()));
   const [modal, setModal] = useState(null); // null | {type:'add',date} | {type:'edit',shift}
+
+  // I settings salvati da una versione precedente non hanno i campi aggiunti
+  // dopo: senza questo merge resterebbero `undefined` e alcune funzioni si
+  // spegnerebbero in silenzio (es. expectedWeeklyHours mancante = nessuno
+  // straordinario calcolato finché non si risalva la pagina Impostazioni).
+  const settings = useMemo(
+    () => ({ ...DEFAULT_SETTINGS, ...storedSettings }),
+    [storedSettings],
+  );
 
   // Aggiorna solo alcuni campi delle impostazioni (es. workerName dal modal import)
   const updateSettings = useCallback((patch) => {
@@ -66,20 +75,25 @@ export default function App() {
     });
   }, [setShifts]);
 
-  const monthShifts = useCallback((monthDate) => {
-    const y = monthDate.getFullYear();
-    const m = monthDate.getMonth();
-    return Object.values(shifts).filter(s => {
+  // Elenco piatto dei turni, calcolato una volta sola: serve sia come contesto
+  // per gli straordinari sia come sorgente delle viste. Ricrearlo a ogni render
+  // (Object.values inline) invaliderebbe ogni memo a valle.
+  const allShifts = useMemo(() => Object.values(shifts), [shifts]);
+
+  const monthShifts = useMemo(() => {
+    const y = currentMonth.getFullYear();
+    const m = currentMonth.getMonth();
+    return allShifts.filter(s => {
       const d = parseDate(s.date);
       return d.getFullYear() === y && d.getMonth() === m;
     });
-  }, [shifts]);
+  }, [allShifts, currentMonth]);
 
   // Reddito annuo lordo maturato dai turni dell'anno visualizzato,
   // più il montante fiscale già maturato prima di usare l'app.
-  const annualGross = useCallback((monthDate) => {
-    const y = monthDate.getFullYear();
-    const yearShifts = Object.values(shifts).filter(s => parseDate(s.date).getFullYear() === y);
+  const annualGross = useMemo(() => {
+    const y = currentMonth.getFullYear();
+    const yearShifts = allShifts.filter(s => parseDate(s.date).getFullYear() === y);
     // Confine automatico a granularità MESE: il montante rappresenta il reddito fino
     // al mese in cui è stato impostato. I turni dei mesi ≤ mese di riferimento sono già
     // inclusi nel montante e NON vanno ri-sommati (evita il doppio conteggio); si
@@ -90,19 +104,34 @@ export default function App() {
     const sameYear = cutoff && Number(cutoff.slice(0, 4)) === y;
     const useCutoff = montante > 0 && sameYear;
     const counted = useCutoff ? yearShifts.filter(s => s.date.slice(0, 7) > cutoffMonth) : yearShifts;
-    const pay = calcTotalPay(counted, settings, yearShifts);
+    // Contesto straordinari = TUTTI i turni, non solo quelli dell'anno: le
+    // settimane lun-dom a cavallo di capodanno vanno raggruppate per intero,
+    // altrimenti lo stesso mese vale una cifra qui e un'altra nel calendario.
+    const pay = calcTotalPay(counted, settings, allShifts);
     const fromShifts = pay ? pay.total : 0;
-    // Mensilità aggiuntive già arrivate entro il mese visualizzato (es. a luglio
-    // la quattordicesima di giugno è già stata incassata).
-    const extras = monthlyBaseGross(settings) * receivedExtraMonthsCount(settings, monthDate.getMonth());
+    // Mensilità aggiuntive già incassate, in base alla data ODIERNA (non al mese
+    // che si sta sfogliando): altrimenti aprire dicembre farebbe risultare la
+    // tredicesima già presa, cambiando reddito annuo, aliquota e soglie bonus.
+    const now = new Date();
+    let extras = 0;
+    if (y <= now.getFullYear()) {
+      const monthIndex = y < now.getFullYear() ? 11 : now.getMonth();
+      extras = monthlyBaseGross(settings) * receivedExtraMonthsCount(settings, monthIndex);
+    }
     const applyMontante = montante > 0 && (!cutoff || sameYear);
-    return fromShifts + (applyMontante ? montante : 0) + extras;
-  }, [shifts, settings]);
+    return { total: fromShifts + (applyMontante ? montante : 0) + extras, extras };
+  }, [allShifts, settings, currentMonth]);
 
   const importShifts = useCallback((parsedShifts) => {
     setShifts(prev => {
       const next = { ...prev };
+      // Deduplica su data+orari: reimportare la stessa foto (o una foto che si
+      // sovrappone a turni già inseriti) non deve creare doppioni.
+      const seen = new Set(Object.values(prev).map(s => `${s.date}|${s.startTime}|${s.endTime}`));
       parsedShifts.forEach(shiftData => {
+        const key = `${shiftData.date}|${shiftData.startTime}|${shiftData.endTime}`;
+        if (seen.has(key)) return;
+        seen.add(key);
         const id = Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
         next[id] = { ...shiftData, id, breakMinutes: shiftData.breakMinutes || 0, note: shiftData.note || '' };
       });
@@ -125,15 +154,15 @@ export default function App() {
           <CalendarView
             currentMonth={currentMonth}
             onMonthChange={setCurrentMonth}
-            shifts={monthShifts(currentMonth)}
+            shifts={monthShifts}
             onAddShift={(date) => setModal({ type: 'add', date })}
             onEditShift={(shift) => setModal({ type: 'edit', shift })}
-            onDeleteShift={deleteShift}
             onImportShifts={importShifts}
             settings={settings}
             onUpdateSettings={updateSettings}
-            allShifts={Object.values(shifts)}
-            annualGross={annualGross(currentMonth)}
+            allShifts={allShifts}
+            annualGross={annualGross.total}
+            annualExtras={annualGross.extras}
           />
         )}
 

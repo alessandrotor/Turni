@@ -1,6 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { formatCurrency, parseNum } from '../utils/pay';
-import { formatMonthYear } from '../utils/dates';
 import { ENABLE_NET_CALC } from '../config/features';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
@@ -13,6 +12,9 @@ const toInput = (n) => {
 
 const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
+// Mese di riferimento del montante, come 'YYYY-MM' per <input type="month">.
+const currentMonthValue = () => new Date().toISOString().slice(0, 7);
+
 export default function Settings({ settings, onSave }) {
   const [form, setForm] = useState({
     hourlyRate: toInput(settings.hourlyRate),
@@ -20,6 +22,10 @@ export default function Settings({ settings, onSave }) {
     sundaySurchargePct: settings.sundaySurchargePct ?? 0,
     overtimeSurchargePct: settings.overtimeSurchargePct ?? 0,
     priorTaxableIncome: toInput(settings.priorTaxableIncome),
+    // Mese fino al quale il montante è comprensivo dei turni. Va scelto
+    // dall'utente: dedurlo dalla data di salvataggio sbagliava di un mese chi
+    // inseriva il dato a inizio mese pensando "fino al mese scorso".
+    priorIncomeMonth: (settings.priorIncomeDate || '').slice(0, 7) || currentMonthValue(),
     workerName: settings.workerName ?? '',
     onCall: !!settings.onCall,
     annualGrossManual: toInput(settings.annualGrossManual),
@@ -44,6 +50,10 @@ export default function Settings({ settings, onSave }) {
     tiProjectionMode: settings.tiProjectionMode === 'ytd' ? 'ytd' : 'stimato',
   });
   const [saved, setSaved] = useState(false);
+  // Il timer del messaggio "Salvato!" va annullato allo smontaggio: cambiando
+  // vista entro 2 secondi si aggiornerebbe lo stato di un componente sparito.
+  const savedTimer = useRef(null);
+  useEffect(() => () => clearTimeout(savedTimer.current), []);
 
   const set = (field) => (e) => {
     setForm(f => ({ ...f, [field]: e.target.value }));
@@ -104,17 +114,15 @@ export default function Settings({ settings, onSave }) {
       .filter(v => parseNum(v.amount) > 0)
       .map(v => ({ id: v.id, label: (v.label || '').trim() || 'Voce fissa', amount: parseNum(v.amount) }));
 
-    // Montante: registra il mese di riferimento (confine turni). Va impostato al PRIMO
-    // salvataggio con montante > 0 (anche se l'importo non cambia) e ogni volta che
-    // l'importo cambia. Azzerato se il montante va a 0.
+    // Montante: il mese di riferimento (confine turni) è quello scelto
+    // dall'utente. Si conserva come data ISO al primo giorno del mese, perché
+    // il resto dell'app lavora su 'YYYY-MM' via slice. Azzerato se il montante
+    // va a 0.
     const newMontante = parseNum(form.priorTaxableIncome);
-    const oldMontante = Number(settings.priorTaxableIncome) || 0;
-    let priorIncomeDate = settings.priorIncomeDate || '';
-    if (newMontante <= 0) {
-      priorIncomeDate = '';
-    } else if (newMontante !== oldMontante || !priorIncomeDate) {
-      priorIncomeDate = new Date().toISOString().slice(0, 10);
-    }
+    const month = /^\d{4}-\d{2}$/.test(form.priorIncomeMonth)
+      ? form.priorIncomeMonth
+      : currentMonthValue();
+    const priorIncomeDate = newMontante > 0 ? `${month}-01` : '';
 
     onSave({
       hourlyRate: parseNum(form.hourlyRate),
@@ -140,7 +148,8 @@ export default function Settings({ settings, onSave }) {
       tiProjectionMode: form.tiProjectionMode,
     });
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    clearTimeout(savedTimer.current);
+    savedTimer.current = setTimeout(() => setSaved(false), 2000);
   };
 
   const hourlyRate = parseNum(form.hourlyRate);
@@ -444,15 +453,15 @@ export default function Settings({ settings, onSave }) {
           <p className="settings-section-desc">
             Nel calendario vedi il tuo <strong>reddito totale</strong> dell'anno e quanto puoi
             ancora guadagnare prima di superare le soglie del trattamento integrativo (ex bonus
-            Renzi). Inserisci il <strong>lordo totale già guadagnato quest'anno fino a questo mese</strong>:
-            l'app registra il <strong>mese corrente</strong> come riferimento e dai mesi successivi
-            <strong>aggiunge automaticamente</strong> i turni che inserisci, senza contare due volte
+            Renzi). Inserisci il <strong>lordo totale già guadagnato quest'anno</strong> e
+            <strong> fino a quale mese</strong> è compreso: dai mesi successivi l'app
+            <strong> aggiunge automaticamente</strong> i turni che inserisci, senza contare due volte
             quelli già compresi. Può includere anche redditi da altri lavori. Se inserisci tutti i
             turni dell'anno da zero, lascia 0.
           </p>
 
           <div className="form-group">
-            <label className="form-label" htmlFor="prior-income">Reddito lordo già guadagnato quest'anno (fino a questo mese)</label>
+            <label className="form-label" htmlFor="prior-income">Reddito lordo già guadagnato quest'anno</label>
             <div className="input-with-symbol">
               <span className="input-symbol">€</span>
               <input
@@ -465,13 +474,24 @@ export default function Settings({ settings, onSave }) {
                 onChange={set('priorTaxableIncome')}
               />
             </div>
-            {settings.priorIncomeDate && parseNum(form.priorTaxableIncome) > 0 && (
-              <p className="form-hint">
-                Riferimento: {formatMonthYear(new Date(Number(settings.priorIncomeDate.slice(0, 4)), Number(settings.priorIncomeDate.slice(5, 7)) - 1, 1))}.
-                I turni dei mesi successivi vengono sommati. Cambia l'importo per aggiornare il mese.
-              </p>
-            )}
           </div>
+
+          {parseNum(form.priorTaxableIncome) > 0 && (
+            <div className="form-group">
+              <label className="form-label" htmlFor="prior-month">Comprende i turni fino a tutto il mese di</label>
+              <input
+                id="prior-month"
+                type="month"
+                className="form-input"
+                value={form.priorIncomeMonth}
+                onChange={set('priorIncomeMonth')}
+              />
+              <p className="form-hint">
+                I turni di questo mese e dei precedenti sono considerati già inclusi nell'importo
+                qui sopra; quelli dei mesi successivi vengono sommati.
+              </p>
+            </div>
+          )}
         </details>
 
         {/* Tredicesima e quattordicesima */}

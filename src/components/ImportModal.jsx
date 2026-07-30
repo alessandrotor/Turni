@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
-import { parseDate, formatDayShort } from '../utils/dates';
-import { minutesDiff, formatMinutes } from '../utils/dates';
+import { useRef } from 'react';
+import { parseDate, formatDayShort, minutesDiff, formatMinutes } from '../utils/dates';
+import useModalDismiss from '../hooks/useModalDismiss';
 
 function ShiftPreviewRow({ shift }) {
   const mins = minutesDiff(shift.startTime, shift.endTime) - (shift.breakMinutes || 0);
@@ -26,17 +26,13 @@ function ShiftPreviewRow({ shift }) {
 }
 
 export default function ImportModal({ shifts, onConfirm, onClose }) {
-  const ref = useRef();
-
-  useEffect(() => {
-    const onKey = e => e.key === 'Escape' && onClose();
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  const ref = useRef(null);
+  const dialogRef = useRef(null);
+  useModalDismiss(dialogRef, onClose);
 
   return (
     <div className="modal-overlay" onClick={e => e.target === ref.current && onClose()} ref={ref}>
-      <div className="modal">
+      <div ref={dialogRef} className="modal" role="dialog" aria-modal="true" aria-label="Conferma importazione">
         <div className="modal-header">
           <span className="modal-title">Conferma importazione</span>
           <button className="modal-close" onClick={onClose}>✕</button>
@@ -50,8 +46,8 @@ export default function ImportModal({ shifts, onConfirm, onClose }) {
           <div className="import-list">
             {shifts
               .slice()
-              .sort((a, b) => a.date.localeCompare(b.date))
-              .map((s, i) => <ShiftPreviewRow key={i} shift={s} />)
+              .sort((a, b) => a.date.localeCompare(b.date) || (a.startTime || '').localeCompare(b.startTime || ''))
+              .map(s => <ShiftPreviewRow key={`${s.date}|${s.startTime}|${s.endTime}`} shift={s} />)
             }
           </div>
         </div>

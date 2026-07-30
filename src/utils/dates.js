@@ -27,6 +27,16 @@ export function parseDate(str) {
   return new Date(y, m - 1, d);
 }
 
+// L'app usa ovunque la stringa ISO 'YYYY-MM-DD' come chiave e come criterio di
+// ordinamento (slice per anno/mese, confronti lessicografici). Una data fuori
+// formato passerebbe i controlli truthy ma non combacerebbe con le celle del
+// calendario: qui si verifica sia il formato sia che sia un giorno reale.
+export function isIsoDate(str) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(str ?? ''))) return false;
+  const d = parseDate(str);
+  return !Number.isNaN(d.getTime()) && formatDate(d) === str;
+}
+
 const DAY_NAMES = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
 const MONTH_NAMES = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
 
@@ -46,16 +56,29 @@ export function formatWeekRange(weekStart) {
   return `${startStr} – ${endStr}`;
 }
 
+// 'HH:MM' → minuti dalla mezzanotte, oppure null se non è un orario valido.
+// Serve a non propagare NaN fino alla UI quando un campo orario è vuoto o
+// contiene un formato inatteso (es. import da immagine).
+export function parseTime(value) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(value ?? '').trim());
+  if (!m) return null;
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  if (h > 23 || min > 59) return null;
+  return h * 60 + min;
+}
+
 export function minutesDiff(startTime, endTime) {
-  const [sh, sm] = startTime.split(':').map(Number);
-  const [eh, em] = endTime.split(':').map(Number);
-  let mins = (eh * 60 + em) - (sh * 60 + sm);
+  const start = parseTime(startTime);
+  const end = parseTime(endTime);
+  if (start === null || end === null) return 0;
+  let mins = end - start;
   if (mins < 0) mins += 24 * 60; // turno notturno
   return mins;
 }
 
 export function formatMinutes(mins) {
-  if (mins < 0) return '0h 00m';
+  if (!Number.isFinite(mins) || mins < 0) return '0h 00m';
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return `${h}h ${String(m).padStart(2, '0')}m`;

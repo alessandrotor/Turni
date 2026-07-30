@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type, MediaResolution } from '@google/genai';
+import { isIsoDate } from '../utils/dates';
 
 // SDK ufficiale mantenuto (@google/genai). Supporta structured output
 // (responseSchema/responseMimeType), thinkingConfig/thinkingBudget e restituisce
@@ -11,6 +12,17 @@ const MODEL = 'gemini-3-flash-preview';
 // modello "thinking" un cap basso troncherebbe il ragionamento e perderebbe
 // turni. Il thinking si controlla semmai con thinkingConfig (vedi sotto).
 const MAX_OUTPUT_TOKENS = 65536;
+
+// Oltre questo tempo la richiesta viene annullata: senza timeout una chiamata
+// che non risponde lascia il pulsante bloccato su "Analisi in corso" per sempre.
+const REQUEST_TIMEOUT_MS = 120000;
+
+// L'immagine viene ridimensionata prima dell'invio: `mediaResolution: LOW` fa
+// comunque scalare il modello lato server, quindi una foto da 12 MP servirebbe
+// solo a occupare memoria e banda (≈7 MB di base64).
+const MAX_IMAGE_SIDE = 1600;
+const RESIZE_MIME = 'image/jpeg';
+const RESIZE_QUALITY = 0.85;
 
 // Budget di thinking: lasciato al DEFAULT del modello per ora. Prima misuriamo
 // thoughtsTokenCount reale (log sotto), poi si decide un valore. Per applicarlo:
@@ -42,13 +54,44 @@ function getClient() {
   return new GoogleGenAI({ apiKey });
 }
 
-function fileToBase64(file) {
+function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Impossibile leggere il file selezionato'));
     reader.readAsDataURL(file);
   });
+}
+
+// Ridimensiona il lato lungo a MAX_IMAGE_SIDE mantenendo le proporzioni.
+// Se qualcosa non va (canvas non disponibile, immagine illeggibile) si ripiega
+// sull'originale: l'import deve funzionare comunque.
+async function prepareImage(file) {
+  const dataUrl = await fileToDataUrl(file);
+  const original = { data: String(dataUrl).split(',')[1], mimeType: file.type || 'image/jpeg' };
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error('decode'));
+      el.src = dataUrl;
+    });
+    const longest = Math.max(img.naturalWidth, img.naturalHeight);
+    if (!longest || longest <= MAX_IMAGE_SIDE) return original;
+
+    const scale = MAX_IMAGE_SIDE / longest;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(img.naturalWidth * scale);
+    canvas.height = Math.round(img.naturalHeight * scale);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return original;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const resized = canvas.toDataURL(RESIZE_MIME, RESIZE_QUALITY).split(',')[1];
+    if (!resized) return original;
+    return { data: resized, mimeType: RESIZE_MIME };
+  } catch {
+    return original;
+  }
 }
 
 // Log della ripartizione token: prompt (immagine+testo), output effettivo,
@@ -68,7 +111,7 @@ function logUsage(response) {
 
 export async function parseShiftsFromImage(imageFile, workerName = '') {
   const ai = getClient();
-  const base64 = await fileToBase64(imageFile);
+  const image = await prepareImage(imageFile);
   const currentYear = new Date().getFullYear();
 
   const name = String(workerName || '').trim();
@@ -86,23 +129,36 @@ ${nameRule}
 
 Allineamento: incrocia con attenzione la riga della persona con la colonna del giorno; non spostarti di riga/colonna. Gestisci immagini irregolari: screenshot WhatsApp, foto storte o ruotate, colonne non perfettamente allineate, celle unite. Ignora intestazioni, totali, legende e celle vuote/di riposo senza orario.`;
 
-  const response = await ai.models.generateContent({
-    model: MODEL,
-    contents: [
-      { text: prompt },
-      { inlineData: { mimeType: imageFile.type, data: base64 } },
-    ],
-    config: {
-      responseMimeType: 'application/json',
-      responseSchema,
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
-      // Estrazione deterministica: stessa immagine → stesso risultato.
-      temperature: 0,
-      // Risoluzione LOW: sui test (tabella + conversazione) l'accuratezza è
-      // identica ad HIGH/MID ma con meno token immagine (prompt ~600 vs ~1400).
-      mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW,
-    },
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  let response;
+  try {
+    response = await ai.models.generateContent({
+      model: MODEL,
+      contents: [
+        { text: prompt },
+        { inlineData: { mimeType: image.mimeType, data: image.data } },
+      ],
+      config: {
+        abortSignal: controller.signal,
+        responseMimeType: 'application/json',
+        responseSchema,
+        maxOutputTokens: MAX_OUTPUT_TOKENS,
+        // Estrazione deterministica: stessa immagine → stesso risultato.
+        temperature: 0,
+        // Risoluzione LOW: sui test (tabella + conversazione) l'accuratezza è
+        // identica ad HIGH/MID ma con meno token immagine (prompt ~600 vs ~1400).
+        mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW,
+      },
+    });
+  } catch (err) {
+    if (controller.signal.aborted) {
+      throw new Error(`Tempo scaduto (${REQUEST_TIMEOUT_MS / 1000}s): riprova con un'immagine più piccola o una connessione migliore.`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 
   logUsage(response);
 
@@ -138,11 +194,14 @@ Allineamento: incrocia con attenzione la riga della persona con la colonna del g
   if (!Array.isArray(raw) || raw.length === 0) throw new Error('Nessun turno trovato');
 
   // Mappa allo schema turni dell'app; conserva i campi di provenienza.
+  // Data e orari vengono NORMALIZZATI e validati: un valore fuori formato
+  // entrerebbe nei totali ma non combacerebbe con la chiave della cella del
+  // calendario, rendendo il turno invisibile e non modificabile.
   const shifts = raw
     .map(t => ({
       date: toIsoDate(t.data),
-      startTime: t.ora_inizio,
-      endTime: t.ora_fine,
+      startTime: toHHMM(t.ora_inizio),
+      endTime: toHHMM(t.ora_fine),
       breakMinutes: 0,
       note: cleanNote(t.codice_turno),
       _codice: t.codice_turno,
@@ -156,13 +215,32 @@ Allineamento: incrocia con attenzione la riga della persona con la colonna del g
 }
 
 // Normalizza la data a ISO YYYY-MM-DD. Il modello a volte restituisce
-// DD/MM/YYYY (o con . / -); l'app usa e ordina per stringa ISO.
+// DD/MM/YYYY (o con . / -) oppure ISO senza zero iniziale ("2026-7-5").
+// Ritorna '' se non è una data reale: il chiamante scarta il turno.
 function toIsoDate(d) {
   const s = String(d || '').trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  const m = s.match(/^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{4})$/);
-  if (m) return `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
-  return s;
+  let iso = '';
+  let m = s.match(/^(\d{4})[/.\-](\d{1,2})[/.\-](\d{1,2})$/);
+  if (m) {
+    iso = `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+  } else {
+    m = s.match(/^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{4})$/);
+    if (m) iso = `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+  }
+  return isIsoDate(iso) ? iso : '';
+}
+
+// Normalizza l'orario a HH:MM. Accetta "8:00", "08.00", "8,30", "0800".
+// Ritorna '' se non è un orario valido.
+function toHHMM(v) {
+  const s = String(v || '').trim();
+  if (!s) return '';
+  const m = s.match(/^(\d{1,2})[:.,h]?(\d{2})$/i);
+  if (!m) return '';
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  if (h > 23 || min > 59) return '';
+  return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }
 
 // Nota del turno: tiene sigle/luoghi (es. "CASSA", "Museo Napoleonico") ma

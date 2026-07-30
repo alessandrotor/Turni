@@ -175,6 +175,14 @@ input, select, textarea { font: inherit; }
 .cal-cell--weekend { background: #fafafa; }
 .cal-cell--weekend:hover { background: #f3f4f6; }
 
+/* Il numero del giorno è il pulsante "aggiungi turno" della cella */
+.cal-cell-add {
+  align-self: flex-start;
+  display: block;
+  padding: 0;
+  color: inherit;
+}
+
 .cal-day-num {
   font-size: .8rem;
   font-weight: 600;
@@ -201,6 +209,9 @@ input, select, textarea { font: inherit; }
 }
 
 .cal-shift-pill {
+  display: block;
+  width: 100%;
+  text-align: left;
   font-size: .65rem;
   font-weight: 600;
   color: var(--c-primary-dark);
@@ -378,38 +389,7 @@ input, select, textarea { font: inherit; }
   font-size: .8rem;
 }
 
-/* ── Week view ──────────────────────────────────────────────────── */
-.week-view {
-  max-width: 640px;
-  margin: 0 auto;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: .75rem;
-}
-
-/* Week header */
-.week-header {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  background: var(--c-card);
-  border-radius: var(--radius);
-  padding: .75rem 1rem;
-  box-shadow: var(--shadow);
-}
-
-.week-header-center {
-  flex: 1;
-  text-align: center;
-}
-
-.week-range {
-  font-weight: 600;
-  font-size: .95rem;
-  color: var(--c-text);
-}
-
+/* ── Navigazione periodo (usata dall'intestazione del calendario) ── */
 .week-today-btn {
   display: inline-block;
   margin-top: .2rem;
@@ -439,171 +419,7 @@ input, select, textarea { font: inherit; }
 }
 .week-nav-btn:hover { background: #bfdbfe; }
 
-/* Day rows */
-.days-list {
-  display: flex;
-  flex-direction: column;
-  gap: .5rem;
-}
-
-.day-row {
-  background: var(--c-card);
-  border-radius: var(--radius);
-  padding: .6rem .75rem;
-  display: flex;
-  align-items: flex-start;
-  gap: .75rem;
-  box-shadow: var(--shadow);
-  border-left: 3px solid transparent;
-  transition: border-color .15s;
-}
-
-.day-today {
-  border-left-color: var(--c-primary);
-}
-
-.day-weekend {
-  background: #fafafa;
-}
-
-.day-label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 36px;
-  padding-top: .1rem;
-}
-
-.day-name {
-  font-size: .7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  color: var(--c-text-2);
-  letter-spacing: .05em;
-}
-.day-today .day-name { color: var(--c-primary); }
-.day-weekend .day-name { color: var(--c-warning); }
-
-.day-date {
-  font-size: .85rem;
-  font-weight: 600;
-  color: var(--c-text);
-}
-
-.day-shifts {
-  flex: 1;
-  min-width: 0;
-}
-
-.shift-list {
-  display: flex;
-  flex-direction: column;
-  gap: .35rem;
-}
-
-/* Add shift button */
-.add-shift-btn {
-  display: block;
-  width: 100%;
-  padding: .45rem .75rem;
-  border-radius: var(--radius-sm);
-  font-size: .85rem;
-  color: var(--c-muted);
-  border: 1.5px dashed var(--c-border);
-  text-align: left;
-  transition: color .15s, border-color .15s, background .15s;
-}
-.add-shift-btn:hover {
-  color: var(--c-primary);
-  border-color: var(--c-primary-light);
-  background: var(--c-primary-light);
-}
-.add-shift-btn--secondary {
-  padding: .25rem .75rem;
-  font-size: .8rem;
-  text-align: center;
-  margin-top: .25rem;
-}
-
-/* Shift card */
-.shift-card {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  padding: .4rem .6rem;
-  background: var(--c-primary-light);
-  border-radius: var(--radius-sm);
-}
-
-.shift-times {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: .1rem;
-}
-.shift-time-range {
-  font-size: .9rem;
-  font-weight: 600;
-  color: var(--c-primary-dark);
-}
-.shift-break {
-  font-size: .72rem;
-  color: var(--c-text-2);
-}
-
-.shift-right {
-  display: flex;
-  align-items: center;
-  gap: .35rem;
-  flex-shrink: 0;
-}
-
-.shift-hours {
-  font-size: .85rem;
-  font-weight: 700;
-  color: var(--c-primary-dark);
-  min-width: 54px;
-  text-align: right;
-}
-
-.shift-note {
-  font-size: .85rem;
-  cursor: default;
-}
-
-.shift-action-btn {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
-  font-size: .85rem;
-  color: var(--c-primary);
-  background: transparent;
-  transition: background .15s;
-}
-.shift-action-btn:hover { background: rgba(37,99,235,.15); }
-.shift-action-btn--danger { color: var(--c-danger); }
-.shift-action-btn--danger:hover { background: var(--c-danger-light); }
-
-/* ── Week summary ───────────────────────────────────────────────── */
-.week-summary {
-  background: var(--c-card);
-  border-radius: var(--radius);
-  padding: 1rem;
-  box-shadow: var(--shadow);
-  display: flex;
-  flex-direction: column;
-  gap: .75rem;
-}
-
-.summary-row {
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
+/* ── Riepilogo ──────────────────────────────────────────────────── */
 .summary-item {
   display: flex;
   flex-direction: column;
@@ -625,44 +441,6 @@ input, select, textarea { font: inherit; }
 }
 
 .diff-positive { color: var(--c-success); }
-.diff-negative { color: var(--c-danger); }
-
-.summary-pay {
-  display: flex;
-  align-items: center;
-  gap: .6rem;
-  padding: .75rem 1rem;
-  background: var(--c-success-light);
-  border-radius: var(--radius-sm);
-}
-
-.summary-pay-label {
-  font-size: .8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .06em;
-  color: var(--c-success);
-  flex: 1;
-}
-
-.summary-pay-value {
-  font-size: 1.25rem;
-  font-weight: 800;
-  color: var(--c-success);
-}
-
-.summary-pay-rate {
-  font-size: .75rem;
-  color: var(--c-text-2);
-}
-
-.summary-pay--empty {
-  background: var(--c-bg);
-  font-size: .82rem;
-  color: var(--c-text-2);
-  font-style: italic;
-  text-align: center;
-}
 
 /* ── Modal ──────────────────────────────────────────────────────── */
 .modal-overlay {
@@ -991,6 +769,11 @@ input, select, textarea { font: inherit; }
   margin-top: .15rem;
 }
 
+.summary-sublabel--warn {
+  color: var(--c-warning);
+  font-weight: 600;
+}
+
 .form-hint {
   font-size: .74rem;
   color: var(--c-text-2);
@@ -1084,6 +867,13 @@ input, select, textarea { font: inherit; }
 
 .bonus-strip-note--warn {
   color: var(--c-warning);
+}
+
+/* Precisazione sulla base di calcolo della soglia (lordo vs imponibile) */
+.bonus-strip-hint {
+  display: block;
+  font-size: .72rem;
+  opacity: .8;
 }
 
 /* ── Aumenti di paga ────────────────────────────────────────────── */

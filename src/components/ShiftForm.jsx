@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { formatDate } from '../utils/dates';
-import { minutesDiff, formatMinutes } from '../utils/dates';
+import { useState, useRef } from 'react';
+import { formatDate, minutesDiff, formatMinutes } from '../utils/dates';
+import useModalDismiss from '../hooks/useModalDismiss';
 
 const BREAK_PRESETS = [
   { label: 'Nessuna', value: 0 },
@@ -41,28 +41,25 @@ function getInitialState(modal) {
 }
 
 export default function ShiftForm({ modal, onSave, onDelete, onClose }) {
-  const [form, setForm] = useState(() => getInitialState(modal));
+  // Stato iniziale calcolato una volta sola e condiviso dai due useState:
+  // ricostruirlo per il secondo era lavoro sprecato a ogni mount del modale.
+  const initial = useRef(null);
+  if (initial.current === null) initial.current = getInitialState(modal);
+
+  const [form, setForm] = useState(initial.current);
   const [customBreak, setCustomBreak] = useState(false);
   const [customSurcharge, setCustomSurcharge] = useState(
-    () => !SURCHARGE_PRESETS.some(p => p.value === Number(getInitialState(modal).surchargePct)),
+    () => !SURCHARGE_PRESETS.some(p => p.value === Number(initial.current.surchargePct)),
   );
 
-  useEffect(() => {
-    const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [onClose]);
+  const dialogRef = useRef(null);
+  useModalDismiss(dialogRef, onClose);
 
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }));
 
-  const workedMins = (() => {
-    try {
-      const total = minutesDiff(form.startTime, form.endTime);
-      return Math.max(0, total - (form.breakMinutes || 0));
-    } catch {
-      return 0;
-    }
-  })();
+  // minutesDiff ritorna 0 su orari non validi (campo svuotato), quindi qui non
+  // serve più intercettare nulla: la preview non può mostrare NaN.
+  const workedMins = Math.max(0, minutesDiff(form.startTime, form.endTime) - (Number(form.breakMinutes) || 0));
 
   const handleBreakPreset = (val) => {
     setCustomBreak(false);
@@ -92,7 +89,7 @@ export default function ShiftForm({ modal, onSave, onDelete, onClose }) {
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal" role="dialog" aria-modal="true" aria-label={isEdit ? 'Modifica turno' : 'Nuovo turno'}>
+      <div ref={dialogRef} className="modal" role="dialog" aria-modal="true" aria-label={isEdit ? 'Modifica turno' : 'Nuovo turno'}>
         <div className="modal-header">
           <h2 className="modal-title">{isEdit ? 'Modifica turno' : 'Nuovo turno'}</h2>
           <button className="modal-close" onClick={onClose} aria-label="Chiudi">✕</button>

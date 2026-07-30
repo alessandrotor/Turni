@@ -1,14 +1,16 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+import useModalDismiss from '../hooks/useModalDismiss';
 import {
   formatDate, formatMonthYear, isToday, isWeekend,
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth,
 } from '../utils/dates';
-import { calcShiftMinutes, calcTotalPay, formatCurrency, isSunday, parseNum } from '../utils/pay';
-import { calcBonusMargin, BONUS_CONST, BONUS_STATUS } from '../utils/bonus';
-import { calcNetMonthly, projectAnnualGross, monthlyBaseGross, EXTRA_MONTHS, TAX_2026, tiDecision } from '../utils/net';
+import { calcShiftMinutes, calcTotalPay, formatCurrency, parseNum } from '../utils/pay';
+import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
+import {
+  calcNetMonthly, projectAnnualGross, monthlyBaseGross,
+  extraMonthsCount, EXTRA_MONTHS, TAX_2026, tiDecision,
+} from '../utils/net';
 import { ENABLE_NET_CALC } from '../config/features';
-import { generateMonthlySummary } from '../services/ai';
-import { parseShiftsFromImage } from '../services/gemini';
 import { exportShiftsExcel, exportShiftsPDF } from '../services/export';
 import { sendImportTelemetry } from '../services/telemetry';
 import ImportModal from './ImportModal';
@@ -19,6 +21,11 @@ function formatMinutesShort(mins) {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+// Importo → stringa da mostrare nell'input (vuota se 0), con la virgola.
+function toAmountInput(n) {
+  return n ? String(n).replace('.', ',') : '';
 }
 
 export default function CalendarView({
@@ -32,11 +39,8 @@ export default function CalendarView({
   onUpdateSettings,
   allShifts,
   annualGross,
+  annualExtras = 0,
 }) {
-  const [aiSummary, setAiSummary] = useState(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiError, setAiError] = useState(null);
-
   const [importParsed, setImportParsed] = useState(null);
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState(null);
@@ -46,7 +50,8 @@ export default function CalendarView({
   const [importUsage, setImportUsage] = useState(null);
   const [exportBusy, setExportBusy] = useState(false);
   const [exportError, setExportError] = useState(null);
-  const fileInputRef = useRef();
+  const fileInputRef = useRef(null);
+  const nameModalRef = useRef(null);
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
@@ -60,19 +65,31 @@ export default function CalendarView({
     return d >= 1 && d <= daysInMonth ? d : null;
   });
 
-  // Group shifts by date
-  const byDate = {};
-  shifts.forEach(s => {
-    if (!byDate[s.date]) byDate[s.date] = [];
-    byDate[s.date].push(s);
-  });
+  // Turni raggruppati per data e ordinati per ora di inizio: senza sort le pill
+  // seguirebbero l'ordine di inserimento nell'oggetto, non quello cronologico.
+  const byDate = useMemo(() => {
+    const map = {};
+    shifts.forEach(s => {
+      if (!map[s.date]) map[s.date] = [];
+      map[s.date].push(s);
+    });
+    Object.values(map).forEach(list =>
+      list.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || '')));
+    return map;
+  }, [shifts]);
 
   // Monthly totals
-  const totalMins = shifts.reduce((sum, s) => sum + calcShiftMinutes(s), 0);
-  const pay = calcTotalPay(shifts, settings, allShifts || shifts);
+  const totalMins = useMemo(
+    () => shifts.reduce((sum, s) => sum + calcShiftMinutes(s), 0),
+    [shifts],
+  );
+  const pay = useMemo(
+    () => calcTotalPay(shifts, settings, allShifts || shifts),
+    [shifts, settings, allShifts],
+  );
 
   // Bonus busta paga: quanto manca alla soglia (reddito annuo dai turni)
-  const bonus = calcBonusMargin(annualGross);
+  const bonus = useMemo(() => calcBonusMargin(annualGross), [annualGross]);
   const fmt0 = (n) => formatCurrency(Math.round(n));
 
   // Montante + confine automatico (granularità MESE): composizione del reddito e avviso.
@@ -82,13 +99,15 @@ export default function CalendarView({
   const priorMonthLabel = priorMonth
     ? formatMonthYear(new Date(Number(priorMonth.slice(0, 4)), Number(priorMonth.slice(5, 7)) - 1, 1))
     : '';
-  let shiftsCovered = 0;
-  if (montante > 0 && priorMonth && priorMonth.slice(0, 4) === String(year)) {
-    const covered = (allShifts || []).filter(s => s.date.slice(0, 4) === String(year) && s.date.slice(0, 7) <= priorMonth);
-    const yearAll = (allShifts || []).filter(s => s.date.slice(0, 4) === String(year));
-    const p = calcTotalPay(covered, settings, yearAll);
-    shiftsCovered = p ? p.total : 0;
-  }
+  const shiftsCovered = useMemo(() => {
+    if (!(montante > 0 && priorMonth && priorMonth.slice(0, 4) === String(year))) return 0;
+    const covered = (allShifts || []).filter(
+      s => s.date.slice(0, 4) === String(year) && s.date.slice(0, 7) <= priorMonth);
+    // Contesto straordinari = tutti i turni (le settimane a cavallo d'anno
+    // devono restare intere), come in App.annualGross.
+    const p = calcTotalPay(covered, settings, allShifts || covered);
+    return p ? p.total : 0;
+  }, [montante, priorMonth, year, allShifts, settings]);
   const montanteMismatch = montante > 0 && shiftsCovered > 0
     && Math.abs(montante - shiftsCovered) > Math.max(500, 0.30 * shiftsCovered);
 
@@ -117,29 +136,34 @@ export default function CalendarView({
   //  - 'stimato': stima annua (contratto/RAL/a chiamata) + voci fisse ×12 + bonus dell'anno;
   //  - 'ytd': reddito maturato (montante+turni+voci fisse+bonus finora) annualizzato sui mesi trascorsi.
   const fixedAnnual = fixedMonthlyTotal * 12;
-  let netBasis;
-  if ((settings.tiProjectionMode || 'stimato') === 'ytd') {
+  const netBasis = useMemo(() => {
+    // 13ª/14ª sono una tantum: annualizzarle (×12/mesi trascorsi) le
+    // moltiplicherebbe: a luglio la 14ª di giugno varrebbe quasi due mensilità.
+    // Si annualizza solo la parte ricorrente e si riaggiungono per intero le
+    // mensilità aggiuntive previste nell'anno.
+    const recurring = Math.max(0, annualGross - annualExtras);
+    const extrasFullYear = ENABLE_NET_CALC
+      ? monthlyBaseGross(settings) * extraMonthsCount(settings)
+      : 0;
     const now = new Date();
     const monthsElapsed = year === now.getFullYear() ? now.getMonth() + 1 : 12;
-    const cumulativo = annualGross + fixedMonthlyTotal * monthsElapsed + bonusYTD;
-    netBasis = monthsElapsed > 0 ? (cumulativo * 12) / monthsElapsed : cumulativo;
-  } else {
+    const annualize = (v) => (monthsElapsed > 0 ? (v * 12) / monthsElapsed : v);
+
+    if ((settings.tiProjectionMode || 'stimato') === 'ytd') {
+      const cumulativo = recurring + fixedMonthlyTotal * monthsElapsed + bonusYTD;
+      return annualize(cumulativo) + extrasFullYear;
+    }
+
     let base;
     if (settings.onCall) {
       const manual = Number(settings.annualGrossManual) || 0;
-      if (manual > 0) {
-        base = manual;
-      } else {
-        const now = new Date();
-        const monthsElapsed = year === now.getFullYear() ? now.getMonth() + 1 : 12;
-        base = monthsElapsed > 0 ? (annualGross * 12) / monthsElapsed : annualGross;
-      }
+      base = manual > 0 ? manual : annualize(recurring);
     } else {
       const projectedAnnual = ENABLE_NET_CALC ? projectAnnualGross(settings) : 0;
       base = projectedAnnual > 0 ? projectedAnnual : annualGross;
     }
-    netBasis = base + fixedAnnual + bonusYearAll;
-  }
+    return base + fixedAnnual + bonusYearAll;
+  }, [annualGross, annualExtras, settings, year, fixedMonthlyTotal, fixedAnnual, bonusYTD, bonusYearAll]);
 
   // Mensilità aggiuntiva che cade in questo mese (quattordicesima a giu, tredicesima a dic).
   const extraThisMonth = ENABLE_NET_CALC
@@ -149,56 +173,49 @@ export default function CalendarView({
       )
     : 0;
   const monthGross = (pay ? pay.total : 0) + extraThisMonth + fixedMonthlyTotal + perMonthBonus;
-  const netMonth = ENABLE_NET_CALC ? calcNetMonthly(monthGross, netBasis, settings, daysInMonth) : null;
+  const netMonth = useMemo(
+    () => (ENABLE_NET_CALC ? calcNetMonthly(monthGross, netBasis, settings, daysInMonth) : null),
+    [monthGross, netBasis, settings, daysInMonth],
+  );
   const monthNet = netMonth ? netMonth.net : 0;
   const monthTrattenute = netMonth ? netMonth.trattenute : 0;
   const monthBonus = netMonth ? netMonth.bonus : 0;
   const monthTfr = netMonth ? netMonth.tfr : 0;
-  const tiInfo = ENABLE_NET_CALC ? tiDecision(netBasis, settings) : null;
+  const tiInfo = useMemo(
+    () => (ENABLE_NET_CALC ? tiDecision(netBasis, settings) : null),
+    [netBasis, settings],
+  );
   const effectiveRatePct = monthGross > 0 ? (monthTrattenute / monthGross) * 100 : 0;
   const addRegPct = Number.isFinite(Number(settings.addRegionalePct)) ? Number(settings.addRegionalePct) : TAX_2026.ADD_REGIONALE_DEFAULT;
   const addComPct = Number.isFinite(Number(settings.addComunalePct)) ? Number(settings.addComunalePct) : TAX_2026.ADD_COMUNALE_DEFAULT;
   const addizionaliPct = (addRegPct + addComPct).toFixed(2).replace('.', ',');
   const showNetPanel = ENABLE_NET_CALC && pay !== null && netBasis > 0 && monthGross > 0;
 
-  // Contesto numerico per il riepilogo AI (cose utili al lavoratore).
-  const workedDays = new Set(shifts.map(s => s.date)).size;
-  const dayNums = [...new Set(shifts.map(s => Number(s.date.slice(8, 10))))].sort((a, b) => a - b);
-  let maxConsecutive = 0, run = 0, prevDay = null;
-  for (const d of dayNums) {
-    run = (prevDay !== null && d === prevDay + 1) ? run + 1 : 1;
-    if (run > maxConsecutive) maxConsecutive = run;
-    prevDay = d;
-  }
-  const summaryContext = {
-    totalHours: totalMins / 60,
-    shiftsCount: shifts.length,
-    overtimeHours: pay?.overtimeMinutes ? pay.overtimeMinutes / 60 : 0,
-    sundaysWorked: shifts.filter(s => isSunday(s.date)).length,
-    shiftsWithSurcharge: shifts.filter(s =>
-      (isSunday(s.date) && (Number(settings.sundaySurchargePct) || 0) > 0) || (Number(s.surchargePct) || 0) > 0
-    ).length,
-    workedDays,
-    restDays: daysInMonth - workedDays,
-    maxConsecutive,
-    bonusRenzi: {
-      status: bonus.status,
-      marginToFull: bonus.marginToFull,
-      marginToMax: bonus.marginToMax,
-      income: bonus.income,
-    },
-    ...(pay ? { gross: monthGross, surcharge: pay.surcharge } : {}),
-    ...(netMonth ? { net: monthNet, trattenute: monthTrattenute, bonus: monthBonus } : {}),
-  };
-
   const hasGeminiKey = !!import.meta.env.VITE_GEMINI_API_KEY;
-  const hasApiKey = hasGeminiKey || !!import.meta.env.VITE_ANTHROPIC_API_KEY;
+
+  const closeNameModal = useCallback(() => setPendingImportFile(null), []);
+  useModalDismiss(nameModalRef, closeNameModal, !!pendingImportFile);
+
+  // Bonus del mese: input controllato con commit a ogni battuta. Con
+  // `defaultValue` + `onBlur` il valore andava perso se l'app finiva in
+  // background prima che il campo perdesse il focus (caso normale su Android).
+  const [monthBonusInput, setMonthBonusInput] = useState(() => toAmountInput(perMonthBonus));
+  useEffect(() => {
+    setMonthBonusInput(toAmountInput(Number(settings.monthlyBonus?.[monthKey]) || 0));
+    // Si risincronizza solo cambiando mese: durante la digitazione la sorgente
+    // di verità è lo stato locale, altrimenti la normalizzazione mangerebbe la
+    // virgola appena scritta.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [monthKey]);
 
   async function runImport(file, name) {
     setImportLoading(true);
     setImportError(null);
     const meta = { named: !!name, imageBytes: file?.size ?? null, imageType: file?.type ?? null };
     try {
+      // SDK Gemini caricato on-demand: serve solo a chi importa da immagine,
+      // non deve pesare sull'avvio (stessa scelta di services/export.js).
+      const { parseShiftsFromImage } = await import('../services/gemini');
       const { shifts: parsed, usage } = await parseShiftsFromImage(file, name);
       setImportUsage(usage);
       setImportParsed(parsed);
@@ -238,8 +255,10 @@ export default function CalendarView({
   }
 
   function handleMonthBonusChange(e) {
+    const raw = e.target.value;
+    setMonthBonusInput(raw);
     if (!onUpdateSettings) return;
-    const amount = parseNum(e.target.value);
+    const amount = parseNum(raw);
     const map = { ...(settings.monthlyBonus || {}) };
     if (amount > 0) map[monthKey] = amount;
     else delete map[monthKey];
@@ -259,27 +278,13 @@ export default function CalendarView({
     }
   }
 
-  async function handleAISummary() {
-    setAiLoading(true);
-    setAiError(null);
-    setAiSummary(null);
-    try {
-      const text = await generateMonthlySummary(shifts, currentMonth, settings, summaryContext);
-      setAiSummary(text);
-    } catch (e) {
-      setAiError(e.message || 'Errore durante la generazione del riepilogo');
-    } finally {
-      setAiLoading(false);
-    }
-  }
-
   return (
     <div className="calendar-view">
       {/* Month navigation */}
       <div className="cal-header">
         <button
           className="week-nav-btn"
-          onClick={() => { onMonthChange(addMonths(currentMonth, -1)); setAiSummary(null); }}
+          onClick={() => onMonthChange(addMonths(currentMonth, -1))}
           aria-label="Mese precedente"
         >
           ‹
@@ -289,7 +294,7 @@ export default function CalendarView({
           {!isCurrentMonth(currentMonth) && (
             <button
               className="week-today-btn"
-              onClick={() => { onMonthChange(getMonthStart(new Date())); setAiSummary(null); }}
+              onClick={() => onMonthChange(getMonthStart(new Date()))}
             >
               Oggi
             </button>
@@ -297,7 +302,7 @@ export default function CalendarView({
         </div>
         <button
           className="week-nav-btn"
-          onClick={() => { onMonthChange(addMonths(currentMonth, 1)); setAiSummary(null); }}
+          onClick={() => onMonthChange(addMonths(currentMonth, 1))}
           aria-label="Mese successivo"
         >
           ›
@@ -350,6 +355,9 @@ export default function CalendarView({
           const today = isToday(date);
           const weekend = isWeekend(date);
 
+          // La cella è un contenitore cliccabile, non un pulsante: annidare
+          // controlli dentro un role="button" è invalido e confonde gli screen
+          // reader. I comandi veri sono i <button> qui dentro.
           return (
             <div
               key={dateStr}
@@ -358,27 +366,30 @@ export default function CalendarView({
                 today ? 'cal-cell--today' : '',
                 weekend ? 'cal-cell--weekend' : '',
               ].join(' ')}
-              onClick={() => onAddShift(dateStr)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={e => e.key === 'Enter' && onAddShift(dateStr)}
+              onClick={e => { if (e.target === e.currentTarget) onAddShift(dateStr); }}
             >
-              <span className={`cal-day-num${today ? ' cal-day-num--today' : ''}`}>
-                {dayNum}
-              </span>
+              <button
+                type="button"
+                className="cal-cell-add"
+                onClick={() => onAddShift(dateStr)}
+                aria-label={`Aggiungi turno il ${dayNum}/${month + 1}`}
+              >
+                <span className={`cal-day-num${today ? ' cal-day-num--today' : ''}`}>
+                  {dayNum}
+                </span>
+              </button>
               <div className="cal-shifts">
                 {dayShifts.map(s => (
-                  <div
+                  <button
                     key={s.id}
+                    type="button"
                     className="cal-shift-pill"
                     onClick={e => { e.stopPropagation(); onEditShift(s); }}
                     title={`${s.startTime}–${s.endTime}${s.note ? ` | ${s.note}` : ''}`}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); onEditShift(s); } }}
+                    aria-label={`Modifica turno ${s.startTime}–${s.endTime}`}
                   >
                     {s.startTime}
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -404,6 +415,12 @@ export default function CalendarView({
               {pay.surcharge > 0 && (
                 <span className="summary-sublabel">
                   di cui maggiorazioni {formatCurrency(pay.surcharge)}
+                </span>
+              )}
+              {pay.shiftsWithoutRate > 0 && (
+                <span className="summary-sublabel summary-sublabel--warn">
+                  ⚠️ {pay.shiftsWithoutRate} turn{pay.shiftsWithoutRate === 1 ? 'o conteggiato' : 'i conteggiati'} a 0 €:
+                  nessuna paga oraria valida per quelle date
                 </span>
               )}
             </div>
@@ -471,14 +488,13 @@ export default function CalendarView({
               <div className="input-with-symbol month-bonus-input">
                 <span className="input-symbol">€</span>
                 <input
-                  key={monthKey}
                   id="month-bonus"
                   type="text"
                   inputMode="decimal"
                   className="form-input form-input--with-symbol"
                   placeholder="0,00"
-                  defaultValue={perMonthBonus ? String(perMonthBonus).replace('.', ',') : ''}
-                  onBlur={handleMonthBonusChange}
+                  value={monthBonusInput}
+                  onChange={handleMonthBonusChange}
                 />
               </div>
             </div>
@@ -577,9 +593,11 @@ export default function CalendarView({
               </span>
             </div>
 
-            {montante > 0 && (
+            {(montante > 0 || annualExtras > 0) && (
               <span className="bonus-strip-note">
-                = montante {fmt0(montante)}{priorMonthLabel && ` (fino a ${priorMonthLabel})`} + turni {fmt0(bonus.income - montante)}
+                ={montante > 0 ? ` montante ${fmt0(montante)}${priorMonthLabel ? ` (fino a ${priorMonthLabel})` : ''} +` : ''}
+                {' '}turni {fmt0(bonus.income - montante - annualExtras)}
+                {annualExtras > 0 && ` + 13ª/14ª ${fmt0(annualExtras)}`}
               </span>
             )}
             {montanteMismatch && (
@@ -595,7 +613,8 @@ export default function CalendarView({
                 </span>
                 <span className="bonus-strip-value">{fmt0(bonus.marginToFull)}</span>
                 <span className="bonus-strip-note">
-                  prima di superare i {formatCurrency(BONUS_CONST.SOGLIA_BONUS_PIENO)} e uscire dal bonus pieno
+                  prima di superare i {fmt0(bonus.thresholdFullGross)} lordi e uscire dal bonus pieno
+                  <span className="bonus-strip-hint"> (= 15.000 € imponibili, al netto dei contributi)</span>
                 </span>
               </div>
             )}
@@ -605,7 +624,8 @@ export default function CalendarView({
                 <span className="bonus-strip-label">Puoi ancora guadagnare</span>
                 <span className="bonus-strip-value">{fmt0(bonus.marginToMax)}</span>
                 <span className="bonus-strip-note">
-                  prima di superare i {formatCurrency(BONUS_CONST.SOGLIA_BONUS_MAX)} e perdere del tutto il bonus
+                  prima di superare i {fmt0(bonus.thresholdMaxGross)} lordi e perdere del tutto il bonus
+                  <span className="bonus-strip-hint"> (= 28.000 € imponibili, al netto dei contributi)</span>
                 </span>
               </div>
             )}
@@ -613,33 +633,17 @@ export default function CalendarView({
             {bonus.status === BONUS_STATUS.OLTRE && (
               <div className="bonus-strip-body bonus-strip-body--danger">
                 <span className="bonus-strip-note">
-                  🚨 Reddito oltre i {formatCurrency(BONUS_CONST.SOGLIA_BONUS_MAX)}: il bonus non spetta.
+                  🚨 Reddito oltre i {fmt0(bonus.thresholdMaxGross)} lordi (28.000 € imponibili): il bonus non spetta.
                 </span>
               </div>
             )}
           </div>
         )}
 
-        {/* AI section — Riepilogo AI temporaneamente disattivato (test import da immagine).
-            Per riattivarlo, togliere il commento a questo blocco.
-        <div className="ai-panel">
-          {hasApiKey ? (
-            <button
-              className="btn-ai"
-              onClick={handleAISummary}
-              disabled={aiLoading || shifts.length === 0}
-            >
-              {aiLoading ? '⏳ Elaborazione…' : '✦ Riepilogo AI'}
-            </button>
-          ) : (
-            <p className="ai-hint">
-              Aggiungi <code>VITE_GEMINI_API_KEY</code> in <code>.env.local</code> per il riepilogo AI con Google Gemini (gratuito).
-            </p>
-          )}
-          {aiError && <p className="ai-error">{aiError}</p>}
-          {aiSummary && <p className="ai-summary-text">{aiSummary}</p>}
-        </div>
-        */}
+        {/* Riepilogo AI disattivato: il codice vive in services/ai.js, non
+            referenziato (e quindi fuori dal bundle). Per riattivarlo servono
+            l'import di generateMonthlySummary, lo stato aiSummary/aiLoading/
+            aiError e un pulsante che li usi. */}
       </div>
 
       {importParsed && (
@@ -651,8 +655,15 @@ export default function CalendarView({
       )}
 
       {pendingImportFile && (
-        <div className="modal-overlay" onClick={() => setPendingImportFile(null)}>
-          <div className="modal name-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={closeNameModal}>
+          <div
+            ref={nameModalRef}
+            className="modal name-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Il tuo nome sul foglio"
+            onClick={e => e.stopPropagation()}
+          >
             <h2 className="modal-title">Il tuo nome sul foglio</h2>
             <p className="modal-desc">
               Il foglio turni può contenere più persone. Indica il tuo nome così l'AI
@@ -668,7 +679,7 @@ export default function CalendarView({
               onKeyDown={e => { if (e.key === 'Enter') handleNameSubmit(); }}
             />
             <div className="name-modal-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => setPendingImportFile(null)}>
+              <button type="button" className="btn btn-secondary" onClick={closeNameModal}>
                 Annulla
               </button>
               <button type="button" className="btn btn-primary" onClick={handleNameSubmit}>
