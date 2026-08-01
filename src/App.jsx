@@ -13,6 +13,9 @@ const DEFAULT_SETTINGS = {
   expectedWeeklyHours: 40,
   sundaySurchargePct: 0,
   overtimeSurchargePct: 0,
+  holidaySurchargePct: 0,        // maggiorazione festivi (%)
+  holidaySundayMode: 'max',      // festivo+domenica: 'max' | 'sum' | 'holiday'
+  patronSaintDate: '',           // santo patrono locale, formato 'MM-DD'
   priorTaxableIncome: 0,
   priorIncomeDate: '',       // data (ISO) in cui è stato impostato il montante (confine turni)
   previousRates: [],

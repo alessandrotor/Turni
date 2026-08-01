@@ -1,4 +1,5 @@
 import { minutesDiff, parseDate, getWeekStart, formatDate } from './dates';
+import { isHoliday } from './holidays';
 
 export function calcShiftMinutes(shift) {
   const total = minutesDiff(shift.startTime, shift.endTime);
@@ -68,12 +69,20 @@ export function isSunday(dateStr) {
 }
 
 // Percentuale di maggiorazione totale per un turno:
-// maggiorazione domenicale (dalle impostazioni) + maggiorazione manuale del turno
+// domenicale (se domenica) + festivo (se festività) + maggiorazione manuale del turno.
+// Se il turno è sia domenica sia festivo, le due si combinano secondo
+// settings.holidaySundayMode ('max' default | 'sum' | 'holiday'), perché i CCNL variano.
 export function getShiftSurchargePct(shift, settings) {
-  let pct = 0;
-  if (isSunday(shift.date)) pct += Number(settings?.sundaySurchargePct) || 0;
-  pct += Number(shift.surchargePct) || 0;
-  return pct;
+  const sun = isSunday(shift.date) ? (Number(settings?.sundaySurchargePct) || 0) : 0;
+  const fest = isHoliday(shift.date, settings) ? (Number(settings?.holidaySurchargePct) || 0) : 0;
+  let base;
+  if (sun > 0 && fest > 0) {
+    const mode = settings?.holidaySundayMode || 'max';
+    base = mode === 'sum' ? sun + fest : mode === 'holiday' ? fest : Math.max(sun, fest);
+  } else {
+    base = sun + fest;
+  }
+  return base + (Number(shift.surchargePct) || 0);
 }
 
 // Calcola la paga di ogni turno tenendo conto della maggiorazione straordinari.

@@ -21,6 +21,9 @@ export default function Settings({ settings, onSave }) {
     expectedWeeklyHours: settings.expectedWeeklyHours ?? 40,
     sundaySurchargePct: settings.sundaySurchargePct ?? 0,
     overtimeSurchargePct: settings.overtimeSurchargePct ?? 0,
+    holidaySurchargePct: settings.holidaySurchargePct ?? 0,
+    holidaySundayMode: settings.holidaySundayMode || 'max',
+    patronSaintDate: settings.patronSaintDate || '',
     priorTaxableIncome: toInput(settings.priorTaxableIncome),
     // Mese fino al quale il montante è comprensivo dei turni. Va scelto
     // dall'utente: dedurlo dalla data di salvataggio sbagliava di un mese chi
@@ -130,6 +133,9 @@ export default function Settings({ settings, onSave }) {
       expectedWeeklyHours: parseNum(form.expectedWeeklyHours),
       sundaySurchargePct: parseNum(form.sundaySurchargePct),
       overtimeSurchargePct: parseNum(form.overtimeSurchargePct),
+      holidaySurchargePct: parseNum(form.holidaySurchargePct),
+      holidaySundayMode: form.holidaySundayMode,
+      patronSaintDate: form.patronSaintDate,
       priorTaxableIncome: newMontante,
       priorIncomeDate,
       workerName: form.workerName.trim(),
@@ -399,10 +405,11 @@ export default function Settings({ settings, onSave }) {
         <details className="settings-section">
           <summary className="settings-section-title">📈 Maggiorazioni</summary>
           <p className="settings-section-desc">
-            La maggiorazione domenicale viene applicata automaticamente ai turni di domenica.
-            La maggiorazione straordinari si applica automaticamente alle ore oltre la soglia
+            Domenicale e festivo vengono applicate <strong>automaticamente</strong> ai turni di
+            domenica e nelle festività nazionali (incluse Pasqua e Pasquetta). Gli straordinari
+            si applicano alle ore oltre la soglia
             {form.onCall ? ' giornaliera' : ' settimanale da contratto'}. Per altre maggiorazioni
-            (festivi, notturni) puoi indicare una percentuale manuale sul singolo turno.
+            (notturni…) usa la percentuale manuale sul singolo turno.
           </p>
 
           <div className="form-group">
@@ -421,6 +428,54 @@ export default function Settings({ settings, onSave }) {
                 onChange={set('sundaySurchargePct')}
               />
             </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="holiday-surcharge">Maggiorazione festivi (%)</label>
+            <div className="input-with-symbol">
+              <span className="input-symbol">%</span>
+              <input
+                id="holiday-surcharge"
+                type="number"
+                className="form-input form-input--with-symbol"
+                min="0"
+                max="200"
+                step="0.5"
+                placeholder="es. 50"
+                value={form.holidaySurchargePct || ''}
+                onChange={set('holidaySurchargePct')}
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="holiday-sunday-mode">Se un festivo cade di domenica</label>
+            <select
+              id="holiday-sunday-mode"
+              className="form-input"
+              value={form.holidaySundayMode}
+              onChange={set('holidaySundayMode')}
+            >
+              <option value="max">Applica solo la più alta</option>
+              <option value="sum">Somma festivo + domenicale</option>
+              <option value="holiday">Solo festivo</option>
+            </select>
+            <p className="form-hint">Dipende dal CCNL: alcuni cumulano le due maggiorazioni, altri no.</p>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="patron-saint">Santo patrono (festività locale)</label>
+            <input
+              id="patron-saint"
+              type="date"
+              className="form-input"
+              value={form.patronSaintDate ? `2000-${form.patronSaintDate}` : ''}
+              onChange={(e) => {
+                setForm(f => ({ ...f, patronSaintDate: e.target.value ? e.target.value.slice(5) : '' }));
+                setSaved(false);
+              }}
+            />
+            <p className="form-hint">Opzionale. Conta solo giorno e mese (es. 29/06 Roma, 07/12 Milano).</p>
           </div>
 
           <div className="form-group">
