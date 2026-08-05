@@ -595,6 +595,44 @@ input, select, textarea { font: inherit; }
 }
 .form-input--with-symbol { padding-left: 1.75rem; }
 
+/* Combobox CCNL: tendina custom, OPACA. La <datalist> nativa nella WebView
+   Android esce semi-trasparente e sopra a tutto, illeggibile su smartphone. */
+.combobox { position: relative; }
+.combobox-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin: 0;
+  padding: .25rem;
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--c-card);
+  border: 1.5px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  -webkit-overflow-scrolling: touch;
+}
+.combobox-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: .55rem .6rem;
+  border: 0;
+  background: transparent;
+  color: var(--c-text);
+  font-size: .9rem;
+  line-height: 1.3;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: normal;      /* nomi CCNL lunghi vanno a capo */
+  word-break: break-word;
+}
+.combobox-option:hover,
+.combobox-option.is-active { background: var(--c-primary-light); }
+
 /* Worked preview */
 .worked-preview {
   display: flex;

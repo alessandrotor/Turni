@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "ccnl:aggiorna": "node scripts/scarica-ccnl.mjs src/data/ccnl.json"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.107.0",

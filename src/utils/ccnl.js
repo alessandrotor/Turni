@@ -5,8 +5,8 @@
 // contratto) e il divisore orario mensile con cui si calcola la mensilità.
 //
 // I DATI vivono in `src/data/ccnl.json` — file human-readable, aggiornabile a
-// mano o rigenerato con `node scripts/fetch-ccnl-catalog.mjs` (scarica l'elenco
-// dei CCNL vigenti dall'archivio open data CNEL). Qui c'è solo la logica di
+// mano o rigenerato con `npm run ccnl:aggiorna` (script `scripts/scarica-ccnl.mjs`,
+// scarica l'elenco dei CCNL vigenti dall'archivio open data CNEL). Qui c'è solo la logica di
 // lettura: ogni voce viene fusa sui DEFAULT, così una voce di solo catalogo
 // (senza parametri di calcolo) non rompe il motore e ripiega su valori generici.
 //

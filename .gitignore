@@ -6,3 +6,7 @@ Turni.apk
 Turni.zip
 phone.txt
 tests/
+# CSV export dello script CCNL (uso esterno on-demand): l'app usa solo il .json
+src/data/ccnl.csv
+/ccnl.csv
+/ccnl.json

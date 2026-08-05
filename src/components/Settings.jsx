@@ -60,6 +60,10 @@ export default function Settings({ settings, onSave }) {
   // Testo digitato nel selettore CCNL (ricerca per nome). Salviamo il codice in
   // form.ccnl, ma l'utente cerca per denominazione: teniamo separati testo e codice.
   const [ccnlQuery, setCcnlQuery] = useState(() => getCcnl(settings.ccnl || '').label);
+  // Apertura della tendina custom (la <datalist> nativa è illeggibile in WebView).
+  const [ccnlOpen, setCcnlOpen] = useState(false);
+  const ccnlBlurTimer = useRef(null);
+  useEffect(() => () => clearTimeout(ccnlBlurTimer.current), []);
   // Il timer del messaggio "Salvato!" va annullato allo smontaggio: cambiando
   // vista entro 2 secondi si aggiornerebbe lo stato di un componente sparito.
   const savedTimer = useRef(null);
@@ -169,14 +173,30 @@ export default function Settings({ settings, onSave }) {
   };
 
   const ccnlPreset = getCcnl(form.ccnl);
-  // Traduce il testo del selettore CCNL nel codice da salvare. Vuoto = nessuno.
+  // Digitando nel campo CCNL: aggiorna il testo, apri la tendina; se il campo è
+  // vuoto azzera il contratto selezionato.
   const onCcnlQuery = (e) => {
     const text = e.target.value;
     setCcnlQuery(text);
+    setCcnlOpen(true);
     setSaved(false);
-    if (text.trim() === '') { setForm(f => ({ ...f, ccnl: '' })); return; }
-    const match = CCNL_LIST.find(c => c.label === text);
-    if (match) setForm(f => ({ ...f, ccnl: match.codice }));
+    if (text.trim() === '') setForm(f => ({ ...f, ccnl: '' }));
+  };
+  // Voci mostrate nella tendina: filtro per nome, cap a 50 (l'elenco ha 1000+ voci).
+  const ccnlMatches = (() => {
+    const q = ccnlQuery.trim().toLowerCase();
+    const selected = getCcnl(form.ccnl).label;
+    // Se il testo coincide col contratto già scelto, mostro l'elenco intero (l'utente
+    // sta riaprendo per cambiare), altrimenti filtro su quello che sta scrivendo.
+    const src = (!q || q === selected.toLowerCase()) ? CCNL_LIST : CCNL_LIST.filter(c => c.label.toLowerCase().includes(q));
+    return src.slice(0, 50);
+  })();
+  // Scelta di una voce dalla tendina.
+  const pickCcnl = (c) => {
+    setForm(f => ({ ...f, ccnl: c.codice }));
+    setCcnlQuery(c.label);
+    setCcnlOpen(false);
+    setSaved(false);
   };
   const hourlyRate = parseNum(form.hourlyRate);
   const weeklyHours = parseNum(form.expectedWeeklyHours);
@@ -785,20 +805,39 @@ export default function Settings({ settings, onSave }) {
 
           <div className="form-group">
             <label className="form-label" htmlFor="ccnl">Contratto</label>
-            <input
-              id="ccnl"
-              className="form-input"
-              list="ccnl-list"
-              value={ccnlQuery}
-              onChange={onCcnlQuery}
-              placeholder="Cerca il tuo contratto per nome…"
-              autoComplete="off"
-            />
-            <datalist id="ccnl-list">
-              {CCNL_LIST.map(c => (
-                <option key={c.codice} value={c.label} />
-              ))}
-            </datalist>
+            <div className="combobox">
+              <input
+                id="ccnl"
+                className="form-input"
+                type="text"
+                role="combobox"
+                aria-expanded={ccnlOpen}
+                value={ccnlQuery}
+                onChange={onCcnlQuery}
+                onFocus={() => setCcnlOpen(true)}
+                onBlur={() => { ccnlBlurTimer.current = setTimeout(() => setCcnlOpen(false), 150); }}
+                onKeyDown={(e) => { if (e.key === 'Escape') setCcnlOpen(false); }}
+                placeholder="Cerca il tuo contratto per nome…"
+                autoComplete="off"
+              />
+              {ccnlOpen && ccnlMatches.length > 0 && (
+                <ul className="combobox-list">
+                  {ccnlMatches.map(c => (
+                    <li key={c.codice}>
+                      <button
+                        type="button"
+                        className={'combobox-option' + (c.codice === form.ccnl ? ' is-active' : '')}
+                        // onMouseDown (non onClick): scatta prima del blur, che altrimenti
+                        // chiuderebbe la lista prima di registrare la scelta.
+                        onMouseDown={(e) => { e.preventDefault(); pickCcnl(c); }}
+                      >
+                        {c.label}{c.verificato ? ' ✓' : ''}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
             <p className="form-hint">
               {form.ccnl
                 ? (ccnlPreset.verificato ? '✓ Contratto verificato su busta reale.' : 'Contratto selezionato.')
