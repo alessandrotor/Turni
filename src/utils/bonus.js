@@ -27,15 +27,17 @@ export const BONUS_STATUS = {
 /**
  * Calcola i margini rispetto alle soglie del bonus.
  * @param {number} annualIncome reddito annuo LORDO complessivo
+ * @param {object} settings serve il CCNL: con i contributi minori l'aliquota
+ *   deducibile sale e le soglie in lordo si spostano di qualche decina di euro
  * @returns margini e soglie espressi in LORDO (coerenti con `income`)
  */
-export function calcBonusMargin(annualIncome) {
+export function calcBonusMargin(annualIncome, settings = {}) {
   const C = BONUS_CONST;
   const income = Math.max(0, Number(annualIncome) || 0);
   // Soglie di legge riportate in lordo, per poterle confrontare con `income`.
-  const thresholdFullGross = taxableToGross(C.SOGLIA_BONUS_PIENO);
-  const thresholdMaxGross = taxableToGross(C.SOGLIA_BONUS_MAX);
-  const base = { income, thresholdFullGross, thresholdMaxGross, taxable: grossToTaxable(income) };
+  const thresholdFullGross = taxableToGross(C.SOGLIA_BONUS_PIENO, settings);
+  const thresholdMaxGross = taxableToGross(C.SOGLIA_BONUS_MAX, settings);
+  const base = { income, thresholdFullGross, thresholdMaxGross, taxable: grossToTaxable(income, settings) };
 
   if (income <= 0) {
     return { ...base, income: 0, taxable: 0, status: BONUS_STATUS.ATTESA, marginToFull: null, marginToMax: null, nearThreshold: false };

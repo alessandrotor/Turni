@@ -8,9 +8,20 @@ import { calcShiftMinutes, calcTotalPay, formatCurrency, parseNum } from '../uti
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
 import {
   calcNetMonthly, projectAnnualGross, monthlyBaseGross,
-  extraMonthsCount, EXTRA_MONTHS, TAX_2026, tiDecision,
+  extraMonthsAccrued, extraMonthAccrual, EXTRA_MONTHS, TAX_2026, tiDecision,
 } from '../utils/net';
 import { ENABLE_NET_CALC } from '../config/features';
+
+// Aliquota contributiva: fino a 3 decimali, senza zeri inutili in coda
+// (9,19% e 0,267%, non 9,190% né 0,300%).
+const fmtPct = (pct) => String(Number(pct.toFixed(3))).replace('.', ',');
+
+// Da dove arriva il reddito annuo di riferimento, per dirlo all'utente.
+const PROJECTION_LABEL = {
+  contratto: 'da contratto',
+  maturato: 'dal maturato annualizzato',
+  manuale: 'inserita a mano',
+};
 import { exportShiftsExcel, exportShiftsPDF } from '../services/export';
 import { sendImportTelemetry } from '../services/telemetry';
 import ImportModal from './ImportModal';
@@ -89,7 +100,7 @@ export default function CalendarView({
   );
 
   // Bonus busta paga: quanto manca alla soglia (reddito annuo dai turni)
-  const bonus = useMemo(() => calcBonusMargin(annualGross), [annualGross]);
+  const bonus = useMemo(() => calcBonusMargin(annualGross, settings), [annualGross, settings]);
   const fmt0 = (n) => formatCurrency(Math.round(n));
 
   // Montante + confine automatico (granularità MESE): composizione del reddito e avviso.
@@ -136,46 +147,59 @@ export default function CalendarView({
   //  - 'stimato': stima annua (contratto/RAL/a chiamata) + voci fisse ×12 + bonus dell'anno;
   //  - 'ytd': reddito maturato (montante+turni+voci fisse+bonus finora) annualizzato sui mesi trascorsi.
   const fixedAnnual = fixedMonthlyTotal * 12;
-  const netBasis = useMemo(() => {
+  const netProjection = useMemo(() => {
     // 13ª/14ª sono una tantum: annualizzarle (×12/mesi trascorsi) le
     // moltiplicherebbe: a luglio la 14ª di giugno varrebbe quasi due mensilità.
     // Si annualizza solo la parte ricorrente e si riaggiungono per intero le
     // mensilità aggiuntive previste nell'anno.
     const recurring = Math.max(0, annualGross - annualExtras);
     const extrasFullYear = ENABLE_NET_CALC
-      ? monthlyBaseGross(settings) * extraMonthsCount(settings)
+      ? monthlyBaseGross(settings) * extraMonthsAccrued(settings, year)
       : 0;
     const now = new Date();
     const monthsElapsed = year === now.getFullYear() ? now.getMonth() + 1 : 12;
     const annualize = (v) => (monthsElapsed > 0 ? (v * 12) / monthsElapsed : v);
+    const extras = (v) => v + fixedAnnual + bonusYearAll;
 
     if ((settings.tiProjectionMode || 'stimato') === 'ytd') {
       const cumulativo = recurring + fixedMonthlyTotal * monthsElapsed + bonusYTD;
-      return annualize(cumulativo) + extrasFullYear;
+      return { value: annualize(cumulativo) + extrasFullYear, source: 'maturato' };
     }
 
-    let base;
-    if (settings.onCall) {
-      const manual = Number(settings.annualGrossManual) || 0;
-      base = manual > 0 ? manual : annualize(recurring);
-    } else {
-      const projectedAnnual = ENABLE_NET_CALC ? projectAnnualGross(settings) : 0;
-      base = projectedAnnual > 0 ? projectedAnnual : annualGross;
-    }
-    return base + fixedAnnual + bonusYearAll;
+    // L'importo scritto a mano vince su tutto: è la valvola di sfogo per chi sa
+    // che il resto dell'anno non somiglierà a quello appena passato.
+    const manual = Number(settings.annualGrossManual) || 0;
+    if (manual > 0) return { value: extras(manual), source: 'manuale' };
+
+    if (settings.onCall) return { value: extras(annualize(recurring)), source: 'maturato' };
+
+    // Il maturato annualizzato NON va scartato: la proiezione da contratto
+    // conosce solo le ore contrattuali e ignora supplementari e festivi, che su
+    // lavoro a turni pesano parecchio. Si prende la più alta delle due, come fa
+    // il sostituto d'imposta — resta comunque una previsione: se il secondo
+    // semestre porta meno ore, il conguaglio di dicembre restituisce il dovuto.
+    const projectedAnnual = ENABLE_NET_CALC ? projectAnnualGross(settings, year) : 0;
+    const fromActual = annualize(recurring) + extrasFullYear;
+    const value = Math.max(projectedAnnual, fromActual, annualGross);
+    const source = value === projectedAnnual ? 'contratto' : 'maturato';
+    return { value: extras(value), source };
   }, [annualGross, annualExtras, settings, year, fixedMonthlyTotal, fixedAnnual, bonusYTD, bonusYearAll]);
+  const netBasis = netProjection.value;
 
-  // Mensilità aggiuntiva che cade in questo mese (quattordicesima a giu, tredicesima a dic).
+  // Mensilità aggiuntiva che cade in questo mese (quattordicesima a giu, tredicesima a dic),
+  // ridotta al rateo effettivamente maturato in base alla data di assunzione.
   const extraThisMonth = ENABLE_NET_CALC
     ? monthlyBaseGross(settings) * (
-        (settings.hasQuattordicesima && month === EXTRA_MONTHS.quattordicesima ? 1 : 0)
-        + (settings.hasTredicesima && month === EXTRA_MONTHS.tredicesima ? 1 : 0)
+        (settings.hasQuattordicesima && month === EXTRA_MONTHS.quattordicesima
+          ? extraMonthAccrual('quattordicesima', year, settings) : 0)
+        + (settings.hasTredicesima && month === EXTRA_MONTHS.tredicesima
+          ? extraMonthAccrual('tredicesima', year, settings) : 0)
       )
     : 0;
   const monthGross = (pay ? pay.total : 0) + extraThisMonth + fixedMonthlyTotal + perMonthBonus;
   const netMonth = useMemo(
-    () => (ENABLE_NET_CALC ? calcNetMonthly(monthGross, netBasis, settings, daysInMonth) : null),
-    [monthGross, netBasis, settings, daysInMonth],
+    () => (ENABLE_NET_CALC ? calcNetMonthly(monthGross, netBasis, settings, daysInMonth, extraThisMonth) : null),
+    [monthGross, netBasis, settings, daysInMonth, extraThisMonth],
   );
   const monthNet = netMonth ? netMonth.net : 0;
   const monthTrattenute = netMonth ? netMonth.trattenute : 0;
@@ -516,13 +540,21 @@ export default function CalendarView({
                 </div>
 
                 <div className="net-group-label">Trattenute</div>
-                <div className="net-line net-line--ded">
-                  <span>Contributi IVS ({(TAX_2026.ALIQUOTA_IVS * 100).toFixed(2).replace('.', ',')}%)</span>
-                  <span>−{fmt0(netMonth.contributi)}</span>
-                </div>
+                {netMonth.contributiRighe.map(r => (
+                  <div className="net-line net-line--ded" key={r.label}>
+                    <span>{r.label} ({fmtPct(r.pct)}%)</span>
+                    <span>−{fmt0(r.importo)}</span>
+                  </div>
+                ))}
                 <div className="net-line net-line--info">
                   <span>Imponibile fiscale</span><span>{fmt0(netMonth.imponibile)}</span>
                 </div>
+                {netMonth.imponibileExtra > 0 && (
+                  <div className="net-subnote">
+                    di cui {fmt0(netMonth.imponibileExtra)} di mensilità aggiuntiva, tassata a parte
+                    (aliquota {(netMonth.irpefExtra / netMonth.imponibileExtra * 100).toFixed(0)}%, senza detrazioni)
+                  </div>
+                )}
 
                 {/* IRPEF come in busta paga: lorda, detrazioni, netta */}
                 <div className="net-irpef-label">IRPEF</div>
@@ -556,7 +588,10 @@ export default function CalendarView({
                       <div className="net-line net-line--bonus"><span>Trattamento integrativo (quota mese)</span><span>+{fmt0(netMonth.trattamentoIntegrativo)}</span></div>
                     )}
                     {netMonth.bonusCuneo > 0 && (
-                      <div className="net-line net-line--bonus"><span>Indennità 207/2024 (quota mese)</span><span>+{fmt0(netMonth.bonusCuneo)}</span></div>
+                      <div className="net-line net-line--bonus">
+                        <span>Indennità 207/2024 ({(netMonth.cuneoPct * 100).toFixed(1).replace('.', ',')}% dell'imponibile)</span>
+                        <span>+{fmt0(netMonth.bonusCuneo)}</span>
+                      </div>
                     )}
                     {netMonth.tfr > 0 && (
                       <>
@@ -574,12 +609,18 @@ export default function CalendarView({
                     TI automatico: {tiInfo.motivo} · reddito annuo stimato {fmt0(tiInfo.redditoStimato)}
                   </div>
                 )}
+                <div className="net-subnote">
+                  Proiezione annua usata: {fmt0(netBasis)} lordi ({PROJECTION_LABEL[netProjection.source]}).
+                  È una previsione: su lavoro a turni le ore cambiano, e il conguaglio di dicembre
+                  rimette a posto detrazioni e bonus. Puoi correggerla in Impostazioni.
+                </div>
 
                 <div className="net-line net-line--total"><span>Netto del mese</span><span>{fmt0(netMonth.net)}</span></div>
                 <p className="net-disclaimer">
                   Stima indicativa (fiscalità 2026). Le trattenute sono quelle vere della busta paga
-                  (contributi + IRPEF netta + addizionali). Trattamento integrativo (€1.200/anno) e
-                  Indennità 207/2024 sono importi annui rapportati ai giorni del mese (÷365).
+                  (contributi + IRPEF netta + addizionali). Il trattamento integrativo (€1.200/anno)
+                  è rapportato ai giorni del mese (÷365); l'Indennità 207/2024 è la percentuale di
+                  fascia sull'imponibile del mese.
                   {netMonth.tfr > 0 && ` L'anticipo TFR è ~6,91% del lordo, tassato a parte (tassazione separata ~${(netMonth.aliqTfr * 100).toFixed(0)}%, stima).`}
                   {' '}Non sostituisce la busta paga né il conguaglio.
                 </p>

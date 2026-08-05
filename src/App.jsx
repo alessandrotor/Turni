@@ -28,6 +28,8 @@ const DEFAULT_SETTINGS = {
   // Mensilità aggiuntive (dipendono dal CCNL)
   hasTredicesima: false,
   hasQuattordicesima: false,
+  hireDate: '',              // data di assunzione: serve al rateo di 13ª/14ª
+  ccnl: '',                  // preset contrattuale (contributi minori, divisore orario)
   // Nome del lavoratore sul foglio turni (per import AI da immagine collettiva)
   workerName: '',
   // Voci fisse mensili (indennità, superminimo...) e bonus per singolo mese
@@ -116,11 +118,13 @@ export default function App() {
     // Mensilità aggiuntive già incassate, in base alla data ODIERNA (non al mese
     // che si sta sfogliando): altrimenti aprire dicembre farebbe risultare la
     // tredicesima già presa, cambiando reddito annuo, aliquota e soglie bonus.
+    // Contano per il RATEO maturato, non per una mensilità piena: chi è assunto
+    // da sei mesi prende mezza quattordicesima.
     const now = new Date();
     let extras = 0;
     if (y <= now.getFullYear()) {
       const monthIndex = y < now.getFullYear() ? 11 : now.getMonth();
-      extras = monthlyBaseGross(settings) * receivedExtraMonthsCount(settings, monthIndex);
+      extras = monthlyBaseGross(settings) * receivedExtraMonthsCount(settings, monthIndex, y);
     }
     const applyMontante = montante > 0 && (!cutoff || sameYear);
     return { total: fromShifts + (applyMontante ? montante : 0) + extras, extras };

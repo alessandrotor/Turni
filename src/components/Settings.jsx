@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { formatCurrency, parseNum } from '../utils/pay';
+import { CCNL_PRESETS, getCcnl } from '../utils/ccnl';
 import { ENABLE_NET_CALC } from '../config/features';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
@@ -35,6 +36,8 @@ export default function Settings({ settings, onSave }) {
     dailyOvertimeThreshold: settings.dailyOvertimeThreshold ?? '',
     hasTredicesima: !!settings.hasTredicesima,
     hasQuattordicesima: !!settings.hasQuattordicesima,
+    hireDate: settings.hireDate || '',
+    ccnl: settings.ccnl || '',
     tfrInBusta: !!settings.tfrInBusta,
     tfrTaxRate: settings.tfrTaxRate === '' || settings.tfrTaxRate == null ? '' : toInput(settings.tfrTaxRate),
     previousRates: (Array.isArray(settings.previousRates) ? settings.previousRates : []).map(c => ({
@@ -144,6 +147,8 @@ export default function Settings({ settings, onSave }) {
       dailyOvertimeThreshold: parseNum(form.dailyOvertimeThreshold),
       hasTredicesima: form.hasTredicesima,
       hasQuattordicesima: form.hasQuattordicesima,
+      hireDate: form.hireDate,
+      ccnl: form.ccnl,
       tfrInBusta: form.tfrInBusta,
       tfrTaxRate: form.tfrTaxRate === '' ? '' : parseNum(form.tfrTaxRate),
       previousRates,
@@ -160,10 +165,12 @@ export default function Settings({ settings, onSave }) {
     savedTimer.current = setTimeout(() => setSaved(false), 2000);
   };
 
+  const ccnlPreset = getCcnl(form.ccnl);
   const hourlyRate = parseNum(form.hourlyRate);
   const weeklyHours = parseNum(form.expectedWeeklyHours);
   const weeklyPay = hourlyRate * weeklyHours;
-  const monthlyPay = weeklyPay * 4.33;
+  // Stessa base della mensilità usata dal motore: il divisore orario dipende dal CCNL.
+  const monthlyPay = weeklyPay * ccnlPreset.monthlyHoursFactor;
 
   return (
     <div className="settings-page">
@@ -382,23 +389,34 @@ export default function Settings({ settings, onSave }) {
                   onChange={set('dailyOvertimeThreshold')}
                 />
               </div>
-              <div className="form-group">
-                <label className="form-label" htmlFor="annual-manual">Reddito annuo lordo stimato (opzionale)</label>
-                <div className="input-with-symbol">
-                  <span className="input-symbol">€</span>
-                  <input
-                    id="annual-manual"
-                    type="text"
-                    inputMode="decimal"
-                    className="form-input form-input--with-symbol"
-                    placeholder="es. 14000"
-                    value={form.annualGrossManual}
-                    onChange={set('annualGrossManual')}
-                  />
-                </div>
-              </div>
             </>
           )}
+
+          {/* Il reddito annuo previsto serve a tutti, non solo a chi è a
+              chiamata: decide aliquota, detrazioni e bonus. Automatico va bene
+              finché le ore sono regolari, ma su lavoro a turni la previsione
+              può sbagliare di parecchio, e qui la si corregge. */}
+          <div className="form-group">
+            <label className="form-label" htmlFor="annual-manual">Reddito annuo lordo previsto (opzionale)</label>
+            <div className="input-with-symbol">
+              <span className="input-symbol">€</span>
+              <input
+                id="annual-manual"
+                type="text"
+                inputMode="decimal"
+                className="form-input form-input--with-symbol"
+                placeholder="es. 14000"
+                value={form.annualGrossManual}
+                onChange={set('annualGrossManual')}
+              />
+            </div>
+            <p className="form-hint">
+              Da qui dipendono aliquota IRPEF, detrazioni e bonus. Se lo lasci vuoto viene stimato
+              da solo, prendendo il più alto fra la proiezione da contratto e i turni già inseriti
+              annualizzati. Compilalo se sai che il resto dell'anno sarà diverso dai mesi appena
+              passati — con i turni capita spesso.
+            </p>
+          </div>
         </details>
 
         {/* Maggiorazioni */}
@@ -578,6 +596,25 @@ export default function Settings({ settings, onSave }) {
             />
             <span>Quattordicesima (giugno)</span>
           </label>
+
+          {(form.hasTredicesima || form.hasQuattordicesima) && (
+            <div className="form-group">
+              <label className="form-label" htmlFor="hire-date">Data di assunzione</label>
+              <input
+                id="hire-date"
+                type="date"
+                className="form-input"
+                value={form.hireDate}
+                onChange={set('hireDate')}
+              />
+              <p className="form-hint">
+                Serve per il <strong>rateo</strong>: la mensilità aggiuntiva si matura in dodicesimi,
+                la quattordicesima da luglio a giugno e la tredicesima nell'anno solare. Chi è assunto
+                da sei mesi ne prende metà. Un mese conta solo se lavorato per almeno 15 giorni.
+                Lascia vuoto per calcolare sempre la mensilità piena.
+              </p>
+            </div>
+          )}
         </details>
 
         {/* TFR in busta */}
@@ -724,19 +761,50 @@ export default function Settings({ settings, onSave }) {
           </div>
         </details>
 
-        {/* CCNL - placeholder futuro */}
-        <details className="settings-section settings-section--future">
-          <summary className="settings-section-title">📜 CCNL (prossimamente)</summary>
+        {/* CCNL: contributi minori e divisore orario */}
+        <details className="settings-section">
+          <summary className="settings-section-title">📜 CCNL</summary>
           <p className="settings-section-desc">
-            In futuro sarà possibile selezionare il Contratto Collettivo Nazionale di Lavoro
-            per calcolare automaticamente la paga con le relative indennità (notturno, festivo, straordinario).
+            Oltre all'IVS (9,19%) quasi tutti i contratti prevedono trattenute minori — FIS, CIGS,
+            Ente Bilaterale — che pesano qualche euro al mese e che senza il contratto non si possono
+            indovinare. Il CCNL determina anche il <strong>divisore orario</strong> con cui si calcola
+            la mensilità (e quindi 13ª e 14ª).
           </p>
+
           <div className="form-group">
-            <label className="form-label">Contratto</label>
-            <select className="form-input" disabled>
-              <option>— Non disponibile —</option>
+            <label className="form-label" htmlFor="ccnl">Contratto</label>
+            <select id="ccnl" className="form-input" value={form.ccnl} onChange={set('ccnl')}>
+              {Object.entries(CCNL_PRESETS).map(([key, c]) => (
+                <option key={key} value={key}>{c.label}</option>
+              ))}
             </select>
           </div>
+
+          {ccnlPreset.contributiExtra.length > 0 || ccnlPreset.enteBilaterale ? (
+            <>
+              <p className="form-hint">Trattenute aggiuntive applicate alla stima del netto:</p>
+              <ul className="settings-list">
+                {ccnlPreset.contributiExtra.map(c => (
+                  <li key={c.label}>{c.label} — {String(c.pct).replace('.', ',')}% del lordo</li>
+                ))}
+                {ccnlPreset.enteBilaterale && (
+                  <li>
+                    {ccnlPreset.enteBilaterale.label} — {String(ccnlPreset.enteBilaterale.pct).replace('.', ',')}%
+                    della retribuzione contrattuale
+                  </li>
+                )}
+              </ul>
+            </>
+          ) : (
+            <p className="form-hint">Nessuna trattenuta aggiuntiva: viene applicato il solo IVS 9,19%.</p>
+          )}
+
+          {form.ccnl && !ccnlPreset.verificato && (
+            <p className="form-hint">
+              ⚠️ Aliquote indicative, <strong>non riscontrate su una busta reale</strong>. Se hai il
+              cedolino sotto mano, confronta le voci: dove non tornano, il dato giusto è quello.
+            </p>
+          )}
         </details>
 
         <div className="settings-footer">
