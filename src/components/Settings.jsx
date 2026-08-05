@@ -843,6 +843,9 @@ export default function Settings({ settings, onSave }) {
                 ? (ccnlPreset.verificato ? '✓ Contratto verificato su busta reale.' : 'Contratto selezionato.')
                 : 'Digita e scegli dall\'elenco. Sono elencati i CCNL vigenti dall\'archivio CNEL.'}
             </p>
+            {form.ccnl && ccnlPreset.note && (
+              <p className="form-hint">ℹ️ {ccnlPreset.note}</p>
+            )}
           </div>
 
           {ccnlPreset.contributiExtra.length > 0 || ccnlPreset.enteBilaterale ? (
