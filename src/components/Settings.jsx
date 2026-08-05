@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { formatCurrency, parseNum } from '../utils/pay';
-import { CCNL_PRESETS, getCcnl } from '../utils/ccnl';
+import { CCNL_LIST, getCcnl } from '../utils/ccnl';
 import { ENABLE_NET_CALC } from '../config/features';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
@@ -57,6 +57,9 @@ export default function Settings({ settings, onSave }) {
     tiProjectionMode: settings.tiProjectionMode === 'ytd' ? 'ytd' : 'stimato',
   });
   const [saved, setSaved] = useState(false);
+  // Testo digitato nel selettore CCNL (ricerca per nome). Salviamo il codice in
+  // form.ccnl, ma l'utente cerca per denominazione: teniamo separati testo e codice.
+  const [ccnlQuery, setCcnlQuery] = useState(() => getCcnl(settings.ccnl || '').label);
   // Il timer del messaggio "Salvato!" va annullato allo smontaggio: cambiando
   // vista entro 2 secondi si aggiornerebbe lo stato di un componente sparito.
   const savedTimer = useRef(null);
@@ -166,6 +169,15 @@ export default function Settings({ settings, onSave }) {
   };
 
   const ccnlPreset = getCcnl(form.ccnl);
+  // Traduce il testo del selettore CCNL nel codice da salvare. Vuoto = nessuno.
+  const onCcnlQuery = (e) => {
+    const text = e.target.value;
+    setCcnlQuery(text);
+    setSaved(false);
+    if (text.trim() === '') { setForm(f => ({ ...f, ccnl: '' })); return; }
+    const match = CCNL_LIST.find(c => c.label === text);
+    if (match) setForm(f => ({ ...f, ccnl: match.codice }));
+  };
   const hourlyRate = parseNum(form.hourlyRate);
   const weeklyHours = parseNum(form.expectedWeeklyHours);
   const weeklyPay = hourlyRate * weeklyHours;
@@ -773,11 +785,25 @@ export default function Settings({ settings, onSave }) {
 
           <div className="form-group">
             <label className="form-label" htmlFor="ccnl">Contratto</label>
-            <select id="ccnl" className="form-input" value={form.ccnl} onChange={set('ccnl')}>
-              {Object.entries(CCNL_PRESETS).map(([key, c]) => (
-                <option key={key} value={key}>{c.label}</option>
+            <input
+              id="ccnl"
+              className="form-input"
+              list="ccnl-list"
+              value={ccnlQuery}
+              onChange={onCcnlQuery}
+              placeholder="Cerca il tuo contratto per nome…"
+              autoComplete="off"
+            />
+            <datalist id="ccnl-list">
+              {CCNL_LIST.map(c => (
+                <option key={c.codice} value={c.label} />
               ))}
-            </select>
+            </datalist>
+            <p className="form-hint">
+              {form.ccnl
+                ? (ccnlPreset.verificato ? '✓ Contratto verificato su busta reale.' : 'Contratto selezionato.')
+                : 'Digita e scegli dall\'elenco. Sono elencati i CCNL vigenti dall\'archivio CNEL.'}
+            </p>
           </div>
 
           {ccnlPreset.contributiExtra.length > 0 || ccnlPreset.enteBilaterale ? (
