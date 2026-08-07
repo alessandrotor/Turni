@@ -6,7 +6,19 @@ Turni.apk
 Turni.zip
 phone.txt
 tests/
-# CSV export dello script CCNL (uso esterno on-demand): l'app usa solo il .json
-src/data/ccnl.csv
-/ccnl.csv
-/ccnl.json
+
+# Firma Android: il keystore e le sue password non entrano MAI nel repository.
+*.jks
+*.keystore
+keystore.properties
+
+# Prodotti di build Android
+android/app/build/
+android/build/
+android/.gradle/
+android/app/release/
+
+# Proxy AI: segreti locali di wrangler
+worker/.dev.vars
+worker/node_modules
+worker/.wrangler

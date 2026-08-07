@@ -6,7 +6,8 @@
 const ENDPOINT = import.meta.env.VITE_TELEMETRY_URL || '';
 
 // ID installazione casuale e anonimo, per distinguere i tester senza sapere chi.
-function installId() {
+// Esportato perché serve anche al proxy AI come chiave dei limiti di richiesta.
+export function installId() {
   try {
     let id = localStorage.getItem('turni_install_id');
     if (!id) {
@@ -19,8 +20,31 @@ function installId() {
   }
 }
 
+// Spegnimento su richiesta dell'utente (interruttore in Impostazioni). Vive in
+// localStorage e non nei settings dell'app perché deve essere leggibile da qui
+// senza far passare l'oggetto settings attraverso ogni chiamante.
+const OPT_OUT_KEY = 'turni_telemetry_off';
+
+export function isTelemetryEnabled() {
+  try {
+    return localStorage.getItem(OPT_OUT_KEY) !== '1';
+  } catch {
+    return true;
+  }
+}
+
+export function setTelemetryEnabled(on) {
+  try {
+    if (on) localStorage.removeItem(OPT_OUT_KEY);
+    else localStorage.setItem(OPT_OUT_KEY, '1');
+  } catch {
+    // Storage non disponibile: la telemetria resta com'è, non è un errore da mostrare.
+  }
+}
+
 export function sendImportTelemetry(data = {}) {
   if (!ENDPOINT) return; // no-op se non configurato
+  if (!isTelemetryEnabled()) return;
   try {
     const payload = JSON.stringify({
       ts: new Date().toISOString(),

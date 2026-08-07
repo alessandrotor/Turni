@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { formatCurrency, parseNum } from '../utils/pay';
 import { CCNL_LIST, getCcnl } from '../utils/ccnl';
+import { isTelemetryEnabled, setTelemetryEnabled } from '../services/telemetry';
 import { ENABLE_NET_CALC } from '../config/features';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
@@ -55,6 +56,8 @@ export default function Settings({ settings, onSave }) {
     addizionaliAltrove: !!settings.addizionaliAltrove,
     noTrattamentoIntegrativo: !!settings.noTrattamentoIntegrativo,
     tiProjectionMode: settings.tiProjectionMode === 'ytd' ? 'ytd' : 'stimato',
+    // Non passa da `onSave`: vive in localStorage, gestito da services/telemetry.
+    telemetry: isTelemetryEnabled(),
   });
   const [saved, setSaved] = useState(false);
   // Testo digitato nel selettore CCNL (ricerca per nome). Salviamo il codice in
@@ -791,6 +794,25 @@ export default function Settings({ settings, onSave }) {
               onChange={set('workerName')}
             />
           </div>
+
+          <p className="settings-section-desc">
+            L'immagine viene inviata a Google Gemini per la lettura e non viene conservata.
+            I turni restano sul tuo telefono.
+          </p>
+
+          <label className="check-row">
+            <input
+              type="checkbox"
+              checked={form.telemetry}
+              onChange={(e) => { setTelemetryEnabled(e.target.checked); setForm(f => ({ ...f, telemetry: e.target.checked })); }}
+            />
+            <span>Invia statistiche anonime d'uso dell'import</span>
+          </label>
+          <p className="form-hint">
+            Solo il numero di token consumati e un identificativo casuale dell'installazione:
+            nessun turno, nessuna immagine, niente che ti identifichi. Serve a capire quanto
+            costa la funzione durante la beta.
+          </p>
         </details>
 
         {/* CCNL: contributi minori e divisore orario */}

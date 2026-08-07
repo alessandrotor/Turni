@@ -1,4 +1,30 @@
+import groovy.json.JsonSlurper
+
 apply plugin: 'com.android.application'
+
+// La versione ha una sola fonte di verità: package.json, come già fa
+// vite.config.js per il badge in fondo alla pagina. Il versionCode va derivato
+// perché Play pretende un intero sempre crescente e diverso a ogni upload:
+// 0.4.0 diventa 400. Regge finché minor e patch restano sotto 100. Un suffisso
+// di pre-release ("0.4.0-beta.1") viene ignorato e dà lo stesso codice di
+// "0.4.0": per caricare due build distinte, incrementa la patch.
+def pkg = new JsonSlurper().parse(file("$rootDir/../package.json"))
+// Le cifre vanno estratte, non solo separate: una versione come "0.4.0-beta.1"
+// manderebbe in eccezione un toInteger() sull'ultimo pezzo.
+def vParts = (pkg.version =~ /(\d+)\.(\d+)\.(\d+)/)
+if (!vParts.find()) {
+    throw new GradleException("Versione non riconosciuta in package.json: ${pkg.version}")
+}
+def (vMajor, vMinor, vPatch) = [1, 2, 3].collect { vParts.group(it).toInteger() }
+
+// Credenziali di firma: file non versionato (vedi .gitignore). Se manca, la
+// release resta non firmata — utile per compilare senza keystore, ma un AAB
+// così NON è caricabile su Play.
+def keystorePropsFile = file('../keystore.properties')
+def keystoreProps = new Properties()
+if (keystorePropsFile.exists()) {
+    keystoreProps.load(new FileInputStream(keystorePropsFile))
+}
 
 android {
     namespace = "com.alessandrotor.turni"
@@ -7,8 +33,8 @@ android {
         applicationId "com.alessandrotor.turni"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode vMajor * 10000 + vMinor * 100 + vPatch
+        versionName pkg.version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,10 +42,32 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (keystorePropsFile.exists()) {
+                storeFile file(keystoreProps['storeFile'])
+                storePassword keystoreProps['storePassword']
+                keyAlias keystoreProps['keyAlias']
+                keyPassword keystoreProps['keyPassword']
+            }
+        }
+    }
+
     buildTypes {
         release {
+            // minifyEnabled resta FALSE di proposito. R8 non tocca gli asset web
+            // (che sono quasi tutto il peso dell'app): accorcerebbe solo il guscio
+            // Java, pochi KB. In cambio Capacitor carica i plugin per riflessione
+            // e `proguard-rules.pro` non ha regole -keep: con R8 acceso Filesystem
+            // e Share possono sparire, e l'export Excel/PDF si romperebbe a runtime
+            // solo nella build di release, cioè dove non te ne accorgi.
+            // Per attivarlo servono prima le regole -keep per i plugin, e un giro
+            // di collaudo su traccia interna che esporti davvero un file.
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (keystorePropsFile.exists()) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

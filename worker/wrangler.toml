@@ -1,0 +1,15 @@
+name = "turni-ai-proxy"
+main = "src/index.js"
+compatibility_date = "2026-01-15"
+
+# La chiave NON va qui. Si carica come secret, che resta solo su Cloudflare:
+#   npx wrangler secret put GEMINI_API_KEY
+# In locale (`wrangler dev`) si legge invece da `worker/.dev.vars`, gitignorato.
+
+# Namespace KV per i limiti di richiesta. Da creare una volta con:
+#   npx wrangler kv namespace create RATE
+# e incollare qui sotto l'id restituito. Senza binding il worker funziona
+# comunque, ma senza alcun limite: va bene per `wrangler dev`, non in rete.
+# [[kv_namespaces]]
+# binding = "RATE"
+# id = "<id-restituito-dal-comando>"

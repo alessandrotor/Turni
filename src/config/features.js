@@ -10,3 +10,9 @@
 
 const env = import.meta.env.VITE_BETA_NET;
 export const ENABLE_NET_CALC = env != null ? env === 'true' : true; // default ON sul branch private-beta
+
+// ENABLE_DEBUG mostra il riquadro con la ripartizione dei token dopo un import
+// da immagine. È materiale da sviluppo: in una build pubblicata sullo Store non
+// deve comparire, quindi il default è OFF e si accende solo di proposito
+// (`VITE_DEBUG=true`, tipicamente in .env.local durante `npm run dev`).
+export const ENABLE_DEBUG = import.meta.env.VITE_DEBUG === 'true';

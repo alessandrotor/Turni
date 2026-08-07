@@ -1,22 +1,21 @@
 {
   "name": "turni",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "ccnl:aggiorna": "node scripts/scarica-ccnl.mjs src/data/ccnl.json"
+    "ccnl:aggiorna": "node scripts/scarica-ccnl.mjs src/data/ccnl.json",
+    "android:release": "npm run build && npx cap sync android && cd android && ./gradlew bundleRelease"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.107.0",
     "@capacitor/android": "^8.4.1",
     "@capacitor/cli": "^8.4.1",
     "@capacitor/core": "^8.4.1",
     "@capacitor/filesystem": "^8.1.2",
     "@capacitor/share": "^8.0.1",
-    "@google/genai": "^2.13.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
     "react": "^18.3.1",

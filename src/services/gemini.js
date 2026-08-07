@@ -1,17 +1,15 @@
-import { GoogleGenAI, Type, MediaResolution } from '@google/genai';
 import { isIsoDate } from '../utils/dates';
+import { installId } from './telemetry';
 
-// SDK ufficiale mantenuto (@google/genai). Supporta structured output
-// (responseSchema/responseMimeType), thinkingConfig/thinkingBudget e restituisce
-// thoughtsTokenCount nel usageMetadata (a differenza del vecchio generative-ai).
-
-// BRANCH flash-lite: modello fissato a Gemini 3 Flash (NON 3.6).
-const MODEL = 'gemini-3-flash-preview';
-
-// Tetto di sicurezza generoso: NON stringere sotto il fabbisogno reale — su un
-// modello "thinking" un cap basso troncherebbe il ragionamento e perderebbe
-// turni. Il thinking si controlla semmai con thinkingConfig (vedi sotto).
-const MAX_OUTPUT_TOKENS = 65536;
+// La chiamata a Gemini NON avviene più da qui: la fa il proxy in `worker/`.
+// Motivo: Vite sostituisce le `import.meta.env.*` a build time, quindi una
+// chiave lasciata nel client finirebbe in chiaro nel bundle, che Capacitor
+// impacchetta come asset dell'APK — estraibile con un unzip da chiunque scarichi
+// l'app, tester della beta compresi.
+//
+// Restano qui il ridimensionamento dell'immagine (va fatto sul telefono, prima
+// di spedire) e la normalizzazione di date e orari, che è pura e già collaudata.
+const PROXY_URL = import.meta.env.VITE_AI_PROXY_URL || '';
 
 // Oltre questo tempo la richiesta viene annullata: senza timeout una chiamata
 // che non risponde lascia il pulsante bloccato su "Analisi in corso" per sempre.
@@ -23,36 +21,6 @@ const REQUEST_TIMEOUT_MS = 120000;
 const MAX_IMAGE_SIDE = 1600;
 const RESIZE_MIME = 'image/jpeg';
 const RESIZE_QUALITY = 0.85;
-
-// Budget di thinking: lasciato al DEFAULT del modello per ora. Prima misuriamo
-// thoughtsTokenCount reale (log sotto), poi si decide un valore. Per applicarlo:
-//   config.thinkingConfig = { thinkingBudget: N }   // N>0, NON azzerare
-// (serve ragionamento spaziale per allineare riga/colonna).
-
-// Schema strutturato: array di turni con campi di provenienza per la
-// validazione deterministica lato app. Niente testo libero oltre a questi.
-const responseSchema = {
-  type: Type.ARRAY,
-  items: {
-    type: Type.OBJECT,
-    properties: {
-      data: { type: Type.STRING, description: 'Data del turno in ISO YYYY-MM-DD' },
-      ora_inizio: { type: Type.STRING, description: 'Ora di inizio HH:MM (24h), vuoto se assente' },
-      ora_fine: { type: Type.STRING, description: 'Ora di fine HH:MM (24h), vuoto se assente' },
-      codice_turno: { type: Type.STRING, description: 'Sigla grezza della cella, es. "M", "P", "R"' },
-      testo_grezzo: { type: Type.STRING, description: 'Contenuto esatto della cella così com\'è nell\'immagine' },
-      riga_identificata: { type: Type.STRING, description: 'Etichetta della riga associata all\'utente' },
-      intestazione_colonna: { type: Type.STRING, description: 'Intestazione della colonna da cui deriva la data' },
-    },
-    required: ['data', 'ora_inizio', 'ora_fine', 'codice_turno', 'testo_grezzo', 'riga_identificata', 'intestazione_colonna'],
-  },
-};
-
-function getClient() {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (!apiKey) throw new Error('Chiave API mancante: aggiungi VITE_GEMINI_API_KEY in .env.local');
-  return new GoogleGenAI({ apiKey });
-}
 
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
@@ -94,103 +62,45 @@ async function prepareImage(file) {
   }
 }
 
-// Log della ripartizione token: prompt (immagine+testo), output effettivo,
-// thinking e totale — per decidere dove intervenire senza ottimizzare alla cieca.
-function logUsage(response) {
-  try {
-    const u = response?.usageMetadata || {};
-    console.log('[gemini-usage]', JSON.stringify(u));
-    console.log('[gemini-usage] prompt=%s output(candidates)=%s thinking(thoughts)=%s total=%s',
-      u.promptTokenCount, u.candidatesTokenCount, u.thoughtsTokenCount ?? 'n/d', u.totalTokenCount);
-    const fr = response?.candidates?.[0]?.finishReason;
-    if (fr) console.log('[gemini-usage] finishReason=%s', fr);
-  } catch (e) {
-    console.log('[gemini-usage] impossibile leggere usageMetadata:', e.message);
-  }
-}
-
 export async function parseShiftsFromImage(imageFile, workerName = '') {
-  const ai = getClient();
+  if (!PROXY_URL) {
+    throw new Error('Servizio di riconoscimento non configurato: manca VITE_AI_PROXY_URL.');
+  }
   const image = await prepareImage(imageFile);
-  const currentYear = new Date().getFullYear();
-
-  const name = String(workerName || '').trim();
-  const nameRule = name
-    ? `\nIl foglio contiene i turni di PIÙ persone: estrai SOLO quelli di "${name}". Individua la sua riga (match parziale, ignora maiuscole/accenti), riporta l'etichetta trovata in "riga_identificata" e ignora tutte le altre persone.`
-    : '\nRiporta in "riga_identificata" l\'etichetta della riga da cui provengono i turni (vuoto se non applicabile).';
-
-  const prompt = `Sei un estrattore di turni da un'immagine di un foglio turni (griglia con persone sulle righe e giorni sulle colonne).
-
-Per ogni turno di lavoro con orario valido, deriva:
-- la DATA dall'intestazione della colonna (giorno/mese/anno). Se l'anno non è indicato usa ${currentYear}. Riporta l'intestazione grezza in "intestazione_colonna".
-- gli ORARI di inizio/fine (24h HH:MM). Se la cella riporta solo una sigla senza orario, lascia ora_inizio/ora_fine vuoti ma compila comunque codice_turno e testo_grezzo.
-- "codice_turno" = sigla grezza della cella; "testo_grezzo" = contenuto esatto della cella.
-${nameRule}
-
-Allineamento: incrocia con attenzione la riga della persona con la colonna del giorno; non spostarti di riga/colonna. Gestisci immagini irregolari: screenshot WhatsApp, foto storte o ruotate, colonne non perfettamente allineate, celle unite. Ignora intestazioni, totali, legende e celle vuote/di riposo senza orario.`;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   let response;
   try {
-    response = await ai.models.generateContent({
-      model: MODEL,
-      contents: [
-        { text: prompt },
-        { inlineData: { mimeType: image.mimeType, data: image.data } },
-      ],
-      config: {
-        abortSignal: controller.signal,
-        responseMimeType: 'application/json',
-        responseSchema,
-        maxOutputTokens: MAX_OUTPUT_TOKENS,
-        // Estrazione deterministica: stessa immagine → stesso risultato.
-        temperature: 0,
-        // Risoluzione LOW: sui test (tabella + conversazione) l'accuratezza è
-        // identica ad HIGH/MID ma con meno token immagine (prompt ~600 vs ~1400).
-        mediaResolution: MediaResolution.MEDIA_RESOLUTION_LOW,
-      },
+    response = await fetch(`${PROXY_URL.replace(/\/$/, '')}/parse-shifts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      body: JSON.stringify({
+        image: image.data,
+        mimeType: image.mimeType,
+        workerName,
+        installId: installId(),
+      }),
     });
   } catch (err) {
     if (controller.signal.aborted) {
       throw new Error(`Tempo scaduto (${REQUEST_TIMEOUT_MS / 1000}s): riprova con un'immagine più piccola o una connessione migliore.`);
     }
-    throw err;
+    throw new Error('Impossibile contattare il servizio di riconoscimento: controlla la connessione.');
   } finally {
     clearTimeout(timer);
   }
 
-  logUsage(response);
-
-  // Ripartizione token esposta anche all'app (pannello debug beta).
-  const u = response?.usageMetadata || {};
-  const finishReason = response?.candidates?.[0]?.finishReason ?? null;
-  const usage = {
-    prompt: u.promptTokenCount ?? null,
-    output: u.candidatesTokenCount ?? null,
-    thinking: u.thoughtsTokenCount ?? null,
-    total: u.totalTokenCount ?? null,
-    finishReason: finishReason ? String(finishReason) : null,
-    model: MODEL,
-    resolution: 'LOW',
-  };
-
-  // Troncamento esplicito: non parsare un JSON parziale (perderebbe turni).
-  if (String(finishReason) === 'MAX_TOKENS') {
-    throw new Error('Risposta troncata (MAX_TOKENS): aumenta maxOutputTokens. Nessun turno importato per non perdere dati.');
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    // Il proxy manda messaggi già scritti per chi usa l'app: si mostrano così.
+    throw new Error(payload?.error || 'Il riconoscimento non è riuscito.');
   }
 
-  const text = (response.text || '').trim();
-  if (!text) throw new Error('Nessuna risposta dal modello (possibile blocco o quota).');
-
-  let raw;
-  try {
-    raw = JSON.parse(text);
-  } catch {
-    const m = text.match(/\[[\s\S]*\]/);
-    if (!m) throw new Error('Nessun turno riconosciuto nell\'immagine');
-    raw = JSON.parse(m[0]);
-  }
+  const raw = payload?.items;
+  const usage = payload?.usage || {};
+  console.log('[gemini-usage]', JSON.stringify(usage));
   if (!Array.isArray(raw) || raw.length === 0) throw new Error('Nessun turno trovato');
 
   // Mappa allo schema turni dell'app; conserva i campi di provenienza.

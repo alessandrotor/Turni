@@ -10,7 +10,7 @@ import {
   calcNetMonthly, projectAnnualGross, monthlyBaseGross,
   extraMonthsAccrued, extraMonthAccrual, EXTRA_MONTHS, TAX_2026, tiDecision,
 } from '../utils/net';
-import { ENABLE_NET_CALC } from '../config/features';
+import { ENABLE_NET_CALC, ENABLE_DEBUG } from '../config/features';
 
 // Aliquota contributiva: fino a 3 decimali, senza zeri inutili in coda
 // (9,19% e 0,267%, non 9,190% né 0,300%).
@@ -215,7 +215,8 @@ export default function CalendarView({
   const addizionaliPct = (addRegPct + addComPct).toFixed(2).replace('.', ',');
   const showNetPanel = ENABLE_NET_CALC && pay !== null && netBasis > 0 && monthGross > 0;
 
-  const hasGeminiKey = !!import.meta.env.VITE_GEMINI_API_KEY;
+  // Costante di build: il modulo gemini resta caricato pigramente (riga ~242).
+  const hasImportAI = !!import.meta.env.VITE_AI_PROXY_URL;
 
   const closeNameModal = useCallback(() => setPendingImportFile(null), []);
   useModalDismiss(nameModalRef, closeNameModal, !!pendingImportFile);
@@ -237,8 +238,8 @@ export default function CalendarView({
     setImportError(null);
     const meta = { named: !!name, imageBytes: file?.size ?? null, imageType: file?.type ?? null };
     try {
-      // SDK Gemini caricato on-demand: serve solo a chi importa da immagine,
-      // non deve pesare sull'avvio (stessa scelta di services/export.js).
+      // Client del proxy caricato on-demand: serve solo a chi importa da
+      // immagine, non deve pesare sull'avvio (come services/export.js).
       const { parseShiftsFromImage } = await import('../services/gemini');
       const { shifts: parsed, usage } = await parseShiftsFromImage(file, name);
       setImportUsage(usage);
@@ -334,7 +335,7 @@ export default function CalendarView({
       </div>
 
       {/* Import bar */}
-      {hasGeminiKey && (
+      {hasImportAI && (
         <div className="import-bar">
           <input
             ref={fileInputRef}
@@ -351,7 +352,7 @@ export default function CalendarView({
             {importLoading ? '⏳ Analisi in corso…' : '📤 Importa turni da immagine'}
           </button>
           {importError && <span className="import-error">{importError}</span>}
-          {importUsage && (
+          {ENABLE_DEBUG && importUsage && (
             <div className="debug-usage">
               <span className="debug-usage-tag">🐛 DEBUG token</span>
               <span>prompt <strong>{importUsage.prompt ?? '—'}</strong></span>
@@ -686,10 +687,9 @@ export default function CalendarView({
           </div>
         )}
 
-        {/* Riepilogo AI disattivato: il codice vive in services/ai.js, non
-            referenziato (e quindi fuori dal bundle). Per riattivarlo servono
-            l'import di generateMonthlySummary, lo stato aiSummary/aiLoading/
-            aiError e un pulsante che li usi. */}
+        {/* Il riepilogo AI del mese è stato rimosso insieme a services/ai.js:
+            teneva due chiavi API in chiaro nel sorgente. Per riproporlo, la
+            generazione va nel proxy (worker/), come l'import da immagine. */}
       </div>
 
       {importParsed && (

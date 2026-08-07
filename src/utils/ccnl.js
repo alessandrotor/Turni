@@ -15,7 +15,10 @@
 // aliquote di uso comune (o nulla): la UI deve dirlo, e chi ha la busta sotto
 // mano deve poter correggere a mano.
 
-import ccnlData from '../data/ccnl.json';
+// L'attributo `with { type: 'json' }` non serve al bundler ma sì a Node puro:
+// senza, `scripts/check-busta-giugno-2026.mjs` non riesce più a importare il
+// motore (ERR_IMPORT_ATTRIBUTE_MISSING).
+import ccnlData from '../data/ccnl.json' with { type: 'json' };
 
 // Divisore orario generico, quando il contratto non ne indica uno: 52 settimane
 // spalmate su 12 mesi.
