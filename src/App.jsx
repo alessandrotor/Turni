@@ -7,6 +7,7 @@ import CalendarView from './components/CalendarView';
 import Settings from './components/Settings';
 import ShiftForm from './components/ShiftForm';
 import NavBar from './components/NavBar';
+import InstallPrompt from './components/InstallPrompt';
 
 const DEFAULT_SETTINGS = {
   hourlyRate: 0,
@@ -158,6 +159,7 @@ export default function App() {
       <NavBar view={view} onNavigate={setView} />
 
       <main className="main-content">
+        <InstallPrompt />
         {view === 'calendar' && (
           <CalendarView
             currentMonth={currentMonth}
