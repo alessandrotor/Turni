@@ -819,6 +819,16 @@ input, select, textarea { font: inherit; }
   font-style: italic;
 }
 
+/* Backup: pulsante e didascalia affiancati, che vanno a capo se stretti. */
+.backup-row {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex-wrap: wrap;
+  margin-bottom: .6rem;
+}
+.backup-row .form-hint { margin-top: 0; }
+
 /* Elenco in sola lettura delle aliquote del CCNL scelto. */
 .settings-list {
   margin: .35rem 0 0;

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { formatCurrency, parseNum } from '../utils/pay';
 import { CCNL_LIST, getCcnl } from '../utils/ccnl';
 import { isTelemetryEnabled, setTelemetryEnabled } from '../services/telemetry';
+import { esportaBackup, importaBackup, contaTurniSalvati } from '../services/backup';
 import { ENABLE_NET_CALC } from '../config/features';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
@@ -60,6 +61,12 @@ export default function Settings({ settings, onSave }) {
     telemetry: isTelemetryEnabled(),
   });
   const [saved, setSaved] = useState(false);
+  // Backup: stato locale alla sezione, non passa da onSave (agisce direttamente
+  // su localStorage). `turniSalvati` è letto una volta all'apertura della pagina.
+  const [backupBusy, setBackupBusy] = useState(false);
+  const [backupMsg, setBackupMsg] = useState(null);
+  const backupInputRef = useRef(null);
+  const [turniSalvati] = useState(contaTurniSalvati);
   // Testo digitato nel selettore CCNL (ricerca per nome). Salviamo il codice in
   // form.ccnl, ma l'utente cerca per denominazione: teniamo separati testo e codice.
   const [ccnlQuery, setCcnlQuery] = useState(() => getCcnl(settings.ccnl || '').label);
@@ -119,6 +126,44 @@ export default function Settings({ settings, onSave }) {
     setForm(f => ({ ...f, fixedMonthlyItems: f.fixedMonthlyItems.filter(v => v.id !== id) }));
     setSaved(false);
   };
+
+  async function handleEsportaBackup() {
+    setBackupBusy(true);
+    setBackupMsg(null);
+    try {
+      const { turni } = await esportaBackup();
+      setBackupMsg({ testo: `Backup creato: ${turni} turni salvati.` });
+    } catch (err) {
+      setBackupMsg({ errore: true, testo: err.message || 'Impossibile creare il backup.' });
+    } finally {
+      setBackupBusy(false);
+    }
+  }
+
+  async function handleImportaBackup(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    // Il ripristino sovrascrive mesi di turni: la conferma non è una formalità.
+    const conferma = window.confirm(
+      'Il ripristino sostituisce TUTTI i turni e le impostazioni presenti su questo telefono. Continuare?'
+    );
+    if (!conferma) return;
+
+    setBackupBusy(true);
+    setBackupMsg(null);
+    try {
+      const { turni } = await importaBackup(file);
+      setBackupMsg({ testo: `Ripristinati ${turni} turni. Ricarico l'app…` });
+      // Gli hook useLocalStorage leggono solo all'inizializzazione: senza reload
+      // la schermata continuerebbe a mostrare i dati vecchi.
+      setTimeout(() => window.location.reload(), 800);
+    } catch (err) {
+      setBackupMsg({ errore: true, testo: err.message || 'Ripristino non riuscito.' });
+      setBackupBusy(false);
+    }
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -894,6 +939,57 @@ export default function Settings({ settings, onSave }) {
               ⚠️ Aliquote indicative, <strong>non riscontrate su una busta reale</strong>. Se hai il
               cedolino sotto mano, confronta le voci: dove non tornano, il dato giusto è quello.
             </p>
+          )}
+        </details>
+
+        {/* Backup e ripristino: i dati vivono solo in localStorage */}
+        <details className="settings-section">
+          <summary className="settings-section-title">💾 Backup e ripristino</summary>
+          <p className="settings-section-desc">
+            Turni e impostazioni esistono <strong>solo su questo telefono</strong>: non c'è nessun
+            account e nessuna copia altrove. Esporta un backup prima di cambiare telefono,
+            reinstallare l'app o aggiornarla da una fonte diversa — in quei casi Android cancella
+            i dati e senza backup non si recuperano.
+          </p>
+
+          <div className="backup-row">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleEsportaBackup}
+              disabled={backupBusy}
+            >
+              ⬇️ Esporta backup
+            </button>
+            <span className="form-hint">
+              {turniSalvati === 0
+                ? 'Nessun turno da salvare'
+                : `${turniSalvati} turn${turniSalvati === 1 ? 'o' : 'i'} + impostazioni`}
+            </span>
+          </div>
+
+          <div className="backup-row">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => backupInputRef.current?.click()}
+              disabled={backupBusy}
+            >
+              ⬆️ Ripristina da file
+            </button>
+            <span className="form-hint">Sostituisce tutti i dati attuali</span>
+          </div>
+
+          <input
+            ref={backupInputRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={handleImportaBackup}
+          />
+
+          {backupMsg && (
+            <p className={backupMsg.errore ? 'ai-error' : 'form-hint'}>{backupMsg.testo}</p>
           )}
         </details>
 

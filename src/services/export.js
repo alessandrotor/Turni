@@ -31,7 +31,9 @@ function prepare(shifts, monthDate) {
 }
 
 // Scrive/condivide il file: nativo → Filesystem + Share; browser → download.
-async function deliver(filename, base64, mime) {
+// Esportata perché la usa anche il backup JSON (services/backup.js): è l'unico
+// punto in cui l'app sa come consegnare un file su entrambe le piattaforme.
+export async function deliver(filename, base64, mime) {
   if (Capacitor.isNativePlatform()) {
     const { Filesystem, Directory } = await import('@capacitor/filesystem');
     const { Share } = await import('@capacitor/share');
