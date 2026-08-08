@@ -22,3 +22,8 @@ android/app/release/
 worker/.dev.vars
 worker/node_modules
 worker/.wrangler
+
+# Export CSV dello script CCNL (uso esterno on-demand): l'app usa solo il .json
+src/data/ccnl.csv
+/ccnl.csv
+/ccnl.json

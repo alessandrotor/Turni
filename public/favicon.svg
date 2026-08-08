@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#2563eb"/>
+  <circle cx="256" cy="256" r="140" fill="#ffffff"/>
+  <circle cx="256" cy="256" r="140" fill="none" stroke="#1d4ed8" stroke-width="10"/>
+  <!-- lancetta dei minuti (ore 12) -->
+  <line x1="256" y1="256" x2="256" y2="150" stroke="#0f172a" stroke-width="16" stroke-linecap="round"/>
+  <!-- lancetta delle ore (ore 1) -->
+  <line x1="256" y1="256" x2="298" y2="184" stroke="#0f172a" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="256" cy="256" r="14" fill="#0f172a"/>
+</svg>
