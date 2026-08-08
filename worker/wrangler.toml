@@ -6,10 +6,10 @@ compatibility_date = "2026-01-15"
 #   npx wrangler secret put GEMINI_API_KEY
 # In locale (`wrangler dev`) si legge invece da `worker/.dev.vars`, gitignorato.
 
-# Namespace KV per i limiti di richiesta. Da creare una volta con:
+# Namespace KV per i limiti di richiesta. Creato con:
 #   npx wrangler kv namespace create RATE
-# e incollare qui sotto l'id restituito. Senza binding il worker funziona
-# comunque, ma senza alcun limite: va bene per `wrangler dev`, non in rete.
-# [[kv_namespaces]]
-# binding = "RATE"
-# id = "<id-restituito-dal-comando>"
+# Senza binding il worker funziona comunque, ma senza alcun limite: va bene per
+# `wrangler dev`, non in rete.
+[[kv_namespaces]]
+binding = "RATE"
+id = "d683b8770d88406ba79a65e64c9bec5f"
