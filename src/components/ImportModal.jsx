@@ -30,6 +30,13 @@ export default function ImportModal({ shifts, onConfirm, onClose }) {
   const dialogRef = useRef(null);
   useModalDismiss(dialogRef, onClose);
 
+  // Totale ore di tutti i turni riconosciuti: un colpo d'occhio per accorgersi
+  // subito se il conteggio non torna (orario letto male, turno di troppo...).
+  const totalMinutes = shifts.reduce(
+    (sum, s) => sum + Math.max(0, minutesDiff(s.startTime, s.endTime) - (s.breakMinutes || 0)),
+    0,
+  );
+
   return (
     <div className="modal-overlay" onClick={e => e.target === ref.current && onClose()} ref={ref}>
       <div ref={dialogRef} className="modal" role="dialog" aria-modal="true" aria-label="Conferma importazione">
@@ -40,7 +47,8 @@ export default function ImportModal({ shifts, onConfirm, onClose }) {
 
         <div className="import-body">
           <p className="import-intro">
-            Trovati <strong>{shifts.length} turni</strong>. Controlla e conferma.
+            Trovati <strong>{shifts.length} turni</strong> · totale{' '}
+            <strong>{formatMinutes(totalMinutes)}</strong>. Controlla e conferma.
           </p>
 
           <div className="import-list">

@@ -148,8 +148,12 @@ function toHHMM(v) {
   const m = s.match(/^(\d{1,2})[:.,h]?(\d{2})$/i);
   if (!m) return '';
   const h = Number(m[1]);
-  const min = Number(m[2]);
+  let min = Number(m[2]);
   if (h > 23 || min > 59) return '';
+  // Un orario che finisce in :50 è quasi sempre una lettura errata di :30
+  // (mezz'ora): sui fogli turni un turno che inizia o finisce davvero alle :50 è
+  // rarissimo, mentre la mezz'ora è la norma. Correggiamo verso il caso comune.
+  if (min === 50) min = 30;
   return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }
 
