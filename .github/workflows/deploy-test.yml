@@ -1,0 +1,46 @@
+# Auto-deploy dell'AMBIENTE DI TEST su ogni push del branch web.
+# La PRODUZIONE resta manuale (deploy su --branch main lanciato a mano), così i
+# tester non vedono cambiamenti a sorpresa. Vedi memory/web-deploy.md.
+#
+# Richiede due impostazioni nel repo GitHub (Settings → Secrets and variables → Actions):
+#   - Secret   CLOUDFLARE_API_TOKEN  → token Cloudflare con permesso "Cloudflare Pages: Edit"
+#   - Variable VITE_AI_PROXY_URL     → https://turni-ai-proxy.magnaopa.workers.dev
+# (L'account id non è segreto ed è scritto qui sotto.)
+
+name: Deploy TEST (Cloudflare Pages)
+
+on:
+  push:
+    branches: [feat/web-app]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-test
+  cancel-in-progress: true
+
+jobs:
+  deploy-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build (telemetria OFF: VITE_TELEMETRY_URL volutamente non impostata)
+        run: npm run build
+        env:
+          VITE_AI_PROXY_URL: ${{ vars.VITE_AI_PROXY_URL }}
+
+      - name: Deploy su Pages (branch test)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: efda5a39e3e8644a9398645ea4b8cfac
+          command: pages deploy dist --project-name turni --branch test
