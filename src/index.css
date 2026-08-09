@@ -1,5 +1,22 @@
+/* ── Carattere ─────────────────────────────────────────────────────
+   Rubik: stessa impostazione neutra del carattere di sistema, ma con le
+   aste smussate agli angoli — più morbido a parità di leggibilità, e le
+   cifre restano incolonnate nelle celle del calendario.
+   Sottoinsieme ai soli caratteri che l'app usa (italiano, cifre, simboli):
+   19,8 kB invece dei 34,5 della famiglia intera. È VARIABILE sull'asse del
+   peso, quindi copre da 300 a 700 con un file solo.
+   Autoprodotto e non da CDN: il service worker lo mette in cache e l'app
+   resta identica offline. Licenza SIL OFL 1.1, vedi assets/fonts/OFL.txt. */
+@font-face {
+  font-family: 'Rubik';
+  src: url('./assets/fonts/rubik.woff2') format('woff2-variations');
+  font-weight: 300 700; font-style: normal; font-display: swap;
+}
+
 /* ── Design system ─────────────────────────────────────────────── */
 :root {
+  --font-sans: 'Rubik', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
   --c-primary:        #2563eb;
   --c-primary-dark:   #1d4ed8;
   --c-primary-light:  #dbeafe;
@@ -30,7 +47,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { font-size: 16px; -webkit-text-size-adjust: 100%; }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans);
   background: var(--c-bg);
   color: var(--c-text);
   line-height: 1.5;
