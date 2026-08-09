@@ -5,14 +5,14 @@
 
 const ENDPOINT = import.meta.env.VITE_TELEMETRY_URL || '';
 
-// La telemetria è SOLO per la produzione dei tester: spenta sull'ambiente di
-// test (sottodominio test.*) e in sviluppo locale, per non sporcare le metriche.
-// Basata sull'origine, così lo stesso bundle vale per prod e test senza build ad hoc.
-const IS_NON_PROD = typeof location !== 'undefined' && (
-  location.hostname.startsWith('test.') ||
-  location.hostname === 'localhost' ||
-  location.hostname === '127.0.0.1'
-);
+// Spegni la telemetria sull'ambiente di TEST (sottodominio test.*). È una
+// sicurezza per i deploy manuali su --branch test fatti con la .env.local (che
+// contiene l'endpoint): l'auto-deploy CI non imposta VITE_TELEMETRY_URL, quindi
+// lì è già off via endpoint vuoto.
+// NB: niente 'localhost' — l'APK Capacitor gira su https://localhost, e lì la
+// telemetria (unico build con endpoint) DEVE funzionare. In dev locale, se hai
+// l'endpoint in .env.local, puoi spegnerla dall'interruttore in Impostazioni.
+const IS_TEST_ENV = typeof location !== 'undefined' && location.hostname.startsWith('test.');
 
 // ID installazione casuale e anonimo, per distinguere i tester senza sapere chi.
 // Esportato perché serve anche al proxy AI come chiave dei limiti di richiesta.
@@ -53,7 +53,7 @@ export function setTelemetryEnabled(on) {
 
 export function sendImportTelemetry(data = {}) {
   if (!ENDPOINT) return; // no-op se non configurato
-  if (IS_NON_PROD) return; // ambiente di test / sviluppo: non inviare
+  if (IS_TEST_ENV) return; // ambiente di test: non inviare
   if (!isTelemetryEnabled()) return;
   try {
     const payload = JSON.stringify({
