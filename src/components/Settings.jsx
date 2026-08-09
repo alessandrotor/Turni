@@ -4,6 +4,7 @@ import { CCNL_LIST, getCcnl } from '../utils/ccnl';
 import { isTelemetryEnabled, setTelemetryEnabled } from '../services/telemetry';
 import { esportaBackup, importaBackup, contaTurniSalvati } from '../services/backup';
 import { ENABLE_NET_CALC } from '../config/features';
+import { genId } from '../utils/id';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
 const toInput = (n) => {
@@ -12,8 +13,6 @@ const toInput = (n) => {
   if (!num) return '';
   return String(num).replace('.', ',');
 };
-
-const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 // Mese di riferimento del montante, come 'YYYY-MM' per <input type="month">.
 const currentMonthValue = () => new Date().toISOString().slice(0, 7);

@@ -1,8 +1,9 @@
 import { useState, useCallback, useMemo } from 'react';
 import useLocalStorage from './hooks/useLocalStorage';
 import { getMonthStart, parseDate } from './utils/dates';
-import { calcTotalPay } from './utils/pay';
+import { calcTotalPay, computePayByShift } from './utils/pay';
 import { monthlyBaseGross, receivedExtraMonthsCount } from './utils/net';
+import { genId } from './utils/id';
 import CalendarView from './components/CalendarView';
 import Settings from './components/Settings';
 import ShiftForm from './components/ShiftForm';
@@ -66,7 +67,7 @@ export default function App() {
   }, [setSettings]);
 
   const addShift = useCallback((shiftData) => {
-    const id = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    const id = genId();
     setShifts(prev => ({ ...prev, [id]: { ...shiftData, id } }));
   }, [setShifts]);
 
@@ -96,10 +97,19 @@ export default function App() {
     });
   }, [allShifts, currentMonth]);
 
+  // Mappa paga per turno, calcolata UNA volta: è O(N) su tutta la storia dei
+  // turni. Ricalcolarla a ogni chiamata di calcTotalPay (mese, anno, montante)
+  // rallenta l'app col crescere dei turni; qui la memoizziamo e la passiamo giù.
+  const payByShift = useMemo(() => computePayByShift(allShifts, settings), [allShifts, settings]);
+
+  const year = currentMonth.getFullYear();
+
   // Reddito annuo lordo maturato dai turni dell'anno visualizzato,
   // più il montante fiscale già maturato prima di usare l'app.
+  // Dipende dall'ANNO (non dal mese): navigare tra i mesi dello stesso anno non
+  // deve ricalcolare RAL e tasse.
   const annualGross = useMemo(() => {
-    const y = currentMonth.getFullYear();
+    const y = year;
     const yearShifts = allShifts.filter(s => parseDate(s.date).getFullYear() === y);
     // Confine automatico a granularità MESE: il montante rappresenta il reddito fino
     // al mese in cui è stato impostato. I turni dei mesi ≤ mese di riferimento sono già
@@ -114,7 +124,7 @@ export default function App() {
     // Contesto straordinari = TUTTI i turni, non solo quelli dell'anno: le
     // settimane lun-dom a cavallo di capodanno vanno raggruppate per intero,
     // altrimenti lo stesso mese vale una cifra qui e un'altra nel calendario.
-    const pay = calcTotalPay(counted, settings, allShifts);
+    const pay = calcTotalPay(counted, settings, allShifts, payByShift);
     const fromShifts = pay ? pay.total : 0;
     // Mensilità aggiuntive già incassate, in base alla data ODIERNA (non al mese
     // che si sta sfogliando): altrimenti aprire dicembre farebbe risultare la
@@ -129,7 +139,7 @@ export default function App() {
     }
     const applyMontante = montante > 0 && (!cutoff || sameYear);
     return { total: fromShifts + (applyMontante ? montante : 0) + extras, extras };
-  }, [allShifts, settings, currentMonth]);
+  }, [allShifts, settings, year, payByShift]);
 
   const importShifts = useCallback((parsedShifts) => {
     setShifts(prev => {
@@ -141,7 +151,7 @@ export default function App() {
         const key = `${shiftData.date}|${shiftData.startTime}|${shiftData.endTime}`;
         if (seen.has(key)) return;
         seen.add(key);
-        const id = Date.now().toString(36) + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+        const id = genId();
         next[id] = { ...shiftData, id, breakMinutes: shiftData.breakMinutes || 0, note: shiftData.note || '' };
       });
       return next;
@@ -171,6 +181,7 @@ export default function App() {
             settings={settings}
             onUpdateSettings={updateSettings}
             allShifts={allShifts}
+            payByShift={payByShift}
             annualGross={annualGross.total}
             annualExtras={annualGross.extras}
           />

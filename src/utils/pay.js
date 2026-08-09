@@ -152,15 +152,19 @@ export function calcShiftPay(shift, settings) {
 // Totale paga con dettaglio maggiorazioni. Ritorna null se nessuna paga
 // oraria è configurata. `allShifts` (default = shifts) fornisce il contesto
 // settimanale per il calcolo degli straordinari.
-export function calcTotalPay(shifts, settings, allShifts = shifts) {
+// `byShift` opzionale: mappa già calcolata con computePayByShift(allShifts, settings).
+// Passarla evita di ricostruirla a ogni chiamata (è O(N) su TUTTA la storia dei
+// turni): con più viste che chiamano questa funzione, ricalcolarla ogni volta
+// rallenta l'app man mano che i turni crescono.
+export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = null) {
   if (!hasAnyRate(settings)) return null;
-  const byShift = computePayByShift(allShifts, settings);
+  const map = byShift || computePayByShift(allShifts, settings);
   let base = 0;
   let surcharge = 0;
   let overtimeMinutes = 0;
   let shiftsWithoutRate = 0;
   shifts.forEach(s => {
-    const p = byShift[s.id];
+    const p = map[s.id];
     if (p) {
       base += p.base;
       surcharge += p.surcharge;
