@@ -258,13 +258,15 @@ export default function Settings({ settings, onSave }) {
 
       <form onSubmit={handleSubmit} className="settings-form">
 
+        {/* ══ ESSENZIALI ══════════════════════════════════════════ */}
+
         {/* Paga oraria attuale */}
         <details className="settings-section" open>
           <summary className="settings-section-title">💰 Paga oraria</summary>
           <p className="settings-section-desc">
             Inserisci la tua paga oraria lorda <strong>attuale</strong>. È quella usata per i
             turni di oggi e futuri. Se durante l'anno hai avuto un aumento, registra le paghe
-            precedenti nella sezione qui sotto. Puoi usare la virgola per i decimali (es. 9,3542).
+            precedenti nel blocco <strong>Avanzate</strong> qui sotto. Puoi usare la virgola per i decimali (es. 9,3542).
           </p>
 
           <div className="form-group">
@@ -298,120 +300,6 @@ export default function Settings({ settings, onSave }) {
               </p>
             </div>
           )}
-        </details>
-
-        {/* Paghe precedenti (aumenti) */}
-        <details className="settings-section">
-          <summary className="settings-section-title">🔄 Paghe precedenti (aumenti)</summary>
-          <p className="settings-section-desc">
-            Hai avuto un aumento durante l'anno? Elenca qui le paghe che avevi <strong>prima</strong>,
-            indicando fino a quale giorno erano in vigore. I turni <strong>fino a</strong> quella data
-            useranno la paga indicata; tutti gli altri usano la paga attuale qui sopra.
-          </p>
-
-          {form.previousRates.length > 0 && (
-            <div className="rate-changes">
-              {form.previousRates.map(c => (
-                <div key={c.id} className="rate-change-row">
-                  <div className="rate-change-fields">
-                    <div className="form-group">
-                      <label className="form-label form-label--sm">Fino al giorno</label>
-                      <input
-                        type="date"
-                        className="form-input"
-                        value={c.until}
-                        onChange={updatePreviousRate(c.id, 'until')}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label form-label--sm">Paga di allora (€/ora)</label>
-                      <div className="input-with-symbol">
-                        <span className="input-symbol">€</span>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          className="form-input form-input--with-symbol"
-                          placeholder="0,00"
-                          value={c.rate}
-                          onChange={updatePreviousRate(c.id, 'rate')}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="rate-change-remove"
-                    onClick={() => removePreviousRate(c.id)}
-                    aria-label="Rimuovi paga precedente"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <button type="button" className="btn btn-secondary btn--full" onClick={addPreviousRate}>
-            + Aggiungi paga precedente
-          </button>
-        </details>
-
-        {/* Voci fisse mensili */}
-        <details className="settings-section">
-          <summary className="settings-section-title">➕ Voci fisse mensili</summary>
-          <p className="settings-section-desc">
-            Importi che ricevi <strong>ogni mese</strong> oltre ai turni (indennità di
-            flessibilità, superminimo, elemento fisso…). Vengono <strong>sommati al lordo del
-            mese</strong> nella stima del netto. Il bonus che varia mese per mese si imposta invece
-            dal calendario.
-          </p>
-
-          {form.fixedMonthlyItems.length > 0 && (
-            <div className="rate-changes">
-              {form.fixedMonthlyItems.map(v => (
-                <div key={v.id} className="rate-change-row">
-                  <div className="rate-change-fields">
-                    <div className="form-group">
-                      <label className="form-label form-label--sm">Descrizione</label>
-                      <input
-                        type="text"
-                        className="form-input"
-                        placeholder="es. Indennità flessibilità"
-                        value={v.label}
-                        onChange={updateFixedItem(v.id, 'label')}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label className="form-label form-label--sm">Importo mensile (€)</label>
-                      <div className="input-with-symbol">
-                        <span className="input-symbol">€</span>
-                        <input
-                          type="text"
-                          inputMode="decimal"
-                          className="form-input form-input--with-symbol"
-                          placeholder="0,00"
-                          value={v.amount}
-                          onChange={updateFixedItem(v.id, 'amount')}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="rate-change-remove"
-                    onClick={() => removeFixedItem(v.id)}
-                    aria-label="Rimuovi voce fissa"
-                  >
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <button type="button" className="btn btn-secondary btn--full" onClick={addFixedItem}>
-            + Aggiungi voce fissa
-          </button>
         </details>
 
         {/* Ore previste / lavoro a chiamata */}
@@ -602,6 +490,184 @@ export default function Settings({ settings, onSave }) {
           </div>
         </details>
 
+        {/* CCNL: contributi minori e divisore orario */}
+        <details className="settings-section settings-section--beta">
+          <summary className="settings-section-title">📜 CCNL (beta)</summary>
+          <p className="settings-section-desc">
+            Oltre all'IVS (9,19%) quasi tutti i contratti prevedono trattenute minori — FIS, CIGS,
+            Ente Bilaterale — che pesano qualche euro al mese e che senza il contratto non si possono
+            indovinare. Il CCNL determina anche il <strong>divisore orario</strong> con cui si calcola
+            la mensilità (e quindi 13ª e 14ª).
+          </p>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="ccnl">Contratto</label>
+            <div className="combobox">
+              <input
+                id="ccnl"
+                className="form-input"
+                type="text"
+                role="combobox"
+                aria-expanded={ccnlOpen}
+                value={ccnlQuery}
+                onChange={onCcnlQuery}
+                onFocus={() => setCcnlOpen(true)}
+                onBlur={() => { ccnlBlurTimer.current = setTimeout(() => setCcnlOpen(false), 150); }}
+                onKeyDown={(e) => { if (e.key === 'Escape') setCcnlOpen(false); }}
+                placeholder="Cerca il tuo contratto per nome…"
+                autoComplete="off"
+              />
+              {ccnlOpen && ccnlMatches.length > 0 && (
+                <ul className="combobox-list">
+                  {ccnlMatches.map(c => (
+                    <li key={c.codice}>
+                      <button
+                        type="button"
+                        className={'combobox-option' + (c.codice === form.ccnl ? ' is-active' : '')}
+                        // onMouseDown (non onClick): scatta prima del blur, che altrimenti
+                        // chiuderebbe la lista prima di registrare la scelta.
+                        onMouseDown={(e) => { e.preventDefault(); pickCcnl(c); }}
+                      >
+                        {c.label}{c.verificato ? ' ✓' : ''}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <p className="form-hint">
+              {form.ccnl
+                ? (ccnlPreset.verificato ? '✓ Contratto verificato su busta reale.' : 'Contratto selezionato.')
+                : 'Digita e scegli dall\'elenco. Sono elencati i CCNL vigenti dall\'archivio CNEL.'}
+            </p>
+            {form.ccnl && ccnlPreset.note && (
+              <p className="form-hint">ℹ️ {ccnlPreset.note}</p>
+            )}
+          </div>
+
+          {ccnlPreset.contributiExtra.length > 0 || ccnlPreset.enteBilaterale ? (
+            <>
+              <p className="form-hint">Trattenute aggiuntive applicate alla stima del netto:</p>
+              <ul className="settings-list">
+                {ccnlPreset.contributiExtra.map(c => (
+                  <li key={c.label}>{c.label} — {String(c.pct).replace('.', ',')}% del lordo</li>
+                ))}
+                {ccnlPreset.enteBilaterale && (
+                  <li>
+                    {ccnlPreset.enteBilaterale.label} — {String(ccnlPreset.enteBilaterale.pct).replace('.', ',')}%
+                    della retribuzione contrattuale
+                  </li>
+                )}
+              </ul>
+            </>
+          ) : (
+            <p className="form-hint">Nessuna trattenuta aggiuntiva: viene applicato il solo IVS 9,19%.</p>
+          )}
+
+          {form.ccnl && !ccnlPreset.verificato && (
+            <p className="form-hint">
+              ⚠️ Aliquote indicative, <strong>non riscontrate su una busta reale</strong>. Se hai il
+              cedolino sotto mano, confronta le voci: dove non tornano, il dato giusto è quello.
+            </p>
+          )}
+        </details>
+
+        {/* Import turni da foto (AI) */}
+        <details className="settings-section">
+          <summary className="settings-section-title">🤖 Import turni da foto</summary>
+          <p className="settings-section-desc">
+            Quando importi i turni da una foto, il foglio può contenere più persone.
+            Indica il tuo nome così l'AI estrae <strong>solo i tuoi</strong> turni. Lascia
+            vuoto per importare tutti i turni presenti nell'immagine.
+          </p>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="worker-name">Il tuo nome sul foglio turni</label>
+            <input
+              id="worker-name"
+              type="text"
+              className="form-input"
+              placeholder="Es. Mario Rossi"
+              value={form.workerName}
+              onChange={set('workerName')}
+            />
+          </div>
+
+          <p className="settings-section-desc">
+            L'immagine viene inviata a Google Gemini per la lettura e non viene conservata.
+            I turni restano sul tuo telefono.
+          </p>
+
+          <label className="check-row">
+            <input
+              type="checkbox"
+              checked={form.telemetry}
+              onChange={(e) => { setTelemetryEnabled(e.target.checked); setForm(f => ({ ...f, telemetry: e.target.checked })); }}
+            />
+            <span>Invia statistiche anonime d'uso dell'import</span>
+          </label>
+          <p className="form-hint">
+            Solo il numero di token consumati e un identificativo casuale dell'installazione:
+            nessun turno, nessuna immagine, niente che ti identifichi. Serve a capire quanto
+            costa la funzione durante la beta.
+          </p>
+        </details>
+
+        {/* Backup e ripristino: i dati vivono solo in localStorage */}
+        <details className="settings-section">
+          <summary className="settings-section-title">💾 Backup e ripristino</summary>
+          <p className="settings-section-desc">
+            Turni e impostazioni esistono <strong>solo su questo telefono</strong>: non c'è nessun
+            account e nessuna copia altrove. Esporta un backup prima di cambiare telefono,
+            reinstallare l'app o aggiornarla da una fonte diversa — in quei casi Android cancella
+            i dati e senza backup non si recuperano.
+          </p>
+
+          <div className="backup-row">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleEsportaBackup}
+              disabled={backupBusy}
+            >
+              ⬇️ Esporta backup
+            </button>
+            <span className="form-hint">
+              {turniSalvati === 0
+                ? 'Nessun turno da salvare'
+                : `${turniSalvati} turn${turniSalvati === 1 ? 'o' : 'i'} + impostazioni`}
+            </span>
+          </div>
+
+          <div className="backup-row">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => backupInputRef.current?.click()}
+              disabled={backupBusy}
+            >
+              ⬆️ Ripristina da file
+            </button>
+            <span className="form-hint">Sostituisce tutti i dati attuali</span>
+          </div>
+
+          <input
+            ref={backupInputRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={handleImportaBackup}
+          />
+
+          {backupMsg && (
+            <p className={backupMsg.errore ? 'ai-error' : 'form-hint'}>{backupMsg.testo}</p>
+          )}
+        </details>
+
+        {/* ══ AVANZATE — fisco e dettagli ═════════════════════════ */}
+        <details className="settings-advanced">
+          <summary className="settings-advanced-title">⚙️ Avanzate — fisco e dettagli</summary>
+
         {/* Reddito e bonus Renzi */}
         <details className="settings-section">
           <summary className="settings-section-title">💶 Reddito e bonus Renzi</summary>
@@ -739,10 +805,10 @@ export default function Settings({ settings, onSave }) {
           )}
         </details>
 
-        {/* Addizionali IRPEF — beta netto (gated dal feature flag) */}
+        {/* Addizionali IRPEF — stima netto (gated dal feature flag) */}
         {ENABLE_NET_CALC && (
-          <details className="settings-section settings-section--beta">
-            <summary className="settings-section-title">🧪 Addizionali IRPEF (beta)</summary>
+          <details className="settings-section">
+            <summary className="settings-section-title">🧾 Addizionali IRPEF</summary>
             <p className="settings-section-desc">
               Usate per la stima del netto. Variano in base alla tua residenza:
               l'addizionale regionale va da ~1,23% a ~3,33%, la comunale da 0% a ~0,9%.
@@ -819,179 +885,122 @@ export default function Settings({ settings, onSave }) {
           </details>
         )}
 
-        {/* Import turni da foto (AI) */}
+        {/* Paghe precedenti (aumenti) */}
         <details className="settings-section">
-          <summary className="settings-section-title">🤖 Import turni da foto</summary>
+          <summary className="settings-section-title">🔄 Paghe precedenti (aumenti)</summary>
           <p className="settings-section-desc">
-            Quando importi i turni da una foto, il foglio può contenere più persone.
-            Indica il tuo nome così l'AI estrae <strong>solo i tuoi</strong> turni. Lascia
-            vuoto per importare tutti i turni presenti nell'immagine.
+            Hai avuto un aumento durante l'anno? Elenca qui le paghe che avevi <strong>prima</strong>,
+            indicando fino a quale giorno erano in vigore. I turni <strong>fino a</strong> quella data
+            useranno la paga indicata; tutti gli altri usano la paga attuale qui sopra.
           </p>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="worker-name">Il tuo nome sul foglio turni</label>
-            <input
-              id="worker-name"
-              type="text"
-              className="form-input"
-              placeholder="Es. Mario Rossi"
-              value={form.workerName}
-              onChange={set('workerName')}
-            />
-          </div>
-
-          <p className="settings-section-desc">
-            L'immagine viene inviata a Google Gemini per la lettura e non viene conservata.
-            I turni restano sul tuo telefono.
-          </p>
-
-          <label className="check-row">
-            <input
-              type="checkbox"
-              checked={form.telemetry}
-              onChange={(e) => { setTelemetryEnabled(e.target.checked); setForm(f => ({ ...f, telemetry: e.target.checked })); }}
-            />
-            <span>Invia statistiche anonime d'uso dell'import</span>
-          </label>
-          <p className="form-hint">
-            Solo il numero di token consumati e un identificativo casuale dell'installazione:
-            nessun turno, nessuna immagine, niente che ti identifichi. Serve a capire quanto
-            costa la funzione durante la beta.
-          </p>
-        </details>
-
-        {/* CCNL: contributi minori e divisore orario */}
-        <details className="settings-section">
-          <summary className="settings-section-title">📜 CCNL</summary>
-          <p className="settings-section-desc">
-            Oltre all'IVS (9,19%) quasi tutti i contratti prevedono trattenute minori — FIS, CIGS,
-            Ente Bilaterale — che pesano qualche euro al mese e che senza il contratto non si possono
-            indovinare. Il CCNL determina anche il <strong>divisore orario</strong> con cui si calcola
-            la mensilità (e quindi 13ª e 14ª).
-          </p>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="ccnl">Contratto</label>
-            <div className="combobox">
-              <input
-                id="ccnl"
-                className="form-input"
-                type="text"
-                role="combobox"
-                aria-expanded={ccnlOpen}
-                value={ccnlQuery}
-                onChange={onCcnlQuery}
-                onFocus={() => setCcnlOpen(true)}
-                onBlur={() => { ccnlBlurTimer.current = setTimeout(() => setCcnlOpen(false), 150); }}
-                onKeyDown={(e) => { if (e.key === 'Escape') setCcnlOpen(false); }}
-                placeholder="Cerca il tuo contratto per nome…"
-                autoComplete="off"
-              />
-              {ccnlOpen && ccnlMatches.length > 0 && (
-                <ul className="combobox-list">
-                  {ccnlMatches.map(c => (
-                    <li key={c.codice}>
-                      <button
-                        type="button"
-                        className={'combobox-option' + (c.codice === form.ccnl ? ' is-active' : '')}
-                        // onMouseDown (non onClick): scatta prima del blur, che altrimenti
-                        // chiuderebbe la lista prima di registrare la scelta.
-                        onMouseDown={(e) => { e.preventDefault(); pickCcnl(c); }}
-                      >
-                        {c.label}{c.verificato ? ' ✓' : ''}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+          {form.previousRates.length > 0 && (
+            <div className="rate-changes">
+              {form.previousRates.map(c => (
+                <div key={c.id} className="rate-change-row">
+                  <div className="rate-change-fields">
+                    <div className="form-group">
+                      <label className="form-label form-label--sm">Fino al giorno</label>
+                      <input
+                        type="date"
+                        className="form-input"
+                        value={c.until}
+                        onChange={updatePreviousRate(c.id, 'until')}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label form-label--sm">Paga di allora (€/ora)</label>
+                      <div className="input-with-symbol">
+                        <span className="input-symbol">€</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          className="form-input form-input--with-symbol"
+                          placeholder="0,00"
+                          value={c.rate}
+                          onChange={updatePreviousRate(c.id, 'rate')}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="rate-change-remove"
+                    onClick={() => removePreviousRate(c.id)}
+                    aria-label="Rimuovi paga precedente"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
             </div>
-            <p className="form-hint">
-              {form.ccnl
-                ? (ccnlPreset.verificato ? '✓ Contratto verificato su busta reale.' : 'Contratto selezionato.')
-                : 'Digita e scegli dall\'elenco. Sono elencati i CCNL vigenti dall\'archivio CNEL.'}
-            </p>
-            {form.ccnl && ccnlPreset.note && (
-              <p className="form-hint">ℹ️ {ccnlPreset.note}</p>
-            )}
-          </div>
-
-          {ccnlPreset.contributiExtra.length > 0 || ccnlPreset.enteBilaterale ? (
-            <>
-              <p className="form-hint">Trattenute aggiuntive applicate alla stima del netto:</p>
-              <ul className="settings-list">
-                {ccnlPreset.contributiExtra.map(c => (
-                  <li key={c.label}>{c.label} — {String(c.pct).replace('.', ',')}% del lordo</li>
-                ))}
-                {ccnlPreset.enteBilaterale && (
-                  <li>
-                    {ccnlPreset.enteBilaterale.label} — {String(ccnlPreset.enteBilaterale.pct).replace('.', ',')}%
-                    della retribuzione contrattuale
-                  </li>
-                )}
-              </ul>
-            </>
-          ) : (
-            <p className="form-hint">Nessuna trattenuta aggiuntiva: viene applicato il solo IVS 9,19%.</p>
           )}
 
-          {form.ccnl && !ccnlPreset.verificato && (
-            <p className="form-hint">
-              ⚠️ Aliquote indicative, <strong>non riscontrate su una busta reale</strong>. Se hai il
-              cedolino sotto mano, confronta le voci: dove non tornano, il dato giusto è quello.
-            </p>
-          )}
+          <button type="button" className="btn btn-secondary btn--full" onClick={addPreviousRate}>
+            + Aggiungi paga precedente
+          </button>
         </details>
 
-        {/* Backup e ripristino: i dati vivono solo in localStorage */}
+        {/* Voci fisse mensili */}
         <details className="settings-section">
-          <summary className="settings-section-title">💾 Backup e ripristino</summary>
+          <summary className="settings-section-title">➕ Voci fisse mensili</summary>
           <p className="settings-section-desc">
-            Turni e impostazioni esistono <strong>solo su questo telefono</strong>: non c'è nessun
-            account e nessuna copia altrove. Esporta un backup prima di cambiare telefono,
-            reinstallare l'app o aggiornarla da una fonte diversa — in quei casi Android cancella
-            i dati e senza backup non si recuperano.
+            Importi che ricevi <strong>ogni mese</strong> oltre ai turni (indennità di
+            flessibilità, superminimo, elemento fisso…). Vengono <strong>sommati al lordo del
+            mese</strong> nella stima del netto. Il bonus che varia mese per mese si imposta invece
+            dal calendario.
           </p>
 
-          <div className="backup-row">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={handleEsportaBackup}
-              disabled={backupBusy}
-            >
-              ⬇️ Esporta backup
-            </button>
-            <span className="form-hint">
-              {turniSalvati === 0
-                ? 'Nessun turno da salvare'
-                : `${turniSalvati} turn${turniSalvati === 1 ? 'o' : 'i'} + impostazioni`}
-            </span>
-          </div>
-
-          <div className="backup-row">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => backupInputRef.current?.click()}
-              disabled={backupBusy}
-            >
-              ⬆️ Ripristina da file
-            </button>
-            <span className="form-hint">Sostituisce tutti i dati attuali</span>
-          </div>
-
-          <input
-            ref={backupInputRef}
-            type="file"
-            accept="application/json,.json"
-            hidden
-            onChange={handleImportaBackup}
-          />
-
-          {backupMsg && (
-            <p className={backupMsg.errore ? 'ai-error' : 'form-hint'}>{backupMsg.testo}</p>
+          {form.fixedMonthlyItems.length > 0 && (
+            <div className="rate-changes">
+              {form.fixedMonthlyItems.map(v => (
+                <div key={v.id} className="rate-change-row">
+                  <div className="rate-change-fields">
+                    <div className="form-group">
+                      <label className="form-label form-label--sm">Descrizione</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="es. Indennità flessibilità"
+                        value={v.label}
+                        onChange={updateFixedItem(v.id, 'label')}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label form-label--sm">Importo mensile (€)</label>
+                      <div className="input-with-symbol">
+                        <span className="input-symbol">€</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          className="form-input form-input--with-symbol"
+                          placeholder="0,00"
+                          value={v.amount}
+                          onChange={updateFixedItem(v.id, 'amount')}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="rate-change-remove"
+                    onClick={() => removeFixedItem(v.id)}
+                    aria-label="Rimuovi voce fissa"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
+
+          <button type="button" className="btn btn-secondary btn--full" onClick={addFixedItem}>
+            + Aggiungi voce fissa
+          </button>
         </details>
+
+        </details>
+        {/* ══ fine Avanzate ═══════════════════════════════════════ */}
 
         <div className="settings-footer">
           <button type="submit" className="btn btn-primary btn--full">
