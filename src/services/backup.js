@@ -22,10 +22,21 @@ const KEY_TELEMETRY_OFF = 'turni_telemetry_off';
 const APP_TAG = 'turni';
 const FORMATO = 1;
 
-function leggi(key, fallback) {
+// Lettura grezza protetta: localStorage può lanciare, non solo restituire null
+// (Safari con i cookie bloccati, storage disabilitato, WebView ristrette).
+function leggiGrezzo(key) {
   try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function leggi(key, fallback) {
+  const raw = leggiGrezzo(key);
+  if (raw == null) return fallback;
+  try {
+    return JSON.parse(raw);
   } catch {
     return fallback;
   }
@@ -45,7 +56,7 @@ export function costruisciBackup() {
     versioneApp: typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : null,
     turni: leggi(KEY_SHIFTS, {}),
     impostazioni: leggi(KEY_SETTINGS, {}),
-    telemetriaDisattivata: localStorage.getItem(KEY_TELEMETRY_OFF) === '1',
+    telemetriaDisattivata: leggiGrezzo(KEY_TELEMETRY_OFF) === '1',
   };
 }
 

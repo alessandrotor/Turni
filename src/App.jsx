@@ -1,4 +1,5 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { Capacitor } from '@capacitor/core';
 import useLocalStorage from './hooks/useLocalStorage';
 import { getMonthStart, parseDate } from './utils/dates';
 import { calcTotalPay, computePayByShift } from './utils/pay';
@@ -87,6 +88,19 @@ export default function App() {
   // per gli straordinari sia come sorgente delle viste. Ricrearlo a ogni render
   // (Object.values inline) invaliderebbe ogni memo a valle.
   const allShifts = useMemo(() => Object.values(shifts), [shifts]);
+
+  // Storage persistente: si chiede al browser di non sfrattare i dati sotto
+  // pressione di memoria. La richiesta arriva al PRIMO turno inserito, non
+  // all'avvio: su Firefox fa comparire un permesso, e chiederlo davanti a
+  // un'app vuota significa farlo negare senza aver capito cosa protegge.
+  // Sul nativo non serve, la persistenza la garantisce il sistema.
+  const persistenzaChiesta = useRef(false);
+  useEffect(() => {
+    if (persistenzaChiesta.current || allShifts.length === 0) return;
+    if (Capacitor.isNativePlatform()) return;
+    persistenzaChiesta.current = true;
+    navigator.storage?.persist?.().catch(() => {});
+  }, [allShifts.length]);
 
   const monthShifts = useMemo(() => {
     const y = currentMonth.getFullYear();

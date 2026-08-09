@@ -10,13 +10,14 @@ createRoot(document.getElementById('root')).render(
   </StrictMode>
 );
 
-// Service worker + storage persistente: SOLO sul web. Nella WebView dell'APK
-// Capacitor un SW rischierebbe di servire asset vecchi dalla cache dopo un
-// aggiornamento del pacchetto, e la persistenza dello storage è già gestita dall'OS.
+// Service worker: SOLO sul web. Nella WebView dell'APK Capacitor rischierebbe
+// di servire asset vecchi dalla cache dopo un aggiornamento del pacchetto.
+//
+// Lo storage persistente NON si chiede più qui: la richiesta fa comparire il
+// permesso di Firefox al primo avvio, su un'app ancora vuota, prima che si
+// capisca cosa si sta autorizzando. Ora la chiede App quando c'è il primo turno
+// da proteggere (src/App.jsx).
 if (!Capacitor.isNativePlatform()) {
-  // Chiede al browser di NON sfrattare i dati (turni/impostazioni in localStorage)
-  // sotto pressione di memoria. Best-effort: se non supportato, si ignora.
-  navigator.storage?.persist?.().catch(() => {});
   import('virtual:pwa-register')
     .then(({ registerSW }) => registerSW({ immediate: true }))
     .catch(() => {});

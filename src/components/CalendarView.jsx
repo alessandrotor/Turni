@@ -207,7 +207,12 @@ export default function CalendarView({
     setEditingName(false);
     setPickAfterName(false);
     if (file) runImport(file, name);
-    else if (pick) setTimeout(() => fileInputRef.current?.click(), 0);
+    // Click SINCRONO, senza setTimeout: WebKit consuma l'indicatore di gesto
+    // utente appena il click esce dal turno dell'evento, e su iOS Safari il
+    // selettore immagini non si aprirebbe — in silenzio, proprio al primo
+    // import. L'input vive fuori dalla modale (è nella barra import), quindi
+    // è già montato: non serve aspettare il re-render.
+    else if (pick) fileInputRef.current?.click();
   }
 
   function handleImportConfirm(parsedShifts) {
