@@ -33,7 +33,7 @@ jobs:
 
       - run: npm ci
 
-      - name: Build (telemetria OFF: VITE_TELEMETRY_URL volutamente non impostata)
+      - name: Build (telemetria OFF — VITE_TELEMETRY_URL volutamente non impostata)
         run: npm run build
         env:
           VITE_AI_PROXY_URL: ${{ vars.VITE_AI_PROXY_URL }}
