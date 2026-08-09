@@ -58,6 +58,8 @@ export default function CalendarView({
   const [showNetDetail, setShowNetDetail] = useState(false);
   const [pendingImportFile, setPendingImportFile] = useState(null);
   const [nameInput, setNameInput] = useState('');
+  // Modifica del nome fuori dall'import (nessun file in attesa): riusa la stessa modale.
+  const [editingName, setEditingName] = useState(false);
   const [importUsage, setImportUsage] = useState(null);
   const [exportBusy, setExportBusy] = useState(false);
   const [exportError, setExportError] = useState(null);
@@ -218,8 +220,8 @@ export default function CalendarView({
   // Costante di build: il modulo gemini resta caricato pigramente (riga ~242).
   const hasImportAI = !!import.meta.env.VITE_AI_PROXY_URL;
 
-  const closeNameModal = useCallback(() => setPendingImportFile(null), []);
-  useModalDismiss(nameModalRef, closeNameModal, !!pendingImportFile);
+  const closeNameModal = useCallback(() => { setPendingImportFile(null); setEditingName(false); }, []);
+  useModalDismiss(nameModalRef, closeNameModal, !!pendingImportFile || editingName);
 
   // Bonus del mese: input controllato con commit a ogni battuta. Con
   // `defaultValue` + `onBlur` il valore andava perso se l'app finiva in
@@ -268,9 +270,12 @@ export default function CalendarView({
 
   function handleNameSubmit() {
     const name = nameInput.trim();
-    if (name && onUpdateSettings) onUpdateSettings({ workerName: name });
+    // In modifica salviamo sempre (anche vuoto = "importa tutti"); al primo import
+    // salviamo solo se un nome è stato dato, così la volta dopo lo richiede ancora.
+    if (onUpdateSettings && (name || editingName)) onUpdateSettings({ workerName: name });
     const file = pendingImportFile;
     setPendingImportFile(null);
+    setEditingName(false);
     if (file) runImport(file, name);
   }
 
@@ -351,6 +356,18 @@ export default function CalendarView({
           >
             {importLoading ? '⏳ Analisi in corso…' : '📤 Importa turni da immagine'}
           </button>
+          {settings.workerName && (
+            <span className="import-asname">
+              Importi i turni di <strong>{settings.workerName}</strong>{' '}
+              <button
+                type="button"
+                className="linklike"
+                onClick={() => { setNameInput(settings.workerName); setEditingName(true); }}
+              >
+                cambia
+              </button>
+            </span>
+          )}
           {importError && <span className="import-error">{importError}</span>}
           {ENABLE_DEBUG && importUsage && (
             <div className="debug-usage">
@@ -700,7 +717,7 @@ export default function CalendarView({
         />
       )}
 
-      {pendingImportFile && (
+      {(pendingImportFile || editingName) && (
         <div className="modal-overlay" onClick={closeNameModal}>
           <div
             ref={nameModalRef}
@@ -713,7 +730,8 @@ export default function CalendarView({
             <h2 className="modal-title">Il tuo nome sul foglio</h2>
             <p className="modal-desc">
               Il foglio turni può contenere più persone. Indica il tuo nome così l'AI
-              estrae solo i tuoi turni. Lo salviamo nelle impostazioni (potrai cambiarlo lì).
+              estrae solo i tuoi turni. Lo salviamo e potrai cambiarlo quando vuoi dal
+              pulsante di import. Lascia vuoto per importare tutti i turni presenti.
             </p>
             <input
               type="text"
@@ -729,7 +747,9 @@ export default function CalendarView({
                 Annulla
               </button>
               <button type="button" className="btn btn-primary" onClick={handleNameSubmit}>
-                {nameInput.trim() ? 'Salva e continua' : 'Importa tutti'}
+                {pendingImportFile
+                  ? (nameInput.trim() ? 'Salva e continua' : 'Importa tutti')
+                  : 'Salva'}
               </button>
             </div>
           </div>

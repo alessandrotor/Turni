@@ -490,184 +490,6 @@ export default function Settings({ settings, onSave }) {
           </div>
         </details>
 
-        {/* CCNL: contributi minori e divisore orario */}
-        <details className="settings-section settings-section--beta">
-          <summary className="settings-section-title">📜 CCNL (beta)</summary>
-          <p className="settings-section-desc">
-            Oltre all'IVS (9,19%) quasi tutti i contratti prevedono trattenute minori — FIS, CIGS,
-            Ente Bilaterale — che pesano qualche euro al mese e che senza il contratto non si possono
-            indovinare. Il CCNL determina anche il <strong>divisore orario</strong> con cui si calcola
-            la mensilità (e quindi 13ª e 14ª).
-          </p>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="ccnl">Contratto</label>
-            <div className="combobox">
-              <input
-                id="ccnl"
-                className="form-input"
-                type="text"
-                role="combobox"
-                aria-expanded={ccnlOpen}
-                value={ccnlQuery}
-                onChange={onCcnlQuery}
-                onFocus={() => setCcnlOpen(true)}
-                onBlur={() => { ccnlBlurTimer.current = setTimeout(() => setCcnlOpen(false), 150); }}
-                onKeyDown={(e) => { if (e.key === 'Escape') setCcnlOpen(false); }}
-                placeholder="Cerca il tuo contratto per nome…"
-                autoComplete="off"
-              />
-              {ccnlOpen && ccnlMatches.length > 0 && (
-                <ul className="combobox-list">
-                  {ccnlMatches.map(c => (
-                    <li key={c.codice}>
-                      <button
-                        type="button"
-                        className={'combobox-option' + (c.codice === form.ccnl ? ' is-active' : '')}
-                        // onMouseDown (non onClick): scatta prima del blur, che altrimenti
-                        // chiuderebbe la lista prima di registrare la scelta.
-                        onMouseDown={(e) => { e.preventDefault(); pickCcnl(c); }}
-                      >
-                        {c.label}{c.verificato ? ' ✓' : ''}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <p className="form-hint">
-              {form.ccnl
-                ? (ccnlPreset.verificato ? '✓ Contratto verificato su busta reale.' : 'Contratto selezionato.')
-                : 'Digita e scegli dall\'elenco. Sono elencati i CCNL vigenti dall\'archivio CNEL.'}
-            </p>
-            {form.ccnl && ccnlPreset.note && (
-              <p className="form-hint">ℹ️ {ccnlPreset.note}</p>
-            )}
-          </div>
-
-          {ccnlPreset.contributiExtra.length > 0 || ccnlPreset.enteBilaterale ? (
-            <>
-              <p className="form-hint">Trattenute aggiuntive applicate alla stima del netto:</p>
-              <ul className="settings-list">
-                {ccnlPreset.contributiExtra.map(c => (
-                  <li key={c.label}>{c.label} — {String(c.pct).replace('.', ',')}% del lordo</li>
-                ))}
-                {ccnlPreset.enteBilaterale && (
-                  <li>
-                    {ccnlPreset.enteBilaterale.label} — {String(ccnlPreset.enteBilaterale.pct).replace('.', ',')}%
-                    della retribuzione contrattuale
-                  </li>
-                )}
-              </ul>
-            </>
-          ) : (
-            <p className="form-hint">Nessuna trattenuta aggiuntiva: viene applicato il solo IVS 9,19%.</p>
-          )}
-
-          {form.ccnl && !ccnlPreset.verificato && (
-            <p className="form-hint">
-              ⚠️ Aliquote indicative, <strong>non riscontrate su una busta reale</strong>. Se hai il
-              cedolino sotto mano, confronta le voci: dove non tornano, il dato giusto è quello.
-            </p>
-          )}
-        </details>
-
-        {/* Import turni da foto (AI) */}
-        <details className="settings-section">
-          <summary className="settings-section-title">🤖 Import turni da foto</summary>
-          <p className="settings-section-desc">
-            Quando importi i turni da una foto, il foglio può contenere più persone.
-            Indica il tuo nome così l'AI estrae <strong>solo i tuoi</strong> turni. Lascia
-            vuoto per importare tutti i turni presenti nell'immagine.
-          </p>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="worker-name">Il tuo nome sul foglio turni</label>
-            <input
-              id="worker-name"
-              type="text"
-              className="form-input"
-              placeholder="Es. Mario Rossi"
-              value={form.workerName}
-              onChange={set('workerName')}
-            />
-          </div>
-
-          <p className="settings-section-desc">
-            L'immagine viene inviata a Google Gemini per la lettura e non viene conservata.
-            I turni restano sul tuo telefono.
-          </p>
-
-          <label className="check-row">
-            <input
-              type="checkbox"
-              checked={form.telemetry}
-              onChange={(e) => { setTelemetryEnabled(e.target.checked); setForm(f => ({ ...f, telemetry: e.target.checked })); }}
-            />
-            <span>Invia statistiche anonime d'uso dell'import</span>
-          </label>
-          <p className="form-hint">
-            Solo il numero di token consumati e un identificativo casuale dell'installazione:
-            nessun turno, nessuna immagine, niente che ti identifichi. Serve a capire quanto
-            costa la funzione durante la beta.
-          </p>
-        </details>
-
-        {/* Backup e ripristino: i dati vivono solo in localStorage */}
-        <details className="settings-section">
-          <summary className="settings-section-title">💾 Backup e ripristino</summary>
-          <p className="settings-section-desc">
-            Turni e impostazioni esistono <strong>solo su questo telefono</strong>: non c'è nessun
-            account e nessuna copia altrove. Esporta un backup prima di cambiare telefono,
-            reinstallare l'app o aggiornarla da una fonte diversa — in quei casi Android cancella
-            i dati e senza backup non si recuperano.
-          </p>
-
-          <div className="backup-row">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={handleEsportaBackup}
-              disabled={backupBusy}
-            >
-              ⬇️ Esporta backup
-            </button>
-            <span className="form-hint">
-              {turniSalvati === 0
-                ? 'Nessun turno da salvare'
-                : `${turniSalvati} turn${turniSalvati === 1 ? 'o' : 'i'} + impostazioni`}
-            </span>
-          </div>
-
-          <div className="backup-row">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => backupInputRef.current?.click()}
-              disabled={backupBusy}
-            >
-              ⬆️ Ripristina da file
-            </button>
-            <span className="form-hint">Sostituisce tutti i dati attuali</span>
-          </div>
-
-          <input
-            ref={backupInputRef}
-            type="file"
-            accept="application/json,.json"
-            hidden
-            onChange={handleImportaBackup}
-          />
-
-          {backupMsg && (
-            <p className={backupMsg.errore ? 'ai-error' : 'form-hint'}>{backupMsg.testo}</p>
-          )}
-        </details>
-
-        {/* ══ AVANZATE — fisco e dettagli ═════════════════════════ */}
-        <details className="settings-advanced">
-          <summary className="settings-advanced-title">⚙️ Avanzate — fisco e dettagli</summary>
-
         {/* Reddito e bonus Renzi */}
         <details className="settings-section">
           <summary className="settings-section-title">💶 Reddito e bonus Renzi</summary>
@@ -762,6 +584,167 @@ export default function Settings({ settings, onSave }) {
             </div>
           )}
         </details>
+
+        {/* CCNL: contributi minori e divisore orario */}
+        <details className="settings-section settings-section--beta">
+          <summary className="settings-section-title">📜 CCNL (beta)</summary>
+          <p className="settings-section-desc">
+            Oltre all'IVS (9,19%) quasi tutti i contratti prevedono trattenute minori — FIS, CIGS,
+            Ente Bilaterale — che pesano qualche euro al mese e che senza il contratto non si possono
+            indovinare. Il CCNL determina anche il <strong>divisore orario</strong> con cui si calcola
+            la mensilità (e quindi 13ª e 14ª).
+          </p>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="ccnl">Contratto</label>
+            <div className="combobox">
+              <input
+                id="ccnl"
+                className="form-input"
+                type="text"
+                role="combobox"
+                aria-expanded={ccnlOpen}
+                value={ccnlQuery}
+                onChange={onCcnlQuery}
+                onFocus={() => setCcnlOpen(true)}
+                onBlur={() => { ccnlBlurTimer.current = setTimeout(() => setCcnlOpen(false), 150); }}
+                onKeyDown={(e) => { if (e.key === 'Escape') setCcnlOpen(false); }}
+                placeholder="Cerca il tuo contratto per nome…"
+                autoComplete="off"
+              />
+              {ccnlOpen && ccnlMatches.length > 0 && (
+                <ul className="combobox-list">
+                  {ccnlMatches.map(c => (
+                    <li key={c.codice}>
+                      <button
+                        type="button"
+                        className={'combobox-option' + (c.codice === form.ccnl ? ' is-active' : '')}
+                        // onMouseDown (non onClick): scatta prima del blur, che altrimenti
+                        // chiuderebbe la lista prima di registrare la scelta.
+                        onMouseDown={(e) => { e.preventDefault(); pickCcnl(c); }}
+                      >
+                        {c.label}{c.verificato ? ' ✓' : ''}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <p className="form-hint">
+              {form.ccnl
+                ? (ccnlPreset.verificato ? '✓ Contratto verificato su busta reale.' : 'Contratto selezionato.')
+                : 'Digita e scegli dall\'elenco. Sono elencati i CCNL vigenti dall\'archivio CNEL.'}
+            </p>
+            {form.ccnl && ccnlPreset.note && (
+              <p className="form-hint">ℹ️ {ccnlPreset.note}</p>
+            )}
+          </div>
+
+          {ccnlPreset.contributiExtra.length > 0 || ccnlPreset.enteBilaterale ? (
+            <>
+              <p className="form-hint">Trattenute aggiuntive applicate alla stima del netto:</p>
+              <ul className="settings-list">
+                {ccnlPreset.contributiExtra.map(c => (
+                  <li key={c.label}>{c.label} — {String(c.pct).replace('.', ',')}% del lordo</li>
+                ))}
+                {ccnlPreset.enteBilaterale && (
+                  <li>
+                    {ccnlPreset.enteBilaterale.label} — {String(ccnlPreset.enteBilaterale.pct).replace('.', ',')}%
+                    della retribuzione contrattuale
+                  </li>
+                )}
+              </ul>
+            </>
+          ) : (
+            <p className="form-hint">Nessuna trattenuta aggiuntiva: viene applicato il solo IVS 9,19%.</p>
+          )}
+
+          {form.ccnl && !ccnlPreset.verificato && (
+            <p className="form-hint">
+              ⚠️ Aliquote indicative, <strong>non riscontrate su una busta reale</strong>. Se hai il
+              cedolino sotto mano, confronta le voci: dove non tornano, il dato giusto è quello.
+            </p>
+          )}
+        </details>
+
+        {/* Import turni da foto (AI) */}
+        <details className="settings-section">
+          <summary className="settings-section-title">🤖 Import turni da foto</summary>
+          <p className="settings-section-desc">
+            L'immagine viene inviata a Google Gemini per la lettura e non viene conservata.
+            I turni restano sul tuo telefono. Il <strong>nome</strong> da cercare sul foglio
+            te lo chiede l'app al primo import da immagine (e potrai cambiarlo da lì).
+          </p>
+
+          <label className="check-row">
+            <input
+              type="checkbox"
+              checked={form.telemetry}
+              onChange={(e) => { setTelemetryEnabled(e.target.checked); setForm(f => ({ ...f, telemetry: e.target.checked })); }}
+            />
+            <span>Invia statistiche anonime d'uso dell'import</span>
+          </label>
+          <p className="form-hint">
+            Solo il numero di token consumati e un identificativo casuale dell'installazione:
+            nessun turno, nessuna immagine, niente che ti identifichi. Serve a capire quanto
+            costa la funzione durante la beta.
+          </p>
+        </details>
+
+        {/* Backup e ripristino: i dati vivono solo in localStorage */}
+        <details className="settings-section">
+          <summary className="settings-section-title">💾 Backup e ripristino</summary>
+          <p className="settings-section-desc">
+            Turni e impostazioni esistono <strong>solo su questo telefono</strong>: non c'è nessun
+            account e nessuna copia altrove. Esporta un backup prima di cambiare telefono,
+            reinstallare l'app o aggiornarla da una fonte diversa — in quei casi Android cancella
+            i dati e senza backup non si recuperano.
+          </p>
+
+          <div className="backup-row">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleEsportaBackup}
+              disabled={backupBusy}
+            >
+              ⬇️ Esporta backup
+            </button>
+            <span className="form-hint">
+              {turniSalvati === 0
+                ? 'Nessun turno da salvare'
+                : `${turniSalvati} turn${turniSalvati === 1 ? 'o' : 'i'} + impostazioni`}
+            </span>
+          </div>
+
+          <div className="backup-row">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => backupInputRef.current?.click()}
+              disabled={backupBusy}
+            >
+              ⬆️ Ripristina da file
+            </button>
+            <span className="form-hint">Sostituisce tutti i dati attuali</span>
+          </div>
+
+          <input
+            ref={backupInputRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={handleImportaBackup}
+          />
+
+          {backupMsg && (
+            <p className={backupMsg.errore ? 'ai-error' : 'form-hint'}>{backupMsg.testo}</p>
+          )}
+        </details>
+
+        {/* ══ AVANZATE — fisco e dettagli ═════════════════════════ */}
+        <details className="settings-advanced">
+          <summary className="settings-advanced-title">⚙️ Avanzate — fisco e dettagli</summary>
 
         {/* TFR in busta */}
         <details className="settings-section">
