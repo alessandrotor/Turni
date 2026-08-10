@@ -18,6 +18,7 @@ let chiamateGemini = 0;
 let ultimoBody = null;
 let turnstileOk = true;
 let rispostaGemini = null;
+let statoGemini = 200;
 
 globalThis.fetch = async (url, init) => {
   const u = String(url);
@@ -30,6 +31,9 @@ globalThis.fetch = async (url, init) => {
   if (u.includes('generativelanguage')) {
     chiamateGemini++;
     ultimoBody = JSON.parse(init.body);
+    if (statoGemini !== 200) {
+      return new Response(JSON.stringify({ error: { message: 'models/x is not found' } }), { status: statoGemini });
+    }
     return new Response(JSON.stringify(rispostaGemini ?? {
       candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify([
         { data: '2026-06-05', ora_inizio: '09:30', ora_fine: '17:00', codice_turno: 'M',
@@ -72,7 +76,7 @@ const check = (l, ok, extra = '') => {
   if (!ok) fail += 1;
   console.log(`${ok ? '  ok  ' : '  XX  '} ${l}${extra ? '  → ' + extra : ''}`);
 };
-const reset = () => { chiamateGemini = 0; ultimoBody = null; turnstileOk = true; rispostaGemini = null; };
+const reset = () => { chiamateGemini = 0; ultimoBody = null; turnstileOk = true; rispostaGemini = null; statoGemini = 200; };
 const conKv = (opts) => ({ GEMINI_API_KEY: 'x', TURNSTILE_SECRET: 's', RATE: kvFinto(opts) });
 
 console.log('\nPercorso felice e costo per richiesta\n');
@@ -192,6 +196,19 @@ console.log('\nOutput pilotato dall\'immagine\n');
   }]) }] } }], usageMetadata: {} };
   const r = await chiama(base(), conKv());
   check('campo da 50.000 caratteri → rifiutato', r.status === 422);
+}
+
+console.log('\nModello ritirato\n');
+{
+  reset();
+  statoGemini = 404;
+  const r = await chiama(base(), conKv());
+  const b = await r.json();
+  // 404 = il nome del modello non esiste più (i preview vengono ritirati).
+  // All'utente serve un messaggio comprensibile, non "404": è il log a dover
+  // dire che cosa cambiare.
+  check('404 da Gemini -> 503 con messaggio leggibile', r.status === 503 && /non disponibile/i.test(b.error), b.error);
+  check('  e il messaggio non espone dettagli tecnici', !/404|models\//.test(b.error));
 }
 
 console.log(fail === 0 ? '\n✓ difese del proxy ok\n' : `\n✗ ${fail} riscontri falliti\n`);

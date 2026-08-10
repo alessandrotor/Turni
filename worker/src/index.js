@@ -293,7 +293,20 @@ export default {
 
     if (!upstream.ok) {
       // Il messaggio di Google può contenere dettagli della chiave: non rimbalzarlo.
-      console.error('gemini', upstream.status, await upstream.text().catch(() => ''));
+      const dettaglio = await upstream.text().catch(() => '');
+      // 404 = modello inesistente. `gemini-3-flash-preview` è un PREVIEW, e i
+      // nomi preview vengono ritirati quando esce la versione stabile: da quel
+      // momento ogni import fallisce. Senza questa distinzione sembrerebbe un
+      // guasto passeggero, e si cercherebbe il problema ovunque tranne che nel
+      // nome del modello. Il messaggio all'utente resta comprensibile; è il log
+      // che deve gridare cosa fare.
+      if (upstream.status === 404) {
+        console.error(`MODELLO NON DISPONIBILE: "${MODEL}" non esiste più. `
+          + 'Se era un preview è stato ritirato: aggiorna MODEL in worker/src/index.js '
+          + 'e ridistribuisci il worker.', dettaglio);
+        return json({ error: 'Il riconoscimento è temporaneamente non disponibile. Riprova più tardi.' }, 503);
+      }
+      console.error('gemini', upstream.status, dettaglio);
       const messaggio = upstream.status === 429
         ? 'Quota del riconoscimento esaurita: riprova più tardi.'
         : 'Il riconoscimento non è riuscito.';

@@ -2,10 +2,16 @@
 # La PRODUZIONE resta manuale (deploy su --branch main lanciato a mano), così i
 # tester non vedono cambiamenti a sorpresa. Vedi memory/web-deploy.md.
 #
-# Richiede due impostazioni nel repo GitHub (Settings → Secrets and variables → Actions):
-#   - Secret   CLOUDFLARE_API_TOKEN  → token Cloudflare con permesso "Cloudflare Pages: Edit"
-#   - Variable VITE_AI_PROXY_URL     → https://turni-ai-proxy.magnaopa.workers.dev
+# Richiede queste impostazioni nel repo GitHub (Settings → Secrets and variables → Actions):
+#   - Secret   CLOUDFLARE_API_TOKEN     → token Cloudflare con permesso "Cloudflare Pages: Edit"
+#   - Variable VITE_AI_PROXY_URL        → https://turni-ai-proxy.magnaopa.workers.dev
+#   - Variable VITE_TURNSTILE_SITEKEY   → sitekey Turnstile (pubblico, non è un segreto)
 # (L'account id non è segreto ed è scritto qui sotto.)
+#
+# ORDINE DA RISPETTARE quando si attiva Turnstile: PRIMA questa variabile, POI il
+# secret sul worker. Al contrario il worker pretenderebbe un token che l'app non
+# manda, e l'import si romperebbe per tutti. Con la variabile vuota tutto continua
+# a funzionare come se Turnstile non ci fosse.
 
 name: Deploy TEST (Cloudflare Pages)
 
@@ -37,6 +43,7 @@ jobs:
         run: npm run build
         env:
           VITE_AI_PROXY_URL: ${{ vars.VITE_AI_PROXY_URL }}
+          VITE_TURNSTILE_SITEKEY: ${{ vars.VITE_TURNSTILE_SITEKEY }}
 
       - name: Deploy su Pages (branch test)
         uses: cloudflare/wrangler-action@v3
