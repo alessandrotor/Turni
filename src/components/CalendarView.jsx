@@ -463,6 +463,11 @@ export default function CalendarView({
               )}
             </div>
 
+            <p className="net-disclaimer">
+              ⚠️ Funzione beta: stima indicativa, fai sempre controllare questi dati a un
+              professionista prima di usarli.
+            </p>
+
             {monthlyBonusAmount > 0 && (
               <div className="month-bonus-row">
                 <label className="check-row" htmlFor="month-bonus">
@@ -586,13 +591,13 @@ export default function CalendarView({
           </div>
         )}
 
-        {/* Bonus fiscale (ex bonus Renzi): riga minima sempre visibile, con
+        {/* Trattamento integrativo (ex bonus Renzi): riga minima sempre visibile, con
             dettaglio (soglie, importi) aperto solo se rilevante — vicino o
             oltre soglia — oppure a richiesta per chi vuole controllare. */}
         {bonus.status !== BONUS_STATUS.ATTESA && (
           <div className="bonus-strip">
             <div className="bonus-strip-head">
-              <span className="bonus-strip-title">💶 Bonus fiscale (ex bonus Renzi)</span>
+              <span className="bonus-strip-title">💶 Trattamento integrativo (ex bonus Renzi)</span>
               <button
                 type="button"
                 className="net-toggle"

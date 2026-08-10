@@ -493,7 +493,7 @@ export default function Settings({ settings, onSave }) {
 
         {/* Reddito e bonus Renzi */}
         <details className="settings-section">
-          <summary className="settings-section-title">💶 Reddito e bonus Renzi</summary>
+          <summary className="settings-section-title">💶 Reddito e trattamento integrativo (ex bonus Renzi)</summary>
           <p className="settings-section-desc">
             Nel calendario vedi il tuo <strong>reddito totale</strong> dell'anno e quanto puoi
             ancora guadagnare prima di superare le soglie del trattamento integrativo (ex bonus
@@ -533,54 +533,6 @@ export default function Settings({ settings, onSave }) {
               <p className="form-hint">
                 I turni di questo mese e dei precedenti sono considerati già inclusi nell'importo
                 qui sopra; quelli dei mesi successivi vengono sommati.
-              </p>
-            </div>
-          )}
-        </details>
-
-        {/* Tredicesima e quattordicesima */}
-        <details className="settings-section">
-          <summary className="settings-section-title">🎁 Tredicesima e quattordicesima</summary>
-          <p className="settings-section-desc">
-            Attiva le mensilità aggiuntive previste dal tuo CCNL. La <strong>tredicesima</strong>
-            arriva a dicembre, la <strong>quattordicesima</strong> a giugno; ciascuna vale circa una
-            mensilità (ore settimanali × paga oraria). Vengono incluse nel reddito annuo (quindi
-            nell'aliquota fiscale) e mostrate nel mese in cui arrivano.
-          </p>
-
-          <label className="check-row">
-            <input
-              type="checkbox"
-              checked={form.hasTredicesima}
-              onChange={setCheck('hasTredicesima')}
-            />
-            <span>Tredicesima (dicembre)</span>
-          </label>
-
-          <label className="check-row">
-            <input
-              type="checkbox"
-              checked={form.hasQuattordicesima}
-              onChange={setCheck('hasQuattordicesima')}
-            />
-            <span>Quattordicesima (giugno)</span>
-          </label>
-
-          {(form.hasTredicesima || form.hasQuattordicesima) && (
-            <div className="form-group">
-              <label className="form-label" htmlFor="hire-date">Data di assunzione</label>
-              <input
-                id="hire-date"
-                type="date"
-                className="form-input"
-                value={form.hireDate}
-                onChange={set('hireDate')}
-              />
-              <p className="form-hint">
-                Serve per il <strong>rateo</strong>: la mensilità aggiuntiva si matura in dodicesimi,
-                la quattordicesima da luglio a giugno e la tredicesima nell'anno solare. Chi è assunto
-                da sei mesi ne prende metà. Un mese conta solo se lavorato per almeno 15 giorni.
-                Lascia vuoto per calcolare sempre la mensilità piena.
               </p>
             </div>
           )}
@@ -746,6 +698,54 @@ export default function Settings({ settings, onSave }) {
         {/* ══ AVANZATE — fisco e dettagli ═════════════════════════ */}
         <details className="settings-advanced">
           <summary className="settings-advanced-title">⚙️ Avanzate — fisco e dettagli</summary>
+
+        {/* Tredicesima e quattordicesima */}
+        <details className="settings-section">
+          <summary className="settings-section-title">🎁 Tredicesima e quattordicesima</summary>
+          <p className="settings-section-desc">
+            Attiva le mensilità aggiuntive previste dal tuo CCNL. La <strong>tredicesima</strong>
+            arriva a dicembre, la <strong>quattordicesima</strong> a giugno; ciascuna vale circa una
+            mensilità (ore settimanali × paga oraria). Vengono incluse nel reddito annuo (quindi
+            nell'aliquota fiscale) e mostrate nel mese in cui arrivano.
+          </p>
+
+          <label className="check-row">
+            <input
+              type="checkbox"
+              checked={form.hasTredicesima}
+              onChange={setCheck('hasTredicesima')}
+            />
+            <span>Tredicesima (dicembre)</span>
+          </label>
+
+          <label className="check-row">
+            <input
+              type="checkbox"
+              checked={form.hasQuattordicesima}
+              onChange={setCheck('hasQuattordicesima')}
+            />
+            <span>Quattordicesima (giugno)</span>
+          </label>
+
+          {(form.hasTredicesima || form.hasQuattordicesima) && (
+            <div className="form-group">
+              <label className="form-label" htmlFor="hire-date">Data di assunzione</label>
+              <input
+                id="hire-date"
+                type="date"
+                className="form-input"
+                value={form.hireDate}
+                onChange={set('hireDate')}
+              />
+              <p className="form-hint">
+                Serve per il <strong>rateo</strong>: la mensilità aggiuntiva si matura in dodicesimi,
+                la quattordicesima da luglio a giugno e la tredicesima nell'anno solare. Chi è assunto
+                da sei mesi ne prende metà. Un mese conta solo se lavorato per almeno 15 giorni.
+                Lascia vuoto per calcolare sempre la mensilità piena.
+              </p>
+            </div>
+          )}
+        </details>
 
         {/* TFR in busta */}
         <details className="settings-section">
