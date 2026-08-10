@@ -51,6 +51,7 @@ export default function Settings({ settings, onSave }) {
       label: v.label ?? '',
       amount: toInput(v.amount),
     })),
+    monthlyBonusAmount: toInput(settings.monthlyBonusAmount),
     addRegionalePct: toInput(settings.addRegionalePct),
     addComunalePct: toInput(settings.addComunalePct),
     addizionaliAltrove: !!settings.addizionaliAltrove,
@@ -207,6 +208,7 @@ export default function Settings({ settings, onSave }) {
       tfrTaxRate: form.tfrTaxRate === '' ? '' : parseNum(form.tfrTaxRate),
       previousRates,
       fixedMonthlyItems,
+      monthlyBonusAmount: parseNum(form.monthlyBonusAmount),
       monthlyBonus: settings.monthlyBonus || {}, // gestito dal calendario, va preservato
       addRegionalePct: parseNum(form.addRegionalePct),
       addComunalePct: parseNum(form.addComunalePct),
@@ -929,8 +931,7 @@ export default function Settings({ settings, onSave }) {
           <p className="settings-section-desc">
             Importi che ricevi <strong>ogni mese</strong> oltre ai turni (indennità di
             flessibilità, superminimo, elemento fisso…). Vengono <strong>sommati al lordo del
-            mese</strong> nella stima del netto. Il bonus che varia mese per mese si imposta invece
-            dal calendario.
+            mese</strong> nella stima del netto.
           </p>
 
           {form.fixedMonthlyItems.length > 0 && (
@@ -979,6 +980,30 @@ export default function Settings({ settings, onSave }) {
           <button type="button" className="btn btn-secondary btn--full" onClick={addFixedItem}>
             + Aggiungi voce fissa
           </button>
+
+          <div className="net-group-label">Bonus mensile (occasionale)</div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="monthly-bonus-amount">
+              Importo del bonus, quando lo prendi
+            </label>
+            <div className="input-with-symbol">
+              <span className="input-symbol">€</span>
+              <input
+                id="monthly-bonus-amount"
+                type="text"
+                inputMode="decimal"
+                className="form-input form-input--with-symbol"
+                placeholder="0,00"
+                value={form.monthlyBonusAmount}
+                onChange={set('monthlyBonusAmount')}
+              />
+            </div>
+            <p className="form-hint">
+              Per un bonus fisso che non prendi per forza ogni mese (es. bonus presenza, premio a
+              scaglioni): l'importo è sempre lo stesso, imposta qui una volta sola. Dal calendario
+              poi spunti i mesi in cui l'hai preso.
+            </p>
+          </div>
         </details>
 
         </details>

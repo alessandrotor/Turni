@@ -4,7 +4,7 @@ import {
   formatDate, formatMonthYear, isToday, isWeekend,
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth,
 } from '../utils/dates';
-import { calcShiftMinutes, calcTotalPay, formatCurrency, parseNum } from '../utils/pay';
+import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
 import { EXTRA_MONTHS } from '../utils/net';
 import { ENABLE_DEBUG } from '../config/features';
@@ -30,11 +30,6 @@ function formatMinutesShort(mins) {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
-}
-
-// Importo → stringa da mostrare nell'input (vuota se 0), con la virgola.
-function toAmountInput(n) {
-  return n ? String(n).replace('.', ',') : '';
 }
 
 export default function CalendarView({
@@ -142,15 +137,22 @@ export default function CalendarView({
   const closeNameModal = useCallback(() => { setPendingImportFile(null); setEditingName(false); setPickAfterName(false); }, []);
   useModalDismiss(nameModalRef, closeNameModal, !!pendingImportFile || editingName);
 
-  // Bonus del mese: input controllato con commit a ogni battuta. Con
-  // `defaultValue` + `onBlur` il valore andava perso se l'app finiva in
-  // background prima che il campo perdesse il focus (caso normale su Android).
-  const [monthBonusInput, setMonthBonusInput] = useState(() => toAmountInput(perMonthBonus));
+  // Bonus del mese: importo fisso (impostato una volta in Impostazioni),
+  // spuntato mese per mese. `true` = preso questo mese; i valori numerici sono
+  // il formato legacy di quando si digitava un importo diverso ogni volta.
+  const monthlyBonusEntry = settings.monthlyBonus?.[monthKey];
+  const bonusTakenThisMonth = !!monthlyBonusEntry;
+  const monthlyBonusAmount = Number(settings.monthlyBonusAmount) || 0;
+
+  // Striscia "bonus Renzi": di default si apre solo quando è rilevante (vicino
+  // o oltre soglia), altrimenti resta ridotta a una riga per chi vuole solo
+  // controllare. Si risincronizza cambiando mese, non a ogni ricalcolo, così
+  // un'apertura manuale non viene richiusa da un turno appena inserito.
+  const bonusRelevant = bonus.nearThreshold
+    || bonus.status === BONUS_STATUS.PARZIALE || bonus.status === BONUS_STATUS.OLTRE;
+  const [showBonusDetail, setShowBonusDetail] = useState(bonusRelevant);
   useEffect(() => {
-    setMonthBonusInput(toAmountInput(Number(settings.monthlyBonus?.[monthKey]) || 0));
-    // Si risincronizza solo cambiando mese: durante la digitazione la sorgente
-    // di verità è lo stato locale, altrimenti la normalizzazione mangerebbe la
-    // virgola appena scritta.
+    setShowBonusDetail(bonusRelevant);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monthKey]);
 
@@ -220,13 +222,10 @@ export default function CalendarView({
     setImportParsed(null);
   }
 
-  function handleMonthBonusChange(e) {
-    const raw = e.target.value;
-    setMonthBonusInput(raw);
+  function handleMonthBonusToggle(e) {
     if (!onUpdateSettings) return;
-    const amount = parseNum(raw);
     const map = { ...(settings.monthlyBonus || {}) };
-    if (amount > 0) map[monthKey] = amount;
+    if (e.target.checked) map[monthKey] = true;
     else delete map[monthKey];
     onUpdateSettings({ monthlyBonus: map });
   }
@@ -459,23 +458,22 @@ export default function CalendarView({
               )}
             </div>
 
-            <div className="month-bonus-row">
-              <label className="month-bonus-label" htmlFor="month-bonus">
-                Bonus di {formatMonthYear(currentMonth)} <span className="month-bonus-hint">(solo questo mese)</span>
-              </label>
-              <div className="input-with-symbol month-bonus-input">
-                <span className="input-symbol">€</span>
-                <input
-                  id="month-bonus"
-                  type="text"
-                  inputMode="decimal"
-                  className="form-input form-input--with-symbol"
-                  placeholder="0,00"
-                  value={monthBonusInput}
-                  onChange={handleMonthBonusChange}
-                />
+            {monthlyBonusAmount > 0 && (
+              <div className="month-bonus-row">
+                <label className="check-row" htmlFor="month-bonus">
+                  <input
+                    id="month-bonus"
+                    type="checkbox"
+                    checked={bonusTakenThisMonth}
+                    onChange={handleMonthBonusToggle}
+                  />
+                  <span>
+                    Ho preso il bonus di {formatMonthYear(currentMonth)}
+                    {' '}<strong>(+{fmt0(monthlyBonusAmount)})</strong>
+                  </span>
+                </label>
               </div>
-            </div>
+            )}
 
             <button
               type="button"
@@ -583,59 +581,81 @@ export default function CalendarView({
           </div>
         )}
 
-        {/* Bonus busta paga: quanto manca alla soglia (sotto al netto mensile) */}
+        {/* Bonus fiscale (ex bonus Renzi): riga minima sempre visibile, con
+            dettaglio (soglie, importi) aperto solo se rilevante — vicino o
+            oltre soglia — oppure a richiesta per chi vuole controllare. */}
         {bonus.status !== BONUS_STATUS.ATTESA && (
           <div className="bonus-strip">
             <div className="bonus-strip-head">
-              <span className="bonus-strip-title">💶 Reddito e bonus Renzi</span>
-              <span className="bonus-strip-income">
-                Reddito totale {currentMonth.getFullYear()}: <strong>{fmt0(bonus.income)}</strong>
-              </span>
+              <span className="bonus-strip-title">💶 Bonus fiscale (ex bonus Renzi)</span>
+              <button
+                type="button"
+                className="net-toggle"
+                onClick={() => setShowBonusDetail(v => !v)}
+                aria-expanded={showBonusDetail}
+              >
+                {showBonusDetail ? 'Nascondi ▲' : 'Dettagli ▼'}
+              </button>
             </div>
 
-            {(montante > 0 || annualExtras > 0) && (
-              <span className="bonus-strip-note">
-                ={montante > 0 ? ` montante ${fmt0(montante)}${priorMonthLabel ? ` (fino a ${priorMonthLabel})` : ''} +` : ''}
-                {' '}turni {fmt0(bonus.income - montante - annualExtras)}
-                {annualExtras > 0 && ` + 13ª/14ª ${fmt0(annualExtras)}`}
-              </span>
-            )}
-            {montanteMismatch && (
-              <span className="bonus-strip-note bonus-strip-note--warn">
-                ⚠️ Montante dichiarato {fmt0(montante)} diverso dai turni fino a {priorMonthLabel} ({fmt0(shiftsCovered)}). Normale se include altri redditi o paghe diverse.
-              </span>
-            )}
+            <span className={`bonus-strip-note ${bonus.status === BONUS_STATUS.OLTRE ? 'bonus-strip-note--warn' : ''}`}>
+              {bonus.status === BONUS_STATUS.PIENO && !bonus.nearThreshold && 'Bonus pieno: reddito entro le soglie.'}
+              {bonus.status === BONUS_STATUS.PIENO && bonus.nearThreshold && '⚠️ Vicino alla soglia del bonus pieno.'}
+              {bonus.status === BONUS_STATUS.PARZIALE && 'Bonus ridotto: reddito oltre i 15.000 € imponibili.'}
+              {bonus.status === BONUS_STATUS.OLTRE && '🚨 Reddito oltre i 28.000 € imponibili: il bonus non spetta.'}
+            </span>
 
-            {bonus.status === BONUS_STATUS.PIENO && (
-              <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
-                <span className="bonus-strip-label">
-                  {bonus.nearThreshold ? '⚠️ Sei vicino alla soglia' : 'Puoi ancora guadagnare'}
+            {showBonusDetail && (
+              <>
+                <span className="bonus-strip-income">
+                  Reddito totale {currentMonth.getFullYear()}: <strong>{fmt0(bonus.income)}</strong>
                 </span>
-                <span className="bonus-strip-value">{fmt0(bonus.marginToFull)}</span>
-                <span className="bonus-strip-note">
-                  prima di superare i {fmt0(bonus.thresholdFullGross)} lordi e uscire dal bonus pieno
-                  <span className="bonus-strip-hint"> (= 15.000 € imponibili, al netto dei contributi)</span>
-                </span>
-              </div>
-            )}
 
-            {bonus.status === BONUS_STATUS.PARZIALE && (
-              <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
-                <span className="bonus-strip-label">Puoi ancora guadagnare</span>
-                <span className="bonus-strip-value">{fmt0(bonus.marginToMax)}</span>
-                <span className="bonus-strip-note">
-                  prima di superare i {fmt0(bonus.thresholdMaxGross)} lordi e perdere del tutto il bonus
-                  <span className="bonus-strip-hint"> (= 28.000 € imponibili, al netto dei contributi)</span>
-                </span>
-              </div>
-            )}
+                {(montante > 0 || annualExtras > 0) && (
+                  <span className="bonus-strip-note">
+                    ={montante > 0 ? ` montante ${fmt0(montante)}${priorMonthLabel ? ` (fino a ${priorMonthLabel})` : ''} +` : ''}
+                    {' '}turni {fmt0(bonus.income - montante - annualExtras)}
+                    {annualExtras > 0 && ` + 13ª/14ª ${fmt0(annualExtras)}`}
+                  </span>
+                )}
+                {montanteMismatch && (
+                  <span className="bonus-strip-note bonus-strip-note--warn">
+                    ⚠️ Montante dichiarato {fmt0(montante)} diverso dai turni fino a {priorMonthLabel} ({fmt0(shiftsCovered)}). Normale se include altri redditi o paghe diverse.
+                  </span>
+                )}
 
-            {bonus.status === BONUS_STATUS.OLTRE && (
-              <div className="bonus-strip-body bonus-strip-body--danger">
-                <span className="bonus-strip-note">
-                  🚨 Reddito oltre i {fmt0(bonus.thresholdMaxGross)} lordi (28.000 € imponibili): il bonus non spetta.
-                </span>
-              </div>
+                {bonus.status === BONUS_STATUS.PIENO && (
+                  <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
+                    <span className="bonus-strip-label">
+                      {bonus.nearThreshold ? '⚠️ Sei vicino alla soglia' : 'Puoi ancora guadagnare'}
+                    </span>
+                    <span className="bonus-strip-value">{fmt0(bonus.marginToFull)}</span>
+                    <span className="bonus-strip-note">
+                      prima di superare i {fmt0(bonus.thresholdFullGross)} lordi e uscire dal bonus pieno
+                      <span className="bonus-strip-hint"> (= 15.000 € imponibili, al netto dei contributi)</span>
+                    </span>
+                  </div>
+                )}
+
+                {bonus.status === BONUS_STATUS.PARZIALE && (
+                  <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
+                    <span className="bonus-strip-label">Puoi ancora guadagnare</span>
+                    <span className="bonus-strip-value">{fmt0(bonus.marginToMax)}</span>
+                    <span className="bonus-strip-note">
+                      prima di superare i {fmt0(bonus.thresholdMaxGross)} lordi e perdere del tutto il bonus
+                      <span className="bonus-strip-hint"> (= 28.000 € imponibili, al netto dei contributi)</span>
+                    </span>
+                  </div>
+                )}
+
+                {bonus.status === BONUS_STATUS.OLTRE && (
+                  <div className="bonus-strip-body bonus-strip-body--danger">
+                    <span className="bonus-strip-note">
+                      🚨 Reddito oltre i {fmt0(bonus.thresholdMaxGross)} lordi (28.000 € imponibili): il bonus non spetta.
+                    </span>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

@@ -37,7 +37,9 @@ const DEFAULT_SETTINGS = {
   workerName: '',
   // Voci fisse mensili (indennità, superminimo...) e bonus per singolo mese
   fixedMonthlyItems: [],   // [{ id, label, amount }] ricorrenti ogni mese
-  monthlyBonus: {},        // { 'YYYY-MM': importo } bonus del singolo mese
+  monthlyBonusAmount: 0,   // importo fisso del bonus (es. bonus presenza), se lo si prende
+  monthlyBonus: {},        // { 'YYYY-MM': true } mesi in cui il bonus fisso è stato preso
+                           // (valori numerici legacy: importo di quel mese, preservato com'era)
   // Lavoratore a chiamata (senza ore settimanali fisse)
   onCall: false,
   annualGrossManual: 0,      // reddito annuo lordo stimato (per aliquota fiscale)

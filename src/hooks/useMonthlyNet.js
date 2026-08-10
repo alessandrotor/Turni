@@ -22,14 +22,20 @@ export default function useMonthlyNet({ year, month, settings, pay, annualGross,
   const mm = String(month + 1).padStart(2, '0');
   const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
     .reduce((s, v) => s + (Number(v.amount) || 0), 0);
-  const perMonthBonus = Number(settings.monthlyBonus?.[monthKey]) || 0;
+  // Il bonus del mese è un importo fisso (impostato una volta in Impostazioni),
+  // spuntato mese per mese dal calendario: la mappa contiene `true` per i mesi
+  // in cui è stato preso. I valori numerici sono il formato legacy (prima che
+  // il bonus diventasse un importo fisso) e restano quelli, invariati.
+  const monthlyBonusAmount = Number(settings.monthlyBonusAmount) || 0;
+  const resolveBonusEntry = (v) => (typeof v === 'number' ? v : (v ? monthlyBonusAmount : 0));
+  const perMonthBonus = resolveBonusEntry(settings.monthlyBonus?.[monthKey]);
   const bonusMap = settings.monthlyBonus || {};
   const bonusYearAll = Object.entries(bonusMap)
     .filter(([k]) => k.slice(0, 4) === String(year))
-    .reduce((s, [, v]) => s + (Number(v) || 0), 0);
+    .reduce((s, [, v]) => s + resolveBonusEntry(v), 0);
   const bonusYTD = Object.entries(bonusMap)
     .filter(([k]) => k.slice(0, 4) === String(year) && k.slice(5, 7) <= mm)
-    .reduce((s, [, v]) => s + (Number(v) || 0), 0);
+    .reduce((s, [, v]) => s + resolveBonusEntry(v), 0);
 
   // Reddito annuo di riferimento (aliquota IRPEF + decisione automatica TI):
   //  - 'stimato': stima annua (contratto/RAL/a chiamata) + voci fisse ×12 + bonus dell'anno;
