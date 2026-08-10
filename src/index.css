@@ -1253,6 +1253,16 @@ input, select, textarea { font: inherit; }
   margin-top: .1rem;
 }
 
+/* Come .net-disclaimer ma pensato per restare a vista senza aprire il
+   dettaglio: colore di avviso invece di grigio muto, niente corsivo. Resta
+   una singola riga di testo, non un box, per non appesantire il pannello. */
+.net-disclaimer--prominent {
+  font-size: .78rem;
+  color: var(--c-warning);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
 .debug-usage {
   flex-basis: 100%;
   display: flex;

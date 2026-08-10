@@ -463,9 +463,9 @@ export default function CalendarView({
               )}
             </div>
 
-            <p className="net-disclaimer">
-              ⚠️ Funzione beta: stima indicativa, fai sempre controllare questi dati a un
-              professionista prima di usarli.
+            <p className="net-disclaimer--prominent">
+              ⚠️ Funzione beta: i calcoli possono contenere errori. Fai sempre controllare
+              questi dati a un professionista prima di usarli.
             </p>
 
             {monthlyBonusAmount > 0 && (
