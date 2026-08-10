@@ -68,12 +68,65 @@ Gli errori tornano come `{ "error": "messaggio in italiano" }` con lo stato HTTP
 appropriato — l'app li mostra così come sono, quindi vanno scritti per essere
 letti da chi usa l'app, non da chi la sviluppa.
 
+## Turnstile
+
+Prova che dall'altra parte c'è un browser vero. È l'unica difesa che *previene*
+l'abuso automatizzato invece di limitarne il danno: l'URL del proxy si ricava
+decompilando l'app, quindi senza questo controllo un ciclo `for` basta a bruciare
+la quota giornaliera.
+
+```bash
+npx wrangler secret put TURNSTILE_SECRET
+```
+
+Il **sitekey** (pubblico) va in `VITE_TURNSTILE_SITEKEY` nel `.env.local` dell'app.
+Nella dashboard Cloudflare va creato in modalità **invisibile**, e fra i domini
+ammessi deve comparire anche **`localhost`**: l'APK Capacitor gira su
+`https://localhost` e senza quel dominio verrebbe rifiutato.
+
+Senza `TURNSTILE_SECRET` il worker salta la verifica — comodo per `wrangler dev`,
+**da non lasciare così in rete**.
+
 ## Limiti
 
-Con il binding KV attivo: 10 richieste al minuto per IP e 50 al giorno per
-installazione. Il conteggio è eventualmente consistente, quindi una raffica molto
-rapida può sforare di poco: basta a fermare l'abuso continuativo (quello che
-brucia la quota), non un attacco mirato.
+Due contatori su KV, con comportamenti diversi in caso di guasto:
 
-L'URL è ricavabile decompilando l'APK. Per una beta chiusa è un rischio
-accettabile; l'irrobustimento vero è legare l'accesso a Play Integrity.
+| | Soglia | Se KV non risponde |
+|---|---|---|
+| **Globale al giorno** | 300 | **Blocca** (503) — è il tetto di spesa |
+| **Per installazione al giorno** | 25 | **Lascia passare** — è una guardia, non sicurezza |
+
+La distinzione non è un dettaglio: `installId` arriva dal client e chiunque può
+generarne uno nuovo a ogni richiesta, quindi non è un controllo di sicurezza e
+non deve poter spegnere la funzione. Il tetto globale sì.
+
+**Il conto delle scritture KV è il vincolo che regge il dimensionamento.** Il
+piano gratuito dà 1.000 scritture al giorno e qui se ne fanno **due** per
+richiesta: 300 × 2 = 600, con margine. Aggiungendo un terzo contatore si
+arriverebbe a 900 e il fail-closed si rivolterebbe contro, spegnendo la funzione
+quando il limitatore esaurisce la *propria* quota — prima ancora di raggiungere
+il tetto di richieste. Se un giorno si alza il tetto, va rifatto questo conto.
+
+Il conteggio è eventualmente consistente: una raffica molto rapida può sforare
+di poco.
+
+## Tetti per richiesta
+
+| | Valore | Perché |
+|---|---|---|
+| `MAX_OUTPUT_TOKENS` | 12.288 | Un foglio mensile intero ne consuma ~3.400 |
+| Immagine | 512 B – 3 MB | L'app ridimensiona a 1600 px prima di spedire |
+| Formati | JPEG, PNG, WebP | Verificati sui **magic bytes**, non sul `mimeType` dichiarato |
+| Nome | 80 caratteri, una riga | Finisce nel prompt |
+| Risposta | 200 elementi, 200 caratteri per campo | Contro l'output pilotato dall'immagine |
+
+## Cosa NON è coperto
+
+Lo `responseSchema` impedisce al modello di uscire dalla forma prevista, quindi
+un "ignora le istruzioni" scritto nell'immagine non ha dove sfogare. Restano:
+
+- **turni falsi** inseriti nell'immagine — mitigati dalla modale di conferma,
+  dove i turni si rivedono prima di importarli;
+- **il tetto di spesa lato Google**, che va impostato su AI Studio / Cloud
+  Console: è l'unico controllo che regge anche se il worker viene aggirato del
+  tutto.

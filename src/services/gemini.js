@@ -1,5 +1,6 @@
 import { isIsoDate } from '../utils/dates';
 import { installId } from './telemetry';
+import { ottieniToken, turnstileAttivo } from './turnstile';
 
 // La chiamata a Gemini NON avviene più da qui: la fa il proxy in `worker/`.
 // Motivo: Vite sostituisce le `import.meta.env.*` a build time, quindi una
@@ -68,6 +69,18 @@ export async function parseShiftsFromImage(imageFile, workerName = '') {
   }
   const image = await prepareImage(imageFile);
 
+  // Token di verifica: si chiede QUI, dopo che il file è stato scelto, non prima.
+  // Anticiparlo al click del pulsante romperebbe il gesto utente su iOS, dove il
+  // selettore file deve aprirsi nello stesso turno dell'evento.
+  let turnstileToken = '';
+  if (turnstileAttivo()) {
+    try {
+      turnstileToken = await ottieniToken();
+    } catch {
+      throw new Error('Verifica di sicurezza non riuscita: controlla la connessione e riprova.');
+    }
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
   let response;
@@ -81,6 +94,7 @@ export async function parseShiftsFromImage(imageFile, workerName = '') {
         mimeType: image.mimeType,
         workerName,
         installId: installId(),
+        turnstileToken,
       }),
     });
   } catch (err) {
