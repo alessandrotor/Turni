@@ -45,6 +45,7 @@ export default function CalendarView({
   payByShift,
   annualGross,
   annualExtras = 0,
+  onNavigate,
 }) {
   const [importParsed, setImportParsed] = useState(null);
   const [importLoading, setImportLoading] = useState(false);
@@ -405,6 +406,14 @@ export default function CalendarView({
                   nessuna paga oraria valida per quelle date
                 </span>
               )}
+            </div>
+          )}
+          {pay === null && (
+            <div className="summary-item">
+              <span className="summary-label">Retribuzione stimata</span>
+              <button type="button" className="linklike" onClick={() => onNavigate?.('settings')}>
+                Imposta la paga oraria →
+              </button>
             </div>
           )}
         </div>

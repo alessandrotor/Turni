@@ -10,6 +10,7 @@ import Settings from './components/Settings';
 import ShiftForm from './components/ShiftForm';
 import NavBar from './components/NavBar';
 import InstallPrompt from './components/InstallPrompt';
+import SetupPrompt from './components/SetupPrompt';
 
 const DEFAULT_SETTINGS = {
   hourlyRate: 0,
@@ -185,6 +186,7 @@ export default function App() {
       <NavBar view={view} onNavigate={setView} />
 
       <main className="main-content">
+        <SetupPrompt settings={settings} onNavigate={setView} />
         <InstallPrompt />
         {view === 'calendar' && (
           <CalendarView
@@ -200,6 +202,7 @@ export default function App() {
             payByShift={payByShift}
             annualGross={annualGross.total}
             annualExtras={annualGross.extras}
+            onNavigate={setView}
           />
         )}
 
