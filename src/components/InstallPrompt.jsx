@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 
-// Banner "Installa app". Su Android/desktop (Chrome/Edge) usa l'evento nativo
-// `beforeinstallprompt`; su iOS Safari, che non lo espone, mostra le istruzioni
-// manuali (Condividi → Aggiungi a Home). Non compare nell'APK Capacitor né
-// quando l'app è già installata (avviata in modalità standalone).
+// Banner "Installa app". Su Android/desktop Chromium (Chrome, Edge, Samsung
+// Internet) usa l'evento nativo `beforeinstallprompt`; su iOS Safari, che non
+// lo espone, mostra le istruzioni manuali (Condividi → Aggiungi a Home).
+// Firefox (mobile e desktop) non implementa `beforeinstallprompt` — è un'API
+// solo Chromium — quindi senza un ramo dedicato il banner resta invisibile in
+// silenzio: su Firefox per Android mostriamo le istruzioni manuali dal menu
+// del browser (l'unico che supporta "Aggiungi a schermata Home" per le PWA;
+// Firefox desktop non ha un equivalente affidabile, lì il banner resta
+// nascosto). Non compare nell'APK Capacitor né quando l'app è già installata
+// (avviata in modalità standalone).
 
 const DISMISS_KEY = 'turni_install_dismissed';
 
@@ -30,10 +36,17 @@ const isIOS = () =>
   // iPadOS si presenta come Mac con touch
   (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
 
+// Firefox per Android: non espone `beforeinstallprompt`, ma supporta
+// "Aggiungi a schermata Home" dal menu del browser. Su iOS "Firefox" è solo
+// una skin di Safari (WebKit imposto da Apple), quindi lì vale già isIOS().
+const isFirefoxAndroid = () => /firefox/i.test(window.navigator.userAgent)
+  && /android/i.test(window.navigator.userAgent);
+
 export default function InstallPrompt() {
   const [deferred, setDeferred] = useState(null); // evento beforeinstallprompt
   const [show, setShow] = useState(false);
   const [iosHint, setIosHint] = useState(false);
+  const [firefoxHint, setFirefoxHint] = useState(false);
   const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
@@ -41,7 +54,7 @@ export default function InstallPrompt() {
     if (Capacitor.isNativePlatform() || isStandalone()) return;
     if (leggiFlag(DISMISS_KEY) === '1') return;
 
-    // Android / desktop: intercetta l'evento e mostra il nostro pulsante.
+    // Android / desktop Chromium: intercetta l'evento e mostra il nostro pulsante.
     const onBeforeInstall = (e) => {
       e.preventDefault();
       setDeferred(e);
@@ -51,8 +64,9 @@ export default function InstallPrompt() {
     window.addEventListener('beforeinstallprompt', onBeforeInstall);
     window.addEventListener('appinstalled', onInstalled);
 
-    // iOS Safari: nessun evento, mostriamo le istruzioni manuali.
+    // iOS Safari e Firefox Android: nessun evento, istruzioni manuali.
     if (isIOS()) { setIosHint(true); setShow(true); }
+    else if (isFirefoxAndroid()) { setFirefoxHint(true); setShow(true); }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', onBeforeInstall);
@@ -92,11 +106,13 @@ export default function InstallPrompt() {
         <strong>Installa Turni</strong>
         {iosHint ? (
           <span>Tocca <span aria-label="Condividi">Condividi ⬆️</span> e poi «Aggiungi a Home».</span>
+        ) : firefoxHint ? (
+          <span>Tocca il menu ⋮ in alto e poi «Aggiungi a schermata Home» (o «Installa»).</span>
         ) : (
           <span>Aggiungila alla schermata home: si apre a tutto schermo, anche offline.</span>
         )}
       </div>
-      {!iosHint && (
+      {!iosHint && !firefoxHint && (
         <button
           className="btn btn-primary install-banner-btn"
           onClick={install}
