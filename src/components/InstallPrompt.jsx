@@ -7,10 +7,12 @@ import { Capacitor } from '@capacitor/core';
 // Firefox (mobile e desktop) non implementa `beforeinstallprompt` — è un'API
 // solo Chromium — quindi senza un ramo dedicato il banner resta invisibile in
 // silenzio: su Firefox per Android mostriamo le istruzioni manuali dal menu
-// del browser (l'unico che supporta "Aggiungi a schermata Home" per le PWA;
-// Firefox desktop non ha un equivalente affidabile, lì il banner resta
-// nascosto). Non compare nell'APK Capacitor né quando l'app è già installata
-// (avviata in modalità standalone).
+// del browser (l'unico che supporta "Aggiungi a schermata Home" per le PWA).
+// Firefox desktop non ha alcun modo nativo di installare una PWA (scelta di
+// prodotto di Mozilla, non un'API mancante) — lì mostriamo solo un avviso
+// generico, nessun pulsante che promette qualcosa che non può fare. Non
+// compare nell'APK Capacitor né quando l'app è già installata (avviata in
+// modalità standalone).
 
 const DISMISS_KEY = 'turni_install_dismissed';
 
@@ -42,11 +44,16 @@ const isIOS = () =>
 const isFirefoxAndroid = () => /firefox/i.test(window.navigator.userAgent)
   && /android/i.test(window.navigator.userAgent);
 
+// Firefox desktop: nessuna installazione nativa possibile (vedi commento in
+// testa al file). Chiamata solo dopo aver escluso iOS e Firefox Android.
+const isFirefoxDesktop = () => /firefox/i.test(window.navigator.userAgent);
+
 export default function InstallPrompt() {
   const [deferred, setDeferred] = useState(null); // evento beforeinstallprompt
   const [show, setShow] = useState(false);
   const [iosHint, setIosHint] = useState(false);
   const [firefoxHint, setFirefoxHint] = useState(false);
+  const [firefoxDesktopHint, setFirefoxDesktopHint] = useState(false);
   const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
@@ -64,9 +71,10 @@ export default function InstallPrompt() {
     window.addEventListener('beforeinstallprompt', onBeforeInstall);
     window.addEventListener('appinstalled', onInstalled);
 
-    // iOS Safari e Firefox Android: nessun evento, istruzioni manuali.
+    // iOS Safari e Firefox (Android/desktop): nessun evento, istruzioni manuali.
     if (isIOS()) { setIosHint(true); setShow(true); }
     else if (isFirefoxAndroid()) { setFirefoxHint(true); setShow(true); }
+    else if (isFirefoxDesktop()) { setFirefoxDesktopHint(true); setShow(true); }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', onBeforeInstall);
@@ -108,11 +116,13 @@ export default function InstallPrompt() {
           <span>Tocca <span aria-label="Condividi">Condividi ⬆️</span> e poi «Aggiungi a Home».</span>
         ) : firefoxHint ? (
           <span>Tocca il menu ⋮ in alto e poi «Aggiungi a schermata Home» (o «Installa»).</span>
+        ) : firefoxDesktopHint ? (
+          <span>Se il tuo browser lo supporta, aggiungila dal menu (⋮ o ≡).</span>
         ) : (
           <span>Aggiungila alla schermata home: si apre a tutto schermo, anche offline.</span>
         )}
       </div>
-      {!iosHint && !firefoxHint && (
+      {!iosHint && !firefoxHint && !firefoxDesktopHint && (
         <button
           className="btn btn-primary install-banner-btn"
           onClick={install}
