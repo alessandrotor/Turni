@@ -128,8 +128,13 @@ export default function CalendarView({
     monthKey, perMonthBonus, fixedMonthlyTotal,
     netProjection, netBasis, extraThisMonth, monthGross,
     netMonth, monthNet, monthTrattenute, monthBonus, monthTfr,
-    tiInfo, effectiveRatePct, addizionaliPct, showNetPanel,
+    tiInfo, effectiveRatePct, addizionaliPct, showNetPanel: showNetPanelRaw,
   } = useMonthlyNet({ year, month, settings, pay, annualGross, annualExtras, daysInMonth });
+  // Senza nemmeno un turno segnato nel mese non c'è niente da stimare: voci
+  // fisse mensili o mensilità aggiuntive maturate da sole (senza turni)
+  // farebbero comunque comparire trattamento integrativo/cuneo, dando
+  // l'impressione di un netto "inventato" per un mese ancora vuoto.
+  const showNetPanel = showNetPanelRaw && shifts.length > 0;
 
   // Costante di build: il modulo gemini resta caricato pigramente (riga ~242).
   const hasImportAI = !!import.meta.env.VITE_AI_PROXY_URL;
