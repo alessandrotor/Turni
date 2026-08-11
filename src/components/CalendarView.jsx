@@ -2,7 +2,7 @@ import { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import useModalDismiss from '../hooks/useModalDismiss';
 import {
   formatDate, formatMonthYear, isToday, isWeekend,
-  addMonths, getMonthStart, getDaysInMonth, isCurrentMonth,
+  addMonths, getMonthStart, getDaysInMonth, isCurrentMonth, formatPayrollRange,
 } from '../utils/dates';
 import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
@@ -36,6 +36,11 @@ export default function CalendarView({
   currentMonth,
   onMonthChange,
   shifts,
+  // Turni del mese di PAGA: coincidono con `shifts` salvo contratti
+  // mensilizzati, dove il mese di busta è fatto di settimane intere. La
+  // griglia resta disegnata su `shifts` (il mese di calendario), i totali si
+  // contano su questi.
+  payrollShifts,
   onAddShift,
   onEditShift,
   onImportShifts,
@@ -90,14 +95,20 @@ export default function CalendarView({
     return map;
   }, [shifts]);
 
-  // Monthly totals
+  // Monthly totals — sul mese di PAGA (vedi prop payrollShifts).
+  const counted = payrollShifts || shifts;
+  // Periodo di paga diverso dal mese di calendario: va detto, altrimenti le ore
+  // non corrispondono ai turni visibili sulla griglia e sembrano sbagliate.
+  const payrollRange = payrollShifts && payrollShifts !== shifts
+    ? formatPayrollRange(year, month)
+    : null;
   const totalMins = useMemo(
-    () => shifts.reduce((sum, s) => sum + calcShiftMinutes(s), 0),
-    [shifts],
+    () => counted.reduce((sum, s) => sum + calcShiftMinutes(s), 0),
+    [counted],
   );
   const pay = useMemo(
-    () => calcTotalPay(shifts, settings, allShifts || shifts, payByShift),
-    [shifts, settings, allShifts, payByShift],
+    () => calcTotalPay(counted, settings, allShifts || counted, payByShift),
+    [counted, settings, allShifts, payByShift],
   );
 
   // Bonus busta paga: quanto manca alla soglia (reddito annuo dai turni)
@@ -135,7 +146,7 @@ export default function CalendarView({
   // fisse mensili o mensilità aggiuntive maturate da sole (senza turni)
   // farebbero comunque comparire trattamento integrativo/cuneo, dando
   // l'impressione di un netto "inventato" per un mese ancora vuoto.
-  const showNetPanel = showNetPanelRaw && shifts.length > 0;
+  const showNetPanel = showNetPanelRaw && counted.length > 0;
 
   // Costante di build: il modulo gemini resta caricato pigramente (riga ~242).
   const hasImportAI = !!import.meta.env.VITE_AI_PROXY_URL;
@@ -385,11 +396,16 @@ export default function CalendarView({
         <div className="cal-summary-row">
           <div className="summary-item">
             <span className="summary-label">Turni</span>
-            <span className="summary-value">{shifts.length}</span>
+            <span className="summary-value">{counted.length}</span>
           </div>
           <div className="summary-item">
             <span className="summary-label">Ore lavorate</span>
             <span className="summary-value">{formatMinutesShort(totalMins)}</span>
+            {payrollRange && (
+              <span className="summary-sublabel">
+                mese di paga: settimane intere, {payrollRange}
+              </span>
+            )}
           </div>
           {pay !== null && (
             <div className="summary-item">

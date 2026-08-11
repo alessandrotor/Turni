@@ -27,6 +27,7 @@
     "note": null,
     "verificato": true,
     "monthlyHoursFactor": 4.3,
+    "mensilizzato": true,
     "contributiExtra": [
       {
         "label": "FIS D.Lgs. 148/2015",

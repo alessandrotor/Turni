@@ -252,6 +252,10 @@ export default function Settings({ settings, onSave }) {
   const weeklyPay = hourlyRate * weeklyHours;
   // Stessa base della mensilità usata dal motore: il divisore orario dipende dal CCNL.
   const monthlyPay = weeklyPay * ccnlPreset.monthlyHoursFactor;
+  // Contratto mensilizzato (es. Turismo): le ore contrattuali sono un numero
+  // fisso al mese e il supplementare si conta su quello, non sulla settimana.
+  const mensilizzato = !form.onCall && ccnlPreset.mensilizzato;
+  const oreMensili = (weeklyHours * ccnlPreset.monthlyHoursFactor).toFixed(2).replace('.', ',');
 
   return (
     <div className="settings-page">
@@ -293,7 +297,10 @@ export default function Settings({ settings, onSave }) {
                 <strong>{formatCurrency(weeklyPay)}</strong>
               </div>
               <div className="pay-preview-row">
-                <span>Stima mensile (×4,33):</span>
+                {/* Il divisore NON è sempre 4,33: il Turismo usa 4,3 (103,20 h
+                    al mese su 24 settimanali). Scriverlo fisso faceva leggere
+                    "×4,33" accanto a un importo calcolato con 4,3. */}
+                <span>Stima mensile (×{String(Number(ccnlPreset.monthlyHoursFactor.toFixed(2))).replace('.', ',')}):</span>
                 <strong>{formatCurrency(monthlyPay)}</strong>
               </div>
               <p className="pay-preview-note">
@@ -322,6 +329,16 @@ export default function Settings({ settings, onSave }) {
                 Quante ore dovresti lavorare ogni settimana secondo il tuo contratto.
                 Le ore oltre questa soglia vengono conteggiate come straordinari.
               </p>
+              {mensilizzato && (
+                <p className="settings-section-desc">
+                  Il CCNL {ccnlPreset.label} è <strong>mensilizzato</strong>: in busta la
+                  retribuzione è un numero fisso di ore al mese ({oreMensili} h), e sono
+                  supplementari le ore che superano quel totale nel mese — non quelle oltre
+                  le {weeklyHours || 0} h della singola settimana. Il mese, per la busta, va
+                  da lunedì a domenica: la settimana a cavallo conta tutta nel mese in cui
+                  comincia.
+                </p>
+              )}
               <div className="form-group">
                 <label className="form-label" htmlFor="expected-hours">Ore settimanali</label>
                 <input
@@ -395,7 +412,7 @@ export default function Settings({ settings, onSave }) {
             Domenicale e festivo vengono applicate <strong>automaticamente</strong> ai turni di
             domenica e nelle festività nazionali (incluse Pasqua e Pasquetta). Gli straordinari
             si applicano alle ore oltre la soglia
-            {form.onCall ? ' giornaliera' : ' settimanale da contratto'}. Per altre maggiorazioni
+            {form.onCall ? ' giornaliera' : mensilizzato ? ' mensile da contratto' : ' settimanale da contratto'}. Per altre maggiorazioni
             (notturni…) usa la percentuale manuale sul singolo turno.
           </p>
 
@@ -486,7 +503,9 @@ export default function Settings({ settings, onSave }) {
             <p className="form-hint">
               {form.onCall
                 ? `Applicata alle ore oltre le ${parseNum(form.dailyOvertimeThreshold) || 0}h giornaliere.`
-                : `Applicata alle ore oltre le ${weeklyHours || 0}h settimanali da contratto.`}
+                : mensilizzato
+                  ? `Applicata alle ore oltre le ${oreMensili}h del mese (contratto mensilizzato).`
+                  : `Applicata alle ore oltre le ${weeklyHours || 0}h settimanali da contratto.`}
             </p>
           </div>
         </details>

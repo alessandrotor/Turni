@@ -1,5 +1,8 @@
-import { minutesDiff, parseDate, getWeekStart, formatDate } from './dates';
-import { isHoliday } from './holidays';
+// Estensioni esplicite: senza, Node puro non riesce a importare questo modulo e
+// i riscontri in `scripts/` (che girano fuori da Vite) non partono.
+import { minutesDiff, parseDate, getWeekStart, formatDate, payrollMonthKey } from './dates.js';
+import { isHoliday } from './holidays.js';
+import { isMensilizzato, monthlyContractHours } from './ccnl.js';
 
 export function calcShiftMinutes(shift) {
   const total = minutesDiff(shift.startTime, shift.endTime);
@@ -86,25 +89,39 @@ export function getShiftSurchargePct(shift, settings) {
 }
 
 // Calcola la paga di ogni turno tenendo conto della maggiorazione straordinari.
-// Due modalità (dipende da settings.onCall):
+// Tre modalità:
 //  - contratto (default): straordinario per le ore che, nella settimana (lun-dom),
 //    superano le ore da contratto (expectedWeeklyHours);
+//  - contratto MENSILIZZATO (es. Turismo): la busta non ragiona a settimana ma a
+//    mese — retribuisce un numero fisso di ore (24 × 4,3 = 103,20) e paga come
+//    supplementari le ore eccedenti nel MESE DI PAGA, che è fatto di settimane
+//    intere (vedi payrollMonthKey). Riscontrato sulle buste di giugno e luglio
+//    2026: 131,45 − 103,20 = 28,25 e 109,70 − 103,20 = 6,50, entrambi esatti.
+//    Con la soglia settimanale i conti non tornerebbero: quattro settimane da 24
+//    ore fanno 96 ore ordinarie, non 103,20.
 //  - a chiamata (onCall): straordinario per le ore che, nel singolo GIORNO,
-//    superano la soglia giornaliera (dailyOvertimeThreshold).
+//    superano la soglia giornaliera (dailyOvertimeThreshold). Ha la precedenza:
+//    chi lavora a chiamata non ha un orario mensilizzato da rispettare.
 // Serve l'insieme completo dei turni per raggruppare correttamente.
 // Ritorna una mappa { [shiftId]: { base, surcharge, overtimeMinutes } }.
 export function computePayByShift(allShifts, settings) {
   const otPct = Number(settings?.overtimeSurchargePct) || 0;
   const onCall = !!settings?.onCall;
+  const mensile = !onCall && isMensilizzato(settings);
   const thresholdMin = onCall
     ? (Number(settings?.dailyOvertimeThreshold) || 0) * 60
-    : (Number(settings?.expectedWeeklyHours) || 0) * 60;
+    : mensile
+      ? monthlyContractHours(settings) * 60
+      : (Number(settings?.expectedWeeklyHours) || 0) * 60;
   const applyOvertime = thresholdMin > 0 && otPct > 0;
 
-  // Raggruppa per giorno (a chiamata) o per settimana (contratto).
+  // Raggruppa per giorno (a chiamata), per mese di paga (mensilizzato) o per
+  // settimana (contratto).
   const groups = new Map();
   for (const s of allShifts) {
-    const key = onCall ? s.date : formatDate(getWeekStart(parseDate(s.date)));
+    const key = onCall ? s.date
+      : mensile ? payrollMonthKey(s.date)
+        : formatDate(getWeekStart(parseDate(s.date)));
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(s);
   }

@@ -29,6 +29,7 @@ const DEFAULTS = {
   label: '',
   verificato: false,
   monthlyHoursFactor: DEFAULT_MONTHLY_HOURS_FACTOR,
+  mensilizzato: false,
   contributiExtra: [],
   enteBilaterale: null,
 };
@@ -42,6 +43,7 @@ function toPreset(entry) {
     label: entry.label || entry.nome || DEFAULTS.label,
     // Un factor mancante o non valido non deve azzerare la mensilità.
     monthlyHoursFactor: Number(entry.monthlyHoursFactor) || DEFAULT_MONTHLY_HOURS_FACTOR,
+    mensilizzato: entry.mensilizzato === true,
     contributiExtra: Array.isArray(entry.contributiExtra) ? entry.contributiExtra : [],
     enteBilaterale: entry.enteBilaterale || null,
   };
@@ -62,4 +64,22 @@ export function getCcnl(key) {
 // Fattore ore mensili del contratto scelto (settimane retribuite al mese).
 export function monthlyHoursFactor(settings = {}) {
   return getCcnl(settings.ccnl).monthlyHoursFactor || DEFAULT_MONTHLY_HOURS_FACTOR;
+}
+
+// Contratto MENSILIZZATO: la retribuzione è un importo fisso al mese, uguale in
+// ogni mese dell'anno, e le ore contrattuali sono un numero fisso (24 × 4,3 =
+// 103,20 per il Turismo part-time 60%) indipendente dai giorni di calendario.
+// Due conseguenze, entrambe riscontrate sulle buste reali di giugno e luglio
+// 2026 (`scripts/check-mese-paga-2026.mjs`):
+//  - il supplementare si conta sull'eccedenza MENSILE, non su quella settimanale;
+//  - il mese di paga è fatto di settimane intere (vedi payrollMonthKey).
+export function isMensilizzato(settings = {}) {
+  return getCcnl(settings.ccnl).mensilizzato === true;
+}
+
+// Ore contrattuali di un mese: quelle che in busta stanno alla voce
+// "Retribuzione" e che restano identiche mese dopo mese.
+export function monthlyContractHours(settings = {}) {
+  const weeklyHours = Math.max(0, Number(settings.expectedWeeklyHours) || 0);
+  return weeklyHours * monthlyHoursFactor(settings);
 }

@@ -8,7 +8,7 @@
 
 // Estensione esplicita: così `scripts/check-busta-giugno-2026.mjs` può
 // importare questo modulo con Node puro, senza passare dal bundler.
-import { getCcnl, monthlyHoursFactor } from './ccnl.js';
+import { getCcnl, monthlyContractHours } from './ccnl.js';
 
 export const TAX_2026 = {
   // Contributi IVS a carico del dipendente (settore privato)
@@ -226,8 +226,7 @@ export const EXTRA_MONTHS = {
 export function monthlyBaseGross(settings = {}) {
   if (settings.onCall) return 0;
   const rate = Math.max(0, Number(settings.hourlyRate) || 0);
-  const weeklyHours = Math.max(0, Number(settings.expectedWeeklyHours) || 0);
-  return rate * weeklyHours * monthlyHoursFactor(settings);
+  return rate * monthlyContractHours(settings);
 }
 
 // Un mese matura il rateo solo se lavorato per almeno 15 giorni (regola CCNL).

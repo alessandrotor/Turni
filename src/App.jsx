@@ -1,8 +1,9 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import useLocalStorage from './hooks/useLocalStorage';
-import { getMonthStart, parseDate } from './utils/dates';
+import { getMonthStart, parseDate, payrollMonthKey } from './utils/dates';
 import { calcTotalPay, computePayByShift } from './utils/pay';
+import { isMensilizzato } from './utils/ccnl';
 import { monthlyBaseGross, receivedExtraMonthsCount } from './utils/net';
 import { genId } from './utils/id';
 import CalendarView from './components/CalendarView';
@@ -114,6 +115,16 @@ export default function App() {
     });
   }, [allShifts, currentMonth]);
 
+  // Turni del MESE DI PAGA: per i contratti mensilizzati la busta non taglia a
+  // fine mese ma a fine settimana (vedi payrollMonthKey), quindi ore e
+  // retribuzione del mese si contano su un insieme diverso da quello disegnato
+  // sul calendario. Negli altri casi i due insiemi coincidono.
+  const payrollShifts = useMemo(() => {
+    if (!isMensilizzato(settings)) return monthShifts;
+    const key = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
+    return allShifts.filter(s => payrollMonthKey(s.date) === key);
+  }, [allShifts, monthShifts, currentMonth, settings]);
+
   // Mappa paga per turno, calcolata UNA volta: è O(N) su tutta la storia dei
   // turni. Ricalcolarla a ogni chiamata di calcTotalPay (mese, anno, montante)
   // rallenta l'app col crescere dei turni; qui la memoizziamo e la passiamo giù.
@@ -193,6 +204,7 @@ export default function App() {
             currentMonth={currentMonth}
             onMonthChange={setCurrentMonth}
             shifts={monthShifts}
+            payrollShifts={payrollShifts}
             onAddShift={(date) => setModal({ type: 'add', date })}
             onEditShift={(shift) => setModal({ type: 'edit', shift })}
             onImportShifts={importShifts}
