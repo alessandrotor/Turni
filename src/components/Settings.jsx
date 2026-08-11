@@ -312,7 +312,19 @@ export default function Settings({ settings, onSave }) {
             </div>
           </div>
 
-          {hourlyRate > 0 && (
+          {/* Anteprima settimanale/mensile: ha senso solo con un orario da
+              contratto. A chiamata le ore settimanali non esistono — quelle in
+              memoria sono il default a 40 — e mostrare «per 40h/settimana» a chi
+              lavora quando lo chiamano è una mensilità inventata. Il motore del
+              netto lo sa già: monthlyBaseGross ritorna 0 per onCall. */}
+          {hourlyRate > 0 && form.onCall && (
+            <p className="form-hint">
+              A chiamata la paga oraria è l'unico dato certo: quanto entra in un mese
+              dipende dai turni, e lo trovi sul calendario.
+            </p>
+          )}
+
+          {hourlyRate > 0 && !form.onCall && (
             <div className="pay-preview">
               <div className="pay-preview-row">
                 <span>Per {weeklyHours}h/settimana:</span>
@@ -383,6 +395,16 @@ export default function Settings({ settings, onSave }) {
                 Il reddito annuo serve solo a stimare l'aliquota fiscale; se lo lasci vuoto viene
                 stimato annualizzando i turni che hai inserito.
               </p>
+              {/* Chi sceglie un CCNL mensilizzato E «a chiamata» non vede il mese
+                  di paga a settimane intere, e senza una riga che lo dica sembra
+                  che l'app se ne sia dimenticata. */}
+              {ccnlPreset.mensilizzato && (
+                <p className="settings-section-desc">
+                  Il CCNL {ccnlPreset.label} è mensilizzato, ma <strong>il lavoro a chiamata
+                  non lo è</strong>: non esiste un monte ore fisso da retribuire ogni mese, si
+                  paga quello che si lavora. Del CCNL restano i contributi, non l'orario.
+                </p>
+              )}
               <div className="form-group">
                 <label className="form-label" htmlFor="daily-ot">Soglia straordinario giornaliera (ore)</label>
                 <input
@@ -790,11 +812,23 @@ export default function Settings({ settings, onSave }) {
         <details className="settings-section">
           <summary className="settings-section-title">🎁 Tredicesima e quattordicesima</summary>
           <p className="settings-section-desc">
-            Attiva le mensilità aggiuntive previste dal tuo CCNL. La <strong>tredicesima</strong>
+            {/* Lo spazio esplicito serve: JSX mangia il ritorno a capo fra un
+                tag e il testo della riga dopo, e si leggeva «tredicesimaarriva». */}
+            Attiva le mensilità aggiuntive previste dal tuo CCNL. La <strong>tredicesima</strong>{' '}
             arriva a dicembre, la <strong>quattordicesima</strong> a giugno; ciascuna vale circa una
             mensilità (ore settimanali × paga oraria). Vengono incluse nel reddito annuo (quindi
             nell'aliquota fiscale) e mostrate nel mese in cui arrivano.
           </p>
+          {/* Senza ore contrattuali la mensilità vale 0 (monthlyBaseGross ritorna
+              0 per onCall): le caselle resterebbero due interruttori che non
+              accendono niente, e va detto invece di lasciarlo scoprire. */}
+          {form.onCall && (
+            <p className="settings-section-desc">
+              Lavorando a chiamata non ci sono ore contrattuali da cui ricavare l'importo:
+              queste caselle non cambiano il calcolo. Se in busta ti arriva un rateo,
+              segnalo come <strong>bonus del mese</strong> nel mese in cui lo prendi.
+            </p>
+          )}
 
           <label className="check-row">
             <input
