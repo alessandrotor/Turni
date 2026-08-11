@@ -21,7 +21,7 @@
 //    cioè i ratei orari di 13ª, ferie, ROL e 14ª sono GIÀ dentro la paga oraria.
 //    Per questo, a chiamata, le caselle 13ª/14ª devono restare spente.
 
-import { calcNetMonthly } from '../src/utils/net.js';
+import { calcNetMonthly, calcNetAnnual, tiDecision, TAX_2026 } from '../src/utils/net.js';
 
 const SETTINGS = {
   hourlyRate: 9.43022,
@@ -112,6 +112,50 @@ const TFR_BUSTA = 730.84 / 13.5 - 0.005 * LORDO;
 check('TFR: la formula della busta', TFR_BUSTA, 50.35, 0.01);
 check('TFR: quanto calcola il motore', n.tfrLordo, 52.27, 0.02);
 check('  scarto, tutto qui', n.tfrLordo - TFR_BUSTA, 1.92, 0.02);
+
+// ---------------------------------------------------------------------------
+// Trattamento integrativo: la capienza e il peso della proiezione annua.
+//
+// La stessa persona, a luglio, si è vista sparire il TI dall'app pur avendolo
+// ricevuto. Non era un errore di calcolo del mese: era la PROIEZIONE annua,
+// costruita sui soli turni inseriti (mesi vuoti = zero) e quindi troppo bassa.
+// Sotto una certa soglia l'imposta lorda annua non copre la detrazione e il TI
+// decade per incapienza — formalmente giusto, su un reddito sbagliato.
+console.log('\nTrattamento integrativo: capienza e proiezione\n');
+
+const check2 = (label, ok, extra = '') => {
+  if (!ok) failures += 1;
+  console.log(`${ok ? '  ok  ' : '  XX  '} ${label}${extra ? '  → ' + extra : ''}`);
+};
+
+{
+  // Proiezione realistica, ricavata dal cedolino stesso: imponibile IRPEF
+  // maturato a giugno 5.613,21, che a metà anno vale circa 11.200 di lordo.
+  const REALE = 11226;
+  const ti = tiDecision(REALE, SETTINGS);
+  check2('con la proiezione vera il TI spetta', ti.incluso, ti.motivo);
+  check2('  vale 1.200 € l\'anno', Math.abs(ti.importoAnnuo - 1200) < 0.01);
+
+  // Proiezione che usciva dall'app con pochi mesi di turni inseriti.
+  const PARZIALE = 8856;
+  const tiP = tiDecision(PARZIALE, SETTINGS);
+  check2('con la proiezione parziale decade', !tiP.incluso, tiP.motivo);
+
+  // Lo sconto di 75 € nel test di capienza sposta il confine, e va verificato
+  // che il confine sia quello: un reddito che sta in mezzo deve avere il TI.
+  const a = calcNetAnnual(REALE, SETTINGS);
+  check2('la capienza si misura sulla detrazione MENO 75 €',
+    TAX_2026.TI_CAPIENZA_SCONTO === 75, String(TAX_2026.TI_CAPIENZA_SCONTO));
+  // Reddito costruito perché l'imposta lorda cada fra detrazione−75 e detrazione:
+  // senza lo sconto il TI verrebbe negato, con lo sconto spetta.
+  const IN_MEZZO = 9100;
+  const m = calcNetAnnual(IN_MEZZO, SETTINGS);
+  const inFascia = m.irpefLorda > m.detrazioneLavoro - 75 && m.irpefLorda <= m.detrazioneLavoro;
+  check2('caso di confine costruito bene', inFascia,
+    `lorda ${m.irpefLorda.toFixed(2)} fra ${(m.detrazioneLavoro - 75).toFixed(2)} e ${m.detrazioneLavoro.toFixed(2)}`);
+  check2('  e in quel caso il TI spetta', tiDecision(IN_MEZZO, SETTINGS).incluso);
+  void a;
+}
 
 console.log(
   failures === 0

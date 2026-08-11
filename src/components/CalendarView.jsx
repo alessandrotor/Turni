@@ -148,6 +148,27 @@ export default function CalendarView({
   // l'impressione di un netto "inventato" per un mese ancora vuoto.
   const showNetPanel = showNetPanelRaw && counted.length > 0;
 
+  // Quanto è "coperta" la proiezione dal maturato: i mesi dell'anno in cui ci
+  // sono turni, contro quelli già trascorsi. Se chi usa l'app ha cominciato a
+  // segnare i turni a metà anno, i mesi precedenti valgono zero e il reddito
+  // annuo stimato esce molto più basso del vero — con effetti a cascata su
+  // detrazioni, trattamento integrativo e indennità.
+  const mesiTrascorsi = year === new Date().getFullYear() ? new Date().getMonth() + 1 : 12;
+  const mesiConTurni = useMemo(() => {
+    const mesi = new Set();
+    (allShifts || []).forEach(s => {
+      if (s.date.slice(0, 4) === String(year)) mesi.add(s.date.slice(5, 7));
+    });
+    return mesi.size;
+  }, [allShifts, year]);
+  // Si avvisa solo quando la proiezione dipende DAVVERO dai soli turni: chi ha
+  // già messo il montante o il reddito annuo a mano ha risolto, e un avviso in
+  // quel caso sarebbe solo rumore.
+  const proiezioneParziale = netProjection.source === 'maturato'
+    && !(Number(settings.priorTaxableIncome) > 0)
+    && !(Number(settings.annualGrossManual) > 0)
+    && mesiConTurni > 0 && mesiConTurni < mesiTrascorsi;
+
   // Costante di build: il modulo gemini resta caricato pigramente (riga ~242).
   const hasImportAI = !!import.meta.env.VITE_AI_PROXY_URL;
 
@@ -610,6 +631,21 @@ export default function CalendarView({
                   È una previsione: su lavoro a turni le ore cambiano, e il conguaglio di dicembre
                   rimette a posto detrazioni e bonus. Puoi correggerla in Impostazioni.
                 </div>
+                {/* Proiezione costruita su pochi mesi di turni: i mesi dell'anno
+                    senza turni inseriti contano come ZERO e schiacciano la stima
+                    verso il basso. È il modo più facile di farsi negare il
+                    trattamento integrativo per una finta incapienza, quindi va
+                    detto qui, accanto al numero che lo causa. */}
+                {proiezioneParziale && (
+                  <div className="net-subnote net-subnote--warn">
+                    ⚠️ La stima usa solo i turni inseriti, e nel {year} ne hai in {mesiConTurni}{' '}
+                    mes{mesiConTurni === 1 ? 'e' : 'i'} su {mesiTrascorsi}: i mesi vuoti contano come
+                    zero e abbassano il reddito annuo stimato. Se hai lavorato anche prima, in
+                    Impostazioni metti il <strong>reddito annuo previsto</strong> o il{' '}
+                    <strong>montante già maturato</strong> — da quel numero dipendono detrazioni,
+                    trattamento integrativo e indennità.
+                  </div>
+                )}
 
                 <div className="net-line net-line--total"><span>Netto del mese</span><span>{fmt0(netMonth.net)}</span></div>
                 <p className="net-disclaimer">
