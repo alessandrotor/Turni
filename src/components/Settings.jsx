@@ -3,6 +3,7 @@ import { formatCurrency, parseNum } from '../utils/pay';
 import { CCNL_LIST, getCcnl } from '../utils/ccnl';
 import { isTelemetryEnabled, setTelemetryEnabled } from '../services/telemetry';
 import { esportaBackup, importaBackup, contaTurniSalvati } from '../services/backup';
+import { elencoOrariDaCorreggere, applicaCorrezioneOrari } from '../services/correzioni';
 import { ENABLE_NET_CALC } from '../config/features';
 import { genId } from '../utils/id';
 
@@ -67,6 +68,9 @@ export default function Settings({ settings, onSave }) {
   const [backupMsg, setBackupMsg] = useState(null);
   const backupInputRef = useRef(null);
   const [turniSalvati] = useState(contaTurniSalvati);
+  // Turni con l'orario a :50 da correggere: letti una volta sola all'apertura,
+  // come turniSalvati. Lista vuota = il blocco non compare proprio.
+  const [daCorreggere] = useState(elencoOrariDaCorreggere);
   // Testo digitato nel selettore CCNL (ricerca per nome). Salviamo il codice in
   // form.ccnl, ma l'utente cerca per denominazione: teniamo separati testo e codice.
   const [ccnlQuery, setCcnlQuery] = useState(() => getCcnl(settings.ccnl || '').label);
@@ -161,6 +165,24 @@ export default function Settings({ settings, onSave }) {
       setTimeout(() => window.location.reload(), 800);
     } catch (err) {
       setBackupMsg({ errore: true, testo: err.message || 'Ripristino non riuscito.' });
+      setBackupBusy(false);
+    }
+  }
+
+  function handleCorreggiOrari() {
+    const conferma = window.confirm(
+      `Vengono corretti ${daCorreggere.length} turni, portando i minuti da :50 a :30. Continuare?`
+    );
+    if (!conferma) return;
+    setBackupBusy(true);
+    setBackupMsg(null);
+    try {
+      const corretti = applicaCorrezioneOrari();
+      setBackupMsg({ testo: `Corretti ${corretti} turni. Ricarico l'app…` });
+      // Come per il ripristino: useLocalStorage legge solo all'inizializzazione.
+      setTimeout(() => window.location.reload(), 800);
+    } catch (err) {
+      setBackupMsg({ errore: true, testo: err.message || 'Correzione non riuscita.' });
       setBackupBusy(false);
     }
   }
@@ -713,6 +735,52 @@ export default function Settings({ settings, onSave }) {
             <p className={backupMsg.errore ? 'ai-error' : 'form-hint'}>{backupMsg.testo}</p>
           )}
         </details>
+
+        {/* Correzione degli orari a :50. È una MIGRAZIONE, non una funzione:
+            compare solo se c'è qualcosa da correggere e sparisce da sola dopo. */}
+        {daCorreggere.length > 0 && (
+          <details className="settings-section">
+            <summary className="settings-section-title">🛠 Correggi orari a :50</summary>
+            <p className="settings-section-desc">
+              Sul foglio turni «16,50» vuol dire <strong>16:30</strong>. Gli import da foto
+              più vecchi sono entrati con i minuti sbagliati: <strong>{daCorreggere.length} turni</strong>
+              {' '}hanno un orario che finisce per <code>:50</code>. Portandoli a <code>:30</code> le ore
+              del mese tornano a corrispondere a quelle della busta.
+            </p>
+
+            <ul className="correzioni-elenco">
+              {daCorreggere.map(t => (
+                <li key={t.id}>
+                  <strong>{t.date.slice(8)}/{t.date.slice(5, 7)}</strong>{' '}
+                  {t.startTime}–{t.endTime} → {t.nuovoStart}–{t.nuovoEnd}
+                </li>
+              ))}
+            </ul>
+
+            <div className="backup-row">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleEsportaBackup}
+                disabled={backupBusy}
+              >
+                ⬇️ Esporta backup prima
+              </button>
+            </div>
+
+            <div className="backup-row">
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleCorreggiOrari}
+                disabled={backupBusy}
+              >
+                🛠 Correggi {daCorreggere.length} turni
+              </button>
+              <span className="form-hint">Modifica i turni salvati</span>
+            </div>
+          </details>
+        )}
 
         {/* ══ AVANZATE — fisco e dettagli ═════════════════════════ */}
         <details className="settings-advanced">

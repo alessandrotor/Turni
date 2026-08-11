@@ -42,6 +42,17 @@ function leggi(key, fallback) {
   }
 }
 
+// Turni grezzi da localStorage e ritorno. Esposti perché `correzioni.js` lavora
+// sugli stessi dati: la chiave la possiede questo modulo, e duplicarla altrove
+// vorrebbe dire doverla cambiare in due posti.
+export function leggiTurni() {
+  return leggi(KEY_SHIFTS, {});
+}
+
+export function salvaTurni(turni) {
+  localStorage.setItem(KEY_SHIFTS, JSON.stringify(turni));
+}
+
 // Quanti turni finirebbero nel backup: si mostra accanto al pulsante, così si
 // vede subito se c'è qualcosa da salvare.
 export function contaTurniSalvati() {
