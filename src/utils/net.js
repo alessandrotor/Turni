@@ -451,6 +451,12 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   // Le detrazioni si scaricano solo sull'ordinario: l'eventuale eccedenza non
   // abbatte l'imposta della 13ª/14ª, va a conguaglio.
   const irpefNetta = Math.max(0, irpefLordaOrdinaria - detrazioni) + irpefExtra;
+  // Quota di detrazione che trova CAPIENZA nell'imposta. Quando la detrazione
+  // supera l'IRPEF lorda il netto è già giusto (l'imposta si azzera e basta), ma
+  // scrivere «lorda 157 − detrazioni 161 = netta 0» sembra un errore di conto:
+  // in busta compare la parte capiente. Verificato su una busta reale, dove la
+  // detrazione teorica di 160,68 è stampata 157,06, cioè pari all'imposta.
+  const detrazioniApplicate = Math.min(detrazioni, irpefLordaOrdinaria);
 
   // Addizionali: stessa aliquota sull'imponibile del mese, dovute solo con imposta netta.
   // Se già trattenute da un altro datore (conguaglio a saldo altrove), sono 0 in questa busta.
@@ -494,7 +500,7 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   return {
     gross, contributi, contributiRighe: cont.righe, imponibile,
     imponibileOrdinario, imponibileExtra, irpefExtra, cuneoPct,
-    irpefLorda, detrazioni, irpefNetta,
+    irpefLorda, detrazioni, detrazioniApplicate, irpefNetta,
     addRegionale, addComunale, trattenute,
     trattamentoIntegrativo, bonusCuneo, bonus,
     tfrLordo, tfrImposta, aliqTfr, tfr, net,

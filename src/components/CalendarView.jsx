@@ -549,9 +549,18 @@ export default function CalendarView({
                   <span>Lorda ({netMonth.imponibile > 0 ? (netMonth.irpefLorda / netMonth.imponibile * 100).toFixed(0) : 0}% dell'imponibile)</span>
                   <span>{fmt0(netMonth.irpefLorda)}</span>
                 </div>
+                {/* Si mostra la quota CAPIENTE: quando la detrazione supera
+                    l'imposta il conto resta giusto lo stesso, ma «157 − 161 = 0»
+                    si legge come uno sbaglio. In busta compare la parte capiente. */}
                 <div className="net-line net-line--calc">
-                  <span>− Detrazioni lavoro dip.</span><span className="pos">−{fmt0(netMonth.detrazioni)}</span>
+                  <span>− Detrazioni lavoro dip.</span><span className="pos">−{fmt0(netMonth.detrazioniApplicate)}</span>
                 </div>
+                {netMonth.detrazioni - netMonth.detrazioniApplicate > 0.5 && (
+                  <div className="net-subnote">
+                    ne spetterebbero {fmt0(netMonth.detrazioni)}, ma l'imposta del mese è più
+                    bassa: la parte eccedente non si recupera qui
+                  </div>
+                )}
                 <div className="net-line net-line--calc net-line--calc-strong">
                   <span>= Netta (trattenuta)</span><span>−{fmt0(netMonth.irpefNetta)}</span>
                 </div>

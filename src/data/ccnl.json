@@ -192,10 +192,15 @@
     "vigente": true,
     "idAccordo": null,
     "fonte": "https://www.cnel.it/Archivio-Contratti",
-    "note": null,
-    "verificato": false,
-    "monthlyHoursFactor": 4.333333333333333,
-    "contributiExtra": [],
+    "note": "Divisore orario 173 letto dall'intestazione di una busta reale (CCNL/DIVIS 173,00 / 26,00). Il contributo dello 0,57% è quello che la busta raggruppa sotto «Altri»: il totale quadra al centesimo, la ripartizione fra FIS e CIGS no, non è stampata. NON coperti: il contributo EPAR (0,10% sulla paga tabellare, che l'app non conosce) e le maggiorazioni festivo 40% / domenicale 15%, che sono impostazioni dell'utente e non dati del contratto.",
+    "verificato": true,
+    "monthlyHoursFactor": 4.325,
+    "contributiExtra": [
+      {
+        "label": "FIS e CIGS",
+        "pct": 0.57
+      }
+    ],
     "enteBilaterale": null
   },
   {
