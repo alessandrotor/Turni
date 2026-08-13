@@ -83,3 +83,11 @@ export function monthlyContractHours(settings = {}) {
   const weeklyHours = Math.max(0, Number(settings.expectedWeeklyHours) || 0);
   return weeklyHours * monthlyHoursFactor(settings);
 }
+
+// Ore FULL-TIME di un mese, stesso fattore di conversione delle ore
+// contrattuali: soglia oltre la quale le ore eccedenti diventano
+// straordinarie invece che supplementari (vedi computePayByShift in pay.js).
+export function monthlyFullTimeHours(settings = {}) {
+  const weeklyHours = Math.max(0, Number(settings.fullTimeWeeklyHours) || 0);
+  return weeklyHours * monthlyHoursFactor(settings);
+}

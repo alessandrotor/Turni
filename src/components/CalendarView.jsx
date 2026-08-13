@@ -5,7 +5,6 @@ import {
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth, formatPayrollRange,
 } from '../utils/dates';
 import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
-import { isMensilizzato } from '../utils/ccnl';
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
 import { EXTRA_MONTHS } from '../utils/net';
 import { ENABLE_DEBUG } from '../config/features';
@@ -61,6 +60,9 @@ export default function CalendarView({
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState(null);
   const [showNetDetail, setShowNetDetail] = useState(false);
+  // Spiegazione di supplementari/straordinari: una riga in più, non un
+  // overlay — niente da posizionare, funziona identico su mobile e desktop.
+  const [otInfoOpen, setOtInfoOpen] = useState(false);
   const [pendingImportFile, setPendingImportFile] = useState(null);
   const [nameInput, setNameInput] = useState('');
   // Modifica del nome fuori dall'import (nessun file in attesa): riusa la stessa modale.
@@ -131,13 +133,25 @@ export default function CalendarView({
   const competenze = useMemo(() => {
     if (!pay) return [];
     const otPct = Number(settings.overtimeSurchargePct) || 0;
-    // In busta le ore oltre la soglia si chiamano «supplementari» sui CCNL
-    // mensilizzati e «straordinarie» altrove: stessa distinzione di Impostazioni
-    // (la voce prende il nome al singolare, come sul cedolino).
-    const otLabel = !settings.onCall && isMensilizzato(settings) ? 'Supplementare' : 'Straordinario';
+    const extraPctRaw = settings.straordinarioSurchargePct;
+    const extraPct = (extraPctRaw === '' || extraPctRaw == null) ? otPct : (Number(extraPctRaw) || 0);
+    // Chi lavora a chiamata non ha una soglia part-time/full-time da
+    // distinguere: resta un'unica fascia, chiamata straordinario come sempre.
+    const tier1Label = settings.onCall ? 'Straordinario' : 'Supplementare';
     return [
-      { label: 'Retribuzione', value: pay.base - pay.overtimeBase, minutes: totalMins - pay.overtimeMinutes },
-      { label: `${otLabel} +${fmtPct(otPct)}%`, value: pay.overtimeBase + pay.surchargeOvertime, minutes: pay.overtimeMinutes },
+      {
+        label: 'Retribuzione',
+        value: pay.base - pay.overtimeBase - pay.straordinarioBase,
+        minutes: totalMins - pay.overtimeMinutes - pay.straordinarioMinutes,
+      },
+      {
+        label: `${tier1Label} +${fmtPct(otPct)}%`, tag: 'overtime',
+        value: pay.overtimeBase + pay.surchargeOvertime, minutes: pay.overtimeMinutes,
+      },
+      {
+        label: `Straordinario +${fmtPct(extraPct)}%`, tag: 'overtime',
+        value: pay.straordinarioBase + pay.surchargeStraordinario, minutes: pay.straordinarioMinutes,
+      },
       { label: 'Magg. domenicali', value: pay.surchargeSunday },
       { label: 'Magg. festive', value: pay.surchargeHoliday },
       { label: 'Magg. manuali', value: pay.surchargeManual },
@@ -474,11 +488,27 @@ export default function CalendarView({
               {/* Con una sola voce la scomposizione ripeterebbe il totale. */}
               {competenze.length > 1 && competenze.map(v => (
                 <span className="summary-sublabel" key={v.label}>
-                  {v.label}
+                  {v.tag === 'overtime' ? (
+                    <button
+                      type="button"
+                      className="linklike"
+                      onClick={() => setOtInfoOpen(o => !o)}
+                      aria-expanded={otInfoOpen}
+                    >
+                      {v.label}
+                    </button>
+                  ) : v.label}
                   {v.minutes > 0 && ` (${formatMinutesShort(v.minutes)})`}
                   {' '}{formatCurrency(v.value)}
                 </span>
               ))}
+              {otInfoOpen && (
+                <span className="summary-sublabel summary-sublabel--info">
+                  Supplementari: le ore oltre il tuo orario contrattuale ma entro il
+                  full-time. Straordinari: oltre il full-time — maggiorazione diversa,
+                  di solito più alta.
+                </span>
+              )}
               {pay.shiftsWithoutRate > 0 && (
                 <span className="summary-sublabel summary-sublabel--warn">
                   ⚠️ {pay.shiftsWithoutRate} turn{pay.shiftsWithoutRate === 1 ? 'o conteggiato' : 'i conteggiati'} a 0 €:

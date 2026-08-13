@@ -22,8 +22,11 @@ export default function Settings({ settings, onSave }) {
   const [form, setForm] = useState({
     hourlyRate: toInput(settings.hourlyRate),
     expectedWeeklyHours: settings.expectedWeeklyHours ?? 40,
+    fullTimeWeeklyHours: settings.fullTimeWeeklyHours ?? 40,
     sundaySurchargePct: settings.sundaySurchargePct ?? 0,
     overtimeSurchargePct: settings.overtimeSurchargePct ?? 0,
+    straordinarioSurchargePct: settings.straordinarioSurchargePct === '' || settings.straordinarioSurchargePct == null
+      ? '' : toInput(settings.straordinarioSurchargePct),
     holidaySurchargePct: settings.holidaySurchargePct ?? 0,
     holidaySundayMode: settings.holidaySundayMode || 'max',
     patronSaintDate: settings.patronSaintDate || '',
@@ -240,8 +243,10 @@ export default function Settings({ settings, onSave }) {
     onSave({
       hourlyRate: parseNum(form.hourlyRate),
       expectedWeeklyHours: parseNum(form.expectedWeeklyHours),
+      fullTimeWeeklyHours: parseNum(form.fullTimeWeeklyHours),
       sundaySurchargePct: parseNum(form.sundaySurchargePct),
       overtimeSurchargePct: parseNum(form.overtimeSurchargePct),
+      straordinarioSurchargePct: form.straordinarioSurchargePct === '' ? '' : parseNum(form.straordinarioSurchargePct),
       holidaySurchargePct: parseNum(form.holidaySurchargePct),
       holidaySundayMode: form.holidaySundayMode,
       patronSaintDate: form.patronSaintDate,
@@ -309,6 +314,11 @@ export default function Settings({ settings, onSave }) {
   // fisso al mese e il supplementare si conta su quello, non sulla settimana.
   const mensilizzato = !form.onCall && ccnlPreset.mensilizzato;
   const oreMensili = (weeklyHours * ccnlPreset.monthlyHoursFactor).toFixed(2).replace('.', ',');
+  const fullTimeWeeklyHours = parseNum(form.fullTimeWeeklyHours);
+  const oreMensiliFullTime = (fullTimeWeeklyHours * ccnlPreset.monthlyHoursFactor).toFixed(2).replace('.', ',');
+  // Soglia degli straordinari attiva solo se il full-time supera davvero le
+  // ore da contratto: altrimenti (già full-time) non c'è fascia intermedia.
+  const haStraordinari = !form.onCall && fullTimeWeeklyHours > weeklyHours;
 
   return (
     <div className="settings-page">
@@ -392,7 +402,9 @@ export default function Settings({ settings, onSave }) {
             <>
               <p className="settings-section-desc">
                 Quante ore dovresti lavorare ogni settimana secondo il tuo contratto.
-                Le ore oltre questa soglia vengono conteggiate come straordinari.
+                Le ore oltre questa soglia diventano <strong>supplementari</strong>; oltre
+                le ore full-time (sotto) diventano <strong>straordinari</strong>, con una
+                maggiorazione diversa.
               </p>
               {mensilizzato && (
                 <p className="settings-section-desc">
@@ -416,6 +428,23 @@ export default function Settings({ settings, onSave }) {
                   value={form.expectedWeeklyHours || ''}
                   onChange={set('expectedWeeklyHours')}
                 />
+              </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="fulltime-hours">Ore settimanali full-time</label>
+                <input
+                  id="fulltime-hours"
+                  type="number"
+                  className="form-input"
+                  min="0"
+                  max="84"
+                  step="0.5"
+                  value={form.fullTimeWeeklyHours || ''}
+                  onChange={set('fullTimeWeeklyHours')}
+                />
+                <p className="form-hint">
+                  Se lavori part-time: le ore oltre questa soglia sono straordinari, non
+                  supplementari. Uguale alle "ore settimanali" se sei già full-time.
+                </p>
               </div>
             </>
           ) : (
@@ -559,7 +588,7 @@ export default function Settings({ settings, onSave }) {
 
           <div className="form-group">
             <label className="form-label" htmlFor="overtime-surcharge">
-              Maggiorazione straordinari (%)
+              {form.onCall ? 'Maggiorazione straordinari (%)' : 'Maggiorazione supplementari (%)'}
             </label>
             <div className="input-with-symbol">
               <span className="input-symbol">%</span>
@@ -579,10 +608,39 @@ export default function Settings({ settings, onSave }) {
               {form.onCall
                 ? `Applicata alle ore oltre le ${parseNum(form.dailyOvertimeThreshold) || 0}h giornaliere.`
                 : mensilizzato
-                  ? `Applicata alle ore oltre le ${oreMensili}h del mese (contratto mensilizzato).`
+                  ? `Applicata alle ore oltre le ${oreMensili}h del mese${haStraordinari ? '' : ' (contratto mensilizzato)'}.`
                   : `Applicata alle ore oltre le ${weeklyHours || 0}h settimanali da contratto.`}
+              {!form.onCall && haStraordinari && ' Oltre il full-time scattano gli straordinari, sotto.'}
             </p>
           </div>
+
+          {!form.onCall && (
+            <div className="form-group">
+              <label className="form-label" htmlFor="straordinario-surcharge">
+                Maggiorazione straordinari (%)
+              </label>
+              <div className="input-with-symbol">
+                <span className="input-symbol">%</span>
+                <input
+                  id="straordinario-surcharge"
+                  type="number"
+                  className="form-input form-input--with-symbol"
+                  min="0"
+                  max="200"
+                  step="0.5"
+                  placeholder="es. 30"
+                  value={form.straordinarioSurchargePct}
+                  onChange={set('straordinarioSurchargePct')}
+                />
+              </div>
+              <p className="form-hint">
+                {haStraordinari
+                  ? `Applicata alle ore oltre le ${mensilizzato ? `${oreMensiliFullTime}h del mese` : `${fullTimeWeeklyHours || 0}h settimanali`} full-time.`
+                  : 'Imposta le ore full-time sopra per attivare questa soglia.'}
+                {' '}Vuoto = stessa aliquota dei supplementari.
+              </p>
+            </div>
+          )}
         </details>
 
         {/* Reddito e bonus Renzi */}

@@ -16,8 +16,10 @@ import SetupPrompt from './components/SetupPrompt';
 const DEFAULT_SETTINGS = {
   hourlyRate: 0,
   expectedWeeklyHours: 40,
+  fullTimeWeeklyHours: 40,   // soglia oltre cui le ore diventano straordinarie invece che supplementari
   sundaySurchargePct: 0,
-  overtimeSurchargePct: 0,
+  overtimeSurchargePct: 0,   // maggiorazione supplementari (fra contratto e full-time)
+  straordinarioSurchargePct: '', // maggiorazione straordinari (oltre il full-time); vuoto = come i supplementari
   holidaySurchargePct: 0,        // maggiorazione festivi (%)
   holidaySundayMode: 'max',      // festivo+domenica: 'max' | 'sum' | 'holiday'
   patronSaintDate: '',           // santo patrono locale, formato 'MM-DD'

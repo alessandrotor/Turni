@@ -910,6 +910,11 @@ input, select, textarea { font: inherit; }
   font-weight: 600;
 }
 
+.summary-sublabel--info {
+  font-style: italic;
+  line-height: 1.4;
+}
+
 .form-hint {
   font-size: .74rem;
   color: var(--c-text-2);

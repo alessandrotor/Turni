@@ -2,7 +2,7 @@
 // i riscontri in `scripts/` (che girano fuori da Vite) non partono.
 import { minutesDiff, parseDate, getWeekStart, formatDate, payrollMonthKey } from './dates.js';
 import { isHoliday } from './holidays.js';
-import { isMensilizzato, monthlyContractHours } from './ccnl.js';
+import { isMensilizzato, monthlyContractHours, monthlyFullTimeHours } from './ccnl.js';
 
 export function calcShiftMinutes(shift) {
   const total = minutesDiff(shift.startTime, shift.endTime);
@@ -98,10 +98,27 @@ export function getShiftSurchargePct(shift, settings) {
   return p.sunday + p.holiday + p.manual;
 }
 
-// Calcola la paga di ogni turno tenendo conto della maggiorazione straordinari.
-// Tre modalità:
-//  - contratto (default): straordinario per le ore che, nella settimana (lun-dom),
-//    superano le ore da contratto (expectedWeeklyHours);
+// Minuti compresi nella fascia [lo, hi) dell'intervallo [before, after).
+// Serve a spezzare un turno che attraversa una soglia (es. inizia sotto il
+// full-time e finisce sopra) fra le due fasce senza contarli due volte.
+function minutesInBand(before, after, lo, hi) {
+  return Math.max(0, Math.min(after, hi) - Math.max(before, lo));
+}
+
+// Calcola la paga di ogni turno tenendo conto delle maggiorazioni per ore
+// eccedenti, su DUE soglie:
+//  - supplementari: ore oltre il contratto (part-time) ma entro il full-time,
+//    maggiorazione `overtimeSurchargePct`;
+//  - straordinari: ore oltre il full-time, maggiorazione
+//    `straordinarioSurchargePct` (vuoto = eredita quella dei supplementari,
+//    stesso pattern di `tfrTaxRate` in net.js — così chi non tocca il campo
+//    nuovo ha lo stesso comportamento di prima).
+// La soglia full-time non si applica a chi lavora "a chiamata" (onCall): non
+// esiste un contratto part-time da cui distinguerla, resta una sola soglia
+// giornaliera come sempre.
+//
+// Tre modalità per la soglia-contratto (supplementari):
+//  - contratto (default): oltre le ore da contratto nella settimana (lun-dom);
 //  - contratto MENSILIZZATO (es. Turismo): la busta non ragiona a settimana ma a
 //    mese — retribuisce un numero fisso di ore (24 × 4,3 = 103,20) e paga come
 //    supplementari le ore eccedenti nel MESE DI PAGA, che è fatto di settimane
@@ -109,13 +126,15 @@ export function getShiftSurchargePct(shift, settings) {
 //    2026: 131,45 − 103,20 = 28,25 e 109,70 − 103,20 = 6,50, entrambi esatti.
 //    Con la soglia settimanale i conti non tornerebbero: quattro settimane da 24
 //    ore fanno 96 ore ordinarie, non 103,20.
-//  - a chiamata (onCall): straordinario per le ore che, nel singolo GIORNO,
-//    superano la soglia giornaliera (dailyOvertimeThreshold). Ha la precedenza:
-//    chi lavora a chiamata non ha un orario mensilizzato da rispettare.
+//  - a chiamata (onCall): oltre la soglia giornaliera (dailyOvertimeThreshold).
+//    Ha la precedenza: chi lavora a chiamata non ha un orario mensilizzato da
+//    rispettare, né una soglia full-time (vedi sopra).
 // Serve l'insieme completo dei turni per raggruppare correttamente.
-// Ritorna una mappa { [shiftId]: { base, surcharge, overtimeMinutes } }.
+// Ritorna una mappa { [shiftId]: { base, surcharge, overtimeMinutes, ... } }.
 export function computePayByShift(allShifts, settings) {
   const otPct = Number(settings?.overtimeSurchargePct) || 0;
+  const extraPctRaw = settings?.straordinarioSurchargePct;
+  const extraPct = (extraPctRaw === '' || extraPctRaw == null) ? otPct : (Number(extraPctRaw) || 0);
   const onCall = !!settings?.onCall;
   const mensile = !onCall && isMensilizzato(settings);
   const thresholdMin = onCall
@@ -123,7 +142,12 @@ export function computePayByShift(allShifts, settings) {
     : mensile
       ? monthlyContractHours(settings) * 60
       : (Number(settings?.expectedWeeklyHours) || 0) * 60;
+  const fullTimeThresholdMin = onCall ? 0
+    : mensile
+      ? monthlyFullTimeHours(settings) * 60
+      : (Number(settings?.fullTimeWeeklyHours) || 0) * 60;
   const applyOvertime = thresholdMin > 0 && otPct > 0;
+  const applyExtra = !onCall && fullTimeThresholdMin > 0 && extraPct > 0;
 
   // Raggruppa per giorno (a chiamata), per mese di paga (mensilizzato) o per
   // settimana (contratto).
@@ -145,37 +169,50 @@ export function computePayByShift(allShifts, settings) {
       const ratePerMin = getRateForDate(s.date, settings) / 60;
       const parts = getShiftSurchargeParts(s, settings);
 
-      let overtimeMin = 0;
-      if (applyOvertime) {
-        const after = cumMin + m;
-        overtimeMin = Math.max(0, after - Math.max(thresholdMin, cumMin));
-      }
+      const before = cumMin;
+      const after = cumMin + m;
+      // Fascia supplementare: fra soglia-contratto e soglia-full-time (o
+      // senza limite superiore se lo straordinario non è attivo — stesso
+      // comportamento di prima, tutto in una fascia sola).
+      const supplementareMin = applyOvertime
+        ? minutesInBand(before, after, thresholdMin, applyExtra ? fullTimeThresholdMin : Infinity)
+        : 0;
+      // Fascia straordinaria: oltre la soglia-full-time.
+      const straordinarioMin = applyExtra
+        ? minutesInBand(before, after, fullTimeThresholdMin, Infinity)
+        : 0;
 
       const shiftBase = m * ratePerMin;
       // Quota di `base` che spetta alle ore oltre soglia. Serve al riepilogo per
       // ricomporre le voci COME LE STAMPA LA BUSTA: il cedolino non scrive il
       // solo +30%, scrive le ore supplementari intere al 130%
       // (`overtimeBase + surchargeOvertime`) e la retribuzione ordinaria al
-      // netto di quelle (`base − overtimeBase`). Senza questo dato le due
-      // colonne non sono confrontabili.
-      const overtimeBase = overtimeMin * ratePerMin;
-      // Le quattro maggiorazioni restano separate perché il riepilogo del mese
-      // le mostra una per una: un unico totale non dice quale voce si scosta da
+      // netto di quelle (`base − overtimeBase − straordinarioBase`). Senza
+      // questo dato le due colonne non sono confrontabili.
+      const overtimeBase = supplementareMin * ratePerMin;
+      const straordinarioBase = straordinarioMin * ratePerMin;
+      // Le maggiorazioni restano separate perché il riepilogo del mese le
+      // mostra una per una: un unico totale non dice quale voce si scosta da
       // quella stampata in busta. `surcharge` resta la loro somma, invariata.
       const surchargeSunday = shiftBase * (parts.sunday / 100);
       const surchargeHoliday = shiftBase * (parts.holiday / 100);
       const surchargeManual = shiftBase * (parts.manual / 100);
       const surchargeOvertime = overtimeBase * (otPct / 100);
+      const surchargeStraordinario = straordinarioBase * (extraPct / 100);
 
       result[s.id] = {
         base: shiftBase,
-        surcharge: surchargeSunday + surchargeHoliday + surchargeManual + surchargeOvertime,
+        surcharge: surchargeSunday + surchargeHoliday + surchargeManual
+          + surchargeOvertime + surchargeStraordinario,
         surchargeSunday,
         surchargeHoliday,
         surchargeManual,
         surchargeOvertime,
+        surchargeStraordinario,
         overtimeBase,
-        overtimeMinutes: overtimeMin,
+        straordinarioBase,
+        overtimeMinutes: supplementareMin,
+        straordinarioMinutes: straordinarioMin,
         // Nessuna paga applicabile a questa data: il turno vale 0 € e va
         // segnalato, altrimenti il totale è silenziosamente sottostimato.
         missingRate: ratePerMin <= 0 && m > 0,
@@ -209,8 +246,11 @@ export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = nul
   let surchargeHoliday = 0;
   let surchargeManual = 0;
   let surchargeOvertime = 0;
+  let surchargeStraordinario = 0;
   let overtimeBase = 0;
+  let straordinarioBase = 0;
   let overtimeMinutes = 0;
+  let straordinarioMinutes = 0;
   let shiftsWithoutRate = 0;
   shifts.forEach(s => {
     const p = map[s.id];
@@ -221,15 +261,18 @@ export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = nul
       surchargeHoliday += p.surchargeHoliday;
       surchargeManual += p.surchargeManual;
       surchargeOvertime += p.surchargeOvertime;
+      surchargeStraordinario += p.surchargeStraordinario;
       overtimeBase += p.overtimeBase;
+      straordinarioBase += p.straordinarioBase;
       overtimeMinutes += p.overtimeMinutes;
+      straordinarioMinutes += p.straordinarioMinutes;
       if (p.missingRate) shiftsWithoutRate += 1;
     }
   });
   return {
     base, surcharge, total: base + surcharge,
-    surchargeSunday, surchargeHoliday, surchargeManual, surchargeOvertime,
-    overtimeBase, overtimeMinutes, shiftsWithoutRate,
+    surchargeSunday, surchargeHoliday, surchargeManual, surchargeOvertime, surchargeStraordinario,
+    overtimeBase, straordinarioBase, overtimeMinutes, straordinarioMinutes, shiftsWithoutRate,
   };
 }
 
