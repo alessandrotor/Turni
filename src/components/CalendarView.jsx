@@ -72,6 +72,10 @@ export default function CalendarView({
   const [importUsage, setImportUsage] = useState(null);
   const [exportBusy, setExportBusy] = useState(false);
   const [exportError, setExportError] = useState(null);
+  // Default al mese di CALENDARIO: chi segna i turni pensa in mesi solari, non
+  // in periodi di paga a settimane intere (quelli sono un dettaglio interno
+  // del calcolo del netto, non come l'utente registra le cose giorno per giorno).
+  const [exportPeriod, setExportPeriod] = useState('calendar');
   const fileInputRef = useRef(null);
   const nameModalRef = useRef(null);
 
@@ -301,12 +305,14 @@ export default function CalendarView({
     setExportBusy(true);
     setExportError(null);
     try {
-      // Si esporta lo STESSO insieme di turni che il riepilogo somma: prima
-      // l'export partiva dal mese di calendario mentre il pannello contava il
-      // mese di paga, e con un CCNL mensilizzato i due «Totale ore» non
-      // combaciavano. Il periodo finisce nel titolo del documento.
-      if (format === 'xlsx') await exportShiftsExcel(counted, currentMonth, payrollRange || '');
-      else await exportShiftsPDF(counted, currentMonth, payrollRange || '');
+      // Scelta esplicita fra mese di calendario (come l'utente segna i turni,
+      // default) e mese di paga a settimane intere (utile solo per confrontare
+      // con la busta aziendale) — vedi selettore accanto ai pulsanti. Il
+      // periodo finisce nel titolo del documento solo se non è il calendario.
+      const exportShifts = exportPeriod === 'payroll' ? counted : shifts;
+      const periodo = exportPeriod === 'payroll' ? (payrollRange || '') : '';
+      if (format === 'xlsx') await exportShiftsExcel(exportShifts, currentMonth, periodo);
+      else await exportShiftsPDF(exportShifts, currentMonth, periodo);
     } catch (e) {
       setExportError(e.message || 'Errore durante l\'esportazione');
     } finally {
@@ -494,10 +500,21 @@ export default function CalendarView({
         {/* Esporta i turni del mese */}
         <div className="export-bar">
           <span className="export-label">Esporta il mese:</span>
+          {payrollRange && (
+            <select
+              className="export-period-select"
+              value={exportPeriod}
+              onChange={e => setExportPeriod(e.target.value)}
+              aria-label="Periodo da esportare"
+            >
+              <option value="calendar">Mese di calendario</option>
+              <option value="payroll">Mese di paga ({payrollRange})</option>
+            </select>
+          )}
           <button
             type="button"
             className="btn-export"
-            disabled={counted.length === 0 || exportBusy}
+            disabled={(exportPeriod === 'payroll' ? counted : shifts).length === 0 || exportBusy}
             onClick={() => handleExport('xlsx')}
           >
             📊 Excel
@@ -505,7 +522,7 @@ export default function CalendarView({
           <button
             type="button"
             className="btn-export"
-            disabled={counted.length === 0 || exportBusy}
+            disabled={(exportPeriod === 'payroll' ? counted : shifts).length === 0 || exportBusy}
             onClick={() => handleExport('pdf')}
           >
             📄 PDF
