@@ -10,6 +10,15 @@
 // importare questo modulo con Node puro, senza passare dal bundler.
 import { getCcnl, monthlyContractHours } from './ccnl.js';
 
+// Arrotondamenti della busta paga. Non sono un dettaglio estetico: il cedolino
+// chiude ogni voce a due decimali e le somme partono da quelle, quindi tenere
+// la piena precisione fino in fondo fa sbagliare di qualche centesimo.
+// Alcune voci (competenze esenti, quota Ente Bilaterale a carico ditta) il
+// software paghe le TRONCA invece di arrotondarle — verificato sulla busta di
+// luglio 2026: 1.200 × 31/365 = 101,9178 in busta è 101,91, non 101,92.
+export const round2 = (x) => Math.round(x * 100) / 100;
+export const trunc2 = (x) => Math.floor(x * 100 + 1e-9) / 100;
+
 export const TAX_2026 = {
   // Contributi IVS a carico del dipendente (settore privato)
   ALIQUOTA_IVS: 0.0919,
@@ -110,29 +119,44 @@ export function calcContributi(gross, settings = {}, ebBase = 0) {
   let deducibili = 0;
   let fringeImponibile = 0;
 
-  const ivs = g * T.ALIQUOTA_IVS;
-  righe.push({ label: 'Contributi IVS', pct: T.ALIQUOTA_IVS * 100, base: g, importo: ivs, deducibile: true });
+  // I contributi NON si calcolano sul lordo esatto: l'imponibile previdenziale
+  // viene arrotondato all'EURO, e le aliquote si applicano a quello. Verificato
+  // su due buste diverse — Turismo luglio 2026 (lordo 1.173,48 → IVS su 1.173,00
+  // = 107,80) e servizi fiduciari giugno 2026 (756,77 → IVS su 757,00 = 69,57).
+  // Sul lordo pieno uscirebbero 107,84 e 69,55.
+  const baseInps = Math.round(g);
+
+  const ivs = round2(baseInps * T.ALIQUOTA_IVS);
+  righe.push({ label: 'Contributi IVS', pct: T.ALIQUOTA_IVS * 100, base: baseInps, importo: ivs, deducibile: true });
   totale += ivs;
   deducibili += ivs;
 
   for (const c of ccnl.contributiExtra || []) {
     const pct = Number(c.pct) || 0;
-    const importo = g * (pct / 100);
-    righe.push({ label: c.label, pct, base: g, importo, deducibile: true });
+    const importo = round2(baseInps * (pct / 100));
+    righe.push({ label: c.label, pct, base: baseInps, importo, deducibile: true });
     totale += importo;
     deducibili += importo;
   }
 
+  // Ente Bilaterale: base a sé, NON il lordo. È il minimo tabellare più la
+  // contingenza, riproporzionati al part-time — un numero che l'app non sa
+  // ricostruire dalla paga oraria (che può contenere superminimi), quindi si può
+  // leggere dalla busta e scriverlo in `ebtBase`. Senza, si ripiega sulla
+  // mensilità da contratto: sulla busta di luglio la differenza è 951,30 contro
+  // 948,05, cioè un centesimo sull'imponibile fiscale.
   const eb = ccnl.enteBilaterale;
-  const base = Math.max(0, Number(ebBase) || 0);
+  const base = Math.max(0, Number(settings.ebtBase) || Number(ebBase) || 0);
   if (eb && base > 0) {
-    const importo = base * ((Number(eb.pct) || 0) / 100);
+    const importo = round2(base * ((Number(eb.pct) || 0) / 100));
     righe.push({ label: eb.label, pct: Number(eb.pct) || 0, base, importo, deducibile: false });
     totale += importo;
-    fringeImponibile += base * ((Number(eb.quotaDitta) || 0) / 100);
+    // La quota ditta è un fringe benefit: tassato pur non essendo trattenuto.
+    // In busta è TRONCATA (948,05 × 0,20% = 1,8961 → 1,89).
+    fringeImponibile += trunc2(base * ((Number(eb.quotaDitta) || 0) / 100));
   }
 
-  return { totale, deducibili, fringeImponibile, righe };
+  return { totale: round2(totale), deducibili: round2(deducibili), fringeImponibile, righe };
 }
 
 function detrazioneLavoro(reddito) {
@@ -442,7 +466,10 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
 
   const cont = calcContributi(gross, settings, monthlyBaseGross(settings));
   const contributi = cont.totale;
-  const imponibile = gross - cont.deducibili + cont.fringeImponibile;
+  // Imponibile fiscale come lo scrive la busta: lordo meno i soli contributi
+  // DEDUCIBILI (l'Ente Bilaterale a carico dipendente non lo è) più la quota
+  // ditta, che è un fringe benefit tassato pur non essendo trattenuto.
+  const imponibile = round2(gross - cont.deducibili + cont.fringeImponibile);
 
   // La mensilità aggiuntiva viaggia su un binario fiscale separato: in busta ha
   // un proprio imponibile ("tassazione autonoma") e NON assorbe detrazioni.
@@ -460,13 +487,13 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   //    d'imposta (verificato su busta reale: 1.955 × 31/365 = 166,04);
   //  - IRPEF sulla mensilità aggiuntiva = aliquota MARGINALE, senza detrazioni.
   const ratio = ann.imponibile > 0 ? imponibileOrdinario / ann.imponibile : 0;
-  const irpefLordaOrdinaria = ann.irpefLorda * ratio;
-  const irpefExtra = imponibileExtra * aliquotaMarginale(ann.imponibile);
-  const irpefLorda = irpefLordaOrdinaria + irpefExtra;
-  const detrazioni = (ann.detrazioneLavoro + ann.detrazioneCuneo) * (monthDays / 365);
+  const irpefLordaOrdinaria = round2(ann.irpefLorda * ratio);
+  const irpefExtra = round2(imponibileExtra * aliquotaMarginale(ann.imponibile));
+  const irpefLorda = round2(irpefLordaOrdinaria + irpefExtra);
+  const detrazioni = round2((ann.detrazioneLavoro + ann.detrazioneCuneo) * (monthDays / 365));
   // Le detrazioni si scaricano solo sull'ordinario: l'eventuale eccedenza non
   // abbatte l'imposta della 13ª/14ª, va a conguaglio.
-  const irpefNetta = Math.max(0, irpefLordaOrdinaria - detrazioni) + irpefExtra;
+  const irpefNetta = round2(Math.max(0, irpefLordaOrdinaria - detrazioni) + irpefExtra);
   // Quota di detrazione che trova CAPIENZA nell'imposta. Quando la detrazione
   // supera l'IRPEF lorda il netto è già giusto (l'imposta si azzera e basta), ma
   // scrivere «lorda 157 − detrazioni 161 = netta 0» sembra un errore di conto:
@@ -481,44 +508,58 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   const aliqReg = pctOr(settings.addRegionalePct, T.ADD_REGIONALE_DEFAULT) / 100;
   const aliqCom = pctOr(settings.addComunalePct, T.ADD_COMUNALE_DEFAULT) / 100;
   const addDovute = !settings.addizionaliAltrove && !settings.noAddizionali && ann.irpefNetta > 0;
-  const addRegionale = addDovute ? imponibile * aliqReg : 0;
-  const addComunale = addDovute ? imponibile * aliqCom : 0;
+  const addRegionale = addDovute ? round2(imponibile * aliqReg) : 0;
+  const addComunale = addDovute ? round2(imponibile * aliqCom) : 0;
 
   // Trattenute fisse mensili (quota associativa, rata di un prestito...):
   // voce generica, non fiscale — non tocca imponibile/IRPEF/TI/cuneo, si
   // sottrae così com'è, come in busta.
-  const trattenuteFisse = (Array.isArray(settings.fixedMonthlyDeductions) ? settings.fixedMonthlyDeductions : [])
-    .reduce((s, v) => s + (Number(v.amount) || 0), 0);
+  const trattenuteFisse = round2(
+    (Array.isArray(settings.fixedMonthlyDeductions) ? settings.fixedMonthlyDeductions : [])
+      .reduce((s, v) => s + (Number(v.amount) || 0), 0),
+  );
 
-  const trattenute = contributi + irpefNetta + addRegionale + addComunale + trattenuteFisse;
+  const trattenute = round2(contributi + irpefNetta + addRegionale + addComunale + trattenuteFisse);
 
   // Trattamento integrativo e indennità (L. 207/2024): quota del mese rapportata
   // ai giorni (giorni di calendario / 365), come in busta paga. Voci separate,
   // aggiunte SOLO alla fine: non riducono le trattenute.
   // Il TI può non essere erogato in busta (il software paghe lo rimanda a conguaglio
   // in base alle proiezioni): interruttore `noTrattamentoIntegrativo`.
+  // Entrambe TRONCATE a due decimali, non arrotondate: in busta 1.200 × 31/365
+  // fa 101,91 (il valore pieno è 101,9178) e 1.060,92 × 5,3% fa 56,22 (56,2288).
   const dayFraction = monthDays / 365;
-  const trattamentoIntegrativo = settings.noTrattamentoIntegrativo ? 0 : ann.trattamentoIntegrativo * dayFraction;
+  const trattamentoIntegrativo = settings.noTrattamentoIntegrativo
+    ? 0 : trunc2(ann.trattamentoIntegrativo * dayFraction);
   // L'indennità L. 207/2024 NON è una quota annua spalmata sui giorni: in busta
   // è la percentuale di fascia applicata all'imponibile fiscale DEL MESE, quindi
   // segue le ore effettivamente lavorate (verificato: 4,8% × 1.849,65 = 88,78).
   const cuneoPct = cuneoPercent(ann.imponibile);
-  const bonusCuneo = imponibile * cuneoPct;
-  const bonus = trattamentoIntegrativo + bonusCuneo;
+  const bonusCuneo = trunc2(imponibile * cuneoPct);
+  const bonus = round2(trattamentoIntegrativo + bonusCuneo);
 
   // Anticipo TFR in busta (opzionale): quota che matura sul lordo (1/13,5 meno lo
   // 0,50% al Fondo di garanzia ≈ 6,91%). NON è soggetto a IRPEF ordinaria/contributi,
   // ma a TASSAZIONE SEPARATA (aliquota media, senza addizionali): a differenza di TI e
   // cuneo — che sono esenti — qui l'imposta va sottratta. Aliquota stimata (default 23%,
   // dove cade quasi sempre il reddito di riferimento del TFR) o impostabile a mano.
-  const tfrLordo = settings.tfrInBusta ? gross * (1 / 13.5 - 0.005) : 0;
+  // NOTA APERTA sulla BASE del TFR. Le due buste disponibili la calcolano in due
+  // modi diversi e nessuno dei due è il lordo pieno che usiamo qui:
+  //   - fiduciari giugno: solo la retribuzione ordinaria, senza maggiorazioni;
+  //   - Turismo luglio:   retribuzione + indennità «utili al TFR» + maggiorazione
+  //     domenicale, ma senza il lavoro supplementare e senza TOP STORE — e
+  //     nemmeno così torna, perché la formula dà 67,39 contro i 66,39 stampati.
+  // Due buste che si contraddicono e una che non quadra non bastano a stabilire
+  // una regola: la base resta il lordo finché non arriva un terzo cedolino.
+  // Non tocca il netto del mese in nessuno dei due casi.
+  const tfrLordo = settings.tfrInBusta ? round2(gross * (1 / 13.5 - 0.005)) : 0;
   const aliqTfr = Number.isFinite(Number(settings.tfrTaxRate)) && settings.tfrTaxRate !== ''
     ? Number(settings.tfrTaxRate) / 100
     : 0.23;
-  const tfrImposta = tfrLordo * aliqTfr;
-  const tfr = tfrLordo - tfrImposta;
+  const tfrImposta = round2(tfrLordo * aliqTfr);
+  const tfr = round2(tfrLordo - tfrImposta);
 
-  const net = gross - trattenute + bonus + tfr;
+  const net = round2(gross - trattenute + bonus + tfr);
 
   return {
     gross, contributi, contributiRighe: cont.righe, imponibile,

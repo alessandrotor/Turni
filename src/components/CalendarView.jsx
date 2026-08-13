@@ -272,8 +272,12 @@ export default function CalendarView({
     setExportBusy(true);
     setExportError(null);
     try {
-      if (format === 'xlsx') await exportShiftsExcel(shifts, currentMonth);
-      else await exportShiftsPDF(shifts, currentMonth);
+      // Si esporta lo STESSO insieme di turni che il riepilogo somma: prima
+      // l'export partiva dal mese di calendario mentre il pannello contava il
+      // mese di paga, e con un CCNL mensilizzato i due «Totale ore» non
+      // combaciavano. Il periodo finisce nel titolo del documento.
+      if (format === 'xlsx') await exportShiftsExcel(counted, currentMonth, payrollRange || '');
+      else await exportShiftsPDF(counted, currentMonth, payrollRange || '');
     } catch (e) {
       setExportError(e.message || 'Errore durante l\'esportazione');
     } finally {
@@ -461,7 +465,7 @@ export default function CalendarView({
           <button
             type="button"
             className="btn-export"
-            disabled={shifts.length === 0 || exportBusy}
+            disabled={counted.length === 0 || exportBusy}
             onClick={() => handleExport('xlsx')}
           >
             📊 Excel
@@ -469,7 +473,7 @@ export default function CalendarView({
           <button
             type="button"
             className="btn-export"
-            disabled={shifts.length === 0 || exportBusy}
+            disabled={counted.length === 0 || exportBusy}
             onClick={() => handleExport('pdf')}
           >
             📄 PDF

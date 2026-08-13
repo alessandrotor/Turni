@@ -16,7 +16,11 @@ const fmtHM = (mins) => {
   return m ? `${h}h ${m}m` : `${h}h`;
 };
 
-function prepare(shifts, monthDate) {
+// `periodo` (opzionale) descrive l'intervallo quando NON è il mese di calendario:
+// per i CCNL mensilizzati il mese di paga è fatto di settimane intere e può
+// contenere giorni del mese prima o dopo. Scriverlo nel titolo evita che il
+// documento sembri sbagliato a chi conta i giorni.
+function prepare(shifts, monthDate, periodo = '') {
   const sorted = shifts.slice().sort(
     (a, b) => a.date.localeCompare(b.date) || (a.startTime || '').localeCompare(b.startTime || '')
   );
@@ -25,7 +29,7 @@ function prepare(shifts, monthDate) {
   return {
     sorted,
     totalMins,
-    title: `Turni – ${formatMonthYear(monthDate)}`,
+    title: `Turni – ${formatMonthYear(monthDate)}${periodo ? ` (${periodo})` : ''}`,
     baseName: `Turni_${monthDate.getFullYear()}-${mm}`,
   };
 }
@@ -54,10 +58,10 @@ export async function deliver(filename, base64, mime) {
   }
 }
 
-export async function exportShiftsExcel(shifts, monthDate) {
+export async function exportShiftsExcel(shifts, monthDate, periodo = '') {
   if (!shifts.length) throw new Error('Nessun turno da esportare in questo mese');
   const XLSX = await import('xlsx');
-  const { sorted, totalMins, title, baseName } = prepare(shifts, monthDate);
+  const { sorted, totalMins, title, baseName } = prepare(shifts, monthDate, periodo);
 
   const aoa = [
     [title],
@@ -89,14 +93,14 @@ export async function exportShiftsExcel(shifts, monthDate) {
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 }
 
-export async function exportShiftsPDF(shifts, monthDate) {
+export async function exportShiftsPDF(shifts, monthDate, periodo = '') {
   if (!shifts.length) throw new Error('Nessun turno da esportare in questo mese');
   const [{ jsPDF }, autoTableMod] = await Promise.all([
     import('jspdf'),
     import('jspdf-autotable'),
   ]);
   const autoTable = autoTableMod.default;
-  const { sorted, totalMins, title, baseName } = prepare(shifts, monthDate);
+  const { sorted, totalMins, title, baseName } = prepare(shifts, monthDate, periodo);
 
   const doc = new jsPDF();
   doc.setFontSize(14);

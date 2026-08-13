@@ -15,7 +15,7 @@
 // busta, proiezione sotto i 15.000 €, e si verifica che il motore segua la
 // fascia invece di inseguire un numero.
 
-import { calcNetMonthly, extraMonthAccrual, monthlyBaseGross } from '../src/utils/net.js';
+import { calcNetMonthly, extraMonthAccrual, monthlyBaseGross, round2 } from '../src/utils/net.js';
 
 const BASE_SETTINGS = {
   hourlyRate: 9.21802,
@@ -100,8 +100,14 @@ console.log('\nCaso C — nessun CCNL, nessuna data di assunzione (comportamento
 const legacy = { ...BASE_SETTINGS, ccnl: '', hireDate: '' };
 const c = calcNetMonthly(LORDO_GIUGNO, annuo, legacy, GIORNI, 0);
 
-check('Contributi = solo IVS 9,19%', c.contributi, LORDO_GIUGNO * 0.0919, 0.01);
-check('Imponibile = lordo − IVS', c.imponibile, LORDO_GIUGNO * (1 - 0.0919), 0.01);
+// L'aliquota si applica all'imponibile previdenziale arrotondato all'EURO, non
+// al lordo esatto: 2.048 × 9,19% = 188,21 e non 2.047,58 × 9,19% = 188,17.
+// Queste due attese prima usavano il lordo pieno e fotografavano il vecchio
+// comportamento; la regola dell'euro è riscontrata su due buste diverse
+// (Turismo luglio: IVS 107,80 su 1.173; fiduciari giugno: 69,57 su 757).
+const baseInps = Math.round(LORDO_GIUGNO);
+check('Contributi = solo IVS 9,19%', c.contributi, round2(baseInps * 0.0919), 0.005);
+check('Imponibile = lordo − IVS', c.imponibile, round2(LORDO_GIUGNO - round2(baseInps * 0.0919)), 0.005);
 check('14ª: rateo pieno', extraMonthAccrual('quattordicesima', 2026, legacy), 1, 0.001);
 
 console.log(failures === 0 ? '\n✓ tutti i riscontri superati\n' : `\n✗ ${failures} riscontri falliti\n`);
