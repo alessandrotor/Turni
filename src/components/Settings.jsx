@@ -52,10 +52,16 @@ export default function Settings({ settings, onSave }) {
       label: v.label ?? '',
       amount: toInput(v.amount),
     })),
+    fixedMonthlyDeductions: (Array.isArray(settings.fixedMonthlyDeductions) ? settings.fixedMonthlyDeductions : []).map(v => ({
+      id: v.id ?? genId(),
+      label: v.label ?? '',
+      amount: toInput(v.amount),
+    })),
     monthlyBonusAmount: toInput(settings.monthlyBonusAmount),
     addRegionalePct: toInput(settings.addRegionalePct),
     addComunalePct: toInput(settings.addComunalePct),
     addizionaliAltrove: !!settings.addizionaliAltrove,
+    noAddizionali: !!settings.noAddizionali,
     noTrattamentoIntegrativo: !!settings.noTrattamentoIntegrativo,
     tiProjectionMode: settings.tiProjectionMode === 'ytd' ? 'ytd' : 'stimato',
     // Non passa da `onSave`: vive in localStorage, gestito da services/telemetry.
@@ -131,6 +137,25 @@ export default function Settings({ settings, onSave }) {
     setSaved(false);
   };
 
+  const addFixedDeduction = () => {
+    setForm(f => ({ ...f, fixedMonthlyDeductions: [...f.fixedMonthlyDeductions, { id: genId(), label: '', amount: '' }] }));
+    setSaved(false);
+  };
+
+  const updateFixedDeduction = (id, field) => (e) => {
+    const value = e.target.value;
+    setForm(f => ({
+      ...f,
+      fixedMonthlyDeductions: f.fixedMonthlyDeductions.map(v => (v.id === id ? { ...v, [field]: value } : v)),
+    }));
+    setSaved(false);
+  };
+
+  const removeFixedDeduction = (id) => {
+    setForm(f => ({ ...f, fixedMonthlyDeductions: f.fixedMonthlyDeductions.filter(v => v.id !== id) }));
+    setSaved(false);
+  };
+
   async function handleEsportaBackup() {
     setBackupBusy(true);
     setBackupMsg(null);
@@ -198,6 +223,10 @@ export default function Settings({ settings, onSave }) {
       .filter(v => parseNum(v.amount) > 0)
       .map(v => ({ id: v.id, label: (v.label || '').trim() || 'Voce fissa', amount: parseNum(v.amount) }));
 
+    const fixedMonthlyDeductions = form.fixedMonthlyDeductions
+      .filter(v => parseNum(v.amount) > 0)
+      .map(v => ({ id: v.id, label: (v.label || '').trim() || 'Trattenuta fissa', amount: parseNum(v.amount) }));
+
     // Montante: il mese di riferimento (confine turni) è quello scelto
     // dall'utente. Si conserva come data ISO al primo giorno del mese, perché
     // il resto dell'app lavora su 'YYYY-MM' via slice. Azzerato se il montante
@@ -230,11 +259,13 @@ export default function Settings({ settings, onSave }) {
       tfrTaxRate: form.tfrTaxRate === '' ? '' : parseNum(form.tfrTaxRate),
       previousRates,
       fixedMonthlyItems,
+      fixedMonthlyDeductions,
       monthlyBonusAmount: parseNum(form.monthlyBonusAmount),
       monthlyBonus: settings.monthlyBonus || {}, // gestito dal calendario, va preservato
       addRegionalePct: parseNum(form.addRegionalePct),
       addComunalePct: parseNum(form.addComunalePct),
       addizionaliAltrove: form.addizionaliAltrove,
+      noAddizionali: form.noAddizionali,
       noTrattamentoIntegrativo: form.noTrattamentoIntegrativo,
       tiProjectionMode: form.tiProjectionMode,
     });
@@ -962,6 +993,15 @@ export default function Settings({ settings, onSave }) {
               <span>Addizionali già trattenute da un altro datore (non applicarle → 0)</span>
             </label>
 
+            <label className="check-row">
+              <input
+                type="checkbox"
+                checked={form.noAddizionali}
+                onChange={setCheck('noAddizionali')}
+              />
+              <span>Primo anno di lavoro: addizionali non ancora attive (nessun anno precedente da cui calcolarle)</span>
+            </label>
+
             <div className="form-group">
               <label className="form-label" htmlFor="ti-mode">Trattamento integrativo — proiezione automatica</label>
               <select
@@ -1125,6 +1165,63 @@ export default function Settings({ settings, onSave }) {
               poi spunti i mesi in cui l'hai preso.
             </p>
           </div>
+        </details>
+
+        {/* Trattenute fisse mensili */}
+        <details className="settings-section">
+          <summary className="settings-section-title">➖ Trattenute fisse mensili</summary>
+          <p className="settings-section-desc">
+            Importi che ti vengono trattenuti <strong>ogni mese</strong> oltre alle tasse (quota
+            associativa, rata di un prestito, altro). Vengono <strong>sottratti dal netto</strong>
+            senza toccare imponibile o tasse, come in busta.
+          </p>
+
+          {form.fixedMonthlyDeductions.length > 0 && (
+            <div className="rate-changes">
+              {form.fixedMonthlyDeductions.map(v => (
+                <div key={v.id} className="rate-change-row">
+                  <div className="rate-change-fields">
+                    <div className="form-group">
+                      <label className="form-label form-label--sm">Descrizione</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        placeholder="es. Quota associativa, rata prestito…"
+                        value={v.label}
+                        onChange={updateFixedDeduction(v.id, 'label')}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label form-label--sm">Importo mensile (€)</label>
+                      <div className="input-with-symbol">
+                        <span className="input-symbol">€</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          className="form-input form-input--with-symbol"
+                          placeholder="0,00"
+                          value={v.amount}
+                          onChange={updateFixedDeduction(v.id, 'amount')}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="rate-change-remove"
+                    onClick={() => removeFixedDeduction(v.id)}
+                    aria-label="Rimuovi trattenuta fissa"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button type="button" className="btn btn-secondary btn--full" onClick={addFixedDeduction}>
+            + Aggiungi trattenuta fissa
+          </button>
         </details>
 
         </details>

@@ -28,6 +28,7 @@ const DEFAULT_SETTINGS = {
   addRegionalePct: 1.23,
   addComunalePct: 0,
   addizionaliAltrove: false,        // addizionali già trattenute da altro datore → 0
+  noAddizionali: false,      // primo anno di lavoro: nessun anno precedente da cui calcolarle → 0
   noTrattamentoIntegrativo: false,  // override: forza esclusione TI (va a conguaglio)
   tiProjectionMode: 'stimato',      // 'stimato' | 'ytd' — proiezione per la decisione TI
   // Mensilità aggiuntive (dipendono dal CCNL)
@@ -39,6 +40,7 @@ const DEFAULT_SETTINGS = {
   workerName: '',
   // Voci fisse mensili (indennità, superminimo...) e bonus per singolo mese
   fixedMonthlyItems: [],   // [{ id, label, amount }] ricorrenti ogni mese
+  fixedMonthlyDeductions: [], // [{ id, label, amount }] trattenute fisse ogni mese
   monthlyBonusAmount: 0,   // importo fisso del bonus (es. bonus presenza), se lo si prende
   monthlyBonus: {},        // { 'YYYY-MM': true } mesi in cui il bonus fisso è stato preso
                            // (valori numerici legacy: importo di quel mese, preservato com'era)

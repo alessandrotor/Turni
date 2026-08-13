@@ -346,8 +346,9 @@ export function calcNetAnnual(grossAnnual, settings = {}) {
   const aliqReg = pctOr(settings.addRegionalePct, T.ADD_REGIONALE_DEFAULT) / 100;
   const aliqCom = pctOr(settings.addComunalePct, T.ADD_COMUNALE_DEFAULT) / 100;
   // Le addizionali sono dovute solo se c'è imposta netta, e solo se non sono
-  // già trattenute da un altro datore (stessa regola del calcolo mensile).
-  const addDovute = !settings.addizionaliAltrove && irpefNetta > 0;
+  // già trattenute da un altro datore o sospese per primo anno di lavoro
+  // (stessa regola del calcolo mensile).
+  const addDovute = !settings.addizionaliAltrove && !settings.noAddizionali && irpefNetta > 0;
   const addRegionale = addDovute ? imponibile * aliqReg : 0;
   const addComunale = addDovute ? imponibile * aliqCom : 0;
 
@@ -459,15 +460,22 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   const detrazioniApplicate = Math.min(detrazioni, irpefLordaOrdinaria);
 
   // Addizionali: stessa aliquota sull'imponibile del mese, dovute solo con imposta netta.
-  // Se già trattenute da un altro datore (conguaglio a saldo altrove), sono 0 in questa busta.
+  // Se già trattenute da un altro datore (conguaglio a saldo altrove) o sospese
+  // per primo anno di lavoro (nessun anno precedente da cui calcolarle), sono 0.
   const pctOr = (v, def) => (Number.isFinite(Number(v)) ? Number(v) : def);
   const aliqReg = pctOr(settings.addRegionalePct, T.ADD_REGIONALE_DEFAULT) / 100;
   const aliqCom = pctOr(settings.addComunalePct, T.ADD_COMUNALE_DEFAULT) / 100;
-  const addDovute = !settings.addizionaliAltrove && ann.irpefNetta > 0;
+  const addDovute = !settings.addizionaliAltrove && !settings.noAddizionali && ann.irpefNetta > 0;
   const addRegionale = addDovute ? imponibile * aliqReg : 0;
   const addComunale = addDovute ? imponibile * aliqCom : 0;
 
-  const trattenute = contributi + irpefNetta + addRegionale + addComunale;
+  // Trattenute fisse mensili (quota associativa, rata di un prestito...):
+  // voce generica, non fiscale — non tocca imponibile/IRPEF/TI/cuneo, si
+  // sottrae così com'è, come in busta.
+  const trattenuteFisse = (Array.isArray(settings.fixedMonthlyDeductions) ? settings.fixedMonthlyDeductions : [])
+    .reduce((s, v) => s + (Number(v.amount) || 0), 0);
+
+  const trattenute = contributi + irpefNetta + addRegionale + addComunale + trattenuteFisse;
 
   // Trattamento integrativo e indennità (L. 207/2024): quota del mese rapportata
   // ai giorni (giorni di calendario / 365), come in busta paga. Voci separate,
@@ -501,7 +509,7 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
     gross, contributi, contributiRighe: cont.righe, imponibile,
     imponibileOrdinario, imponibileExtra, irpefExtra, cuneoPct,
     irpefLorda, detrazioni, detrazioniApplicate, irpefNetta,
-    addRegionale, addComunale, trattenute,
+    addRegionale, addComunale, trattenuteFisse, trattenute,
     trattamentoIntegrativo, bonusCuneo, bonus,
     tfrLordo, tfrImposta, aliqTfr, tfr, net,
   };

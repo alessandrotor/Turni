@@ -571,6 +571,12 @@ export default function CalendarView({
                     <span>−{fmt0(netMonth.addRegionale + netMonth.addComunale)}</span>
                   </div>
                 )}
+                {netMonth.trattenuteFisse > 0 && (
+                  <div className="net-line net-line--ded">
+                    <span>Trattenute fisse</span>
+                    <span>−{fmt0(netMonth.trattenuteFisse)}</span>
+                  </div>
+                )}
                 <div className="net-line net-line--subtotal">
                   <span>Totale trattenute ({(netMonth.trattenute / netMonth.gross * 100).toFixed(1)}%)</span>
                   <span>−{fmt0(netMonth.trattenute)}</span>
