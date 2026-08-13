@@ -71,21 +71,31 @@ export function isSunday(dateStr) {
   return parseDate(dateStr).getDay() === 0;
 }
 
-// Percentuale di maggiorazione totale per un turno:
-// domenicale (se domenica) + festivo (se festività) + maggiorazione manuale del turno.
+// Maggiorazioni di un turno, tenute DISTINTE per tipo (percentuali):
+// domenicale (se domenica), festiva (se festività), manuale (impostata sul turno).
 // Se il turno è sia domenica sia festivo, le due si combinano secondo
-// settings.holidaySundayMode ('max' default | 'sum' | 'holiday'), perché i CCNL variano.
-export function getShiftSurchargePct(shift, settings) {
-  const sun = isSunday(shift.date) ? (Number(settings?.sundaySurchargePct) || 0) : 0;
-  const fest = isHoliday(shift.date, settings) ? (Number(settings?.holidaySurchargePct) || 0) : 0;
-  let base;
-  if (sun > 0 && fest > 0) {
+// settings.holidaySundayMode ('max' default | 'sum' | 'holiday'), perché i CCNL variano;
+// qui la combinazione decide anche a QUALE delle due va attribuita la quota, così
+// il riepilogo può dire quanto della paga viene da domeniche e quanto da festivi.
+// A parità, in modalità 'max', la quota va al festivo: è la ragione più specifica.
+export function getShiftSurchargeParts(shift, settings) {
+  let sunday = isSunday(shift.date) ? (Number(settings?.sundaySurchargePct) || 0) : 0;
+  let holiday = isHoliday(shift.date, settings) ? (Number(settings?.holidaySurchargePct) || 0) : 0;
+  if (sunday > 0 && holiday > 0) {
     const mode = settings?.holidaySundayMode || 'max';
-    base = mode === 'sum' ? sun + fest : mode === 'holiday' ? fest : Math.max(sun, fest);
-  } else {
-    base = sun + fest;
+    if (mode === 'holiday') sunday = 0;
+    else if (mode !== 'sum') { // 'max': vince la maggiore, l'altra sparisce
+      if (sunday > holiday) holiday = 0;
+      else sunday = 0;
+    }
   }
-  return base + (Number(shift.surchargePct) || 0);
+  return { sunday, holiday, manual: Number(shift.surchargePct) || 0 };
+}
+
+// Percentuale di maggiorazione totale per un turno: la somma delle tre componenti.
+export function getShiftSurchargePct(shift, settings) {
+  const p = getShiftSurchargeParts(shift, settings);
+  return p.sunday + p.holiday + p.manual;
 }
 
 // Calcola la paga di ogni turno tenendo conto della maggiorazione straordinari.
@@ -133,7 +143,7 @@ export function computePayByShift(allShifts, settings) {
     for (const s of groupShifts) {
       const m = calcShiftMinutes(s);
       const ratePerMin = getRateForDate(s.date, settings) / 60;
-      const pct = getShiftSurchargePct(s, settings);
+      const parts = getShiftSurchargeParts(s, settings);
 
       let overtimeMin = 0;
       if (applyOvertime) {
@@ -143,11 +153,21 @@ export function computePayByShift(allShifts, settings) {
 
       const shiftBase = m * ratePerMin;
       const overtimeBase = overtimeMin * ratePerMin;
-      const surcharge = shiftBase * (pct / 100) + overtimeBase * (otPct / 100);
+      // Le quattro maggiorazioni restano separate perché il riepilogo del mese
+      // le mostra una per una: un unico totale non dice quale voce si scosta da
+      // quella stampata in busta. `surcharge` resta la loro somma, invariata.
+      const surchargeSunday = shiftBase * (parts.sunday / 100);
+      const surchargeHoliday = shiftBase * (parts.holiday / 100);
+      const surchargeManual = shiftBase * (parts.manual / 100);
+      const surchargeOvertime = overtimeBase * (otPct / 100);
 
       result[s.id] = {
         base: shiftBase,
-        surcharge,
+        surcharge: surchargeSunday + surchargeHoliday + surchargeManual + surchargeOvertime,
+        surchargeSunday,
+        surchargeHoliday,
+        surchargeManual,
+        surchargeOvertime,
         overtimeMinutes: overtimeMin,
         // Nessuna paga applicabile a questa data: il turno vale 0 € e va
         // segnalato, altrimenti il totale è silenziosamente sottostimato.
@@ -178,6 +198,10 @@ export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = nul
   const map = byShift || computePayByShift(allShifts, settings);
   let base = 0;
   let surcharge = 0;
+  let surchargeSunday = 0;
+  let surchargeHoliday = 0;
+  let surchargeManual = 0;
+  let surchargeOvertime = 0;
   let overtimeMinutes = 0;
   let shiftsWithoutRate = 0;
   shifts.forEach(s => {
@@ -185,11 +209,19 @@ export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = nul
     if (p) {
       base += p.base;
       surcharge += p.surcharge;
+      surchargeSunday += p.surchargeSunday;
+      surchargeHoliday += p.surchargeHoliday;
+      surchargeManual += p.surchargeManual;
+      surchargeOvertime += p.surchargeOvertime;
       overtimeMinutes += p.overtimeMinutes;
       if (p.missingRate) shiftsWithoutRate += 1;
     }
   });
-  return { base, surcharge, total: base + surcharge, overtimeMinutes, shiftsWithoutRate };
+  return {
+    base, surcharge, total: base + surcharge,
+    surchargeSunday, surchargeHoliday, surchargeManual, surchargeOvertime,
+    overtimeMinutes, shiftsWithoutRate,
+  };
 }
 
 export function formatCurrency(amount) {

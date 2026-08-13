@@ -24,6 +24,8 @@
 // determinante.
 
 import { calcNetMonthly, round2, trunc2 } from '../src/utils/net.js';
+import { calcTotalPay } from '../src/utils/pay.js';
+import { payrollMonthKey } from '../src/utils/dates.js';
 
 const BASE_SETTINGS = {
   hourlyRate: 9.21802,
@@ -82,6 +84,82 @@ check('Retribuzione (103,20 h)', RETRIBUZIONE, 951.30, CENT);
 check('Lavoro supplementare 30% (6,50 h)', SUPPLEMENTARE, 77.89, CENT);
 check('Magg. domenicale 10% (15,50 h)', MAGG_DOMENICALE, 14.29, CENT);
 check('Lordo del mese', LORDO_LUGLIO, 1173.48, CENT);
+
+// ---------------------------------------------------------------------------
+// Dai TURNI alle competenze.
+//
+// Fin qui le competenze sono gli importi letti dal cedolino. Ma in app quegli
+// importi nascono dai turni, ed è proprio lì che si era aperto lo scarto: il
+// riepilogo segnava 1.113 € di lordo contro i 1.173,48 stampati, perché contava
+// 104,65 h invece di 109,70. Le 5 ore mancanti valevano 60 € e non 46 perché,
+// oltre la soglia di 103,20 h, ogni ora è supplementare al 130%.
+//
+// Con un totale unico di «maggiorazioni» quella voce non si vedeva. Qui si
+// verifica che il percorso turni → maggiorazioni produca, diviso per tipo,
+// esattamente quel che stampa la busta.
+const PAY_SETTINGS = {
+  ...BASE_SETTINGS,
+  sundaySurchargePct: 10,
+  holidaySurchargePct: 30, // nessuna festività fra il 6 lug e il 2 ago: resta a zero
+  overtimeSurchargePct: 30,
+  onCall: false,
+};
+
+// Turni ricostruiti: 109,70 h nel mese di paga (6 lug – 2 ago 2026), di cui
+// 15,50 di domenica. NON sono i turni veri — il cedolino non li stampa — ma una
+// distribuzione qualunque con quei due totali, che è tutto ciò che serve al
+// calcolo: le maggiorazioni dipendono dalle ore e dai giorni, non dagli orari.
+function turniLuglio() {
+  const hhmm = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+  const shifts = [];
+  const push = (date, minuti) => {
+    shifts.push({ id: `t${shifts.length + 1}`, date, startTime: '09:00', endTime: hhmm(9 * 60 + minuti) });
+  };
+
+  // 15,50 h sulle quattro domeniche del mese di paga.
+  [['2026-07-12', 240], ['2026-07-19', 240], ['2026-07-26', 240], ['2026-08-02', 210]]
+    .forEach(([d, m]) => push(d, m));
+
+  // 94,20 h (5.652 min) sui feriali: 18 turni da 5 h più un resto da 4h 12m.
+  const feriali = [];
+  for (let d = new Date(2026, 6, 6); d <= new Date(2026, 7, 2); d.setDate(d.getDate() + 1)) {
+    if (d.getDay() !== 0) {
+      feriali.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+    }
+  }
+  feriali.slice(0, 18).forEach(d => push(d, 300));
+  push(feriali[18], 252);
+
+  return shifts;
+}
+
+const TURNI = turniLuglio();
+const p = calcTotalPay(TURNI, PAY_SETTINGS, TURNI);
+const oreTurni = TURNI.reduce((s, t) => {
+  const [h1, m1] = t.startTime.split(':').map(Number);
+  const [h2, m2] = t.endTime.split(':').map(Number);
+  return s + (h2 * 60 + m2 - (h1 * 60 + m1));
+}, 0) / 60;
+
+console.log('\nDai turni alle competenze\n');
+// Se un turno finisse in un altro mese di paga le ore non tornerebbero e tutto
+// il resto del blocco scivolerebbe: meglio accorgersene qui.
+check('Turni tutti nel mese di paga 2026-07',
+  TURNI.every(t => payrollMonthKey(t.date) === '2026-07') ? 1 : 0, 1, CENT);
+check('Ore contate', oreTurni, 109.70, CENT);
+check('Ore supplementari (oltre 103,20)', p.overtimeMinutes / 60, 6.50, CENT);
+check('Base (109,70 h × 9,21802)', p.base, 1011.22, CENT);
+check('  di cui magg. domenicali 10%', p.surchargeSunday, 14.29, CENT);
+check('  di cui magg. supplementari 30%', p.surchargeOvertime, 17.98, CENT);
+check('  festive e manuali: nessuna', p.surchargeHoliday + p.surchargeManual, 0, CENT);
+// 1.043,48 è il lordo di busta meno le due voci che non nascono dai turni
+// (120,00 TOP STORE + 10,00 Ind. Flessibilità).
+check('Totale dai turni', p.total, round2(LORDO_LUGLIO - 130), CENT);
+// La somma delle quattro componenti deve restare il totale di prima: la
+// divisione per tipo è solo di lettura, non cambia un centesimo.
+check('Somma componenti = surcharge',
+  p.surchargeSunday + p.surchargeHoliday + p.surchargeManual + p.surchargeOvertime,
+  p.surcharge, CENT);
 
 const r = calcNetMonthly(LORDO_LUGLIO, ANNUO_STIMATO, BASE_SETTINGS, GIORNI, 0);
 const riga = (label) => r.contributiRighe.find(x => x.label.startsWith(label));

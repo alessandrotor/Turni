@@ -5,6 +5,7 @@ import {
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth, formatPayrollRange,
 } from '../utils/dates';
 import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
+import { isMensilizzato } from '../utils/ccnl';
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
 import { EXTRA_MONTHS } from '../utils/net';
 import { ENABLE_DEBUG } from '../config/features';
@@ -26,9 +27,13 @@ import ImportModal from './ImportModal';
 
 const DAY_HEADERS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
+// I minuti non sono sempre interi: le ore contrattuali mensili nascono da una
+// moltiplicazione (24 × 4,3 = 103,19999…), quindi lo straordinario che ne deriva
+// porta con sé la coda binaria. Senza arrotondare uscirebbe «6h 30.00000000000091m».
 function formatMinutesShort(mins) {
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
+  const total = Math.round(mins);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
@@ -110,6 +115,26 @@ export default function CalendarView({
     () => calcTotalPay(counted, settings, allShifts || counted, payByShift),
     [counted, settings, allShifts, payByShift],
   );
+
+  // Maggiorazioni divise per tipo. Un totale unico non dice QUALE voce si scosta
+  // da quella stampata in busta: confrontando luglio 2026 col cedolino, lo scarto
+  // stava tutto nelle supplementari (ore mancanti), ma la riga non lo mostrava.
+  const surchargeBreakdown = useMemo(() => {
+    if (!pay) return [];
+    // In busta le ore oltre la soglia si chiamano «supplementari» sui CCNL
+    // mensilizzati e «straordinari» altrove: stessa distinzione di Impostazioni.
+    const otLabel = !settings.onCall && isMensilizzato(settings) ? 'supplementari' : 'straordinari';
+    return [
+      { label: 'domenicali', value: pay.surchargeSunday },
+      { label: 'festive', value: pay.surchargeHoliday },
+      { label: 'manuali', value: pay.surchargeManual },
+      // Le ore accanto sono il numero da confrontare con il cedolino.
+      { label: otLabel, value: pay.surchargeOvertime, minutes: pay.overtimeMinutes },
+    ].filter(p => p.value >= 0.005);
+  }, [pay, settings]);
+  const surchargeDetail = surchargeBreakdown
+    .map(p => `${p.label} ${formatCurrency(p.value)}${p.minutes > 0 ? ` (${formatMinutesShort(p.minutes)})` : ''}`)
+    .join(' · ');
 
   // Bonus busta paga: quanto manca alla soglia (reddito annuo dai turni)
   const bonus = useMemo(() => calcBonusMargin(annualGross, settings), [annualGross, settings]);
@@ -440,6 +465,9 @@ export default function CalendarView({
                 <span className="summary-sublabel">
                   di cui maggiorazioni {formatCurrency(pay.surcharge)}
                 </span>
+              )}
+              {surchargeDetail && (
+                <span className="summary-sublabel">{surchargeDetail}</span>
               )}
               {pay.shiftsWithoutRate > 0 && (
                 <span className="summary-sublabel summary-sublabel--warn">
