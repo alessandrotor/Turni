@@ -1,6 +1,6 @@
-# Auto-deploy dell'AMBIENTE DI TEST su ogni push del branch web.
-# La PRODUZIONE resta manuale (deploy su --branch main lanciato a mano), così i
-# tester non vedono cambiamenti a sorpresa. Vedi memory/web-deploy.md.
+# Auto-deploy dell'AMBIENTE DI TEST su ogni push del branch di lavoro `experimental`.
+# La PRODUZIONE resta manuale (deploy su --branch main lanciato a mano dal branch
+# git `main`), così i tester non vedono cambiamenti a sorpresa. Vedi memory/web-deploy.md.
 #
 # Richiede queste impostazioni nel repo GitHub (Settings → Secrets and variables → Actions):
 #   - Secret   CLOUDFLARE_API_TOKEN     → token Cloudflare con permesso "Cloudflare Pages: Edit"
@@ -17,7 +17,7 @@ name: Deploy TEST (Cloudflare Pages)
 
 on:
   push:
-    branches: [feat/web-app]
+    branches: [experimental]
 
 permissions:
   contents: read
