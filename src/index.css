@@ -1216,6 +1216,19 @@ input, select, textarea { font: inherit; }
   color: var(--c-muted);
 }
 
+/* Nota che segnala un dato mancante, non un dettaglio: va letta, quindi esce
+   dal grigio corsivo delle altre. */
+.net-subnote--warn {
+  margin-top: .45rem;
+  font-style: normal;
+  color: var(--c-warning);
+  background: var(--c-warning-light);
+  border-left: 3px solid var(--c-warning);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  padding: .5rem .6rem;
+  line-height: 1.5;
+}
+
 /* Riga informativa (imponibile): neutra, senza segno */
 .net-line--info {
   padding-left: .85rem;

@@ -36,6 +36,10 @@ export const TAX_2026 = {
   TI_SOGLIA_PIENO: 15000,
   TI_SOGLIA_MAX: 28000,
   TI_MASSIMO: 1200,
+  // Sconto sulla detrazione nel test di capienza del TI: la norma confronta
+  // l'imposta lorda con la detrazione da lavoro dipendente DIMINUITA di 75 €
+  // (ragguagliati al periodo di lavoro nell'anno).
+  TI_CAPIENZA_SCONTO: 75,
 
   // Cuneo fiscale 2026 (L. 207/2024)
   CUNEO_SOGLIA_SOMMA: 20000,     // sotto: somma non tassata
@@ -177,11 +181,22 @@ function bonusCuneo(redditoComplessivo, redditoLavoro) {
 }
 
 // Trattamento integrativo, calcolato sull'imponibile e sulle detrazioni.
+//
+// La capienza NON si misura sulla detrazione piena: la norma la confronta con la
+// detrazione da lavoro dipendente diminuita di 75 € (ragguagliati al periodo di
+// lavoro; qui si ragiona su base annua, quindi 75 pieni). Senza quello sconto il
+// TI verrebbe negato a chi per legge ci rientra, in una fascia stretta ma reale:
+// imposta lorda fra detrazione−75 e detrazione, cioè attorno agli 8.200–8.500 €
+// di imponibile.
+//
+// NON riscontrato su busta: nelle buste disponibili la capienza c'è comunque, con
+// o senza lo sconto. Viene dalla norma, non dai dati — se un cedolino dovesse
+// dire il contrario, è il cedolino a vincere.
 function trattamentoIntegrativo(reddito, irpef, detLavoro, detrTotali) {
   const T = TAX_2026;
   if (reddito > T.TI_SOGLIA_MAX) return 0;
   if (reddito <= T.TI_SOGLIA_PIENO) {
-    return irpef > detLavoro ? T.TI_MASSIMO : 0;
+    return irpef > detLavoro - T.TI_CAPIENZA_SCONTO ? T.TI_MASSIMO : 0;
   }
   const diff = detrTotali - irpef;
   return Math.min(T.TI_MASSIMO, Math.max(0, diff));
