@@ -116,25 +116,29 @@ export default function CalendarView({
     [counted, settings, allShifts, payByShift],
   );
 
-  // Maggiorazioni divise per tipo. Un totale unico non dice QUALE voce si scosta
-  // da quella stampata in busta: confrontando luglio 2026 col cedolino, lo scarto
-  // stava tutto nelle supplementari (ore mancanti), ma la riga non lo mostrava.
-  const surchargeBreakdown = useMemo(() => {
+  // Competenze del mese nelle stesse voci del cedolino, così che le due colonne
+  // si possano affiancare davvero. Il punto delicato è il lavoro oltre soglia: la
+  // busta scrive quelle ore INTERE al 130% (6,50 h → 77,89 €), non il solo +30%
+  // (17,98 €) che invece resterebbe fuori dalla base. Sotto la stessa parola
+  // c'erano due grandezze diverse, e il confronto dava sempre torto all'app.
+  //
+  // È una riaffettatura di sola lettura degli stessi totali: le voci sommano a
+  // `pay.total`, che resta il numero in cima.
+  const competenze = useMemo(() => {
     if (!pay) return [];
+    const otPct = Number(settings.overtimeSurchargePct) || 0;
     // In busta le ore oltre la soglia si chiamano «supplementari» sui CCNL
-    // mensilizzati e «straordinari» altrove: stessa distinzione di Impostazioni.
-    const otLabel = !settings.onCall && isMensilizzato(settings) ? 'supplementari' : 'straordinari';
+    // mensilizzati e «straordinarie» altrove: stessa distinzione di Impostazioni
+    // (la voce prende il nome al singolare, come sul cedolino).
+    const otLabel = !settings.onCall && isMensilizzato(settings) ? 'Supplementare' : 'Straordinario';
     return [
-      { label: 'domenicali', value: pay.surchargeSunday },
-      { label: 'festive', value: pay.surchargeHoliday },
-      { label: 'manuali', value: pay.surchargeManual },
-      // Le ore accanto sono il numero da confrontare con il cedolino.
-      { label: otLabel, value: pay.surchargeOvertime, minutes: pay.overtimeMinutes },
-    ].filter(p => p.value >= 0.005);
-  }, [pay, settings]);
-  const surchargeDetail = surchargeBreakdown
-    .map(p => `${p.label} ${formatCurrency(p.value)}${p.minutes > 0 ? ` (${formatMinutesShort(p.minutes)})` : ''}`)
-    .join(' · ');
+      { label: 'Retribuzione', value: pay.base - pay.overtimeBase, minutes: totalMins - pay.overtimeMinutes },
+      { label: `${otLabel} +${fmtPct(otPct)}%`, value: pay.overtimeBase + pay.surchargeOvertime, minutes: pay.overtimeMinutes },
+      { label: 'Magg. domenicali', value: pay.surchargeSunday },
+      { label: 'Magg. festive', value: pay.surchargeHoliday },
+      { label: 'Magg. manuali', value: pay.surchargeManual },
+    ].filter(v => v.value >= 0.005);
+  }, [pay, settings, totalMins]);
 
   // Bonus busta paga: quanto manca alla soglia (reddito annuo dai turni)
   const bonus = useMemo(() => calcBonusMargin(annualGross, settings), [annualGross, settings]);
@@ -461,14 +465,14 @@ export default function CalendarView({
             <div className="summary-item">
               <span className="summary-label">Retribuzione stimata</span>
               <span className="summary-value diff-positive">{formatCurrency(pay.total)}</span>
-              {pay.surcharge > 0 && (
-                <span className="summary-sublabel">
-                  di cui maggiorazioni {formatCurrency(pay.surcharge)}
+              {/* Con una sola voce la scomposizione ripeterebbe il totale. */}
+              {competenze.length > 1 && competenze.map(v => (
+                <span className="summary-sublabel" key={v.label}>
+                  {v.label}
+                  {v.minutes > 0 && ` (${formatMinutesShort(v.minutes)})`}
+                  {' '}{formatCurrency(v.value)}
                 </span>
-              )}
-              {surchargeDetail && (
-                <span className="summary-sublabel">{surchargeDetail}</span>
-              )}
+              ))}
               {pay.shiftsWithoutRate > 0 && (
                 <span className="summary-sublabel summary-sublabel--warn">
                   ⚠️ {pay.shiftsWithoutRate} turn{pay.shiftsWithoutRate === 1 ? 'o conteggiato' : 'i conteggiati'} a 0 €:

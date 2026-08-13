@@ -161,6 +161,24 @@ check('Somma componenti = surcharge',
   p.surchargeSunday + p.surchargeHoliday + p.surchargeManual + p.surchargeOvertime,
   p.surcharge, CENT);
 
+// Le righe come le STAMPA il cedolino. Il riepilogo dell'app le ricompone da
+// questi totali, e la voce delicata è il supplementare: la busta scrive le ore
+// oltre soglia INTERE al 130% (77,89), non il solo +30% (17,98) — che da solo
+// non combacia con niente di quel che c'è sulla carta.
+const RETRIBUZIONE_ORDINARIA = p.base - p.overtimeBase;
+const SUPPLEMENTARE_INTERO = p.overtimeBase + p.surchargeOvertime;
+
+console.log('\nLe righe stampate in busta, ricomposte dai turni\n');
+check('Ore ordinarie (109,70 − 6,50)', (oreTurni * 60 - p.overtimeMinutes) / 60, 103.20, CENT);
+check('Retribuzione', RETRIBUZIONE_ORDINARIA, 951.30, CENT);
+check('Lavoro supplementare 30%', SUPPLEMENTARE_INTERO, 77.89, CENT);
+check('Magg. domenicale 10%', p.surchargeSunday, 14.29, CENT);
+// La riaffettatura è di sola lettura: le tre righe devono ridare il totale
+// esatto di prima, altrimenti mostrarle sposterebbe il lordo.
+check('Somma righe = totale dai turni',
+  RETRIBUZIONE_ORDINARIA + SUPPLEMENTARE_INTERO + p.surchargeSunday + p.surchargeHoliday + p.surchargeManual,
+  p.total, CENT);
+
 const r = calcNetMonthly(LORDO_LUGLIO, ANNUO_STIMATO, BASE_SETTINGS, GIORNI, 0);
 const riga = (label) => r.contributiRighe.find(x => x.label.startsWith(label));
 

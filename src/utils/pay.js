@@ -152,6 +152,12 @@ export function computePayByShift(allShifts, settings) {
       }
 
       const shiftBase = m * ratePerMin;
+      // Quota di `base` che spetta alle ore oltre soglia. Serve al riepilogo per
+      // ricomporre le voci COME LE STAMPA LA BUSTA: il cedolino non scrive il
+      // solo +30%, scrive le ore supplementari intere al 130%
+      // (`overtimeBase + surchargeOvertime`) e la retribuzione ordinaria al
+      // netto di quelle (`base − overtimeBase`). Senza questo dato le due
+      // colonne non sono confrontabili.
       const overtimeBase = overtimeMin * ratePerMin;
       // Le quattro maggiorazioni restano separate perché il riepilogo del mese
       // le mostra una per una: un unico totale non dice quale voce si scosta da
@@ -168,6 +174,7 @@ export function computePayByShift(allShifts, settings) {
         surchargeHoliday,
         surchargeManual,
         surchargeOvertime,
+        overtimeBase,
         overtimeMinutes: overtimeMin,
         // Nessuna paga applicabile a questa data: il turno vale 0 € e va
         // segnalato, altrimenti il totale è silenziosamente sottostimato.
@@ -202,6 +209,7 @@ export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = nul
   let surchargeHoliday = 0;
   let surchargeManual = 0;
   let surchargeOvertime = 0;
+  let overtimeBase = 0;
   let overtimeMinutes = 0;
   let shiftsWithoutRate = 0;
   shifts.forEach(s => {
@@ -213,6 +221,7 @@ export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = nul
       surchargeHoliday += p.surchargeHoliday;
       surchargeManual += p.surchargeManual;
       surchargeOvertime += p.surchargeOvertime;
+      overtimeBase += p.overtimeBase;
       overtimeMinutes += p.overtimeMinutes;
       if (p.missingRate) shiftsWithoutRate += 1;
     }
@@ -220,7 +229,7 @@ export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = nul
   return {
     base, surcharge, total: base + surcharge,
     surchargeSunday, surchargeHoliday, surchargeManual, surchargeOvertime,
-    overtimeMinutes, shiftsWithoutRate,
+    overtimeBase, overtimeMinutes, shiftsWithoutRate,
   };
 }
 
