@@ -60,9 +60,6 @@ export default function CalendarView({
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState(null);
   const [showNetDetail, setShowNetDetail] = useState(false);
-  // Spiegazione di supplementari/straordinari: una riga in più, non un
-  // overlay — niente da posizionare, funziona identico su mobile e desktop.
-  const [otInfoOpen, setOtInfoOpen] = useState(false);
   const [pendingImportFile, setPendingImportFile] = useState(null);
   const [nameInput, setNameInput] = useState('');
   // Modifica del nome fuori dall'import (nessun file in attesa): riusa la stessa modale.
@@ -489,26 +486,20 @@ export default function CalendarView({
               {competenze.length > 1 && competenze.map(v => (
                 <span className="summary-sublabel" key={v.label}>
                   {v.tag === 'overtime' ? (
-                    <button
-                      type="button"
-                      className="linklike"
-                      onClick={() => setOtInfoOpen(o => !o)}
-                      aria-expanded={otInfoOpen}
-                    >
-                      {v.label}
-                    </button>
+                    <span className="tooltip-wrap">
+                      <button type="button" className="linklike" aria-describedby={`ot-tip-${v.label}`}>
+                        {v.label}
+                      </button>
+                      <span className="tooltip-bubble" role="tooltip" id={`ot-tip-${v.label}`}>
+                        Supplementari: ore oltre il contratto ma entro il full-time.
+                        Straordinari: oltre il full-time, maggiorazione diversa.
+                      </span>
+                    </span>
                   ) : v.label}
                   {v.minutes > 0 && ` (${formatMinutesShort(v.minutes)})`}
                   {' '}{formatCurrency(v.value)}
                 </span>
               ))}
-              {otInfoOpen && (
-                <span className="summary-sublabel summary-sublabel--info">
-                  Supplementari: le ore oltre il tuo orario contrattuale ma entro il
-                  full-time. Straordinari: oltre il full-time — maggiorazione diversa,
-                  di solito più alta.
-                </span>
-              )}
               {pay.shiftsWithoutRate > 0 && (
                 <span className="summary-sublabel summary-sublabel--warn">
                   ⚠️ {pay.shiftsWithoutRate} turn{pay.shiftsWithoutRate === 1 ? 'o conteggiato' : 'i conteggiati'} a 0 €:

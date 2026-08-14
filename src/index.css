@@ -910,9 +910,41 @@ input, select, textarea { font: inherit; }
   font-weight: 600;
 }
 
-.summary-sublabel--info {
-  font-style: italic;
+/* Tooltip leggero, solo CSS: hover su desktop, tap su mobile (il tap mette a
+   fuoco il bottone, :focus-within lo mostra). Niente JS, niente overlay da
+   posizionare — la bolla è ancorata al suo stesso contenitore. */
+.tooltip-wrap {
+  position: relative;
+  display: inline-block;
+}
+.tooltip-bubble {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: .4rem;
+  width: max-content;
+  max-width: min(230px, 80vw);
+  padding: .5rem .65rem;
+  background: var(--c-text);
+  color: var(--c-bg);
+  font-size: .72rem;
+  font-style: normal;
   line-height: 1.4;
+  text-align: left;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity .15s ease, transform .15s ease;
+  pointer-events: none;
+  z-index: 20;
+}
+.tooltip-wrap:hover .tooltip-bubble,
+.tooltip-wrap:focus-within .tooltip-bubble {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
 .form-hint {
