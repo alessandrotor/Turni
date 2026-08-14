@@ -852,6 +852,7 @@ export default function CalendarView({
       {importParsed && (
         <ImportModal
           shifts={importParsed}
+          workerName={settings.workerName}
           onConfirm={handleImportConfirm}
           onClose={() => setImportParsed(null)}
         />
