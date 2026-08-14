@@ -284,6 +284,10 @@ export default {
             // LOW: sui test l'accuratezza è identica a MID/HIGH con molti meno
             // token immagine (prompt ~600 contro ~1400).
             mediaResolution: 'MEDIA_RESOLUTION_LOW',
+            // Verificato su due fogli reali (griglia multi-persona e chat in
+            // prosa): stessa accuratezza di prima, thinking azzerato — il
+            // costo per import scende di ~60-65%.
+            thinkingConfig: { thinkingLevel: 'MINIMAL' },
           },
         }),
       });
