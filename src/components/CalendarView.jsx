@@ -491,8 +491,8 @@ export default function CalendarView({
                         {v.label}
                       </button>
                       <span className="tooltip-bubble" role="tooltip" id={`ot-tip-${v.label}`}>
-                        Supplementari: ore oltre il contratto ma entro il full-time.
-                        Straordinari: oltre il full-time, maggiorazione diversa.
+                        Le ore di straordinari sono chiamate "supplementari" se non
+                        superano quelle di un full-time.
                       </span>
                     </span>
                   ) : v.label}
@@ -662,7 +662,14 @@ export default function CalendarView({
 
                 {(netMonth.addRegionale + netMonth.addComunale) > 0 && (
                   <div className="net-line net-line--ded">
-                    <span>Addizionali reg./com. ({addizionaliPct}%)</span>
+                    <span className="tooltip-wrap">
+                      <button type="button" className="linklike" aria-describedby="net-tip-add">Addizionali reg./com.</button>
+                      <span className="tooltip-bubble" role="tooltip" id="net-tip-add">
+                        Tasse locali (regione e comune) calcolate sul reddito imponibile,
+                        trattenute ogni mese in busta.
+                      </span>
+                      {' '}({addizionaliPct}%)
+                    </span>
                     <span>−{fmt0(netMonth.addRegionale + netMonth.addComunale)}</span>
                   </div>
                 )}
@@ -682,11 +689,28 @@ export default function CalendarView({
                   <>
                     <div className="net-group-label">Competenze in busta (a parte)</div>
                     {netMonth.trattamentoIntegrativo > 0 && (
-                      <div className="net-line net-line--bonus"><span>Trattamento integrativo (quota mese)</span><span>+{fmt0(netMonth.trattamentoIntegrativo)}</span></div>
+                      <div className="net-line net-line--bonus">
+                        <span className="tooltip-wrap">
+                          <button type="button" className="linklike" aria-describedby="net-tip-ti">Trattamento integrativo</button>
+                          <span className="tooltip-bubble" role="tooltip" id="net-tip-ti">
+                            Ex bonus Renzi: spetta con un reddito imponibile fino a 28.000
+                            €/anno, se l'imposta dovuta supera le detrazioni.
+                          </span>
+                          {' '}(quota mese)
+                        </span>
+                        <span>+{fmt0(netMonth.trattamentoIntegrativo)}</span>
+                      </div>
                     )}
                     {netMonth.bonusCuneo > 0 && (
                       <div className="net-line net-line--bonus">
-                        <span>Indennità 207/2024 ({(netMonth.cuneoPct * 100).toFixed(1).replace('.', ',')}% dell'imponibile)</span>
+                        <span className="tooltip-wrap">
+                          <button type="button" className="linklike" aria-describedby="net-tip-cuneo">Indennità 207/2024</button>
+                          <span className="tooltip-bubble" role="tooltip" id="net-tip-cuneo">
+                            Sconto sui contributi (legge di bilancio 2025) per redditi fino
+                            a 40.000 €/anno: aumenta il netto senza toccare il lordo.
+                          </span>
+                          {' '}({(netMonth.cuneoPct * 100).toFixed(1).replace('.', ',')}% dell'imponibile)
+                        </span>
                         <span>+{fmt0(netMonth.bonusCuneo)}</span>
                       </div>
                     )}
