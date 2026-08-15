@@ -204,66 +204,6 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
           </div>
 
           <div className="stats-card">
-            <div className="stats-card-title">Giorni lavorati di fila</div>
-            <p className="stats-streaks-intro">
-              Quante volte hai lavorato più giorni <strong>consecutivi</strong>, senza
-              nemmeno una giornata di riposo in mezzo.
-            </p>
-
-            {summary.longestStreak > 0 && (
-              <p className="stats-streaks-lead">
-                Il periodo più lungo del {year} è stato di{' '}
-                <strong className={summary.longestStreak >= STREAK_LUNGA ? 'stats-streaks-lead--warn' : ''}>
-                  {summary.longestStreak} giorni di fila
-                </strong>
-                {longest && <>, {conArticolo('dal', longest.start)} {conArticolo('al', longest.end)}</>}.
-              </p>
-            )}
-
-            {longStreaks.length > 0 ? (
-              <>
-                <div className="stats-streaks-title">
-                  {longStreaks.length === 1
-                    ? `Un periodo da ${STREAK_LUNGA} giorni o più`
-                    : `${longStreaks.length} periodi da ${STREAK_LUNGA} giorni o più`}
-                </div>
-                <ul className="stats-streaks-list">
-                  {longStreaks.slice(0, 5).map(r => (
-                    <li key={r.start}>
-                      <button
-                        type="button"
-                        className="stats-streak-row"
-                        onClick={() => onOpenDay?.(r.start)}
-                        title={`Vai al ${fmtDayMonth(r.start)} nel Calendario`}
-                      >
-                        <span className="stats-streak-days">{r.days} giorni</span>
-                        <span className="stats-streak-range">
-                          {conArticolo('dal', r.start)} {conArticolo('al', r.end)}
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-                {longStreaks.length > 5 && (
-                  <p className="stats-streaks-more">
-                    e altri {longStreaks.length - 5} periodi da {STREAK_LUNGA} giorni o più
-                  </p>
-                )}
-                <p className="stats-streaks-note">
-                  {STREAK_LUNGA} giorni di fila vuol dire una settimana intera senza un
-                  giorno libero. Sul calendario qui sotto quei giorni portano una
-                  barretta scura.
-                </p>
-              </>
-            ) : (
-              <p className="stats-streaks-note">
-                Nessun periodo da {STREAK_LUNGA} giorni o più: hai sempre avuto almeno un
-                giorno di riposo entro la settimana.
-              </p>
-            )}
-          </div>
-
-          <div className="stats-card">
             <div className="stats-card-title">L'anno a colpo d'occhio</div>
             <div className="mini-months">
               {Array.from({ length: 12 }, (_, m) => {
@@ -356,6 +296,66 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
               <p className="net-disclaimer--prominent">
                 ⚠️ Funzione beta: i calcoli possono contenere errori. Fai sempre controllare
                 questi dati a un professionista prima di usarli.
+              </p>
+            )}
+          </div>
+
+          <div className="stats-card">
+            <div className="stats-card-title">Giorni lavorati di fila</div>
+            <p className="stats-streaks-intro">
+              Quante volte hai lavorato più giorni <strong>consecutivi</strong>, senza
+              nemmeno una giornata di riposo in mezzo.
+            </p>
+
+            {summary.longestStreak > 0 && (
+              <p className="stats-streaks-lead">
+                Il periodo più lungo del {year} è stato di{' '}
+                <strong className={summary.longestStreak >= STREAK_LUNGA ? 'stats-streaks-lead--warn' : ''}>
+                  {summary.longestStreak} giorni di fila
+                </strong>
+                {longest && <>, {conArticolo('dal', longest.start)} {conArticolo('al', longest.end)}</>}.
+              </p>
+            )}
+
+            {longStreaks.length > 0 ? (
+              <>
+                <div className="stats-streaks-title">
+                  {longStreaks.length === 1
+                    ? `Un periodo da ${STREAK_LUNGA} giorni o più`
+                    : `${longStreaks.length} periodi da ${STREAK_LUNGA} giorni o più`}
+                </div>
+                <ul className="stats-streaks-list">
+                  {longStreaks.slice(0, 5).map(r => (
+                    <li key={r.start}>
+                      <button
+                        type="button"
+                        className="stats-streak-row"
+                        onClick={() => onOpenDay?.(r.start)}
+                        title={`Vai al ${fmtDayMonth(r.start)} nel Calendario`}
+                      >
+                        <span className="stats-streak-days">{r.days} giorni</span>
+                        <span className="stats-streak-range">
+                          {conArticolo('dal', r.start)} {conArticolo('al', r.end)}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                {longStreaks.length > 5 && (
+                  <p className="stats-streaks-more">
+                    e altri {longStreaks.length - 5} periodi da {STREAK_LUNGA} giorni o più
+                  </p>
+                )}
+                <p className="stats-streaks-note">
+                  {STREAK_LUNGA} giorni di fila vuol dire una settimana intera senza un
+                  giorno libero. Nel calendario qui sopra quei giorni portano una
+                  barretta scura.
+                </p>
+              </>
+            ) : (
+              <p className="stats-streaks-note">
+                Nessun periodo da {STREAK_LUNGA} giorni o più: hai sempre avuto almeno un
+                giorno di riposo entro la settimana.
               </p>
             )}
           </div>

@@ -69,6 +69,21 @@ export default function App() {
   // solo un residuo da capire.
   const goToMonth = useCallback((m) => { setFocusDate(null); setCurrentMonth(m); }, []);
 
+  // L'evidenziazione è un segnaposto per ritrovare il giorno appena tappato,
+  // non uno stato di selezione: il primo tocco successivo la spegne, ovunque
+  // cada. Senza, restava accesa fino al ricaricamento della pagina.
+  // Il listener parte sul giro dopo (setTimeout 0), altrimenti intercetterebbe
+  // lo stesso clic che l'ha accesa e la spegnerebbe all'istante.
+  useEffect(() => {
+    if (!focusDate) return undefined;
+    const spegni = () => setFocusDate(null);
+    const id = setTimeout(() => document.addEventListener('click', spegni, { once: true }), 0);
+    return () => {
+      clearTimeout(id);
+      document.removeEventListener('click', spegni);
+    };
+  }, [focusDate]);
+
   // I settings salvati da una versione precedente non hanno i campi aggiunti
   // dopo: senza questo merge resterebbero `undefined` e alcune funzioni si
   // spegnerebbero in silenzio (es. expectedWeeklyHours mancante = nessuno
