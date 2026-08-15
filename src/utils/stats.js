@@ -133,15 +133,57 @@ export function dailyBreakdown(year, allShifts, settings = {}, payByShift = null
   return byDay;
 }
 
+// Numero progressivo del giorno, per stabilire se due date sono consecutive.
+// Passa da Date.UTC e NON dalla differenza fra due `Date` locali: con l'ora
+// legale due giorni consecutivi distano 23 o 25 ore, non 24 (in Italia il
+// 29 marzo e il 25 ottobre 2026), e un confronto in millisecondi spezzerebbe
+// la serie proprio lì — in silenzio, e solo sui dispositivi con fuso europeo.
+function dayNumber(iso) {
+  return Math.round(
+    Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10))) / 86400000,
+  );
+}
+
+// Soglia oltre cui una serie di giorni lavorati merita di essere segnalata.
+// Sette giorni filati vuol dire una settimana senza un giorno di riposo.
+export const STREAK_LUNGA = 7;
+
+/**
+ * Tutte le serie di giorni lavorati CONSECUTIVI, dalla più lunga alla più
+ * corta. Si fermano ai confini dell'anno: una serie a cavallo di capodanno
+ * viene spezzata fra i due anni.
+ *
+ * @returns {Array<{start, end, days}>} date ISO comprese
+ */
+export function workStreaks(byDay) {
+  const dates = Array.from(byDay.keys()).sort();
+  const runs = [];
+  let start = null;
+  let prevIso = null;
+  let prevNum = null;
+  let len = 0;
+  for (const iso of dates) {
+    const n = dayNumber(iso);
+    if (prevNum !== null && n - prevNum === 1) {
+      len += 1;
+    } else {
+      if (start) runs.push({ start, end: prevIso, days: len });
+      start = iso;
+      len = 1;
+    }
+    prevIso = iso;
+    prevNum = n;
+  }
+  if (start) runs.push({ start, end: prevIso, days: len });
+  return runs.sort((a, b) => b.days - a.days || a.start.localeCompare(b.start));
+}
+
 /**
  * Totali dell'anno per la card di riepilogo: quello che un lavoratore a turni
  * guarda per primo, e che nessuna altra vista dell'app mette insieme.
  *
- * `longestStreak` conta i giorni lavorati CONSECUTIVI: è l'unico numero qui
- * che non si ricava a occhio dal calendario, e su lavoro a turni è quello che
- * salta di più (la legge prevede 24 ore di riposo consecutive ogni sette
- * giorni, di norma in coincidenza con la domenica). Si ferma ai confini
- * dell'anno: una serie a cavallo di capodanno viene spezzata.
+ * `longestStreak` è l'unico numero qui che non si ricava a occhio dal
+ * calendario, ed è quello che su lavoro a turni salta di più.
  */
 export function yearSummary(byDay) {
   let workedDays = 0;
@@ -159,27 +201,34 @@ export function yearSummary(byDay) {
     if (d.holiday) holidays += 1;
   }
 
-  // Serie più lunga di giorni consecutivi lavorati.
-  const dates = Array.from(byDay.keys()).sort();
-  let longestStreak = 0;
-  let longestStreakEnd = null;
-  let run = 0;
-  let prev = null;
-  for (const iso of dates) {
-    const d = parseDate(iso);
-    const consecutive = prev && (d - prev) === 86400000;
-    run = consecutive ? run + 1 : 1;
-    if (run > longestStreak) { longestStreak = run; longestStreakEnd = iso; }
-    prev = d;
-  }
+  const streaks = workStreaks(byDay);
+  const longest = streaks[0] || null;
 
   return {
     workedDays, totalMinutes,
     overtimeMinutes, straordinarioMinutes,
     ordinaryMinutes: Math.max(0, totalMinutes - overtimeMinutes - straordinarioMinutes),
     sundays, holidays,
-    longestStreak, longestStreakEnd,
+    streaks,
+    longestStreak: longest ? longest.days : 0,
+    longestStreakEnd: longest ? longest.end : null,
   };
+}
+
+/** Date ISO che stanno dentro una serie lunga almeno `min` giorni. */
+export function daysInLongStreaks(streaks, min = STREAK_LUNGA) {
+  const set = new Set();
+  for (const r of streaks) {
+    if (r.days < min) continue;
+    let n = dayNumber(r.start);
+    const end = dayNumber(r.end);
+    while (n <= end) {
+      const d = new Date(n * 86400000);
+      set.add(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`);
+      n += 1;
+    }
+  }
+  return set;
 }
 
 /**

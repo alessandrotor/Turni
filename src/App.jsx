@@ -204,6 +204,14 @@ export default function App() {
             payByShift={payByShift}
             onNavigate={setView}
             onOpenMonth={(y, m) => { setCurrentMonth(new Date(y, m, 1)); setView('calendar'); }}
+            // Dal giorno del calendarietto si va al Calendario sul mese che lo
+            // contiene: è la vista che ha davvero il dettaglio dei turni, e
+            // duplicarlo qui in un riquadro a parte vorrebbe dire mantenerne due.
+            onOpenDay={(iso) => {
+              const d = parseDate(iso);
+              setCurrentMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+              setView('calendar');
+            }}
           />
         )}
 

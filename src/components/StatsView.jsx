@@ -2,7 +2,10 @@ import { useMemo, useState } from 'react';
 import { MONTH_NAMES, parseDate } from '../utils/dates';
 import { hasAnyRate, formatCurrency } from '../utils/pay';
 import { computeAnnualGrossFromShifts, projectAnnualIncome, calcNetAnnual } from '../utils/net';
-import { monthlyBreakdown, dailyBreakdown, yearSummary, monthGrid } from '../utils/stats';
+import {
+  monthlyBreakdown, dailyBreakdown, yearSummary, monthGrid,
+  daysInLongStreaks, STREAK_LUNGA,
+} from '../utils/stats';
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
 import { ENABLE_NET_CALC } from '../config/features';
 
@@ -17,6 +20,13 @@ const fmtH = (mins) => {
 };
 
 const WEEKDAY_INITIALS = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
+
+// «3 giu» — per gli estremi di una serie, dove il mese serve ma l'anno no
+// (è già quello selezionato in cima alla pagina).
+const fmtDayMonth = (iso) => {
+  const d = parseDate(iso);
+  return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`;
+};
 
 // Da dove arriva la proiezione annua, per dirlo all'utente — stessa etichetta
 // che il pannello netto di Calendario usa per lo stesso valore.
@@ -48,7 +58,7 @@ function dayCategory(day) {
 // mette insieme. Le cifre economiche vengono dalle stesse funzioni che usa
 // Calendario — vedi `computeAnnualGrossFromShifts`/`projectAnnualIncome` in
 // utils/net.js — così le due pagine non possono divergere.
-export default function StatsView({ allShifts, settings, payByShift, onNavigate, onOpenMonth }) {
+export default function StatsView({ allShifts, settings, payByShift, onNavigate, onOpenMonth, onOpenDay }) {
   const yearsWithData = useMemo(() => {
     const set = new Set((allShifts || []).map(s => Number(s.date.slice(0, 4))));
     return Array.from(set).sort((a, b) => a - b);
@@ -80,6 +90,11 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
     [year, allShifts, settings, payByShift],
   );
   const summary = useMemo(() => yearSummary(byDay), [byDay]);
+  const longStreaks = useMemo(
+    () => summary.streaks.filter(r => r.days >= STREAK_LUNGA),
+    [summary],
+  );
+  const streakDays = useMemo(() => daysInLongStreaks(summary.streaks), [summary]);
   const minutesByMonth = useMemo(() => {
     const map = new Map(months.map(m => [m.monthIndex, m.totalMinutes]));
     return map;
@@ -175,18 +190,42 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
                 <span className="stats-fact-label">festivi</span>
               </div>
               <div className="stats-fact">
-                <span className="stats-fact-value">{summary.longestStreak}</span>
-                <span className="stats-fact-label">
-                  giorni di fila
-                  {summary.longestStreakEnd && (
-                    <>
-                      {' '}(fino al {parseDate(summary.longestStreakEnd).getDate()}
-                      {' '}{MONTH_NAMES[parseDate(summary.longestStreakEnd).getMonth()]})
-                    </>
-                  )}
+                <span className={`stats-fact-value ${summary.longestStreak >= STREAK_LUNGA ? 'stats-fact-value--str' : ''}`}>
+                  {summary.longestStreak}
                 </span>
+                <span className="stats-fact-label">giorni di fila (massimo)</span>
               </div>
             </div>
+
+            {longStreaks.length > 0 && (
+              <div className="stats-streaks">
+                <div className="stats-streaks-title">
+                  Serie di {STREAK_LUNGA} giorni o più senza riposo
+                </div>
+                <ul className="stats-streaks-list">
+                  {longStreaks.slice(0, 5).map(r => (
+                    <li key={r.start}>
+                      <button
+                        type="button"
+                        className="stats-streak-row"
+                        onClick={() => onOpenDay?.(r.start)}
+                        title={`Apri ${fmtDayMonth(r.start)} nel Calendario`}
+                      >
+                        <span className="stats-streak-days">{r.days} giorni</span>
+                        <span className="stats-streak-range">
+                          {fmtDayMonth(r.start)} – {fmtDayMonth(r.end)}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+                {longStreaks.length > 5 && (
+                  <p className="stats-streaks-more">
+                    e altre {longStreaks.length - 5} serie da {STREAK_LUNGA} giorni o più
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="stats-card">
@@ -218,13 +257,23 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
                         if (day.straordinarioMinutes > 0) parts.push(`straordinarie ${fmtH(day.straordinarioMinutes)}`);
                         if (day.holiday) parts.push('festivo');
                         else if (day.sunday) parts.push('domenica');
+                        if (streakDays.has(iso)) parts.push(`serie di ${STREAK_LUNGA}+ giorni`);
+                        // Solo i giorni CON turni sono bottoni: su un giorno
+                        // vuoto non c'è niente da aprire, e 365 bersagli inerti
+                        // per anno sarebbero solo rumore per chi naviga da
+                        // tastiera o con uno screen reader.
                         return (
-                          <span
-                            className="mini-day"
+                          <button
+                            type="button"
+                            className="mini-day mini-day--btn"
                             data-cat={dayCategory(day)}
                             data-level={dayLevel(day.totalMinutes)}
+                            data-holiday={day.holiday ? '1' : undefined}
+                            data-streak={streakDays.has(iso) ? '1' : undefined}
                             key={iso}
                             title={parts.join(' · ')}
+                            aria-label={parts.join(', ')}
+                            onClick={() => onOpenDay?.(iso)}
                           />
                         );
                       })}
@@ -238,6 +287,12 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
               <span className="stats-legend-item"><i className="mini-day" data-cat="ord" data-level="2" />Ordinarie</span>
               {hasSup && <span className="stats-legend-item"><i className="mini-day" data-cat="sup" data-level="2" />{tier1Label}</span>}
               {hasStr && <span className="stats-legend-item"><i className="mini-day" data-cat="str" data-level="2" />Straordinarie</span>}
+              {summary.holidays > 0 && (
+                <span className="stats-legend-item"><i className="mini-day" data-cat="ord" data-level="2" data-holiday="1" />Festivo</span>
+              )}
+              {longStreaks.length > 0 && (
+                <span className="stats-legend-item"><i className="mini-day" data-cat="ord" data-level="2" data-streak="1" />In serie di {STREAK_LUNGA}+ giorni</span>
+              )}
               <span className="stats-legend-item stats-legend-item--hint">tinta più intensa = più ore</span>
             </div>
           </div>
