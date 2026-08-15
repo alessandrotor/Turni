@@ -28,6 +28,15 @@ const fmtDayMonth = (iso) => {
   return `${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`;
 };
 
+// «dal 23 feb», ma «dall'8 giu»: in italiano l'articolo si elide davanti alle
+// due date che cominciano per vocale, otto e undici. Senza questo si legge
+// «dal 8 giugno», che è sbagliato.
+const conArticolo = (prep, iso) => {
+  const giorno = parseDate(iso).getDate();
+  const elide = giorno === 8 || giorno === 11;
+  return `${prep}${elide ? "l'" : ' '}${fmtDayMonth(iso)}`;
+};
+
 // Da dove arriva la proiezione annua, per dirlo all'utente — stessa etichetta
 // che il pannello netto di Calendario usa per lo stesso valore.
 const PROJECTION_LABEL = {
@@ -94,6 +103,8 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
     () => summary.streaks.filter(r => r.days >= STREAK_LUNGA),
     [summary],
   );
+  // `streaks` è già ordinata dalla più lunga: la prima è il record dell'anno.
+  const longest = summary.streaks[0] || null;
   const streakDays = useMemo(() => daysInLongStreaks(summary.streaks), [summary]);
   const minutesByMonth = useMemo(() => {
     const map = new Map(months.map(m => [m.monthIndex, m.totalMinutes]));
@@ -189,18 +200,32 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
                 <span className="stats-fact-value">{summary.holidays}</span>
                 <span className="stats-fact-label">festivi</span>
               </div>
-              <div className="stats-fact">
-                <span className={`stats-fact-value ${summary.longestStreak >= STREAK_LUNGA ? 'stats-fact-value--str' : ''}`}>
-                  {summary.longestStreak}
-                </span>
-                <span className="stats-fact-label">giorni di fila (massimo)</span>
-              </div>
             </div>
+          </div>
 
-            {longStreaks.length > 0 && (
-              <div className="stats-streaks">
+          <div className="stats-card">
+            <div className="stats-card-title">Giorni lavorati di fila</div>
+            <p className="stats-streaks-intro">
+              Quante volte hai lavorato più giorni <strong>consecutivi</strong>, senza
+              nemmeno una giornata di riposo in mezzo.
+            </p>
+
+            {summary.longestStreak > 0 && (
+              <p className="stats-streaks-lead">
+                Il periodo più lungo del {year} è stato di{' '}
+                <strong className={summary.longestStreak >= STREAK_LUNGA ? 'stats-streaks-lead--warn' : ''}>
+                  {summary.longestStreak} giorni di fila
+                </strong>
+                {longest && <>, {conArticolo('dal', longest.start)} {conArticolo('al', longest.end)}</>}.
+              </p>
+            )}
+
+            {longStreaks.length > 0 ? (
+              <>
                 <div className="stats-streaks-title">
-                  Serie di {STREAK_LUNGA} giorni o più senza riposo
+                  {longStreaks.length === 1
+                    ? `Un periodo da ${STREAK_LUNGA} giorni o più`
+                    : `${longStreaks.length} periodi da ${STREAK_LUNGA} giorni o più`}
                 </div>
                 <ul className="stats-streaks-list">
                   {longStreaks.slice(0, 5).map(r => (
@@ -209,11 +234,11 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
                         type="button"
                         className="stats-streak-row"
                         onClick={() => onOpenDay?.(r.start)}
-                        title={`Apri ${fmtDayMonth(r.start)} nel Calendario`}
+                        title={`Vai al ${fmtDayMonth(r.start)} nel Calendario`}
                       >
                         <span className="stats-streak-days">{r.days} giorni</span>
                         <span className="stats-streak-range">
-                          {fmtDayMonth(r.start)} – {fmtDayMonth(r.end)}
+                          {conArticolo('dal', r.start)} {conArticolo('al', r.end)}
                         </span>
                       </button>
                     </li>
@@ -221,10 +246,20 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
                 </ul>
                 {longStreaks.length > 5 && (
                   <p className="stats-streaks-more">
-                    e altre {longStreaks.length - 5} serie da {STREAK_LUNGA} giorni o più
+                    e altri {longStreaks.length - 5} periodi da {STREAK_LUNGA} giorni o più
                   </p>
                 )}
-              </div>
+                <p className="stats-streaks-note">
+                  {STREAK_LUNGA} giorni di fila vuol dire una settimana intera senza un
+                  giorno libero. Sul calendario qui sotto quei giorni portano una
+                  barretta scura.
+                </p>
+              </>
+            ) : (
+              <p className="stats-streaks-note">
+                Nessun periodo da {STREAK_LUNGA} giorni o più: hai sempre avuto almeno un
+                giorno di riposo entro la settimana.
+              </p>
             )}
           </div>
 
@@ -291,7 +326,7 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
                 <span className="stats-legend-item"><i className="mini-day" data-cat="ord" data-level="2" data-holiday="1" />Festivo</span>
               )}
               {longStreaks.length > 0 && (
-                <span className="stats-legend-item"><i className="mini-day" data-cat="ord" data-level="2" data-streak="1" />In serie di {STREAK_LUNGA}+ giorni</span>
+                <span className="stats-legend-item"><i className="mini-day" data-cat="ord" data-level="2" data-streak="1" />{STREAK_LUNGA}+ giorni di fila</span>
               )}
               <span className="stats-legend-item stats-legend-item--hint">tinta più intensa = più ore</span>
             </div>

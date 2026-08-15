@@ -55,6 +55,10 @@ export default function CalendarView({
   annualGross,
   annualExtras = 0,
   onNavigate,
+  // Giorno da mettere in evidenza arrivando da un'altra pagina (il
+  // calendarietto di Statistiche): la cella si illumina e ci si scorre sopra,
+  // altrimenti si atterra sul mese e tocca ricercare a mano il giorno tappato.
+  focusDate = null,
 }) {
   const [importParsed, setImportParsed] = useState(null);
   const [importLoading, setImportLoading] = useState(false);
@@ -77,6 +81,15 @@ export default function CalendarView({
   const [exportPeriod, setExportPeriod] = useState('calendar');
   const fileInputRef = useRef(null);
   const nameModalRef = useRef(null);
+  const focusCellRef = useRef(null);
+
+  // Porta sotto gli occhi il giorno arrivato da un'altra pagina. `block:
+  // 'center'` e non 'nearest': su un mese lungo la cella può essere appena
+  // fuori dallo schermo, e uno scroll minimo la lascerebbe sul bordo.
+  useEffect(() => {
+    if (!focusDate || !focusCellRef.current) return;
+    focusCellRef.current.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [focusDate]);
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
@@ -426,10 +439,12 @@ export default function CalendarView({
           return (
             <div
               key={dateStr}
+              ref={dateStr === focusDate ? focusCellRef : null}
               className={[
                 'cal-cell',
                 today ? 'cal-cell--today' : '',
                 weekend ? 'cal-cell--weekend' : '',
+                dateStr === focusDate ? 'cal-cell--focus' : '',
               ].join(' ')}
               onClick={e => { if (e.target === e.currentTarget) onAddShift(dateStr); }}
             >

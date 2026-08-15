@@ -61,6 +61,13 @@ export default function App() {
   const [view, setView] = useState('calendar');
   const [currentMonth, setCurrentMonth] = useState(() => getMonthStart(new Date()));
   const [modal, setModal] = useState(null); // null | {type:'add',date} | {type:'edit',shift}
+  // Giorno su cui atterrare arrivando dal calendarietto di Statistiche.
+  const [focusDate, setFocusDate] = useState(null);
+
+  // Sfogliare i mesi spegne l'evidenziazione: il giorno tappato non è più
+  // quello che si sta guardando, e una cella accesa in un altro mese sarebbe
+  // solo un residuo da capire.
+  const goToMonth = useCallback((m) => { setFocusDate(null); setCurrentMonth(m); }, []);
 
   // I settings salvati da una versione precedente non hanno i campi aggiunti
   // dopo: senza questo merge resterebbero `undefined` e alcune funzioni si
@@ -181,7 +188,8 @@ export default function App() {
         {view === 'calendar' && (
           <CalendarView
             currentMonth={currentMonth}
-            onMonthChange={setCurrentMonth}
+            onMonthChange={goToMonth}
+            focusDate={focusDate}
             shifts={monthShifts}
             payrollShifts={payrollShifts}
             onAddShift={(date) => setModal({ type: 'add', date })}
@@ -203,13 +211,15 @@ export default function App() {
             settings={settings}
             payByShift={payByShift}
             onNavigate={setView}
-            onOpenMonth={(y, m) => { setCurrentMonth(new Date(y, m, 1)); setView('calendar'); }}
-            // Dal giorno del calendarietto si va al Calendario sul mese che lo
-            // contiene: è la vista che ha davvero il dettaglio dei turni, e
-            // duplicarlo qui in un riquadro a parte vorrebbe dire mantenerne due.
+            onOpenMonth={(y, m) => { setFocusDate(null); setCurrentMonth(new Date(y, m, 1)); setView('calendar'); }}
+            // Dal giorno del calendarietto si va al Calendario ESATTAMENTE su
+            // quel giorno: la cella si illumina e ci si scorre sopra. Atterrare
+            // sul mese e basta lasciava il lavoro a metà — toccava ricercare a
+            // mano il giorno appena tappato.
             onOpenDay={(iso) => {
               const d = parseDate(iso);
               setCurrentMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+              setFocusDate(iso);
               setView('calendar');
             }}
           />
