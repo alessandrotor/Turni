@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { formatCurrency, parseNum } from '../utils/pay';
 import { CCNL_LIST, getCcnl } from '../utils/ccnl';
+import { FASCE_DIPENDENTI, FASCIA_DEFAULT, contributiDiLegge } from '../utils/contributi-legge';
 import { isTelemetryEnabled, setTelemetryEnabled } from '../services/telemetry';
 import { esportaBackup, importaBackup, contaTurniSalvati } from '../services/backup';
 import { elencoOrariDaCorreggere, applicaCorrezioneOrari } from '../services/correzioni';
@@ -44,6 +45,7 @@ export default function Settings({ settings, onSave }) {
     hasQuattordicesima: !!settings.hasQuattordicesima,
     hireDate: settings.hireDate || '',
     ccnl: settings.ccnl || '',
+    aziendaDipendenti: settings.aziendaDipendenti || FASCIA_DEFAULT,
     tfrInBusta: !!settings.tfrInBusta,
     tfrTaxRate: settings.tfrTaxRate === '' || settings.tfrTaxRate == null ? '' : toInput(settings.tfrTaxRate),
     previousRates: (Array.isArray(settings.previousRates) ? settings.previousRates : []).map(c => ({
@@ -267,6 +269,7 @@ export default function Settings({ settings, onSave }) {
       hasQuattordicesima: form.hasQuattordicesima,
       hireDate: form.hireDate,
       ccnl: form.ccnl,
+      aziendaDipendenti: form.aziendaDipendenti,
       tfrInBusta: form.tfrInBusta,
       tfrTaxRate: form.tfrTaxRate === '' ? '' : parseNum(form.tfrTaxRate),
       previousRates,
@@ -292,6 +295,15 @@ export default function Settings({ settings, onSave }) {
   };
 
   const ccnlPreset = getCcnl(form.ccnl);
+  // Le aliquote degli ammortizzatori non stanno nel CCNL: si ricavano dalla
+  // fascia dimensionale scelta qui sopra, così l'elenco mostra quelle vere.
+  const contributiLegge = contributiDiLegge(
+    { aziendaDipendenti: form.aziendaDipendenti },
+    ccnlPreset.ammortizzatori,
+  );
+  // 0,2666… non va mostrato per intero: due decimali bastano, e gli interi
+  // restano interi (0,30 e non 0,3000).
+  const fmtPct = (pct) => String(Number(Number(pct).toFixed(2))).replace('.', ',');
   // Digitando nel campo CCNL: aggiorna il testo, apri la tendina; se il campo è
   // vuoto azzera il contratto selezionato.
   const onCcnlQuery = (e) => {
@@ -869,16 +881,43 @@ export default function Settings({ settings, onSave }) {
             )}
           </div>
 
-          {ccnlPreset.contributiExtra.length > 0 || ccnlPreset.enteBilaterale ? (
+          {ccnlPreset.ammortizzatori && (
+            <div className="form-group">
+              <label className="form-label" htmlFor="azienda-dipendenti">Dipendenti dell'azienda</label>
+              <select
+                id="azienda-dipendenti"
+                className="form-input"
+                value={form.aziendaDipendenti}
+                onChange={set('aziendaDipendenti')}
+              >
+                {FASCE_DIPENDENTI.map(f => (
+                  <option key={f.id} value={f.id}>{f.label}</option>
+                ))}
+              </select>
+              <p className="form-hint">
+                Serve davvero: FIS e CIGS sono contributi di <strong>legge</strong>, non del
+                contratto, e cambiano a scaglioni. Il FIS passa da 0,50% a 0,80% oltre i 5
+                dipendenti, e la CIGS si paga <strong>solo oltre i 15</strong>. Lo stesso CCNL,
+                in un'azienda piccola, trattiene meno.
+              </p>
+            </div>
+          )}
+
+          {contributiLegge.length > 0 || ccnlPreset.contributiExtra.length > 0 || ccnlPreset.enteBilaterale ? (
             <>
               <p className="form-hint">Trattenute aggiuntive applicate alla stima del netto:</p>
               <ul className="settings-list">
+                {contributiLegge.map(c => (
+                  <li key={c.label}>
+                    {c.label} — {fmtPct(c.pct)}% del lordo <em>(di legge, per fascia dimensionale)</em>
+                  </li>
+                ))}
                 {ccnlPreset.contributiExtra.map(c => (
-                  <li key={c.label}>{c.label} — {String(c.pct).replace('.', ',')}% del lordo</li>
+                  <li key={c.label}>{c.label} — {fmtPct(c.pct)}% del lordo</li>
                 ))}
                 {ccnlPreset.enteBilaterale && (
                   <li>
-                    {ccnlPreset.enteBilaterale.label} — {String(ccnlPreset.enteBilaterale.pct).replace('.', ',')}%
+                    {ccnlPreset.enteBilaterale.label} — {fmtPct(ccnlPreset.enteBilaterale.pct)}%
                     della retribuzione contrattuale
                   </li>
                 )}

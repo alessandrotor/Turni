@@ -39,6 +39,10 @@ const DEFAULT_SETTINGS = {
   hasQuattordicesima: false,
   hireDate: '',              // data di assunzione: serve al rateo di 13ª/14ª
   ccnl: '',                  // preset contrattuale (contributi minori, divisore orario)
+  // Quanti dipendenti ha l'azienda: NON è un vezzo statistico, decide le
+  // aliquote FIS e CIGS, che sono di legge e a scaglioni (5 e 15 dipendenti).
+  // Default 'oltre15' = comportamento identico a prima di questa impostazione.
+  aziendaDipendenti: 'oltre15',
   // Nome del lavoratore sul foglio turni (per import AI da immagine collettiva)
   workerName: '',
   // Voci fisse mensili (indennità, superminimo...) e bonus per singolo mese
