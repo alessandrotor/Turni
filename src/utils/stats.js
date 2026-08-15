@@ -27,8 +27,12 @@ import { calcNetMonthly, monthlyBaseGross, extraMonthAccrual, EXTRA_MONTHS } fro
 //   stesso mese.
 // @param {boolean} enableNetCalc gate del motore fiscale (beta)
 // @returns {Array<{monthIndex, shiftsCount, totalMinutes, ordinaryMinutes,
-//   overtimeMinutes, gross, net}>} un elemento per ogni mese CON ALMENO UN
-//   TURNO, in ordine cronologico — i mesi vuoti non compaiono.
+//   overtimeMinutes, straordinarioMinutes, gross, net}>} un elemento per ogni
+//   mese CON ALMENO UN TURNO, in ordine cronologico — i mesi vuoti non
+//   compaiono. `overtimeMinutes` sono le supplementari (fra soglia-contratto
+//   e soglia-full-time, o l'unica fascia per chi lavora a chiamata),
+//   `straordinarioMinutes` quelle oltre il full-time — stessa distinzione a
+//   due soglie di `computePayByShift` in pay.js, non una fascia unica.
 export function monthlyBreakdown(year, allShifts, settings = {}, payByShift = null, annualGrossRef = 0, enableNetCalc = true) {
   const shiftsByMonth = new Map();
   for (const s of allShifts || []) {
@@ -50,9 +54,16 @@ export function monthlyBreakdown(year, allShifts, settings = {}, payByShift = nu
     if (!monthShifts || monthShifts.length === 0) continue;
 
     const totalMinutes = monthShifts.reduce((sum, s) => sum + calcShiftMinutes(s), 0);
+    // computePayByShift assegna supplementari/straordinari a ogni turno
+    // indipendentemente dalla paga oraria (sono soglie sulle ORE, non
+    // sull'importo): ma calcTotalPay si rifiuta di aggregarle senza una paga
+    // configurata (`hasAnyRate`), quindi senza paga oraria la ripartizione
+    // qui non è disponibile — stesso limite del riepilogo di Calendario, non
+    // uno nuovo di questa pagina.
     const pay = canPay ? calcTotalPay(monthShifts, settings, allShifts, payByShift) : null;
     const overtimeMinutes = pay ? pay.overtimeMinutes : 0;
-    const ordinaryMinutes = Math.max(0, totalMinutes - overtimeMinutes);
+    const straordinarioMinutes = pay ? pay.straordinarioMinutes : 0;
+    const ordinaryMinutes = Math.max(0, totalMinutes - overtimeMinutes - straordinarioMinutes);
 
     // 13ª/14ª maturata in questo mese: stesso rateo del pannello mensile di
     // Calendario (`useMonthlyNet.js`), non un calcolo diverso.
@@ -77,7 +88,7 @@ export function monthlyBreakdown(year, allShifts, settings = {}, payByShift = nu
     rows.push({
       monthIndex: m,
       shiftsCount: monthShifts.length,
-      totalMinutes, ordinaryMinutes, overtimeMinutes,
+      totalMinutes, ordinaryMinutes, overtimeMinutes, straordinarioMinutes,
       gross, net,
     });
   }

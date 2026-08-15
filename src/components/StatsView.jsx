@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { MONTH_NAMES } from '../utils/dates';
 import { hasAnyRate, formatCurrency } from '../utils/pay';
-import { isMensilizzato } from '../utils/ccnl';
 import { computeAnnualGrossFromShifts, projectAnnualIncome, calcNetAnnual } from '../utils/net';
 import { monthlyBreakdown } from '../utils/stats';
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
@@ -61,16 +60,12 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate 
 
   const bonus = useMemo(() => calcBonusMargin(projection.value, settings), [projection, settings]);
 
-  const otLabel = !settings.onCall && isMensilizzato(settings) ? 'Supplementari' : 'Straordinari';
-
-  const grossNetData = useMemo(() => months.map(m => {
-    const label = MONTH_NAMES[m.monthIndex];
-    const bars = [{ segments: [{ value: m.gross, color: 'var(--c-primary)', title: `Lordo ${label}: ${fmt0(m.gross)}` }] }];
-    if (netCalcOn) {
-      bars.push({ segments: [{ value: m.net, color: 'var(--c-success)', title: `Netto ${label}: ${fmt0(m.net)}` }] });
-    }
-    return { label, bars };
-  }), [months, netCalcOn]);
+  // Stessa etichetta della fascia 1 che usa il riepilogo di Calendario: chi
+  // lavora a chiamata non ha una soglia part-time/full-time da distinguere,
+  // resta un'unica fascia chiamata straordinario.
+  const tier1Label = settings.onCall ? 'Straordinarie' : 'Supplementari';
+  const anyOvertime = months.some(m => m.overtimeMinutes > 0);
+  const anyStraordinario = months.some(m => m.straordinarioMinutes > 0);
 
   const hoursData = useMemo(() => months.map(m => {
     const label = MONTH_NAMES[m.monthIndex];
@@ -80,11 +75,17 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate 
     if (m.overtimeMinutes > 0) {
       segments.push({
         value: m.overtimeMinutes / 60, color: 'var(--c-warning)',
-        title: `${otLabel} ${label}: ${fmtHours(m.overtimeMinutes / 60)}`,
+        title: `${tier1Label} ${label}: ${fmtHours(m.overtimeMinutes / 60)}`,
+      });
+    }
+    if (m.straordinarioMinutes > 0) {
+      segments.push({
+        value: m.straordinarioMinutes / 60, color: 'var(--c-danger)',
+        title: `Straordinarie ${label}: ${fmtHours(m.straordinarioMinutes / 60)}`,
       });
     }
     return { label, bars: [{ segments }] };
-  }), [months, otLabel]);
+  }), [months, tier1Label]);
 
   if (yearsWithData.length === 0) {
     return (
@@ -158,22 +159,16 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate 
           </div>
 
           <div className="stats-card">
-            <div className="stats-card-title">Retribuzione mensile</div>
-            <Bars data={grossNetData} formatValue={fmt0} />
-            <div className="stats-legend">
-              <span className="stats-legend-item"><i style={{ background: 'var(--c-primary)' }} />Lordo</span>
-              {netCalcOn && (
-                <span className="stats-legend-item"><i style={{ background: 'var(--c-success)' }} />Netto</span>
-              )}
-            </div>
-          </div>
-
-          <div className="stats-card">
             <div className="stats-card-title">Ore lavorate al mese</div>
             <Bars data={hoursData} formatValue={fmtHours} />
             <div className="stats-legend">
               <span className="stats-legend-item"><i style={{ background: 'var(--c-primary)' }} />Ordinarie</span>
-              <span className="stats-legend-item"><i style={{ background: 'var(--c-warning)' }} />{otLabel}</span>
+              {anyOvertime && (
+                <span className="stats-legend-item"><i style={{ background: 'var(--c-warning)' }} />{tier1Label}</span>
+              )}
+              {anyStraordinario && (
+                <span className="stats-legend-item"><i style={{ background: 'var(--c-danger)' }} />Straordinarie</span>
+              )}
             </div>
           </div>
 
