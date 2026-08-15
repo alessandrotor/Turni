@@ -13,10 +13,16 @@
 // fuso il riscontro non proverebbe niente.
 
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { workStreaks, daysInLongStreaks, STREAK_LUNGA } from '../src/utils/stats.js';
 
 if (process.env.TZ !== 'Europe/Rome') {
-  const r = spawnSync(process.execPath, [new URL(import.meta.url).pathname], {
+  // `fileURLToPath` e non `new URL(...).pathname`: su Windows quest'ultimo
+  // restituisce «/D:/…» con lo slash iniziale, che Node risolve come percorso
+  // relativo al disco corrente («D:\D:\…»). Lo script non partiva affatto, e
+  // proprio qui non ci si può accorgere di nulla: il riscontro che protegge dal
+  // difetto del cambio d'ora non veniva mai eseguito.
+  const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], {
     stdio: 'inherit',
     env: { ...process.env, TZ: 'Europe/Rome' },
   });
