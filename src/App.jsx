@@ -203,6 +203,7 @@ export default function App() {
             settings={settings}
             payByShift={payByShift}
             onNavigate={setView}
+            onOpenMonth={(y, m) => { setCurrentMonth(new Date(y, m, 1)); setView('calendar'); }}
           />
         )}
 
