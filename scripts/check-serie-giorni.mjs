@@ -33,9 +33,19 @@ function check(label, actual, expected) {
   console.log(`${ok ? '  ok  ' : '  XX  '} ${label.padEnd(46)} ${a}${ok ? '' : `  atteso ${e}`}`);
 }
 
-// Un giorno lavorato vale l'altro: qui contano solo le date.
+// Un giorno lavorato vale l'altro: qui contano solo le date. La forma è quella
+// che produce `dailyBreakdown`, campi delle assenze compresi — un fixture più
+// povero del dato vero fa passare riscontri che in app fallirebbero.
 const giorni = (...date) => new Map(date.map(d => [d, {
   totalMinutes: 480, overtimeMinutes: 0, straordinarioMinutes: 0,
+  assenzaMinutes: 0, assenzaTipo: null,
+  shiftsCount: 1, sunday: false, holiday: false,
+}]));
+
+// Giornata di sola assenza: stesse ore, ma nessuna lavorata.
+const assenze = (...date) => new Map(date.map(d => [d, {
+  totalMinutes: 240, overtimeMinutes: 0, straordinarioMinutes: 0,
+  assenzaMinutes: 240, assenzaTipo: 'ferie',
   shiftsCount: 1, sunday: false, holiday: false,
 }]));
 
@@ -93,6 +103,24 @@ check('date fuori ordine',
 check('serie a cavallo di capodanno (dentro lo stesso insieme)',
   workStreaks(giorni('2025-12-30', '2025-12-31', '2026-01-01')),
   [{ start: '2025-12-30', end: '2026-01-01', days: 3 }]);
+
+console.log('\nLe assenze spezzano la serie\n');
+
+// Un giorno di ferie è riposo dal lavoro: interrompe i giorni consecutivi,
+// altrimenti una settimana di ferie in mezzo a due mesi pieni risulterebbe
+// come un'unica lunghissima serie senza riposo — il contrario del vero.
+check('ferie in mezzo: due serie, non una',
+  workStreaks(new Map([
+    ...giorni('2026-09-01', '2026-09-02'),
+    ...assenze('2026-09-03'),
+    ...giorni('2026-09-04', '2026-09-05'),
+  ])),
+  [{ start: '2026-09-01', end: '2026-09-02', days: 2 },
+   { start: '2026-09-04', end: '2026-09-05', days: 2 }]);
+
+check('solo assenze: nessuna serie',
+  workStreaks(assenze('2026-09-07', '2026-09-08', '2026-09-09')),
+  []);
 
 console.log('\nGiorni dentro una serie lunga\n');
 

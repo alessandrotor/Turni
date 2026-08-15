@@ -5,6 +5,7 @@ import {
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth, formatPayrollRange,
 } from '../utils/dates';
 import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
+import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
 import { EXTRA_MONTHS } from '../utils/net';
 import { ENABLE_DEBUG } from '../config/features';
@@ -132,6 +133,27 @@ export default function CalendarView({
     [counted, settings, allShifts, payByShift],
   );
 
+  // Assenze del mese, contate dai turni e non da `pay`: senza una paga oraria
+  // impostata `calcTotalPay` restituisce null, ma le ore di ferie e malattia
+  // esistono lo stesso e vanno mostrate.
+  const assenze = useMemo(() => {
+    const per = new Map();
+    let minuti = 0;
+    let giorni = 0;
+    for (const s of counted) {
+      const t = tipoTurno(s);
+      if (t === TIPO.LAVORO) continue;
+      const m = calcShiftMinutes(s);
+      per.set(t, (per.get(t) || 0) + m);
+      minuti += m;
+      giorni += 1;
+    }
+    const dettaglio = [...per.entries()]
+      .map(([t, m]) => `${formatMinutesShort(m)} ${ETICHETTA[t].toLowerCase()}`)
+      .join(' · ');
+    return { minuti, giorni, dettaglio };
+  }, [counted]);
+
   // Competenze del mese nelle stesse voci del cedolino, così che le due colonne
   // si possano affiancare davvero. Il punto delicato è il lavoro oltre soglia: la
   // busta scrive quelle ore INTERE al 130% (6,50 h → 77,89 €), non il solo +30%
@@ -150,9 +172,17 @@ export default function CalendarView({
     const tier1Label = settings.onCall ? 'Straordinario' : 'Supplementare';
     return [
       {
+        // Ferie e permessi restano DENTRO questa riga: è così che li scrive la
+        // busta (a luglio 2026 le ore «Retribuzione» sono 103,20 anche con
+        // ferie godute nel periodo, senza una voce a parte). La malattia no:
+        // in busta è una voce sua, quindi si sottrae qui e compare sotto.
         label: 'Retribuzione',
-        value: pay.base - pay.overtimeBase - pay.straordinarioBase,
-        minutes: totalMins - pay.overtimeMinutes - pay.straordinarioMinutes,
+        value: pay.base - pay.overtimeBase - pay.straordinarioBase - pay.malattiaBase,
+        minutes: totalMins - pay.overtimeMinutes - pay.straordinarioMinutes - pay.malattiaMinutes,
+        nota: (pay.ferieMinutes > 0 || pay.permessoMinutes > 0) ? [
+          pay.ferieMinutes > 0 ? `${formatMinutesShort(pay.ferieMinutes)} di ferie` : '',
+          pay.permessoMinutes > 0 ? `${formatMinutesShort(pay.permessoMinutes)} di permesso` : '',
+        ].filter(Boolean).join(' · ') : null,
       },
       {
         label: `${tier1Label} +${fmtPct(otPct)}%`, tag: 'overtime',
@@ -162,10 +192,14 @@ export default function CalendarView({
         label: `Straordinario +${fmtPct(extraPct)}%`, tag: 'overtime',
         value: pay.straordinarioBase + pay.surchargeStraordinario, minutes: pay.straordinarioMinutes,
       },
+      { label: 'Malattia', value: pay.malattiaBase, minutes: pay.malattiaMinutes },
       { label: 'Magg. domenicali', value: pay.surchargeSunday },
       { label: 'Magg. festive', value: pay.surchargeHoliday },
       { label: 'Magg. manuali', value: pay.surchargeManual },
-    ].filter(v => v.value >= 0.005);
+      // La malattia può valere zero (carenza non pagata) ma le sue ORE esistono
+      // e vanno mostrate: senza questa eccezione la riga sparirebbe proprio nei
+      // giorni in cui serve di più capire dove sono finite le ore.
+    ].filter(v => v.value >= 0.005 || v.minutes > 0);
   }, [pay, settings, totalMins]);
 
   // Bonus busta paga: quanto manca alla soglia (reddito annuo dai turni)
@@ -459,18 +493,29 @@ export default function CalendarView({
                 </span>
               </button>
               <div className="cal-shifts">
-                {dayShifts.map(s => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    className="cal-shift-pill"
-                    onClick={e => { e.stopPropagation(); onEditShift(s); }}
-                    title={`${s.startTime}–${s.endTime}${s.note ? ` | ${s.note}` : ''}`}
-                    aria-label={`Modifica turno ${s.startTime}–${s.endTime}`}
-                  >
-                    {s.startTime}
-                  </button>
-                ))}
+                {dayShifts.map(s => {
+                  const t = tipoTurno(s);
+                  // Un'assenza non ha un orario da mostrare: al suo posto va
+                  // l'icona del tipo, che è l'informazione vera di quel giorno.
+                  const assente = t !== TIPO.LAVORO;
+                  const ore = calcShiftMinutes(s) / 60;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      className={`cal-shift-pill${assente ? ` cal-shift-pill--${t}` : ''}`}
+                      onClick={e => { e.stopPropagation(); onEditShift(s); }}
+                      title={assente
+                        ? `${ETICHETTA[t]} · ${ore} h${s.note ? ` | ${s.note}` : ''}`
+                        : `${s.startTime}–${s.endTime}${s.note ? ` | ${s.note}` : ''}`}
+                      aria-label={assente
+                        ? `Modifica ${ETICHETTA[t].toLowerCase()} del ${dayNum}/${month + 1}`
+                        : `Modifica turno ${s.startTime}–${s.endTime}`}
+                    >
+                      {assente ? ICONA[t] : s.startTime}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           );
@@ -482,11 +527,26 @@ export default function CalendarView({
         <div className="cal-summary-row">
           <div className="summary-item">
             <span className="summary-label">Turni</span>
-            <span className="summary-value">{counted.length}</span>
+            <span className="summary-value">{counted.length - assenze.giorni}</span>
+            {assenze.giorni > 0 && (
+              <span className="summary-sublabel">
+                + {assenze.giorni} giorn{assenze.giorni === 1 ? 'o' : 'i'} di assenza
+              </span>
+            )}
           </div>
           <div className="summary-item">
+            {/* «Ore lavorate» deve contare SOLO il lavoro: sommarci ferie e
+                malattia renderebbe falsa proprio l'etichetta. Le ore di
+                assenza contano eccome per la busta, e stanno nella riga
+                sotto — visibili, ma non spacciate per lavoro. */}
             <span className="summary-label">Ore lavorate</span>
-            <span className="summary-value">{formatMinutesShort(totalMins)}</span>
+            <span className="summary-value">{formatMinutesShort(totalMins - assenze.minuti)}</span>
+            {assenze.minuti > 0 && (
+              <span className="summary-sublabel">
+                + {formatMinutesShort(assenze.minuti)} di assenza ({assenze.dettaglio})
+                {' '}= {formatMinutesShort(totalMins)} contate in busta
+              </span>
+            )}
             {payrollRange && (
               <span className="summary-sublabel">
                 mese di paga: settimane intere, {payrollRange}
@@ -513,6 +573,7 @@ export default function CalendarView({
                   ) : v.label}
                   {v.minutes > 0 && ` (${formatMinutesShort(v.minutes)})`}
                   {' '}{formatCurrency(v.value)}
+                  {v.nota && <em className="summary-sublabel-nota"> di cui {v.nota}</em>}
                 </span>
               ))}
               {pay.shiftsWithoutRate > 0 && (

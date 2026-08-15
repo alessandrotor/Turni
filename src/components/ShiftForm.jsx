@@ -1,6 +1,9 @@
 import { useState, useRef } from 'react';
 import { formatDate, minutesDiff, formatMinutes } from '../utils/dates';
 import useModalDismiss from '../hooks/useModalDismiss';
+import { TIPO, ETICHETTA, ICONA, tipoTurno, isAssenza, minutiGiornoAssenza } from '../utils/assenze';
+
+const TIPI = [TIPO.LAVORO, TIPO.FERIE, TIPO.PERMESSO, TIPO.MALATTIA];
 
 const BREAK_PRESETS = [
   { label: 'Nessuna', value: 0 },
@@ -18,33 +21,40 @@ const SURCHARGE_PRESETS = [
   { label: '50%', value: 50 },
 ];
 
-function getInitialState(modal) {
+function getInitialState(modal, settings) {
+  const oreAssenza = minutiGiornoAssenza(settings) / 60;
   if (modal.type === 'edit') {
     const s = modal.shift;
     return {
+      kind: tipoTurno(s),
       date: s.date,
-      startTime: s.startTime,
-      endTime: s.endTime,
+      startTime: s.startTime ?? '08:00',
+      endTime: s.endTime ?? '16:00',
       breakMinutes: s.breakMinutes ?? 0,
       surchargePct: s.surchargePct ?? 0,
+      // Un'assenza salvata porta la propria durata; un turno di lavoro no, e
+      // se lo si converte in assenza parte dalle ore da contratto.
+      absenceHours: s.durationMinutes != null ? String(s.durationMinutes / 60) : String(oreAssenza),
       note: s.note ?? '',
     };
   }
   return {
+    kind: TIPO.LAVORO,
     date: modal.date ?? formatDate(new Date()),
     startTime: '08:00',
     endTime: '16:00',
     breakMinutes: 0,
     surchargePct: 0,
+    absenceHours: String(oreAssenza),
     note: '',
   };
 }
 
-export default function ShiftForm({ modal, onSave, onDelete, onClose }) {
+export default function ShiftForm({ modal, settings = {}, onSave, onDelete, onClose }) {
   // Stato iniziale calcolato una volta sola e condiviso dai due useState:
   // ricostruirlo per il secondo era lavoro sprecato a ogni mount del modale.
   const initial = useRef(null);
-  if (initial.current === null) initial.current = getInitialState(modal);
+  if (initial.current === null) initial.current = getInitialState(modal, settings);
 
   const [form, setForm] = useState(initial.current);
   const [customBreak, setCustomBreak] = useState(false);
@@ -56,6 +66,8 @@ export default function ShiftForm({ modal, onSave, onDelete, onClose }) {
   useModalDismiss(dialogRef, onClose);
 
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }));
+
+  const assenzaSelezionata = isAssenza({ type: form.kind });
 
   // minutesDiff ritorna 0 su orari non validi (campo svuotato), quindi qui non
   // serve più intercettare nulla: la preview non può mostrare NaN.
@@ -73,29 +85,68 @@ export default function ShiftForm({ modal, onSave, onDelete, onClose }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const shift = {
+    const base = {
       ...(modal.type === 'edit' ? { id: modal.shift.id } : {}),
       date: form.date,
-      startTime: form.startTime,
-      endTime: form.endTime,
-      breakMinutes: Number(form.breakMinutes) || 0,
-      surchargePct: Number(form.surchargePct) || 0,
       note: form.note.trim(),
     };
+    // Un'assenza non ha orari né pausa né maggiorazione: porta solo una durata.
+    // Salvare anche i campi del lavoro lascerebbe in giro dati che non
+    // significano niente e che il motore dovrebbe imparare a ignorare.
+    const shift = assenzaSelezionata
+      ? {
+          ...base,
+          type: form.kind,
+          durationMinutes: Math.max(0, Math.round((Number(form.absenceHours) || 0) * 60)),
+        }
+      : {
+          ...base,
+          startTime: form.startTime,
+          endTime: form.endTime,
+          breakMinutes: Number(form.breakMinutes) || 0,
+          surchargePct: Number(form.surchargePct) || 0,
+        };
     onSave(shift);
   };
 
   const isEdit = modal.type === 'edit';
+  // «Nuovo turno» su una giornata di ferie sarebbe fuorviante: titolo e
+  // pulsanti seguono il tipo scelto. Nomi scritti per esteso invece che
+  // costruiti a pezzi, altrimenti esce «Nuovo malattia».
+  const NOME = {
+    [TIPO.LAVORO]: 'turno',
+    [TIPO.FERIE]: 'giorno di ferie',
+    [TIPO.PERMESSO]: 'permesso',
+    [TIPO.MALATTIA]: 'giorno di malattia',
+  };
+  const nomeTipo = NOME[form.kind];
+  const titolo = `${isEdit ? 'Modifica' : 'Nuovo'} ${nomeTipo}`;
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div ref={dialogRef} className="modal" role="dialog" aria-modal="true" aria-label={isEdit ? 'Modifica turno' : 'Nuovo turno'}>
+      <div ref={dialogRef} className="modal" role="dialog" aria-modal="true" aria-label={titolo}>
         <div className="modal-header">
-          <h2 className="modal-title">{isEdit ? 'Modifica turno' : 'Nuovo turno'}</h2>
+          <h2 className="modal-title">{titolo}</h2>
           <button className="modal-close" onClick={onClose} aria-label="Chiudi">✕</button>
         </div>
 
         <form onSubmit={handleSubmit} className="modal-form">
+          <div className="form-group">
+            <label className="form-label">Giornata</label>
+            <div className="break-presets">
+              {TIPI.map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  className={`break-preset-btn ${form.kind === t ? 'active' : ''}`}
+                  onClick={() => setForm(f => ({ ...f, kind: t }))}
+                >
+                  {ICONA[t] && `${ICONA[t]} `}{ETICHETTA[t]}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="form-group">
             <label className="form-label" htmlFor="shift-date">Data</label>
             <input
@@ -108,6 +159,35 @@ export default function ShiftForm({ modal, onSave, onDelete, onClose }) {
             />
           </div>
 
+          {assenzaSelezionata ? (
+            <div className="form-group">
+              <label className="form-label" htmlFor="absence-hours">Ore contate per questa giornata</label>
+              <input
+                id="absence-hours"
+                type="number"
+                className="form-input"
+                min="0"
+                max="24"
+                step="0.5"
+                value={form.absenceHours}
+                onChange={set('absenceHours')}
+                required
+              />
+              <p className="form-hint">
+                Proposte dal contratto ({minutiGiornoAssenza(settings) / 60} h al giorno).
+                In busta un giorno di assenza vale un numero fisso di ore, non
+                l'orario che avresti fatto: se il tuo cedolino ne conta altre,
+                cambiale qui o in Impostazioni.
+                {form.kind === TIPO.MALATTIA && (
+                  <>
+                    {' '}I primi giorni di ogni malattia possono essere pagati
+                    diversamente: la regola si imposta in Impostazioni.
+                  </>
+                )}
+              </p>
+            </div>
+          ) : (
+          <>
           <div className="form-row">
             <div className="form-group">
               <label className="form-label" htmlFor="shift-start">Inizio</label>
@@ -219,6 +299,8 @@ export default function ShiftForm({ modal, onSave, onDelete, onClose }) {
               Impostazioni si applica automaticamente e si somma a questa.
             </p>
           </div>
+          </>
+          )}
 
           <div className="form-group">
             <label className="form-label" htmlFor="shift-note">Note (opzionale)</label>
@@ -238,7 +320,7 @@ export default function ShiftForm({ modal, onSave, onDelete, onClose }) {
               Annulla
             </button>
             <button type="submit" className="btn btn-primary">
-              {isEdit ? 'Salva modifiche' : 'Aggiungi turno'}
+              {isEdit ? 'Salva modifiche' : `Aggiungi ${nomeTipo}`}
             </button>
           </div>
 
@@ -248,7 +330,7 @@ export default function ShiftForm({ modal, onSave, onDelete, onClose }) {
               className="btn btn-danger-ghost btn--full"
               onClick={() => onDelete(modal.shift.id)}
             >
-              🗑 Elimina turno
+              🗑 Elimina {nomeTipo}
             </button>
           )}
         </form>

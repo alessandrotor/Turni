@@ -31,6 +31,18 @@ export function parseDate(str) {
 // ordinamento (slice per anno/mese, confronti lessicografici). Una data fuori
 // formato passerebbe i controlli truthy ma non combacerebbe con le celle del
 // calendario: qui si verifica sia il formato sia che sia un giorno reale.
+// Numero progressivo del giorno, per stabilire se due date sono consecutive.
+// Passa da Date.UTC e NON dalla differenza fra due `Date` locali: con l'ora
+// legale due giorni consecutivi distano 23 o 25 ore, non 24 (in Italia il
+// 29 marzo e il 25 ottobre 2026), e un confronto in millisecondi spezzerebbe
+// la sequenza proprio lì — in silenzio, e solo sui dispositivi con fuso
+// europeo. Lo usano sia le serie di giorni lavorati sia gli eventi di malattia.
+export function dayNumber(iso) {
+  return Math.round(
+    Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10))) / 86400000,
+  );
+}
+
 export function isIsoDate(str) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(str ?? ''))) return false;
   const d = parseDate(str);

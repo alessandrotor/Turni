@@ -6,8 +6,9 @@
 // Estensione esplicita sugli import: stesso motivo di net.js e pay.js — così
 // il modulo resta importabile da Node puro, se in futuro serve un riscontro.
 import { calcShiftMinutes, calcTotalPay, hasAnyRate, isSunday } from './pay.js';
-import { parseDate, getDaysInMonth, formatDate } from './dates.js';
+import { parseDate, getDaysInMonth, formatDate, dayNumber } from './dates.js';
 import { isHoliday } from './holidays.js';
+import { tipoTurno, TIPO } from './assenze.js';
 import { calcNetMonthly, monthlyBaseGross, extraMonthAccrual, EXTRA_MONTHS } from './net.js';
 
 // Raggruppa per MESE DI CALENDARIO, non di paga: è la vista d'insieme
@@ -115,12 +116,22 @@ export function dailyBreakdown(year, allShifts, settings = {}, payByShift = null
     if (!day) {
       day = {
         totalMinutes: 0, overtimeMinutes: 0, straordinarioMinutes: 0, shiftsCount: 0,
+        assenzaMinutes: 0, assenzaTipo: null,
         sunday: isSunday(s.date), holiday: isHoliday(s.date, settings),
       };
       byDay.set(s.date, day);
     }
-    day.totalMinutes += calcShiftMinutes(s);
+    const min = calcShiftMinutes(s);
+    day.totalMinutes += min;
     day.shiftsCount += 1;
+    const t = tipoTurno(s);
+    if (t !== TIPO.LAVORO) {
+      day.assenzaMinutes += min;
+      // Il tipo del giorno è quello della prima assenza incontrata: giornate
+      // miste (mezza malattia, mezzo lavoro) sono rare e il calendarietto ha
+      // un colore solo per cella.
+      if (!day.assenzaTipo) day.assenzaTipo = t;
+    }
     // Senza paga oraria `computePayByShift` non viene calcolata a monte: le
     // fasce restano a zero e il giorno risulta tutto ordinario. È lo stesso
     // limite del riepilogo di Calendario, non uno nuovo di questa vista.
@@ -131,17 +142,6 @@ export function dailyBreakdown(year, allShifts, settings = {}, payByShift = null
     }
   }
   return byDay;
-}
-
-// Numero progressivo del giorno, per stabilire se due date sono consecutive.
-// Passa da Date.UTC e NON dalla differenza fra due `Date` locali: con l'ora
-// legale due giorni consecutivi distano 23 o 25 ore, non 24 (in Italia il
-// 29 marzo e il 25 ottobre 2026), e un confronto in millisecondi spezzerebbe
-// la serie proprio lì — in silenzio, e solo sui dispositivi con fuso europeo.
-function dayNumber(iso) {
-  return Math.round(
-    Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10))) / 86400000,
-  );
 }
 
 // Soglia oltre cui una serie di giorni lavorati merita di essere segnalata.
@@ -155,8 +155,18 @@ export const STREAK_LUNGA = 7;
  *
  * @returns {Array<{start, end, days}>} date ISO comprese
  */
+// Un giorno conta come LAVORATO se contiene ore che non sono assenza. Una
+// giornata di sole ferie o di sola malattia non è lavoro: interrompe la serie
+// dei giorni consecutivi, ed è proprio il riposo che quella serie cerca.
+export function isGiornoLavorato(day) {
+  // `|| 0` non è difensivo per abitudine: senza, un giorno privo del campo
+  // (dati vecchi, o un riscontro che costruisce la mappa a mano) darebbe
+  // `480 > undefined` = false e sparirebbe da ogni conteggio, in silenzio.
+  return day.totalMinutes > (day.assenzaMinutes || 0);
+}
+
 export function workStreaks(byDay) {
-  const dates = Array.from(byDay.keys()).sort();
+  const dates = Array.from(byDay.keys()).filter(k => isGiornoLavorato(byDay.get(k))).sort();
   const runs = [];
   let start = null;
   let prevIso = null;
@@ -192,11 +202,22 @@ export function yearSummary(byDay) {
   let straordinarioMinutes = 0;
   let sundays = 0;
   let holidays = 0;
+  let ferieDays = 0;
+  let malattiaDays = 0;
+  let permessoDays = 0;
+  let assenzaMinutes = 0;
   for (const d of byDay.values()) {
-    workedDays += 1;
     totalMinutes += d.totalMinutes;
     overtimeMinutes += d.overtimeMinutes;
     straordinarioMinutes += d.straordinarioMinutes;
+    assenzaMinutes += d.assenzaMinutes;
+    if (d.assenzaTipo === TIPO.FERIE) ferieDays += 1;
+    else if (d.assenzaTipo === TIPO.MALATTIA) malattiaDays += 1;
+    else if (d.assenzaTipo === TIPO.PERMESSO) permessoDays += 1;
+    // Un giorno di sole ferie o sola malattia NON è un giorno lavorato, e non
+    // conta fra le domeniche o i festivi «lavorati»: sono contatori di presenza.
+    if (!isGiornoLavorato(d)) continue;
+    workedDays += 1;
     if (d.sunday) sundays += 1;
     if (d.holiday) holidays += 1;
   }
@@ -209,6 +230,7 @@ export function yearSummary(byDay) {
     overtimeMinutes, straordinarioMinutes,
     ordinaryMinutes: Math.max(0, totalMinutes - overtimeMinutes - straordinarioMinutes),
     sundays, holidays,
+    ferieDays, malattiaDays, permessoDays, assenzaMinutes,
     streaks,
     longestStreak: longest ? longest.days : 0,
     longestStreakEnd: longest ? longest.end : null,

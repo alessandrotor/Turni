@@ -256,6 +256,23 @@ input, select, textarea { font: inherit; }
 }
 .cal-shift-pill:hover { background: #bfdbfe; }
 
+/* Assenze nel calendario: la pill porta un'icona invece dell'orario, e uno
+   sfondo che la stacca dai turni di lavoro senza doverla leggere. */
+.cal-shift-pill--ferie { background: var(--c-success-light); color: #047857; }
+.cal-shift-pill--ferie:hover { background: #a7f3d0; }
+.cal-shift-pill--permesso { background: #ede9fe; color: #6d28d9; }
+.cal-shift-pill--permesso:hover { background: #ddd6fe; }
+.cal-shift-pill--malattia { background: #e2e8f0; color: var(--c-text-2); }
+.cal-shift-pill--malattia:hover { background: #cbd5e1; }
+
+/* Sotto-nota di una voce delle competenze («di cui 4h di ferie»). */
+.summary-sublabel-nota {
+  display: block;
+  color: var(--c-muted);
+  font-size: .68rem;
+  font-style: italic;
+}
+
 /* Calendar summary */
 .cal-summary {
   background: var(--c-card);
@@ -979,6 +996,17 @@ input, select, textarea { font: inherit; }
   color: var(--c-text-2);
   margin-top: .35rem;
   font-style: italic;
+}
+
+/* Avvertenza su parametri NON riscontrati su busta reale: va distinta dai
+   suggerimenti normali, altrimenti si legge come una nota qualsiasi. */
+.form-hint--warn {
+  color: var(--c-warning);
+  font-style: normal;
+  background: var(--c-warning-light);
+  border-radius: var(--radius-sm);
+  padding: .5rem .6rem;
+  line-height: 1.45;
 }
 
 /* Backup: pulsante e didascalia affiancati, che vanno a capo se stretti. */
@@ -1720,6 +1748,13 @@ input, select, textarea { font: inherit; }
 .mini-day[data-cat="str"][data-level="1"] { background: #fecaca; }
 .mini-day[data-cat="str"][data-level="2"] { background: #f87171; }
 .mini-day[data-cat="str"][data-level="3"] { background: var(--c-danger); }
+
+/* Assenze: tinte fuori dalla scala blu→arancio→rosso del lavoro, perché non
+   sono «più lavoro», sono un'altra cosa. Un solo tono per tipo: le ore di un
+   giorno di assenza sono fisse, graduarle non direbbe niente. */
+.mini-day[data-cat="fer"] { background: #34d399; }   /* ferie: verde */
+.mini-day[data-cat="perm"] { background: #a78bfa; }  /* permesso: viola */
+.mini-day[data-cat="mal"] { background: #94a3b8; }   /* malattia: grigio */
 
 .mini-month-total {
   font-size: .68rem;

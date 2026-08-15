@@ -7,6 +7,7 @@ import {
   daysInLongStreaks, STREAK_LUNGA,
 } from '../utils/stats';
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
+import { TIPO, ETICHETTA } from '../utils/assenze';
 import { ENABLE_NET_CALC } from '../config/features';
 
 const fmt0 = (n) => formatCurrency(Math.round(n));
@@ -56,7 +57,12 @@ function dayLevel(minutes) {
 
 // La fascia che "vince" il colore del giorno è la più alta presente: un giorno
 // con anche solo un'ora di straordinario va visto come giorno di straordinario.
+// Le assenze hanno la precedenza su tutto: una giornata di ferie non è un
+// giorno di lavoro leggero, è un'altra cosa.
 function dayCategory(day) {
+  if (day.assenzaTipo === TIPO.FERIE) return 'fer';
+  if (day.assenzaTipo === TIPO.PERMESSO) return 'perm';
+  if (day.assenzaTipo === TIPO.MALATTIA) return 'mal';
   if (day.straordinarioMinutes > 0) return 'str';
   if (day.overtimeMinutes > 0) return 'sup';
   return 'ord';
@@ -200,6 +206,24 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
                 <span className="stats-fact-value">{summary.holidays}</span>
                 <span className="stats-fact-label">festivi</span>
               </div>
+              {summary.ferieDays > 0 && (
+                <div className="stats-fact">
+                  <span className="stats-fact-value">{summary.ferieDays}</span>
+                  <span className="stats-fact-label">giorni di ferie</span>
+                </div>
+              )}
+              {summary.permessoDays > 0 && (
+                <div className="stats-fact">
+                  <span className="stats-fact-value">{summary.permessoDays}</span>
+                  <span className="stats-fact-label">permessi</span>
+                </div>
+              )}
+              {summary.malattiaDays > 0 && (
+                <div className="stats-fact">
+                  <span className="stats-fact-value">{summary.malattiaDays}</span>
+                  <span className="stats-fact-label">giorni di malattia</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -228,6 +252,7 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
                         if (!day) return <span className="mini-day" data-cat="off" key={iso} />;
                         const dayNum = Number(iso.slice(8, 10));
                         const parts = [`${dayNum} ${MONTH_NAMES[m]}: ${fmtH(day.totalMinutes)}`];
+                        if (day.assenzaTipo) parts.push(ETICHETTA[day.assenzaTipo].toLowerCase());
                         if (day.overtimeMinutes > 0) parts.push(`${tier1Label.toLowerCase()} ${fmtH(day.overtimeMinutes)}`);
                         if (day.straordinarioMinutes > 0) parts.push(`straordinarie ${fmtH(day.straordinarioMinutes)}`);
                         if (day.holiday) parts.push('festivo');
@@ -262,6 +287,15 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
               <span className="stats-legend-item"><i className="mini-day" data-cat="ord" data-level="2" />Ordinarie</span>
               {hasSup && <span className="stats-legend-item"><i className="mini-day" data-cat="sup" data-level="2" />{tier1Label}</span>}
               {hasStr && <span className="stats-legend-item"><i className="mini-day" data-cat="str" data-level="2" />Straordinarie</span>}
+              {summary.ferieDays > 0 && (
+                <span className="stats-legend-item"><i className="mini-day" data-cat="fer" data-level="2" />Ferie</span>
+              )}
+              {summary.permessoDays > 0 && (
+                <span className="stats-legend-item"><i className="mini-day" data-cat="perm" data-level="2" />Permesso</span>
+              )}
+              {summary.malattiaDays > 0 && (
+                <span className="stats-legend-item"><i className="mini-day" data-cat="mal" data-level="2" />Malattia</span>
+              )}
               {summary.holidays > 0 && (
                 <span className="stats-legend-item"><i className="mini-day" data-cat="ord" data-level="2" data-holiday="1" />Festivo</span>
               )}

@@ -4,10 +4,16 @@
 // su browser viene scaricato.
 import { Capacitor } from '@capacitor/core';
 import { calcShiftMinutes } from '../utils/pay';
+import { tipoTurno, ETICHETTA, TIPO } from '../utils/assenze';
 import { parseDate, formatMonthYear } from '../utils/dates';
 
 const GIORNI = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
-const HEADERS = ['Data', 'Giorno', 'Inizio', 'Fine', 'Pausa (min)', 'Ore', 'Note'];
+const HEADERS = ['Data', 'Giorno', 'Tipo', 'Inizio', 'Fine', 'Pausa (min)', 'Ore', 'Note'];
+
+// Ferie, permessi e malattia non hanno orari: al loro posto il tipo, altrimenti
+// nel foglio esportato comparirebbero righe con due colonne vuote e nessuna
+// spiegazione di dove vengano quelle ore.
+const tipoLabel = (s) => (tipoTurno(s) === TIPO.LAVORO ? 'Lavoro' : ETICHETTA[tipoTurno(s)]);
 
 const itDate = (iso) => { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
 const fmtHM = (mins) => {
@@ -72,6 +78,7 @@ export async function exportShiftsExcel(shifts, monthDate, periodo = '') {
       return [
         itDate(s.date),
         GIORNI[parseDate(s.date).getDay()],
+        tipoLabel(s),
         s.startTime || '',
         s.endTime || '',
         s.breakMinutes || 0,
@@ -80,11 +87,11 @@ export async function exportShiftsExcel(shifts, monthDate, periodo = '') {
       ];
     }),
     [],
-    ['', '', '', '', 'Totale ore', Number((totalMins / 60).toFixed(2)), ''],
+    ['', '', '', '', '', 'Totale ore', Number((totalMins / 60).toFixed(2)), ''],
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = [{ wch: 12 }, { wch: 11 }, { wch: 8 }, { wch: 8 }, { wch: 11 }, { wch: 8 }, { wch: 28 }];
+  ws['!cols'] = [{ wch: 12 }, { wch: 11 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 11 }, { wch: 8 }, { wch: 28 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Turni');
   const base64 = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
@@ -114,6 +121,7 @@ export async function exportShiftsPDF(shifts, monthDate, periodo = '') {
       return [
         itDate(s.date),
         GIORNI[parseDate(s.date).getDay()],
+        tipoLabel(s),
         s.startTime || '',
         s.endTime || '',
         String(s.breakMinutes || 0),
@@ -121,7 +129,7 @@ export async function exportShiftsPDF(shifts, monthDate, periodo = '') {
         s.note || '',
       ];
     }),
-    foot: [['', '', '', '', 'Totale ore', fmtHM(totalMins), '']],
+    foot: [['', '', '', '', '', 'Totale ore', fmtHM(totalMins), '']],
     styles: { fontSize: 9, cellPadding: 2 },
     headStyles: { fillColor: [37, 99, 235] },
     footStyles: { fillColor: [226, 232, 240], textColor: [15, 23, 42], fontStyle: 'bold' },
