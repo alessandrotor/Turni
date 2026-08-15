@@ -4,9 +4,10 @@ import useLocalStorage from './hooks/useLocalStorage';
 import { getMonthStart, parseDate, payrollMonthKey } from './utils/dates';
 import { calcTotalPay, computePayByShift } from './utils/pay';
 import { isMensilizzato } from './utils/ccnl';
-import { monthlyBaseGross, receivedExtraMonthsCount } from './utils/net';
+import { computeAnnualGrossFromShifts } from './utils/net';
 import { genId } from './utils/id';
 import CalendarView from './components/CalendarView';
+import StatsView from './components/StatsView';
 import Settings from './components/Settings';
 import ShiftForm from './components/ShiftForm';
 import NavBar from './components/NavBar';
@@ -136,42 +137,16 @@ export default function App() {
 
   const year = currentMonth.getFullYear();
 
-  // Reddito annuo lordo maturato dai turni dell'anno visualizzato,
-  // più il montante fiscale già maturato prima di usare l'app.
-  // Dipende dall'ANNO (non dal mese): navigare tra i mesi dello stesso anno non
-  // deve ricalcolare RAL e tasse.
-  const annualGross = useMemo(() => {
-    const y = year;
-    const yearShifts = allShifts.filter(s => parseDate(s.date).getFullYear() === y);
-    // Confine automatico a granularità MESE: il montante rappresenta il reddito fino
-    // al mese in cui è stato impostato. I turni dei mesi ≤ mese di riferimento sono già
-    // inclusi nel montante e NON vanno ri-sommati (evita il doppio conteggio); si
-    // contano solo quelli dei mesi successivi.
-    const montante = Number(settings.priorTaxableIncome) || 0;
-    const cutoff = settings.priorIncomeDate || '';
-    const cutoffMonth = cutoff.slice(0, 7); // 'YYYY-MM'
-    const sameYear = cutoff && Number(cutoff.slice(0, 4)) === y;
-    const useCutoff = montante > 0 && sameYear;
-    const counted = useCutoff ? yearShifts.filter(s => s.date.slice(0, 7) > cutoffMonth) : yearShifts;
-    // Contesto straordinari = TUTTI i turni, non solo quelli dell'anno: le
-    // settimane lun-dom a cavallo di capodanno vanno raggruppate per intero,
-    // altrimenti lo stesso mese vale una cifra qui e un'altra nel calendario.
-    const pay = calcTotalPay(counted, settings, allShifts, payByShift);
-    const fromShifts = pay ? pay.total : 0;
-    // Mensilità aggiuntive già incassate, in base alla data ODIERNA (non al mese
-    // che si sta sfogliando): altrimenti aprire dicembre farebbe risultare la
-    // tredicesima già presa, cambiando reddito annuo, aliquota e soglie bonus.
-    // Contano per il RATEO maturato, non per una mensilità piena: chi è assunto
-    // da sei mesi prende mezza quattordicesima.
-    const now = new Date();
-    let extras = 0;
-    if (y <= now.getFullYear()) {
-      const monthIndex = y < now.getFullYear() ? 11 : now.getMonth();
-      extras = monthlyBaseGross(settings) * receivedExtraMonthsCount(settings, monthIndex, y);
-    }
-    const applyMontante = montante > 0 && (!cutoff || sameYear);
-    return { total: fromShifts + (applyMontante ? montante : 0) + extras, extras };
-  }, [allShifts, settings, year, payByShift]);
+  // Reddito annuo lordo maturato dai turni dell'anno visualizzato, più il
+  // montante fiscale già maturato prima di usare l'app. Dipende dall'ANNO
+  // (non dal mese): navigare tra i mesi dello stesso anno non deve
+  // ricalcolare RAL e tasse. Stessa funzione usata dalla pagina Statistiche,
+  // per anni diversi: un'unica fonte evita che le due pagine mostrino cifre
+  // diverse per lo stesso anno (vedi `computeAnnualGrossFromShifts` in net.js).
+  const annualGross = useMemo(
+    () => computeAnnualGrossFromShifts(year, allShifts, settings, payByShift),
+    [allShifts, settings, year, payByShift],
+  );
 
   const importShifts = useCallback((parsedShifts) => {
     setShifts(prev => {
@@ -218,6 +193,15 @@ export default function App() {
             payByShift={payByShift}
             annualGross={annualGross.total}
             annualExtras={annualGross.extras}
+            onNavigate={setView}
+          />
+        )}
+
+        {view === 'stats' && (
+          <StatsView
+            allShifts={allShifts}
+            settings={settings}
+            payByShift={payByShift}
             onNavigate={setView}
           />
         )}

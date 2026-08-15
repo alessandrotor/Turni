@@ -14,6 +14,13 @@ export default function NavBar({ view, onNavigate }) {
           <span>Calendario</span>
         </button>
         <button
+          className={`nav-link ${view === 'stats' ? 'active' : ''}`}
+          onClick={() => onNavigate('stats')}
+        >
+          <span className="nav-icon">📊</span>
+          <span>Statistiche</span>
+        </button>
+        <button
           className={`nav-link ${view === 'settings' ? 'active' : ''}`}
           onClick={() => onNavigate('settings')}
         >
