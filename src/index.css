@@ -598,6 +598,34 @@ input, select, textarea { font: inherit; }
 }
 .form-row--compact { grid-template-columns: 1fr; }
 
+/* Sezione «Altro» del modale turno: stesso meccanismo di ⚙️ Avanzate in
+   Impostazioni (<details> nativo, freccia che ruota), ma alleggerita — qui
+   sta dentro una finestra già stretta, quindi niente bordo tratteggiato e
+   peso del testo pari a quello di una form-label. */
+.form-advanced {
+  border-top: 1px solid var(--c-border);
+  padding-top: .5rem;
+}
+.form-advanced-title {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .35rem 0;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--c-text-2);
+}
+.form-advanced-title:hover { color: var(--c-primary); }
+.form-advanced-title::-webkit-details-marker { display: none; }
+.form-advanced-title::after {
+  content: '▸';
+  margin-left: auto;
+  transition: transform .15s;
+}
+.form-advanced[open] > .form-advanced-title::after { transform: rotate(90deg); }
+
 .input-with-symbol {
   position: relative;
   display: flex;

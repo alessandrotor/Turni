@@ -21,8 +21,16 @@ const SURCHARGE_PRESETS = [
   { label: '50%', value: 50 },
 ];
 
+// Ore di una giornata di assenza: nascono da una divisione (40 h ÷ 6 giorni),
+// quindi si portano dietro la coda binaria — «6.666666666666667» finiva dritto
+// dentro il campo e dentro l'hint. Due decimali bastano al mezzo quarto d'ora,
+// e `Number(...)` toglie gli zeri inutili così 4 resta 4 e non «4,00».
+function oreArrotondate(ore) {
+  return Number(ore.toFixed(2));
+}
+
 function getInitialState(modal, settings) {
-  const oreAssenza = minutiGiornoAssenza(settings) / 60;
+  const oreAssenza = oreArrotondate(minutiGiornoAssenza(settings) / 60);
   if (modal.type === 'edit') {
     const s = modal.shift;
     return {
@@ -34,7 +42,9 @@ function getInitialState(modal, settings) {
       surchargePct: s.surchargePct ?? 0,
       // Un'assenza salvata porta la propria durata; un turno di lavoro no, e
       // se lo si converte in assenza parte dalle ore da contratto.
-      absenceHours: s.durationMinutes != null ? String(s.durationMinutes / 60) : String(oreAssenza),
+      absenceHours: s.durationMinutes != null
+        ? String(oreArrotondate(s.durationMinutes / 60))
+        : String(oreAssenza),
       note: s.note ?? '',
     };
   }
@@ -68,6 +78,17 @@ export default function ShiftForm({ modal, settings = {}, onSave, onDelete, onCl
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }));
 
   const assenzaSelezionata = isAssenza({ type: form.kind });
+
+  // Maggiorazione e note vivono sotto «Altro», chiuso di default: la finestra
+  // resta corta per il caso comune, che è segnare un turno e basta. Se però il
+  // turno in modifica ha già uno dei due valori la sezione parte aperta —
+  // nascondere un dato che c'è è peggio di una riga in più.
+  //
+  // Calcolato UNA volta dallo stato iniziale, non da `form`: `open` è un
+  // attributo normale, e ricalcolarlo a ogni render richiuderebbe la sezione
+  // mentre ci si sta scrivendo dentro.
+  const apriAvanzate = Number(initial.current.surchargePct) > 0
+    || initial.current.note !== '';
 
   // minutesDiff ritorna 0 su orari non validi (campo svuotato), quindi qui non
   // serve più intercettare nulla: la preview non può mostrare NaN.
@@ -174,16 +195,8 @@ export default function ShiftForm({ modal, settings = {}, onSave, onDelete, onCl
                 required
               />
               <p className="form-hint">
-                Proposte dal contratto ({minutiGiornoAssenza(settings) / 60} h al giorno).
-                In busta un giorno di assenza vale un numero fisso di ore, non
-                l'orario che avresti fatto: se il tuo cedolino ne conta altre,
-                cambiale qui o in Impostazioni.
-                {form.kind === TIPO.MALATTIA && (
-                  <>
-                    {' '}I primi giorni di ogni malattia possono essere pagati
-                    diversamente: la regola si imposta in Impostazioni.
-                  </>
-                )}
+                Proposte dal contratto ({String(oreArrotondate(minutiGiornoAssenza(settings) / 60)).replace('.', ',')} h
+                al giorno). Se il tuo cedolino ne conta altre, cambiale qui o in Impostazioni.
               </p>
             </div>
           ) : (
@@ -259,61 +272,70 @@ export default function ShiftForm({ modal, settings = {}, onSave, onDelete, onCl
             )}
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Maggiorazione (%)</label>
-            <div className="break-presets">
-              {SURCHARGE_PRESETS.map(p => (
-                <button
-                  key={p.value}
-                  type="button"
-                  className={`break-preset-btn ${!customSurcharge && Number(form.surchargePct) === p.value ? 'active' : ''}`}
-                  onClick={() => handleSurchargePreset(p.value)}
-                >
-                  {p.label}
-                </button>
-              ))}
-              <button
-                type="button"
-                className={`break-preset-btn ${customSurcharge ? 'active' : ''}`}
-                onClick={() => setCustomSurcharge(true)}
-              >
-                Altra
-              </button>
-            </div>
-            {customSurcharge && (
-              <div className="form-row form-row--compact">
-                <input
-                  type="number"
-                  className="form-input"
-                  min="0"
-                  max="200"
-                  step="0.5"
-                  placeholder="% maggiorazione"
-                  value={form.surchargePct}
-                  onChange={(e) => setForm(f => ({ ...f, surchargePct: e.target.value }))}
-                />
-              </div>
-            )}
-            <p className="form-hint">
-              Per festivi, notturni, straordinari… La maggiorazione domenicale delle
-              Impostazioni si applica automaticamente e si somma a questa.
-            </p>
-          </div>
           </>
           )}
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="shift-note">Note (opzionale)</label>
-            <input
-              id="shift-note"
-              type="text"
-              className="form-input"
-              placeholder="es. straordinario, sostituzione..."
-              value={form.note}
-              onChange={set('note')}
-              maxLength={100}
-            />
-          </div>
+          <details className="form-advanced" open={apriAvanzate}>
+            <summary className="form-advanced-title">
+              Altro — {assenzaSelezionata ? 'note' : 'maggiorazione e note'}
+            </summary>
+
+            {!assenzaSelezionata && (
+              <div className="form-group">
+                <label className="form-label">Maggiorazione (%)</label>
+                <div className="break-presets">
+                  {SURCHARGE_PRESETS.map(p => (
+                    <button
+                      key={p.value}
+                      type="button"
+                      className={`break-preset-btn ${!customSurcharge && Number(form.surchargePct) === p.value ? 'active' : ''}`}
+                      onClick={() => handleSurchargePreset(p.value)}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className={`break-preset-btn ${customSurcharge ? 'active' : ''}`}
+                    onClick={() => setCustomSurcharge(true)}
+                  >
+                    Altra
+                  </button>
+                </div>
+                {customSurcharge && (
+                  <div className="form-row form-row--compact">
+                    <input
+                      type="number"
+                      className="form-input"
+                      min="0"
+                      max="200"
+                      step="0.5"
+                      placeholder="% maggiorazione"
+                      value={form.surchargePct}
+                      onChange={(e) => setForm(f => ({ ...f, surchargePct: e.target.value }))}
+                    />
+                  </div>
+                )}
+                <p className="form-hint">
+                  La maggiorazione domenicale e festiva delle Impostazioni si applica
+                  da sé e si somma a questa.
+                </p>
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="form-label" htmlFor="shift-note">Note (opzionale)</label>
+              <input
+                id="shift-note"
+                type="text"
+                className="form-input"
+                placeholder="es. straordinario, sostituzione..."
+                value={form.note}
+                onChange={set('note')}
+                maxLength={100}
+              />
+            </div>
+          </details>
 
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>
