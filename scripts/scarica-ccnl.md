@@ -62,6 +62,10 @@ Scarica l'elenco aggiornato e lo scrive in `src/data/ccnl.json`.
 ## Rilanciarlo non cancella le tue modifiche
 
 Se il file di output esiste già, i **campi curati a mano** non vengono persi:
-`verificato`, `monthlyHoursFactor`, `contributiExtra`, `enteBilaterale`. Puoi
-quindi rilanciarlo quando vuoi per aggiornare l'elenco, senza buttare via i
-parametri che hai verificato tu.
+`verificato`, `monthlyHoursFactor`, `mensilizzato`, `contributiExtra`,
+`enteBilaterale`, `ammortizzatori`. Puoi quindi rilanciarlo quando vuoi per
+aggiornare l'elenco, senza buttare via i parametri che hai verificato tu.
+
+L'elenco qui sopra deve restare allineato alla costante `CAMPI_CURATI` in
+`scarica-ccnl.mjs`: un campo nuovo che non viene aggiunto lì sopravvive fino al
+primo aggiornamento e poi sparisce senza dire niente.

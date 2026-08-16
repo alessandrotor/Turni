@@ -32,6 +32,10 @@ const DEFAULTS = {
   mensilizzato: false,
   contributiExtra: [],
   enteBilaterale: null,
+  // A quale fondo per gli ammortizzatori sociali è iscritto il settore ('fis',
+  // oppure null se non lo sappiamo). Le ALIQUOTE non stanno qui: dipendono
+  // dalla dimensione dell'azienda, non dal contratto — vedi contributi-legge.js.
+  ammortizzatori: null,
 };
 
 // Normalizza una voce grezza del JSON in un preset completo e sicuro da usare.
@@ -46,6 +50,7 @@ function toPreset(entry) {
     mensilizzato: entry.mensilizzato === true,
     contributiExtra: Array.isArray(entry.contributiExtra) ? entry.contributiExtra : [],
     enteBilaterale: entry.enteBilaterale || null,
+    ammortizzatori: entry.ammortizzatori || null,
   };
 }
 

@@ -9,6 +9,7 @@
 // Estensione esplicita: così `scripts/check-busta-giugno-2026.mjs` può
 // importare questo modulo con Node puro, senza passare dal bundler.
 import { getCcnl, monthlyContractHours } from './ccnl.js';
+import { contributiDiLegge } from './contributi-legge.js';
 
 // Arrotondamenti della busta paga. Non sono un dettaglio estetico: il cedolino
 // chiude ogni voce a due decimali e le somme partono da quelle, quindi tenere
@@ -131,7 +132,15 @@ export function calcContributi(gross, settings = {}, ebBase = 0) {
   totale += ivs;
   deducibili += ivs;
 
-  for (const c of ccnl.contributiExtra || []) {
+  // Ammortizzatori sociali (FIS, CIGS): sono contributi di LEGGE, e l'aliquota
+  // dipende da quanti dipendenti ha l'azienda — non dal CCNL, che dice soltanto
+  // a quale fondo si è iscritti. `contributiExtra` resta per l'eventuale
+  // trattenuta davvero contrattuale, oggi vuoto per tutti.
+  const minori = [
+    ...contributiDiLegge(settings, ccnl.ammortizzatori),
+    ...(ccnl.contributiExtra || []),
+  ];
+  for (const c of minori) {
     const pct = Number(c.pct) || 0;
     const importo = round2(baseInps * (pct / 100));
     righe.push({ label: c.label, pct, base: baseInps, importo, deducibile: true });
@@ -230,8 +239,11 @@ function trattamentoIntegrativo(reddito, irpef, detLavoro, detrTotali) {
 // L'Ente Bilaterale resta fuori: è trattenuto ma non deducibile, e la sua base
 // non è il lordo.
 export function deductibleContribRate(settings = {}) {
-  const extra = (getCcnl(settings.ccnl).contributiExtra || [])
-    .reduce((s, c) => s + (Number(c.pct) || 0), 0) / 100;
+  const ccnl = getCcnl(settings.ccnl);
+  const extra = [
+    ...contributiDiLegge(settings, ccnl.ammortizzatori),
+    ...(ccnl.contributiExtra || []),
+  ].reduce((s, c) => s + (Number(c.pct) || 0), 0) / 100;
   return TAX_2026.ALIQUOTA_IVS + extra;
 }
 

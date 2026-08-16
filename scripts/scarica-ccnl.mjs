@@ -36,7 +36,7 @@ const API_URL =
 
 // Campi che potresti aver riempito a mano (parametri di calcolo): se il file di
 // output esiste già, questi valori vengono PRESERVATI e non sovrascritti.
-const CAMPI_CURATI = ['verificato', 'monthlyHoursFactor', 'mensilizzato', 'contributiExtra', 'enteBilaterale'];
+const CAMPI_CURATI = ['verificato', 'monthlyHoursFactor', 'mensilizzato', 'contributiExtra', 'enteBilaterale', 'ammortizzatori'];
 
 function firstDefined(...vals) {
   return vals.find(v => v !== undefined && v !== null && v !== '') ?? null;

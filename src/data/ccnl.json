@@ -28,21 +28,13 @@
     "verificato": true,
     "monthlyHoursFactor": 4.3,
     "mensilizzato": true,
-    "contributiExtra": [
-      {
-        "label": "FIS D.Lgs. 148/2015",
-        "pct": 0.26667
-      },
-      {
-        "label": "Contributo CIGS",
-        "pct": 0.3
-      }
-    ],
+    "contributiExtra": [],
     "enteBilaterale": {
       "label": "Ente Bilaterale Turismo",
       "pct": 0.2,
       "quotaDitta": 0.2
-    }
+    },
+    "ammortizzatori": "fis"
   },
   {
     "codice": "commercio",
@@ -57,13 +49,9 @@
     "note": null,
     "verificato": false,
     "monthlyHoursFactor": 4.2,
-    "contributiExtra": [
-      {
-        "label": "FIS D.Lgs. 148/2015",
-        "pct": 0.26667
-      }
-    ],
-    "enteBilaterale": null
+    "contributiExtra": [],
+    "enteBilaterale": null,
+    "ammortizzatori": "fis"
   },
   {
     "codice": "commercio-confesercenti",
@@ -78,13 +66,9 @@
     "note": null,
     "verificato": false,
     "monthlyHoursFactor": 4.2,
-    "contributiExtra": [
-      {
-        "label": "FIS D.Lgs. 148/2015",
-        "pct": 0.26667
-      }
-    ],
-    "enteBilaterale": null
+    "contributiExtra": [],
+    "enteBilaterale": null,
+    "ammortizzatori": "fis"
   },
   {
     "codice": "metalmeccanico-industria",
@@ -192,16 +176,16 @@
     "vigente": true,
     "idAccordo": null,
     "fonte": "https://www.cnel.it/Archivio-Contratti",
-    "note": "Divisore orario 173 letto dall'intestazione di una busta reale (CCNL/DIVIS 173,00 / 26,00). Il contributo dello 0,57% è quello che la busta raggruppa sotto «Altri»: il totale quadra al centesimo, la ripartizione fra FIS e CIGS no, non è stampata. NON coperti: il contributo EPAR (0,10% sulla paga tabellare, che l'app non conosce) e le maggiorazioni festivo 40% / domenicale 15%, che sono impostazioni dell'utente e non dati del contratto.",
+    "note": "Divisore orario 173 letto dall'intestazione di una busta reale (CCNL/DIVIS 173,00 / 26,00). FIS e CIGS non sono più scritti qui: sono contributi di legge, calcolati sulla dimensione dell'azienda (vedi utils/contributi-legge.js). Il contributo EPAR è allo 0,10% sulla paga tabellare, l'unico valore su cui le fonti concordano; la quota a carico azienda varia fra 0,10% e 0,15% secondo il firmatario ed è lasciata a zero. NON coperte le maggiorazioni festivo 40% / domenicale 15%, che sono impostazioni dell'utente e non dati del contratto.",
     "verificato": true,
     "monthlyHoursFactor": 4.325,
-    "contributiExtra": [
-      {
-        "label": "FIS e CIGS",
-        "pct": 0.57
-      }
-    ],
-    "enteBilaterale": null
+    "contributiExtra": [],
+    "enteBilaterale": {
+      "label": "EPAR (ente bilaterale)",
+      "pct": 0.1,
+      "quotaDitta": 0
+    },
+    "ammortizzatori": "fis"
   },
   {
     "codice": "chimico-farmaceutico",

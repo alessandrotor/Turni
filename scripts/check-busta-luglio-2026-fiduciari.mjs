@@ -69,7 +69,20 @@ console.log(`\nBusta luglio 2026 — servizi fiduciari, intermittente (lordo ${L
 const n = calcNetMonthly(LORDO, PROIEZIONE, SETTINGS, GIORNI);
 
 check('Contributo IVS', n.contributiRighe.find(r => r.label === 'Contributi IVS')?.importo, 71.41, 0.1);
-check('FIS e CIGS (0,57%)', n.contributiRighe.find(r => r.label === 'FIS e CIGS')?.importo, 4.43, 0.1);
+// FIS e CIGS non sono più una riga scritta a mano nel CCNL: sono contributi di
+// LEGGE, calcolati sulla fascia dimensionale dell'azienda (qui oltre 15
+// dipendenti, perché la busta paga entrambi), quindi il motore li espone
+// separati invece che raggruppati.
+//
+// La busta li stampa insieme sotto «Altri» per 4,43, che corrisponde a un FIS
+// arrotondato a 0,27% tondo dal gestionale paghe. La legge dice 0,80 ÷ 3 =
+// 0,2667%, da cui 4,40. I 3 centesimi sono l'arrotondamento di QUEL software,
+// non una regola diversa: la busta Turismo verificata calcola lo stesso
+// contributo a 0,2667% esatti (3,13 su imponibile 1.173). Si tiene la legge.
+const ammortizzatori = n.contributiRighe
+  .filter(r => r.label === 'FIS D.Lgs. 148/2015' || r.label === 'Contributo CIGS')
+  .reduce((s, r) => s + r.importo, 0);
+check('FIS + CIGS (busta: 0,57% = 4,43)', ammortizzatori, 4.43, 0.1);
 check('Imponibile fiscale', n.imponibile, 701.45, 0.5);
 check('IRPEF lorda (23%)', n.irpefLorda, 161.33, 0.3);
 check('IRPEF netta (incapienza)', n.irpefNetta, 0, 0.01);
