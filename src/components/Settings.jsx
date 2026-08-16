@@ -6,6 +6,7 @@ import { esportaBackup, importaBackup, contaTurniSalvati } from '../services/bac
 import { elencoOrariDaCorreggere, applicaCorrezioneOrari } from '../services/correzioni';
 import { ENABLE_NET_CALC } from '../config/features';
 import { genId } from '../utils/id';
+import { minutiGiornoAssenza } from '../utils/assenze';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
 const toInput = (n) => {
@@ -67,6 +68,12 @@ export default function Settings({ settings, onSave }) {
     noAddizionali: !!settings.noAddizionali,
     noTrattamentoIntegrativo: !!settings.noTrattamentoIntegrativo,
     tiProjectionMode: settings.tiProjectionMode === 'ytd' ? 'ytd' : 'stimato',
+    workingDaysPerWeek: toInput(settings.workingDaysPerWeek ?? 6),
+    absenceDailyHours: settings.absenceDailyHours === '' || settings.absenceDailyHours == null
+      ? '' : toInput(settings.absenceDailyHours),
+    malattiaCarenzaGiorni: toInput(settings.malattiaCarenzaGiorni ?? 3),
+    malattiaCarenzaPct: toInput(settings.malattiaCarenzaPct ?? 0),
+    malattiaPct: toInput(settings.malattiaPct ?? 100),
     // Non passa da `onSave`: vive in localStorage, gestito da services/telemetry.
     telemetry: isTelemetryEnabled(),
   });
@@ -273,6 +280,11 @@ export default function Settings({ settings, onSave }) {
       noAddizionali: form.noAddizionali,
       noTrattamentoIntegrativo: form.noTrattamentoIntegrativo,
       tiProjectionMode: form.tiProjectionMode,
+      workingDaysPerWeek: parseNum(form.workingDaysPerWeek),
+      absenceDailyHours: form.absenceDailyHours === '' ? '' : parseNum(form.absenceDailyHours),
+      malattiaCarenzaGiorni: parseNum(form.malattiaCarenzaGiorni),
+      malattiaCarenzaPct: parseNum(form.malattiaCarenzaPct),
+      malattiaPct: parseNum(form.malattiaPct),
     });
     setSaved(true);
     clearTimeout(savedTimer.current);
@@ -314,6 +326,14 @@ export default function Settings({ settings, onSave }) {
   // fisso al mese e il supplementare si conta su quello, non sulla settimana.
   const mensilizzato = !form.onCall && ccnlPreset.mensilizzato;
   const oreMensili = (weeklyHours * ccnlPreset.monthlyHoursFactor).toFixed(2).replace('.', ',');
+  // Ore di un giorno di assenza calcolate dal contratto, mostrate come
+  // suggerimento accanto al campo che le può sovrascrivere.
+  const oreAssenzaCalcolate = (
+    minutiGiornoAssenza({
+      expectedWeeklyHours: weeklyHours,
+      workingDaysPerWeek: parseNum(form.workingDaysPerWeek),
+    }) / 60
+  ).toFixed(2).replace('.', ',');
   const fullTimeWeeklyHours = parseNum(form.fullTimeWeeklyHours);
   const oreMensiliFullTime = (fullTimeWeeklyHours * ccnlPreset.monthlyHoursFactor).toFixed(2).replace('.', ',');
   // Soglia degli straordinari attiva solo se il full-time supera davvero le
@@ -641,6 +661,110 @@ export default function Settings({ settings, onSave }) {
               </p>
             </div>
           )}
+        </details>
+
+        {/* Ferie, permessi e malattia */}
+        <details className="settings-section">
+          <summary className="settings-section-title">🏖 Ferie, permessi e malattia</summary>
+          <p className="settings-section-desc">
+            In busta un giorno di assenza vale un <strong>numero fisso di ore</strong>, non
+            l'orario che avresti fatto. Senza segnarle, le ore dell'app restano sotto quelle
+            del cedolino.
+          </p>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label" htmlFor="working-days">Giorni lavorativi a settimana</label>
+              <input
+                id="working-days"
+                type="number"
+                className="form-input"
+                min="1"
+                max="7"
+                step="1"
+                value={form.workingDaysPerWeek}
+                onChange={set('workingDaysPerWeek')}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="absence-hours-setting">Ore di un giorno di assenza</label>
+              <input
+                id="absence-hours-setting"
+                type="number"
+                className="form-input"
+                min="0"
+                max="24"
+                step="0.5"
+                placeholder={String(oreAssenzaCalcolate)}
+                value={form.absenceDailyHours}
+                onChange={set('absenceDailyHours')}
+              />
+            </div>
+          </div>
+          <p className="form-hint">
+            Vuoto = calcolato dal contratto: {weeklyHours || 0} h ÷ {form.workingDaysPerWeek || 6} giorni
+            = <strong>{oreAssenzaCalcolate} h</strong> al giorno.
+          </p>
+
+          <p className="settings-section-desc" style={{ marginTop: '1rem' }}>
+            <strong>Malattia.</strong> Molti contratti pagano i primi giorni di ogni malattia
+            in modo diverso dai successivi. La carenza si conta per <strong>evento</strong>:
+            due malattie separate hanno ciascuna i propri giorni iniziali.
+          </p>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label" htmlFor="carenza-giorni">Primi giorni</label>
+              <input
+                id="carenza-giorni"
+                type="number"
+                className="form-input"
+                min="0"
+                max="30"
+                step="1"
+                value={form.malattiaCarenzaGiorni}
+                onChange={set('malattiaCarenzaGiorni')}
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="carenza-pct">% in quei giorni</label>
+              <div className="input-with-symbol">
+                <span className="input-symbol">%</span>
+                <input
+                  id="carenza-pct"
+                  type="number"
+                  className="form-input form-input--with-symbol"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={form.malattiaCarenzaPct}
+                  onChange={set('malattiaCarenzaPct')}
+                />
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="malattia-pct">% dopo</label>
+              <div className="input-with-symbol">
+                <span className="input-symbol">%</span>
+                <input
+                  id="malattia-pct"
+                  type="number"
+                  className="form-input form-input--with-symbol"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={form.malattiaPct}
+                  onChange={set('malattiaPct')}
+                />
+              </div>
+            </div>
+          </div>
+          <p className="form-hint form-hint--warn">
+            ⚠️ Questi valori <strong>non sono verificati su nessuna busta paga</strong>, a
+            differenza di contributi e aliquote fiscali: nessuno dei cedolini usati per tarare
+            l'app contiene malattia. La struttura è quella dello schema INPS (primi tre giorni
+            a parte), ma quanto paghi davvero dipende dal tuo CCNL. Controlla su una tua busta
+            con malattia e correggi qui.
+          </p>
         </details>
 
         {/* Reddito e bonus Renzi */}

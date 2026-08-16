@@ -3,8 +3,14 @@
 import { minutesDiff, parseDate, getWeekStart, formatDate, payrollMonthKey } from './dates.js';
 import { isHoliday } from './holidays.js';
 import { isMensilizzato, monthlyContractHours, monthlyFullTimeHours } from './ccnl.js';
+import { isAssenza, tipoTurno, percentualeAssenza, giorniEventoMalattia, TIPO } from './assenze.js';
 
+// Ferie, permessi e malattia non hanno orari: portano una durata già in minuti,
+// perché in busta valgono un numero fisso di ore e non un intervallo. Il
+// controllo sta qui e non nei chiamanti così ore, totali e statistiche
+// continuano a funzionare senza sapere che tipo di giornata stanno sommando.
 export function calcShiftMinutes(shift) {
+  if (shift?.durationMinutes != null) return Math.max(0, Number(shift.durationMinutes) || 0);
   const total = minutesDiff(shift.startTime, shift.endTime);
   return Math.max(0, total - (shift.breakMinutes || 0));
 }
@@ -149,6 +155,10 @@ export function computePayByShift(allShifts, settings) {
   const applyOvertime = thresholdMin > 0 && otPct > 0;
   const applyExtra = !onCall && fullTimeThresholdMin > 0 && extraPct > 0;
 
+  // La carenza si conta per EVENTO di malattia, quindi va ricavata da tutti i
+  // turni in una volta: un giorno isolato non sa di che evento fa parte.
+  const eventoMalattia = giorniEventoMalattia(allShifts);
+
   // Raggruppa per giorno (a chiamata), per mese di paga (mensilizzato) o per
   // settimana (contratto).
   const groups = new Map();
@@ -167,22 +177,33 @@ export function computePayByShift(allShifts, settings) {
     for (const s of groupShifts) {
       const m = calcShiftMinutes(s);
       const ratePerMin = getRateForDate(s.date, settings) / 60;
-      const parts = getShiftSurchargeParts(s, settings);
+      const tipo = tipoTurno(s);
+      const assenza = isAssenza(s);
+      // Ferie e permessi valgono il 100%; la malattia dipende da quanti giorni
+      // dura l'evento (carenza). Vedi utils/assenze.js.
+      const pctAssenza = assenza
+        ? percentualeAssenza(s, settings, eventoMalattia.get(s.date) || 0)
+        : 100;
+      // Nessuna maggiorazione su un giorno non lavorato: una domenica di ferie
+      // non prende il domenicale, non ci si è andati.
+      const parts = assenza ? { sunday: 0, holiday: 0, manual: 0 } : getShiftSurchargeParts(s, settings);
 
       const before = cumMin;
       const after = cumMin + m;
-      // Fascia supplementare: fra soglia-contratto e soglia-full-time (o
-      // senza limite superiore se lo straordinario non è attivo — stesso
-      // comportamento di prima, tutto in una fascia sola).
-      const supplementareMin = applyOvertime
+      // Le assenze RIEMPIONO la soglia contrattuale — è così che la busta
+      // arriva comunque alle ore del mese quando ci sono ferie — ma non
+      // possono essere supplementari o straordinarie: in un giorno di ferie
+      // non si lavora, e pagarle in più sarebbe un guadagno per essere stati
+      // assenti.
+      const supplementareMin = (!assenza && applyOvertime)
         ? minutesInBand(before, after, thresholdMin, applyExtra ? fullTimeThresholdMin : Infinity)
         : 0;
       // Fascia straordinaria: oltre la soglia-full-time.
-      const straordinarioMin = applyExtra
+      const straordinarioMin = (!assenza && applyExtra)
         ? minutesInBand(before, after, fullTimeThresholdMin, Infinity)
         : 0;
 
-      const shiftBase = m * ratePerMin;
+      const shiftBase = m * ratePerMin * (pctAssenza / 100);
       // Quota di `base` che spetta alle ore oltre soglia. Serve al riepilogo per
       // ricomporre le voci COME LE STAMPA LA BUSTA: il cedolino non scrive il
       // solo +30%, scrive le ore supplementari intere al 130%
@@ -213,6 +234,13 @@ export function computePayByShift(allShifts, settings) {
         straordinarioBase,
         overtimeMinutes: supplementareMin,
         straordinarioMinutes: straordinarioMin,
+        // Le assenze restano contate a parte: in busta ferie e permessi
+        // stanno DENTRO la retribuzione ordinaria, la malattia è una voce sua.
+        tipo,
+        ferieMinutes: tipo === TIPO.FERIE ? m : 0,
+        permessoMinutes: tipo === TIPO.PERMESSO ? m : 0,
+        malattiaMinutes: tipo === TIPO.MALATTIA ? m : 0,
+        malattiaBase: tipo === TIPO.MALATTIA ? shiftBase : 0,
         // Nessuna paga applicabile a questa data: il turno vale 0 € e va
         // segnalato, altrimenti il totale è silenziosamente sottostimato.
         missingRate: ratePerMin <= 0 && m > 0,
@@ -251,6 +279,10 @@ export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = nul
   let straordinarioBase = 0;
   let overtimeMinutes = 0;
   let straordinarioMinutes = 0;
+  let ferieMinutes = 0;
+  let permessoMinutes = 0;
+  let malattiaMinutes = 0;
+  let malattiaBase = 0;
   let shiftsWithoutRate = 0;
   shifts.forEach(s => {
     const p = map[s.id];
@@ -266,13 +298,19 @@ export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = nul
       straordinarioBase += p.straordinarioBase;
       overtimeMinutes += p.overtimeMinutes;
       straordinarioMinutes += p.straordinarioMinutes;
+      ferieMinutes += p.ferieMinutes;
+      permessoMinutes += p.permessoMinutes;
+      malattiaMinutes += p.malattiaMinutes;
+      malattiaBase += p.malattiaBase;
       if (p.missingRate) shiftsWithoutRate += 1;
     }
   });
   return {
     base, surcharge, total: base + surcharge,
     surchargeSunday, surchargeHoliday, surchargeManual, surchargeOvertime, surchargeStraordinario,
-    overtimeBase, straordinarioBase, overtimeMinutes, straordinarioMinutes, shiftsWithoutRate,
+    overtimeBase, straordinarioBase, overtimeMinutes, straordinarioMinutes,
+    ferieMinutes, permessoMinutes, malattiaMinutes, malattiaBase,
+    shiftsWithoutRate,
   };
 }
 

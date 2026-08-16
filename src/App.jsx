@@ -52,6 +52,12 @@ const DEFAULT_SETTINGS = {
   dailyOvertimeThreshold: 0, // ore/giorno oltre cui scatta lo straordinario
   tfrInBusta: false,         // aggiungi la quota TFR come anticipo sul netto
   tfrTaxRate: '',            // aliquota tassazione separata TFR (%) — vuoto = default 23%
+  // Assenze (ferie, permessi, malattia)
+  workingDaysPerWeek: 6,     // giorni su cui si spalma l'orario: dà le ore di un giorno di assenza
+  absenceDailyHours: '',     // ore di un giorno di assenza — vuoto = ore settimanali ÷ giorni
+  malattiaCarenzaGiorni: 3,  // primi giorni di ogni evento pagati diversamente
+  malattiaCarenzaPct: 0,     // % della paga in quei giorni
+  malattiaPct: 100,          // % della paga dal giorno successivo
 };
 
 export default function App() {
@@ -232,6 +238,7 @@ export default function App() {
       {modal && (
         <ShiftForm
           modal={modal}
+          settings={settings}
           onSave={handleSaveShift}
           onDelete={(id) => { deleteShift(id); setModal(null); }}
           onClose={() => setModal(null)}
