@@ -15,6 +15,12 @@ import { deliver } from './export';
 const KEY_SHIFTS = 'turni_shifts';
 const KEY_SETTINGS = 'turni_settings';
 const KEY_TELEMETRY_OFF = 'turni_telemetry_off';
+// Griglia o agenda. È una preferenza dell'utente come l'interruttore della
+// telemetria, quindi segue i dati: chi ripristina su un altro telefono ritrova
+// la vista che usava. Esportata perché la legge anche CalendarView — la chiave
+// resta di questo modulo, che è dove vivono tutte le altre.
+export const KEY_CAL_LAYOUT = 'turni_cal_layout';
+const LAYOUT_AMMESSI = new Set(['grid', 'timeline']);
 
 // Marcatori del formato. `formato` va incrementato solo se cambia la struttura
 // in modo non retrocompatibile: serve a rifiutare un file di una versione futura
@@ -68,6 +74,7 @@ export function costruisciBackup() {
     turni: leggi(KEY_SHIFTS, {}),
     impostazioni: leggi(KEY_SETTINGS, {}),
     telemetriaDisattivata: leggiGrezzo(KEY_TELEMETRY_OFF) === '1',
+    vistaCalendario: leggiGrezzo(KEY_CAL_LAYOUT) || null,
   };
 }
 
@@ -131,6 +138,12 @@ export async function importaBackup(file) {
   }
   if (dati.telemetriaDisattivata) localStorage.setItem(KEY_TELEMETRY_OFF, '1');
   else localStorage.removeItem(KEY_TELEMETRY_OFF);
+
+  // Assente nei backup fatti prima che la vista agenda esistesse: in quel caso
+  // si lascia la preferenza corrente com'è, invece di riportarla alla griglia.
+  if (LAYOUT_AMMESSI.has(dati.vistaCalendario)) {
+    localStorage.setItem(KEY_CAL_LAYOUT, dati.vistaCalendario);
+  }
 
   return { turni: Object.keys(dati.turni).length };
 }

@@ -25,6 +25,7 @@ import { exportShiftsExcel, exportShiftsPDF } from '../services/export';
 import { sendImportTelemetry } from '../services/telemetry';
 import ImportModal from './ImportModal';
 import TimelineView from './TimelineView';
+import { KEY_CAL_LAYOUT } from '../services/backup';
 
 const DAY_HEADERS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
@@ -82,11 +83,11 @@ export default function CalendarView({
   // del calcolo del netto, non come l'utente registra le cose giorno per giorno).
   const [exportPeriod, setExportPeriod] = useState('calendar');
   const [calLayout, setCalLayout] = useState(() => {
-    try { return localStorage.getItem('turni_cal_layout') || 'grid'; } catch { return 'grid'; }
+    try { return localStorage.getItem(KEY_CAL_LAYOUT) || 'grid'; } catch { return 'grid'; }
   });
   const handleSetLayout = useCallback((mode) => {
     setCalLayout(mode);
-    try { localStorage.setItem('turni_cal_layout', mode); } catch { /* ignore */ }
+    try { localStorage.setItem(KEY_CAL_LAYOUT, mode); } catch { /* storage non disponibile: la scelta vale per questa sessione */ }
   }, []);
   const fileInputRef = useRef(null);
   const nameModalRef = useRef(null);
@@ -421,8 +422,9 @@ export default function CalendarView({
               type="button"
               className={`cal-mode-btn ${calLayout === 'grid' ? 'active' : ''}`}
               onClick={() => handleSetLayout('grid')}
-              title="Vista Griglia mensile"
-              aria-label="Vista Griglia"
+              title="Vista griglia mensile"
+              aria-label="Vista griglia mensile"
+              aria-pressed={calLayout === 'grid'}
             >
               ⊞
             </button>
@@ -430,8 +432,9 @@ export default function CalendarView({
               type="button"
               className={`cal-mode-btn ${calLayout === 'timeline' ? 'active' : ''}`}
               onClick={() => handleSetLayout('timeline')}
-              title="Vista Agenda Timeline"
-              aria-label="Vista Agenda Timeline"
+              title="Vista agenda"
+              aria-label="Vista agenda"
+              aria-pressed={calLayout === 'timeline'}
             >
               ≡
             </button>
