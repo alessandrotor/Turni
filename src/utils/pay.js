@@ -4,6 +4,7 @@ import { minutesDiff, parseDate, getWeekStart, formatDate, payrollMonthKey } fro
 import { isHoliday } from './holidays.js';
 import { isMensilizzato, monthlyContractHours, monthlyFullTimeHours } from './ccnl.js';
 import { isAssenza, tipoTurno, percentualeAssenza, giorniEventoMalattia, TIPO } from './assenze.js';
+import { minutiNotturni, pctNotturnoAggiuntiva } from './notturno.js';
 
 // Ferie, permessi e malattia non hanno orari: portano una durata già in minuti,
 // perché in busta valgono un numero fisso di ore e non un intervallo. Il
@@ -97,6 +98,11 @@ export function getShiftSurchargeParts(shift, settings) {
   }
   return { sunday, holiday, manual: Number(shift.surchargePct) || 0 };
 }
+
+// NB: il notturno NON sta qui. Queste sono percentuali che valgono sul turno
+// INTERO perché dipendono dal giorno; il notturno vale solo sui minuti che
+// cadono nella fascia oraria, quindi ha un modulo suo (utils/notturno.js) e
+// entra nel calcolo più sotto, in computePayByShift.
 
 // Percentuale di maggiorazione totale per un turno: la somma delle tre componenti.
 export function getShiftSurchargePct(shift, settings) {
@@ -221,19 +227,38 @@ export function computePayByShift(allShifts, settings) {
       const surchargeOvertime = overtimeBase * (otPct / 100);
       const surchargeStraordinario = straordinarioBase * (extraPct / 100);
 
+      // Notturno: si paga sui MINUTI in fascia, non sul turno intero — un
+      // 20:00–02:00 ha quattro ore notturne e due diurne. E si aggiunge come
+      // SUPPLEMENTO su quanto il turno prende già, perché i CCNL non cumulano
+      // le maggiorazioni: la maggiore assorbe la minore (vedi notturno.js).
+      // Con la maggiorazione notturna a zero questo blocco vale zero e il
+      // motore resta identico a prima — è ciò che gli script di riscontro
+      // sulle buste reali continuano a dimostrare.
+      // La pausa si sottrae ai minuti pagati (calcShiftMinutes) ma non si sa in
+      // che punto del turno cade, quindi non la si può sottrarre alla sola
+      // fascia notturna. Il tetto evita l'unico esito palesemente sbagliato:
+      // più minuti notturni che minuti pagati.
+      const notteMin = assenza ? 0 : Math.min(minutiNotturni(s, settings), m);
+      const nightBase = notteMin * ratePerMin;
+      const surchargeNight = nightBase
+        * (pctNotturnoAggiuntiva(settings, parts.sunday + parts.holiday + parts.manual) / 100);
+
       result[s.id] = {
         base: shiftBase,
         surcharge: surchargeSunday + surchargeHoliday + surchargeManual
-          + surchargeOvertime + surchargeStraordinario,
+          + surchargeOvertime + surchargeStraordinario + surchargeNight,
         surchargeSunday,
         surchargeHoliday,
         surchargeManual,
         surchargeOvertime,
         surchargeStraordinario,
+        surchargeNight,
         overtimeBase,
         straordinarioBase,
+        nightBase,
         overtimeMinutes: supplementareMin,
         straordinarioMinutes: straordinarioMin,
+        nightMinutes: notteMin,
         // Le assenze restano contate a parte: in busta ferie e permessi
         // stanno DENTRO la retribuzione ordinaria, la malattia è una voce sua.
         tipo,
@@ -254,8 +279,14 @@ export function computePayByShift(allShifts, settings) {
 export function calcShiftPay(shift, settings) {
   const rate = getRateForDate(shift.date, settings);
   if (rate <= 0) return null;
-  const base = calcShiftHours(shift) * rate;
-  return base * (1 + getShiftSurchargePct(shift, settings) / 100);
+  const ratePerMin = rate / 60;
+  const pctGiorno = getShiftSurchargePct(shift, settings);
+  const base = calcShiftMinutes(shift) * ratePerMin;
+  // Il notturno sta fuori dalla percentuale del turno: vale sui soli minuti in
+  // fascia (vedi computePayByShift, che e' la strada che l'app percorre davvero).
+  const notte = minutiNotturni(shift, settings) * ratePerMin
+    * (pctNotturnoAggiuntiva(settings, pctGiorno) / 100);
+  return base * (1 + pctGiorno / 100) + notte;
 }
 
 // Totale paga con dettaglio maggiorazioni. Ritorna null se nessuna paga
@@ -275,10 +306,13 @@ export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = nul
   let surchargeManual = 0;
   let surchargeOvertime = 0;
   let surchargeStraordinario = 0;
+  let surchargeNight = 0;
   let overtimeBase = 0;
   let straordinarioBase = 0;
+  let nightBase = 0;
   let overtimeMinutes = 0;
   let straordinarioMinutes = 0;
+  let nightMinutes = 0;
   let ferieMinutes = 0;
   let permessoMinutes = 0;
   let malattiaMinutes = 0;
@@ -294,10 +328,13 @@ export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = nul
       surchargeManual += p.surchargeManual;
       surchargeOvertime += p.surchargeOvertime;
       surchargeStraordinario += p.surchargeStraordinario;
+      surchargeNight += p.surchargeNight;
       overtimeBase += p.overtimeBase;
       straordinarioBase += p.straordinarioBase;
+      nightBase += p.nightBase;
       overtimeMinutes += p.overtimeMinutes;
       straordinarioMinutes += p.straordinarioMinutes;
+      nightMinutes += p.nightMinutes;
       ferieMinutes += p.ferieMinutes;
       permessoMinutes += p.permessoMinutes;
       malattiaMinutes += p.malattiaMinutes;
@@ -308,7 +345,9 @@ export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = nul
   return {
     base, surcharge, total: base + surcharge,
     surchargeSunday, surchargeHoliday, surchargeManual, surchargeOvertime, surchargeStraordinario,
-    overtimeBase, straordinarioBase, overtimeMinutes, straordinarioMinutes,
+    surchargeNight,
+    overtimeBase, straordinarioBase, nightBase,
+    overtimeMinutes, straordinarioMinutes, nightMinutes,
     ferieMinutes, permessoMinutes, malattiaMinutes, malattiaBase,
     shiftsWithoutRate,
   };

@@ -23,6 +23,13 @@ const DEFAULT_SETTINGS = {
   straordinarioSurchargePct: '', // maggiorazione straordinari (oltre il full-time); vuoto = come i supplementari
   holidaySurchargePct: 0,        // maggiorazione festivi (%)
   holidaySundayMode: 'max',      // festivo+domenica: 'max' | 'sum' | 'holiday'
+  // Notturno: si paga sui soli minuti in fascia, non sul turno intero (vedi
+  // utils/notturno.js). 0 = spento, ed e' il default: chi non lo imposta ha il
+  // motore identico a prima che esistesse.
+  nightSurchargePct: 0,
+  nightStart: '22:00',
+  nightEnd: '06:00',
+  nightCumuloMode: 'max',        // notturno vs domenica/festivo: 'max' | 'somma'
   patronSaintDate: '',           // santo patrono locale, formato 'MM-DD'
   priorTaxableIncome: 0,
   priorIncomeDate: '',       // data (ISO) in cui è stato impostato il montante (confine turni)

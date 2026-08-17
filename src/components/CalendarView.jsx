@@ -204,6 +204,15 @@ export default function CalendarView({
       { label: 'Malattia', value: pay.malattiaBase, minutes: pay.malattiaMinutes },
       { label: 'Magg. domenicali', value: pay.surchargeSunday },
       { label: 'Magg. festive', value: pay.surchargeHoliday },
+      // Le ore, qui, sono quelle in FASCIA — non quelle del turno: è l'unico
+      // modo per capire il numero, visto che la maggiorazione si paga solo su
+      // quelle. Con il cumulo a «solo la più alta» l'importo può essere zero
+      // pur essendoci ore notturne (le assorbe il domenicale), e va comunque
+      // mostrato: sparire proprio lì lascerebbe il dubbio di un conto perso.
+      {
+        label: 'Magg. notturne', value: pay.surchargeNight,
+        minutes: pay.nightMinutes,
+      },
       { label: 'Magg. manuali', value: pay.surchargeManual },
       // La malattia può valere zero (carenza non pagata) ma le sue ORE esistono
       // e vanno mostrate: senza questa eccezione la riga sparirebbe proprio nei
