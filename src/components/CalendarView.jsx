@@ -24,6 +24,7 @@ const PROJECTION_LABEL = {
 import { exportShiftsExcel, exportShiftsPDF } from '../services/export';
 import { sendImportTelemetry } from '../services/telemetry';
 import ImportModal from './ImportModal';
+import TimelineView from './TimelineView';
 
 const DAY_HEADERS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
@@ -80,6 +81,13 @@ export default function CalendarView({
   // in periodi di paga a settimane intere (quelli sono un dettaglio interno
   // del calcolo del netto, non come l'utente registra le cose giorno per giorno).
   const [exportPeriod, setExportPeriod] = useState('calendar');
+  const [calLayout, setCalLayout] = useState(() => {
+    try { return localStorage.getItem('turni_cal_layout') || 'grid'; } catch { return 'grid'; }
+  });
+  const handleSetLayout = useCallback((mode) => {
+    setCalLayout(mode);
+    try { localStorage.setItem('turni_cal_layout', mode); } catch { /* ignore */ }
+  }, []);
   const fileInputRef = useRef(null);
   const nameModalRef = useRef(null);
   const focusCellRef = useRef(null);
@@ -380,7 +388,7 @@ export default function CalendarView({
 
   return (
     <div className="calendar-view">
-      {/* Month navigation */}
+      {/* Month navigation & Layout toggle */}
       <div className="cal-header">
         <button
           className="week-nav-btn"
@@ -400,13 +408,35 @@ export default function CalendarView({
             </button>
           )}
         </div>
-        <button
-          className="week-nav-btn"
-          onClick={() => onMonthChange(addMonths(currentMonth, 1))}
-          aria-label="Mese successivo"
-        >
-          ›
-        </button>
+        <div className="cal-header-right">
+          <button
+            className="week-nav-btn"
+            onClick={() => onMonthChange(addMonths(currentMonth, 1))}
+            aria-label="Mese successivo"
+          >
+            ›
+          </button>
+          <div className="cal-mode-toggle" role="group" aria-label="Modalità di visualizzazione">
+            <button
+              type="button"
+              className={`cal-mode-btn ${calLayout === 'grid' ? 'active' : ''}`}
+              onClick={() => handleSetLayout('grid')}
+              title="Vista Griglia mensile"
+              aria-label="Vista Griglia"
+            >
+              ⊞
+            </button>
+            <button
+              type="button"
+              className={`cal-mode-btn ${calLayout === 'timeline' ? 'active' : ''}`}
+              onClick={() => handleSetLayout('timeline')}
+              title="Vista Agenda Timeline"
+              aria-label="Vista Agenda Timeline"
+            >
+              ≡
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Import bar */}
@@ -452,75 +482,88 @@ export default function CalendarView({
         </div>
       )}
 
-      {/* Calendar grid */}
-      <div className="cal-grid">
-        {DAY_HEADERS.map(d => (
-          <div key={d} className="cal-day-header">{d}</div>
-        ))}
+      {/* Main shifts view: Timeline or Grid */}
+      {calLayout === 'timeline' ? (
+        <TimelineView
+          daysInMonth={daysInMonth}
+          year={year}
+          month={month}
+          byDate={byDate}
+          onAddShift={onAddShift}
+          onEditShift={onEditShift}
+          settings={settings}
+          focusDate={focusDate}
+        />
+      ) : (
+        <div className="cal-grid">
+          {DAY_HEADERS.map(d => (
+            <div key={d} className="cal-day-header">{d}</div>
+          ))}
 
-        {cells.map((dayNum, i) => {
-          if (!dayNum) return <div key={`e${i}`} className="cal-cell cal-cell--empty" />;
+          {cells.map((dayNum, i) => {
+            if (!dayNum) return <div key={`e${i}`} className="cal-cell cal-cell--empty" />;
 
-          const date = new Date(year, month, dayNum);
-          const dateStr = formatDate(date);
-          const dayShifts = byDate[dateStr] || [];
-          const today = isToday(date);
-          const weekend = isWeekend(date);
+            const date = new Date(year, month, dayNum);
+            const dateStr = formatDate(date);
+            const dayShifts = byDate[dateStr] || [];
+            const today = isToday(date);
+            const weekend = isWeekend(date);
 
-          // La cella è un contenitore cliccabile, non un pulsante: annidare
-          // controlli dentro un role="button" è invalido e confonde gli screen
-          // reader. I comandi veri sono i <button> qui dentro.
-          return (
-            <div
-              key={dateStr}
-              ref={dateStr === focusDate ? focusCellRef : null}
-              className={[
-                'cal-cell',
-                today ? 'cal-cell--today' : '',
-                weekend ? 'cal-cell--weekend' : '',
-                dateStr === focusDate ? 'cal-cell--focus' : '',
-              ].join(' ')}
-              onClick={e => { if (e.target === e.currentTarget) onAddShift(dateStr); }}
-            >
-              <button
-                type="button"
-                className="cal-cell-add"
-                onClick={() => onAddShift(dateStr)}
-                aria-label={`Aggiungi turno il ${dayNum}/${month + 1}`}
+            // La cella è un contenitore cliccabile, non un pulsante: annidare
+            // controlli dentro un role="button" è invalido e confonde gli screen
+            // reader. I comandi veri sono i <button> qui dentro.
+            return (
+              <div
+                key={dateStr}
+                ref={dateStr === focusDate ? focusCellRef : null}
+                className={[
+                  'cal-cell',
+                  today ? 'cal-cell--today' : '',
+                  weekend ? 'cal-cell--weekend' : '',
+                  dateStr === focusDate ? 'cal-cell--focus' : '',
+                ].join(' ')}
+                onClick={e => { if (e.target === e.currentTarget) onAddShift(dateStr); }}
               >
-                <span className={`cal-day-num${today ? ' cal-day-num--today' : ''}`}>
-                  {dayNum}
-                </span>
-              </button>
-              <div className="cal-shifts">
-                {dayShifts.map(s => {
-                  const t = tipoTurno(s);
-                  // Un'assenza non ha un orario da mostrare: al suo posto va
-                  // l'icona del tipo, che è l'informazione vera di quel giorno.
-                  const assente = t !== TIPO.LAVORO;
-                  const ore = calcShiftMinutes(s) / 60;
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      className={`cal-shift-pill${assente ? ` cal-shift-pill--${t}` : ''}`}
-                      onClick={e => { e.stopPropagation(); onEditShift(s); }}
-                      title={assente
-                        ? `${ETICHETTA[t]} · ${ore} h${s.note ? ` | ${s.note}` : ''}`
-                        : `${s.startTime}–${s.endTime}${s.note ? ` | ${s.note}` : ''}`}
-                      aria-label={assente
-                        ? `Modifica ${ETICHETTA[t].toLowerCase()} del ${dayNum}/${month + 1}`
-                        : `Modifica turno ${s.startTime}–${s.endTime}`}
-                    >
-                      {assente ? ICONA[t] : s.startTime}
-                    </button>
-                  );
-                })}
+                <button
+                  type="button"
+                  className="cal-cell-add"
+                  onClick={() => onAddShift(dateStr)}
+                  aria-label={`Aggiungi turno il ${dayNum}/${month + 1}`}
+                >
+                  <span className={`cal-day-num${today ? ' cal-day-num--today' : ''}`}>
+                    {dayNum}
+                  </span>
+                </button>
+                <div className="cal-shifts">
+                  {dayShifts.map(s => {
+                    const t = tipoTurno(s);
+                    // Un'assenza non ha un orario da mostrare: al suo posto va
+                    // l'icona del tipo, che è l'informazione vera di quel giorno.
+                    const assente = t !== TIPO.LAVORO;
+                    const ore = calcShiftMinutes(s) / 60;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        className={`cal-shift-pill${assente ? ` cal-shift-pill--${t}` : ''}`}
+                        onClick={e => { e.stopPropagation(); onEditShift(s); }}
+                        title={assente
+                          ? `${ETICHETTA[t]} · ${ore} h${s.note ? ` | ${s.note}` : ''}`
+                          : `${s.startTime}–${s.endTime}${s.note ? ` | ${s.note}` : ''}`}
+                        aria-label={assente
+                          ? `Modifica ${ETICHETTA[t].toLowerCase()} del ${dayNum}/${month + 1}`
+                          : `Modifica turno ${s.startTime}–${s.endTime}`}
+                      >
+                        {assente ? ICONA[t] : s.startTime}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Monthly summary */}
       <div className="cal-summary">
