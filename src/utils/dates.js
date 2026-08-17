@@ -89,41 +89,6 @@ export function minutesDiff(startTime, endTime) {
   return mins;
 }
 
-// Fascia notturna convenzionale: 22:00–06:00.
-//
-// Attenzione a cosa NON è: l'app non modella nessuna maggiorazione notturna —
-// le maggiorazioni che calcola sono domenica, festivo, supplementari e
-// straordinari, tutte configurate dall'utente. Questa è quindi una descrizione
-// dell'ORARIO e basta, e chi la mostra a video deve dirlo, altrimenti si legge
-// come una voce di paga che in busta non esiste.
-const NOTTE_DA = 22 * 60;
-const NOTTE_A = 6 * 60;
-
-const siSovrappongono = (a1, a2, b1, b2) => a1 < b2 && b1 < a2;
-
-/**
- * Il turno tocca la fascia 22:00–06:00, anche solo per un minuto?
- *
- * Lavora in minuti assoluti dall'inizio del primo giorno, così un turno che
- * valica la mezzanotte (22:00–06:00) trova comunque la sua finestra: senza
- * questo, un confronto fatto sulle sole ore di inizio e fine sbaglia in
- * entrambi i versi — marcava notturno un 06:00–07:00 e poteva mancare un turno
- * a cavallo.
- */
-export function toccaFasciaNotturna(startTime, endTime) {
-  const inizio = parseTime(startTime);
-  const durata = minutesDiff(startTime, endTime);
-  if (inizio === null || durata <= 0) return false;
-  const fine = inizio + durata;
-
-  // Due giorni di finestre: il turno può estendersi oltre la mezzanotte.
-  for (const giorno of [0, 1440]) {
-    if (siSovrappongono(inizio, fine, giorno + NOTTE_DA, giorno + 1440)) return true;
-    if (siSovrappongono(inizio, fine, giorno, giorno + NOTTE_A)) return true;
-  }
-  return false;
-}
-
 export function formatMinutes(mins) {
   if (!Number.isFinite(mins) || mins < 0) return '0h 00m';
   const h = Math.floor(mins / 60);

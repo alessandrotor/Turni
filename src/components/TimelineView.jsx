@@ -1,8 +1,9 @@
 import { useRef, useEffect, useMemo } from 'react';
 import {
-  formatDate, formatDayShort, isToday, isWeekend, formatMinutes, toccaFasciaNotturna,
+  formatDate, formatDayShort, isToday, isWeekend, formatMinutes,
 } from '../utils/dates';
 import { calcShiftMinutes, getShiftSurchargePct } from '../utils/pay';
+import { minutiNotturni, pctNotturno, fasciaNotturna } from '../utils/notturno';
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { isHoliday } from '../utils/holidays';
 
@@ -14,6 +15,21 @@ function comportamentoScorrimento() {
   } catch {
     return 'auto';
   }
+}
+
+// Il badge dice quante ore cadono in fascia; il suggerimento dice se quelle ore
+// valgono davvero di più. Sono due cose diverse e vanno tenute distinte: la
+// fascia è un fatto dell'orario, la maggiorazione è un'impostazione che l'utente
+// può non aver messo — e in quel caso il badge non deve lasciar credere a un
+// aumento che in busta non c'è.
+function spiegaNotturno(minuti, settings) {
+  const { inizio, durata } = fasciaNotturna(settings);
+  const hhmm = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+  const fascia = `${hhmm(inizio)}–${hhmm(inizio + durata)}`;
+  const pct = pctNotturno(settings);
+  return pct > 0
+    ? `${formatMinutes(minuti)} nella fascia ${fascia}: sono le sole ore su cui si applica la maggiorazione notturna del ${String(pct).replace('.', ',')}%.`
+    : `${formatMinutes(minuti)} nella fascia ${fascia}. Non hai impostato una maggiorazione notturna, quindi non cambia la stima: puoi aggiungerla in Impostazioni.`;
 }
 
 export default function TimelineView({
@@ -101,7 +117,8 @@ export default function TimelineView({
                     const tipo = tipoTurno(shift);
                     const isAssenza = tipo !== TIPO.LAVORO;
                     const mins = calcShiftMinutes(shift);
-                    const night = !isAssenza && toccaFasciaNotturna(shift.startTime, shift.endTime);
+                    const notteMin = isAssenza ? 0 : minutiNotturni(shift, settings);
+                    const night = notteMin > 0;
                     const surchargePct = getShiftSurchargePct(shift, settings);
                     const descrizione = isAssenza
                       ? `${ETICHETTA[tipo].toLowerCase()} del ${d.dayNum}/${month + 1}`
@@ -150,9 +167,9 @@ export default function TimelineView({
                           {night && (
                             <span
                               className="timeline-badge timeline-badge--night"
-                              title="Il turno tocca la fascia 22:00–06:00. È un'indicazione sull'orario: non incide sulla stima della paga."
+                              title={spiegaNotturno(notteMin, settings)}
                             >
-                              🌙 Notturno
+                              🌙 {formatMinutes(notteMin)} in fascia
                             </span>
                           )}
 
