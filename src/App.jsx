@@ -215,7 +215,7 @@ export default function App() {
       <NavBar view={view} onNavigate={setView} />
 
       <main className="main-content">
-        <SetupPrompt settings={settings} onNavigate={setView} />
+        <SetupPrompt settings={settings} onNavigate={setView} turniInseriti={allShifts.length} />
         <InstallPrompt />
         {view === 'calendar' && (
           <CalendarView
