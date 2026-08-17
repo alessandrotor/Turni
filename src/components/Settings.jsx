@@ -8,6 +8,7 @@ import { elencoOrariDaCorreggere, applicaCorrezioneOrari } from '../services/cor
 import { ENABLE_NET_CALC } from '../config/features';
 import { genId } from '../utils/id';
 import { minutiGiornoAssenza } from '../utils/assenze';
+import { FASCIA_NOTTURNA_DEFAULT, CUMULO_DEFAULT } from '../utils/notturno';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
 const toInput = (n) => {
@@ -31,6 +32,10 @@ export default function Settings({ settings, onSave }) {
       ? '' : toInput(settings.straordinarioSurchargePct),
     holidaySurchargePct: settings.holidaySurchargePct ?? 0,
     holidaySundayMode: settings.holidaySundayMode || 'max',
+    nightSurchargePct: settings.nightSurchargePct ?? 0,
+    nightStart: settings.nightStart || FASCIA_NOTTURNA_DEFAULT.inizio,
+    nightEnd: settings.nightEnd || FASCIA_NOTTURNA_DEFAULT.fine,
+    nightCumuloMode: settings.nightCumuloMode || CUMULO_DEFAULT,
     patronSaintDate: settings.patronSaintDate || '',
     priorTaxableIncome: toInput(settings.priorTaxableIncome),
     // Mese fino al quale il montante è comprensivo dei turni. Va scelto
@@ -258,6 +263,10 @@ export default function Settings({ settings, onSave }) {
       straordinarioSurchargePct: form.straordinarioSurchargePct === '' ? '' : parseNum(form.straordinarioSurchargePct),
       holidaySurchargePct: parseNum(form.holidaySurchargePct),
       holidaySundayMode: form.holidaySundayMode,
+      nightSurchargePct: parseNum(form.nightSurchargePct),
+      nightStart: form.nightStart || FASCIA_NOTTURNA_DEFAULT.inizio,
+      nightEnd: form.nightEnd || FASCIA_NOTTURNA_DEFAULT.fine,
+      nightCumuloMode: form.nightCumuloMode,
       patronSaintDate: form.patronSaintDate,
       priorTaxableIncome: newMontante,
       priorIncomeDate,
@@ -602,6 +611,75 @@ export default function Settings({ settings, onSave }) {
             </select>
             <p className="form-hint">Dipende dal CCNL: alcuni cumulano le due maggiorazioni, altri no.</p>
           </div>
+
+          <div className="form-group">
+            <label className="form-label" htmlFor="night-surcharge">Maggiorazione notturna (%)</label>
+            <div className="input-with-symbol">
+              <span className="input-symbol">%</span>
+              <input
+                id="night-surcharge"
+                type="number"
+                className="form-input form-input--with-symbol"
+                min="0"
+                max="200"
+                step="0.5"
+                placeholder="es. 20"
+                value={form.nightSurchargePct || ''}
+                onChange={set('nightSurchargePct')}
+              />
+            </div>
+            <p className="form-hint">
+              Si applica <strong>alle sole ore che cadono nella fascia</strong>, non a tutto il
+              turno: un 20:00–02:00 ha quattro ore notturne e due diurne. Lascia vuoto se il tuo
+              contratto non la prevede.
+            </p>
+          </div>
+
+          {form.nightSurchargePct > 0 && (
+            <>
+              <div className="form-group">
+                <label className="form-label">Fascia notturna</label>
+                <div className="form-row">
+                  <input
+                    type="time"
+                    className="form-input"
+                    aria-label="Inizio della fascia notturna"
+                    value={form.nightStart}
+                    onChange={set('nightStart')}
+                  />
+                  <input
+                    type="time"
+                    className="form-input"
+                    aria-label="Fine della fascia notturna"
+                    value={form.nightEnd}
+                    onChange={set('nightEnd')}
+                  />
+                </div>
+                <p className="form-hint">
+                  22:00–06:00 su vigilanza, commercio e metalmeccanici. Nel <strong>turismo</strong>{' '}
+                  è 22:00–06:00 in generale, ma <strong>23:00–06:00</strong> per i lavoratori
+                  notturni di pubblici esercizi, ristorazione e alberghi.
+                </p>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" htmlFor="night-cumulo">Se il turno notturno è anche domenica o festivo</label>
+                <select
+                  id="night-cumulo"
+                  className="form-input"
+                  value={form.nightCumuloMode}
+                  onChange={set('nightCumuloMode')}
+                >
+                  <option value="max">Applica solo la più alta</option>
+                  <option value="somma">Somma notturna + domenicale/festiva</option>
+                </select>
+                <p className="form-hint">
+                  Quasi tutti i CCNL non cumulano: la maggiorazione più alta assorbe la più bassa.
+                  Scegli la somma solo se hai un accordo aziendale che lo prevede davvero.
+                </p>
+              </div>
+            </>
+          )}
 
           <div className="form-group">
             <label className="form-label" htmlFor="patron-saint">Santo patrono (festività locale)</label>
