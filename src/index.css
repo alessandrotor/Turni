@@ -327,32 +327,31 @@ input, select, textarea { font: inherit; }
 }
 
 .timeline-card {
-  background: #f8fafc;
+  background: var(--c-bg);
   border: 1px solid var(--c-border);
   border-left: 3px solid var(--c-primary);
   border-radius: var(--radius-sm);
   padding: .5rem .65rem;
   cursor: pointer;
-  transition: all .12s ease;
+  transition: background .12s ease, border-color .12s ease, transform .12s ease;
   display: flex;
   flex-direction: column;
   gap: .25rem;
 }
 .timeline-card:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
+  border-color: var(--c-muted);
   transform: translateX(1px);
 }
 
 .timeline-card--night {
-  border-left-color: #475569;
-  background: #f8fafc;
+  border-left-color: var(--c-text-2);
 }
 
-.timeline-card--ferie { border-left-color: var(--c-success); background: #f0fdf4; }
-.timeline-card--permesso { border-left-color: #7c3aed; background: #faf5ff; }
-.timeline-card--malattia { border-left-color: #64748b; background: #f8fafc; }
-.timeline-card--infortunio { border-left-color: var(--c-danger); background: #fef2f2; }
+/* Stesse famiglie di colore delle pill nella griglia (.cal-shift-pill--*):
+   la stessa assenza non può cambiare tinta a seconda della vista. */
+.timeline-card--ferie { border-left-color: var(--c-success); background: var(--c-success-light); }
+.timeline-card--permesso { border-left-color: #6d28d9; background: #ede9fe; }
+.timeline-card--malattia { border-left-color: var(--c-text-2); background: var(--c-border); }
 
 .timeline-card-header {
   display: flex;
@@ -405,12 +404,12 @@ input, select, textarea { font: inherit; }
 }
 
 .timeline-badge--night {
-  background: #334155;
-  color: #f8fafc;
+  background: var(--c-text);
+  color: var(--c-card);
 }
 
 .timeline-badge--break {
-  background: #e2e8f0;
+  background: var(--c-border);
   color: var(--c-text-2);
 }
 
@@ -419,10 +418,16 @@ input, select, textarea { font: inherit; }
   color: var(--c-warning);
 }
 
+/* La nota è testo libero dell'utente e può essere lunga quanto vuole: senza un
+   tetto sfonda la riga dei badge. Il testo intero resta nel `title`. */
 .timeline-badge--note {
-  background: #f1f5f9;
+  background: var(--c-bg);
   color: var(--c-text-2);
   border: 1px solid var(--c-border);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .timeline-add-extra-btn {
@@ -438,18 +443,22 @@ input, select, textarea { font: inherit; }
   background: var(--c-primary-light);
 }
 
-/* Rest Card */
+/* Rest Card — è un <button> vero (tastiera e barra spaziatrice gratis), quindi
+   gli servono la larghezza piena e l'allineamento che un pulsante non ha. */
 .timeline-rest-card {
+  display: block;
+  width: 100%;
+  text-align: left;
   padding: .45rem .65rem;
   border-radius: var(--radius-sm);
-  background: #fcfdfc;
-  border: 1px dashed #d1fae5;
+  background: var(--c-card);
+  border: 1px dashed var(--c-success-light);
   cursor: pointer;
-  transition: all .12s;
+  transition: background .12s, border-color .12s;
 }
 .timeline-rest-card:hover {
   background: var(--c-success-light);
-  border-color: #6ee7b7;
+  border-color: var(--c-success);
 }
 
 .timeline-rest-content {
@@ -2142,4 +2151,19 @@ input, select, textarea { font: inherit; }
 .stats-legend-item--hint {
   color: var(--c-muted);
   font-style: italic;
+}
+
+/* ── Riduci animazioni ───────────────────────────────────────────
+   Rispetta l'impostazione di sistema. Vale per tutta l'app e non solo per
+   l'agenda, ma è l'agenda che l'ha resa necessaria: scorre da sola fino al
+   giorno di oggi a ogni apertura, e su schermo piccolo un movimento non
+   richiesto si legge come un guasto. Lo scorrimento in sé resta — è
+   l'animazione a sparire, non il salto. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
