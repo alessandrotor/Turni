@@ -1,17 +1,19 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useMemo } from 'react';
 import {
-  formatDate, formatDayShort, isToday, isWeekend, minutesDiff, formatMinutes,
+  formatDate, formatDayShort, isToday, isWeekend, formatMinutes, toccaFasciaNotturna,
 } from '../utils/dates';
 import { calcShiftMinutes, getShiftSurchargePct } from '../utils/pay';
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { isHoliday } from '../utils/holidays';
 
-function isNightShift(startTime, endTime) {
-  if (!startTime || !endTime) return false;
-  const [sh] = startTime.split(':').map(Number);
-  const [eh] = endTime.split(':').map(Number);
-  // Se finisce la mattina dopo (es. 22:00 -> 06:00) o inizia/finisce in orari notturni
-  return eh < sh || sh >= 21 || sh < 5 || eh <= 7;
+// Chi ha chiesto al sistema di ridurre le animazioni non deve vedere la pagina
+// scorrere da sola: lo stesso salto, senza il movimento.
+function comportamentoScorrimento() {
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  } catch {
+    return 'auto';
+  }
 }
 
 export default function TimelineView({
@@ -29,36 +31,33 @@ export default function TimelineView({
 
   // Scorri sul giorno focus (o su oggi al primo caricamento del mese corrente)
   useEffect(() => {
-    if (focusRef.current) {
-      focusRef.current.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    } else if (todayRef.current) {
-      todayRef.current.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    }
+    const bersaglio = focusRef.current || todayRef.current;
+    if (!bersaglio) return;
+    bersaglio.scrollIntoView({ block: 'center', behavior: comportamentoScorrimento() });
   }, [focusDate, month, year]);
 
-  const days = Array.from({ length: daysInMonth }, (_, i) => {
+  // I giorni si ricostruiscono solo quando cambia il mese o cambiano i turni:
+  // senza questo, ogni stato del calendario (menù export, modali, barra import)
+  // rifaceva da capo trentun giorni di celle.
+  const days = useMemo(() => Array.from({ length: daysInMonth }, (_, i) => {
     const dayNum = i + 1;
     const date = new Date(year, month, dayNum);
     const dateStr = formatDate(date);
-    const dayShifts = byDate[dateStr] || [];
-    const today = isToday(date);
-    const weekend = isWeekend(date);
-    const holiday = isHoliday(dateStr, settings);
 
     return {
       dayNum,
       date,
       dateStr,
       dayName: formatDayShort(date),
-      dayShifts,
-      today,
-      weekend,
-      holiday,
+      dayShifts: byDate[dateStr] || [],
+      today: isToday(date),
+      weekend: isWeekend(date),
+      holiday: isHoliday(dateStr, settings),
     };
-  });
+  }), [daysInMonth, year, month, byDate, settings]);
 
   return (
-    <div className="timeline-view" role="feed" aria-label="Agenda dei turni">
+    <div className="timeline-view" role="list" aria-label="Agenda dei turni">
       {days.map((d) => {
         const hasShifts = d.dayShifts.length > 0;
         const isFocus = d.dateStr === focusDate;
@@ -66,6 +65,7 @@ export default function TimelineView({
         return (
           <div
             key={d.dateStr}
+            role="listitem"
             ref={isFocus ? focusRef : d.today ? todayRef : null}
             className={[
               'timeline-item',
@@ -88,7 +88,7 @@ export default function TimelineView({
             </div>
 
             {/* Linea verticale guida */}
-            <div className="timeline-spine">
+            <div className="timeline-spine" aria-hidden="true">
               <div className={`timeline-node ${d.today ? 'timeline-node--today' : hasShifts ? 'timeline-node--active' : ''}`} />
               <div className="timeline-line" />
             </div>
@@ -101,18 +101,22 @@ export default function TimelineView({
                     const tipo = tipoTurno(shift);
                     const isAssenza = tipo !== TIPO.LAVORO;
                     const mins = calcShiftMinutes(shift);
-                    const night = !isAssenza && isNightShift(shift.startTime, shift.endTime);
+                    const night = !isAssenza && toccaFasciaNotturna(shift.startTime, shift.endTime);
                     const surchargePct = getShiftSurchargePct(shift, settings);
+                    const descrizione = isAssenza
+                      ? `${ETICHETTA[tipo].toLowerCase()} del ${d.dayNum}/${month + 1}`
+                      : `turno ${shift.startTime}–${shift.endTime} del ${d.dayNum}/${month + 1}`;
 
+                    // Il riquadro resta cliccabile col mouse, ma NON è un
+                    // comando per la tastiera: il comando vero è il pulsante
+                    // qui sotto. Un role="button" che ne contiene un altro è
+                    // invalido e regala due tabulazioni per la stessa azione —
+                    // è la stessa regola che vale per le celle della griglia.
                     return (
                       <div
                         key={shift.id}
                         className={`timeline-card ${isAssenza ? `timeline-card--${tipo}` : ''} ${night ? 'timeline-card--night' : ''}`}
                         onClick={() => onEditShift(shift)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onEditShift(shift); }}
-                        aria-label={`Modifica turno del ${d.dayNum}/${month + 1}`}
                       >
                         <div className="timeline-card-header">
                           {isAssenza ? (
@@ -134,7 +138,7 @@ export default function TimelineView({
                           <button
                             type="button"
                             className="timeline-card-edit-btn"
-                            aria-label="Modifica"
+                            aria-label={`Modifica ${descrizione}`}
                             onClick={(e) => { e.stopPropagation(); onEditShift(shift); }}
                           >
                             ✎
@@ -144,8 +148,11 @@ export default function TimelineView({
                         {/* Badge e Metadati del Turno */}
                         <div className="timeline-card-badges">
                           {night && (
-                            <span className="timeline-badge timeline-badge--night">
-                              🌙 Notte
+                            <span
+                              className="timeline-badge timeline-badge--night"
+                              title="Il turno tocca la fascia 22:00–06:00. È un'indicazione sull'orario: non incide sulla stima della paga."
+                            >
+                              🌙 Notturno
                             </span>
                           )}
 
@@ -181,20 +188,19 @@ export default function TimelineView({
                   </button>
                 </div>
               ) : (
-                /* Card Giorno Libero / Riposo */
-                <div
+                /* Giorno libero: è un pulsante vero, così la tastiera e la barra
+                   spaziatrice funzionano senza doverle reimplementare a mano. */
+                <button
+                  type="button"
                   className="timeline-rest-card"
                   onClick={() => onAddShift(d.dateStr)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onAddShift(d.dateStr); }}
-                  aria-label={`Giorno di riposo. Clicca per aggiungere un turno il ${d.dayNum}/${month + 1}`}
+                  aria-label={`Giorno di riposo: aggiungi un turno il ${d.dayNum}/${month + 1}`}
                 >
-                  <div className="timeline-rest-content">
+                  <span className="timeline-rest-content">
                     <span className="timeline-rest-label">🌿 Riposo</span>
                     <span className="timeline-rest-action">+ Aggiungi turno</span>
-                  </div>
-                </div>
+                  </span>
+                </button>
               )}
             </div>
           </div>
