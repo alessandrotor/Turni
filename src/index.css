@@ -349,10 +349,10 @@ input, select, textarea { font: inherit; }
   background: #f8fafc;
 }
 
-.timeline-card--ferie { border-left-color: #0284c7; background: #f0f9ff; }
-.timeline-card--malattia { border-left-color: #e11d48; background: #fff1f2; }
-.timeline-card--permesso { border-left-color: #d97706; background: #fffbeb; }
-.timeline-card--infortunio { border-left-color: #7c3aed; background: #f5f3ff; }
+.timeline-card--ferie { border-left-color: var(--c-success); background: #f0fdf4; }
+.timeline-card--permesso { border-left-color: #7c3aed; background: #faf5ff; }
+.timeline-card--malattia { border-left-color: #64748b; background: #f8fafc; }
+.timeline-card--infortunio { border-left-color: var(--c-danger); background: #fef2f2; }
 
 .timeline-card-header {
   display: flex;
