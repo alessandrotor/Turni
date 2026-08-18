@@ -76,8 +76,12 @@ export async function parseShiftsFromImage(imageFile, workerName = '') {
   if (turnstileAttivo()) {
     try {
       turnstileToken = await ottieniToken();
-    } catch {
-      throw new Error('Verifica di sicurezza non riuscita: controlla la connessione e riprova.');
+    } catch (e) {
+      // `ottieniToken` ha già riprovato per conto suo: se si arriva qui il
+      // guasto è persistito, quindi il consiglio non può più essere «riprova».
+      // Il motivo tecnico resta in console, dove serve a chi ripara.
+      console.warn('turnstile: nessun token dopo i tentativi —', e?.message);
+      throw new Error('Verifica di sicurezza non riuscita. Ricarica la pagina e riprova; se continua, potrebbe essere un blocco del browser.');
     }
   }
 
