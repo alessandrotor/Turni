@@ -38,17 +38,8 @@ function caricaScript() {
   return caricamento;
 }
 
-/**
- * Ottiene un token di verifica. Restituisce '' se Turnstile non è configurato
- * (sviluppo locale senza sitekey), così il flusso resta identico.
- *
- * Il contenitore è un div fuori schermo: in modalità invisibile Turnstile non
- * disegna nulla di visibile, ma un elemento nel DOM gli serve comunque.
- */
-export async function ottieniToken() {
-  if (!SITEKEY) return '';
-  await caricaScript();
-
+// Un solo giro di giostra: disegna il widget, aspetta il token, pulisce.
+async function unTentativo() {
   const box = document.createElement('div');
   box.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;';
   document.body.appendChild(box);
@@ -62,7 +53,14 @@ export async function ottieniToken() {
         sitekey: SITEKEY,
         appearance: 'interaction-only',
         callback: chiudi(resolve),
-        'error-callback': chiudi(() => reject(new Error('verifica fallita'))),
+        // Il CODICE d'errore va conservato, non buttato. Il 18 agosto un
+        // «110200» (dominio non in elenco) è costato un'ora di diagnosi
+        // perché a video arrivava solo «verifica non riuscita»: il codice
+        // dice in un secondo se è configurazione, rete o blocco del browser.
+        'error-callback': chiudi((codice) => {
+          console.warn('turnstile: errore', codice);
+          reject(new Error(`verifica fallita (${codice ?? 'senza codice'})`));
+        }),
         'timeout-callback': chiudi(() => reject(new Error('verifica scaduta'))),
       });
     });
@@ -71,5 +69,31 @@ export async function ottieniToken() {
     // iframe di Cloudflare che continua a rinnovare il token.
     try { if (widgetId !== undefined) window.turnstile.remove(widgetId); } catch { /* già rimosso */ }
     box.remove();
+  }
+}
+
+/**
+ * Ottiene un token di verifica. Restituisce '' se Turnstile non è configurato
+ * (sviluppo locale senza sitekey), così il flusso resta identico.
+ *
+ * Riprova UNA volta prima di arrendersi. Non è prudenza generica: il primo
+ * tentativo fallisce in casi che al secondo non si ripresentano — la
+ * configurazione del widget appena cambiata e non ancora propagata ai bordi di
+ * Cloudflare, lo script caricato ma non ancora pronto, un singolo pacchetto
+ * perso. Senza il secondo tentativo ognuno di questi costa all'utente l'intero
+ * import: deve chiudere l'errore e riscegliere la foto da capo.
+ */
+export async function ottieniToken() {
+  if (!SITEKEY) return '';
+  await caricaScript();
+
+  try {
+    return await unTentativo();
+  } catch (primo) {
+    console.warn('turnstile: primo tentativo fallito, riprovo —', primo.message);
+    // Mezzo secondo di respiro: senza pausa un guasto istantaneo (script non
+    // pronto) si ripeterebbe identico.
+    await new Promise(r => setTimeout(r, 500));
+    return unTentativo();
   }
 }
