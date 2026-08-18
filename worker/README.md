@@ -160,3 +160,35 @@ un "ignora le istruzioni" scritto nell'immagine non ha dove sfogare. Restano:
 - **il tetto di spesa lato Google**, che va impostato su AI Studio / Cloud
   Console: è l'unico controllo che regge anche se il worker viene aggirato del
   tutto.
+
+## Due worker: produzione e prova
+
+| | Configurazione | Chiave Gemini | KV |
+|---|---|---|---|
+| `turni-ai-proxy` | `wrangler.toml` | progetto di produzione | `d683b877…` |
+| `turni-ai-proxy-test` | `wrangler.test.toml` | **progetto Google diverso** | `52b3f1dd…` |
+
+```bash
+npx wrangler deploy                          # produzione
+npx wrangler deploy -c wrangler.test.toml    # prova
+```
+
+Il secondo esiste per una ragione sola: il tetto di **300 riconoscimenti al
+giorno e' condiviso** da tutti quelli che parlano con lo stesso worker. Senza
+separazione, un ciclo di prove spegne l'import agli utenti veri fino a
+mezzanotte — e non e' un problema di soldi, e' un problema di disponibilita':
+non viene speso un centesimo.
+
+**La chiave del worker di prova deve stare in un PROGETTO Google diverso**, non
+essere semplicemente una seconda chiave. Le quote Gemini stanno sul progetto:
+due chiavi dello stesso progetto condividono lo stesso limite e non separano
+nulla.
+
+Il `TURNSTILE_SECRET` invece e' lo stesso sui due worker: il widget e' uno solo
+e copre entrambi i domini.
+
+Il sito di prova sceglie il proxy con la variabile GitHub
+`VITE_AI_PROXY_URL_TEST`, che ha come ripiego `VITE_AI_PROXY_URL` (vedi
+`.github/workflows/deploy-test.yml`). Due nomi distinti invece di uno
+sovrascritto: cosi' nessuno dei due ambienti puo' ereditare l'indirizzo
+dell'altro per distrazione.

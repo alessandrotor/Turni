@@ -4,8 +4,22 @@
 #
 # Richiede queste impostazioni nel repo GitHub (Settings → Secrets and variables → Actions):
 #   - Secret   CLOUDFLARE_API_TOKEN     → token Cloudflare con permesso "Cloudflare Pages: Edit"
-#   - Variable VITE_AI_PROXY_URL        → https://turni-ai-proxy.magnaopa.workers.dev
+#   - Variable VITE_AI_PROXY_URL_TEST   → https://turni-ai-proxy-test.magnaopa.workers.dev
+#   - Variable VITE_AI_PROXY_URL        → proxy di PRODUZIONE, usato solo come ripiego
 #   - Variable VITE_TURNSTILE_SITEKEY   → sitekey Turnstile (pubblico, non è un segreto)
+#
+# I DUE PROXY. Il sito di prova parla con un worker suo, che ha una chiave
+# Gemini di un progetto Google diverso. Senza, un ciclo di prove esaurirebbe il
+# tetto di 300 riconoscimenti al giorno CONDIVISO e spegnerebbe l'import agli
+# utenti veri fino a mezzanotte, senza che sia stato speso un centesimo.
+#
+# Il ripiego su VITE_AI_PROXY_URL non è pigrizia: permette di introdurre il
+# secondo worker senza finestre di rotture. Finché la variabile _TEST non
+# esiste, il sito di prova continua a usare il proxy di produzione come ha
+# sempre fatto; nel momento in cui la si crea, il passaggio avviene al deploy
+# successivo. Da creare SOLO dopo che il worker di prova ha la sua chiave,
+# altrimenti l'import di prova parla con un proxy che risponde
+# «Proxy non configurato».
 # (L'account id non è segreto ed è scritto qui sotto.)
 #
 # ORDINE DA RISPETTARE quando si attiva Turnstile: PRIMA questa variabile, POI il
@@ -42,7 +56,7 @@ jobs:
       - name: Build (telemetria OFF — VITE_TELEMETRY_URL volutamente non impostata)
         run: npm run build
         env:
-          VITE_AI_PROXY_URL: ${{ vars.VITE_AI_PROXY_URL }}
+          VITE_AI_PROXY_URL: ${{ vars.VITE_AI_PROXY_URL_TEST || vars.VITE_AI_PROXY_URL }}
           VITE_TURNSTILE_SITEKEY: ${{ vars.VITE_TURNSTILE_SITEKEY }}
 
       - name: Deploy su Pages (branch test)

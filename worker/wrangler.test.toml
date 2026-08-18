@@ -1,0 +1,54 @@
+# Worker GEMELLO per l'ambiente di prova.
+#
+# Stesso codice di `src/index.js`, risorse tutte separate. Serve a una cosa
+# sola: impedire che una prova consumi la quota degli utenti veri. Il tetto di
+# 300 riconoscimenti al giorno e' condiviso da tutti quelli che parlano con lo
+# stesso worker — e con la stessa chiave Gemini — quindi senza questo secondo
+# proxy un ciclo di prove spegne l'import in produzione fino a mezzanotte,
+# senza che sia stato speso un centesimo.
+#
+# Si distribuisce con:
+#   npx wrangler deploy -c wrangler.test.toml
+#
+# I SEGRETI non stanno qui e non sono condivisi con il worker di produzione:
+# vanno caricati dal pannello Cloudflare (Workers -> turni-ai-proxy-test ->
+# Settings -> Variables and Secrets), NON con `wrangler secret put` da una shell
+# non interattiva, che legge uno stdin vuoto e carica un segreto vuoto in
+# silenzio. E' gia' successo il 18 agosto.
+#
+#   GEMINI_API_KEY    chiave di un PROGETTO Google diverso da quello di
+#                     produzione. Le quote Gemini stanno sul progetto, non sulla
+#                     chiave: due chiavi dello stesso progetto condividerebbero
+#                     lo stesso limite, e non separerebbero niente.
+#   TURNSTILE_SECRET  lo stesso del worker di produzione. Il widget e' uno solo
+#                     e copre entrambi i domini, quindi un secondo widget
+#                     aggiungerebbe cose da ricordare senza proteggere di piu'.
+
+name = "turni-ai-proxy-test"
+main = "src/index.js"
+compatibility_date = "2026-01-15"
+
+# Namespace KV suo, cosi' il contatore giornaliero delle prove non tocca quello
+# di produzione. Creato con `npx wrangler kv namespace create RATE_TEST`.
+[[kv_namespaces]]
+binding = "RATE"
+id = "52b3f1ddffdd4a93a51389384fa41524"
+
+# Guardie sulla raffica: stesse soglie della produzione. Gli `namespace_id` sono
+# etichette scelte da noi e restano distinti da quelli di produzione (1001/1002)
+# per non confondersi leggendo i log.
+[[ratelimits]]
+name = "RAFFICA_IP"
+namespace_id = "2001"
+
+  [ratelimits.simple]
+  limit = 5
+  period = 60
+
+[[ratelimits]]
+name = "RAFFICA_INSTALL"
+namespace_id = "2002"
+
+  [ratelimits.simple]
+  limit = 5
+  period = 60
