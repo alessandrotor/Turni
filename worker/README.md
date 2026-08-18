@@ -89,26 +89,56 @@ Senza `TURNSTILE_SECRET` il worker salta la verifica — comodo per `wrangler de
 
 ## Limiti
 
-Due contatori su KV, con comportamenti diversi in caso di guasto:
+Due livelli con scopi diversi, e solo il primo costa scritture KV.
 
-| | Soglia | Se KV non risponde |
-|---|---|---|
-| **Globale al giorno** | 300 | **Blocca** (503) — è il tetto di spesa |
-| **Per installazione al giorno** | 25 | **Lascia passare** — è una guardia, non sicurezza |
+| | Soglia | Dove | Se si guasta |
+|---|---|---|---|
+| **Globale al giorno** | 300 | KV | **Blocca** (503) — e' il tetto di spesa |
+| **Raffica per IP** | 5 / 60 s | rate limiting binding | **Lascia passare** |
+| **Raffica per installazione** | 5 / 60 s | rate limiting binding | **Lascia passare** |
 
-La distinzione non è un dettaglio: `installId` arriva dal client e chiunque può
-generarne uno nuovo a ogni richiesta, quindi non è un controllo di sicurezza e
-non deve poter spegnere la funzione. Il tetto globale sì.
+Il tetto globale sta su KV perche' deve valere su tutto il pianeta e perche' in
+caso di guasto deve bloccare: se non si puo' leggere quanto si e' speso, non si
+spende. E' l'unica difesa che regge anche quando tutto il resto e' aggirato.
 
-**Il conto delle scritture KV è il vincolo che regge il dimensionamento.** Il
-piano gratuito dà 1.000 scritture al giorno e qui se ne fanno **due** per
-richiesta: 300 × 2 = 600, con margine. Aggiungendo un terzo contatore si
-arriverebbe a 900 e il fail-closed si rivolterebbe contro, spegnendo la funzione
-quando il limitatore esaurisce la *propria* quota — prima ancora di raggiungere
-il tetto di richieste. Se un giorno si alza il tetto, va rifatto questo conto.
+Le due raffiche sono guardie contro il **ciclo**, non contro l'uso, e si
+guastano in modo permissivo: dietro c'e' gia' il tetto globale. Coprono due
+aggiramenti diversi — chi rigenera l'`installId` a ogni richiesta resta appeso
+all'IP, chi cambia rete resta appeso all'installazione.
 
-Il conteggio è eventualmente consistente: una raffica molto rapida può sforare
-di poco.
+**Perche' al minuto e non al giorno.** Il binding accetta solo periodi da 10 o
+60 secondi: finestre giornaliere non esistono. Contro la minaccia vera e' anche
+la scelta migliore — chi abusa lo fa in ciclo, e un limite al minuto lo ferma in
+pochi secondi, mentre un contatore giornaliero lo lascerebbe correre fino a
+bruciare la quota di tutti.
+
+Le soglie della raffica vivono in `wrangler.toml`, non nel codice: duplicarle
+creerebbe un numero che sembra autorevole e non lo e'.
+
+**Il conto delle scritture KV.** Il piano gratuito ne da' 1.000 al giorno e qui
+se ne fa **una** per richiesta: 300 su 1.000, con margine largo. Erano due
+finche' esisteva il contatore "25 al giorno per installazione", sostituito dalle
+raffiche. Se un giorno si alza il tetto globale, va rifatto questo conto — e va
+rifatto anche `check-proxy-difese.mjs`, che asserisce la singola scrittura.
+
+Il conteggio globale e' eventualmente consistente: una raffica molto rapida puo'
+sforare di poco. Il rate limiter, in piu', conta **per singolo data center**, e
+Cloudflare lo dichiara "non un sistema di contabilita' accurato": va bene per
+una guardia, non andrebbe bene per un tetto di spesa.
+
+## CORS
+
+Ristretto, ma con un'avvertenza su cosa protegge: il CORS vive nel **browser**.
+Impedisce a una pagina di terzi di leggere la risposta di questo proxy usando la
+sessione di un tuo utente. Contro uno script a riga di comando non fa nulla —
+basta non mandare l'header `Origin`.
+
+Per questo un'origine non ammessa non viene respinta con un errore: sarebbe
+teatro. Semplicemente non le si restituisce il permesso.
+
+Ammessi: `turni-9vr.pages.dev` e i suoi sottodomini (sito di prova e anteprime
+di Pages), `https://localhost` per la WebView Capacitor dell'APK, e
+`http://localhost:<porta>` per `npm run dev`.
 
 ## Tetti per richiesta
 

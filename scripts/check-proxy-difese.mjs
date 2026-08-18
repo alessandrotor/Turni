@@ -60,11 +60,31 @@ function kvFinto({ rompiSu = null } = {}) {
 const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 const immagineValida = PNG + 'A'.repeat(600);
 
-const chiama = (body, env) => worker.fetch(new Request('https://x/parse-shifts', {
+const chiama = (body, env, { origin, ip = '203.0.113.5' } = {}) => worker.fetch(new Request('https://x/parse-shifts', {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '203.0.113.5' },
+  headers: {
+    'Content-Type': 'application/json',
+    'CF-Connecting-IP': ip,
+    ...(origin ? { Origin: origin } : {}),
+  },
   body: JSON.stringify(body),
 }), env);
+
+// Limitatore di raffica finto: conta le chiamate per chiave e dice `success:
+// false` oltre la soglia. `rotto` simula il guasto del binding, che deve essere
+// perdonato (fail-open) perche' dietro c'e' gia' il tetto globale.
+function raffcaFinta({ limite = 5, rotto = false } = {}) {
+  const conteggi = new Map();
+  return {
+    _conteggi: conteggi,
+    async limit({ key }) {
+      if (rotto) throw new Error('binding non disponibile');
+      const n = (conteggi.get(key) || 0) + 1;
+      conteggi.set(key, n);
+      return { success: n <= limite };
+    },
+  };
+}
 
 const base = (extra = {}) => ({
   image: immagineValida, mimeType: 'image/png', workerName: 'Rossi',
@@ -77,7 +97,10 @@ const check = (l, ok, extra = '') => {
   console.log(`${ok ? '  ok  ' : '  XX  '} ${l}${extra ? '  → ' + extra : ''}`);
 };
 const reset = () => { chiamateGemini = 0; ultimoBody = null; turnstileOk = true; rispostaGemini = null; statoGemini = 200; };
-const conKv = (opts) => ({ GEMINI_API_KEY: 'x', TURNSTILE_SECRET: 's', RATE: kvFinto(opts) });
+const conKv = (opts) => ({
+  GEMINI_API_KEY: 'x', TURNSTILE_SECRET: 's', RATE: kvFinto(opts),
+  RAFFICA_IP: raffcaFinta(), RAFFICA_INSTALL: raffcaFinta(),
+});
 
 console.log('\nPercorso felice e costo per richiesta\n');
 {
@@ -88,8 +111,12 @@ console.log('\nPercorso felice e costo per richiesta\n');
   check('200 con items e usage', r.status === 200 && b.items?.length === 1 && b.usage.total === 3407);
   check('Gemini chiamato una volta sola', chiamateGemini === 1);
   // Il conto delle scritture è il vincolo su cui regge il tetto di 300/giorno
-  // contro le 1.000 scritture del piano gratuito KV.
-  check('DUE scritture KV, non di più', kv.scritture === 2, `scritture: ${kv.scritture}`);
+  // contro le 1.000 scritture del piano gratuito KV. Era DUE finché esisteva il
+  // contatore giornaliero per installazione; da quando quella guardia è passata
+  // al rate limiter — che non tocca KV — ne resta UNA sola, e il margine passa
+  // da 400 a 700 scritture. Se un giorno questo numero risale, il tetto globale
+  // va ridimensionato di conseguenza.
+  check('UNA sola scrittura KV per richiesta', kv.scritture === 1, `scritture: ${kv.scritture}`);
   check('maxOutputTokens contenuto', ultimoBody.generationConfig.maxOutputTokens === 12288,
         String(ultimoBody.generationConfig.maxOutputTokens));
 }
@@ -125,12 +152,57 @@ console.log('\nTetti di volume\n');
   check('  la chiave porta la data: domani riparte', [...kv._dati.keys()].some(k => k.includes(oggi)));
 }
 {
+  // Raffica: la sesta richiesta di fila dallo stesso IP deve essere fermata.
+  // Il controllo che conta non e' il 429, e' che Gemini non venga chiamato.
   reset();
-  const kv = kvFinto();
-  const oggi = new Date().toISOString().slice(0, 10);
-  kv._dati.set(`install:tst_prova:${oggi}`, '25');
-  const r = await chiama(base(), { GEMINI_API_KEY: 'x', TURNSTILE_SECRET: 's', RATE: kv });
-  check('oltre il tetto per installazione → 429', r.status === 429);
+  const env = conKv();
+  let ultima;
+  for (let i = 0; i < 6; i++) ultima = await chiama(base(), env);
+  check('sesta richiesta di fila → 429 (raffica)', ultima.status === 429, (await ultima.clone().json()).error);
+  check('  e Gemini viene chiamato 5 volte, non 6', chiamateGemini === 5, String(chiamateGemini));
+}
+{
+  // Chi si rigenera l'installId a ogni richiesta resta appeso all'IP.
+  reset();
+  const env = conKv();
+  let ultima;
+  for (let i = 0; i < 6; i++) ultima = await chiama(base({ installId: 'tst_' + i }), env);
+  check('installId sempre diverso → lo ferma comunque l IP', ultima.status === 429);
+}
+{
+  // Chi cambia rete a ogni richiesta resta appeso all'installazione.
+  reset();
+  const env = conKv();
+  let ultima;
+  for (let i = 0; i < 6; i++) ultima = await chiama(base(), env, { ip: `203.0.113.${i}` });
+  check('IP sempre diverso → lo ferma comunque l installazione', ultima.status === 429);
+}
+{
+  // Il limitatore e' una guardia, non il tetto: se si guasta si prosegue.
+  reset();
+  const env = { GEMINI_API_KEY: 'x', TURNSTILE_SECRET: 's', RATE: kvFinto(),
+    RAFFICA_IP: raffcaFinta({ rotto: true }), RAFFICA_INSTALL: raffcaFinta({ rotto: true }) };
+  const r = await chiama(base(), env);
+  check('limitatore guasto → si prosegue (fail-open)', r.status === 200);
+}
+
+console.log("\nCORS: chi puo leggere la risposta dal browser\n");
+{
+  const permesso = async (origin) => {
+    reset();
+    const r = await chiama(base(), conKv(), { origin });
+    return r.headers.get('Access-Control-Allow-Origin');
+  };
+  check('sito di produzione ammesso', await permesso('https://turni-9vr.pages.dev') === 'https://turni-9vr.pages.dev');
+  check('sito di prova ammesso', await permesso('https://test.turni-9vr.pages.dev') === 'https://test.turni-9vr.pages.dev');
+  check('anteprima di Pages ammessa', await permesso('https://ad3686b2.turni-9vr.pages.dev') !== null);
+  check('APK Capacitor (https://localhost) ammesso', await permesso('https://localhost') === 'https://localhost');
+  check('dev su Vite ammesso', await permesso('http://localhost:5173') === 'http://localhost:5173');
+  check('origine estranea NON ammessa', await permesso('https://esempio-malevolo.test') === null);
+  check('  sosia del dominio NON ammesso', await permesso('https://turni-9vr.pages.dev.evil.test') === null);
+  // Senza Origin non c'e' un browser da proteggere: la richiesta passa, ed e'
+  // il motivo per cui il CORS non e' una difesa contro gli script.
+  check('senza Origin: nessun permesso, ma la richiesta passa', await permesso(undefined) === null);
 }
 
 console.log('\nComportamento a KV guasto\n');

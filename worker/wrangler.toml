@@ -6,10 +6,36 @@ compatibility_date = "2026-01-15"
 #   npx wrangler secret put GEMINI_API_KEY
 # In locale (`wrangler dev`) si legge invece da `worker/.dev.vars`, gitignorato.
 
-# Namespace KV per i limiti di richiesta. Creato con:
+# Namespace KV per il TETTO GIORNALIERO GLOBALE. Creato con:
 #   npx wrangler kv namespace create RATE
-# Senza binding il worker funziona comunque, ma senza alcun limite: va bene per
+# Senza binding il worker funziona comunque, ma senza alcun tetto: va bene per
 # `wrangler dev`, non in rete.
 [[kv_namespaces]]
 binding = "RATE"
 id = "d683b8770d88406ba79a65e64c9bec5f"
+
+# Guardie contro la RAFFICA. Non consumano scritture KV e non costano nulla in
+# più: si pagano solo le richieste al Worker.
+#
+# `period` accetta SOLO 10 o 60 secondi — finestre giornaliere non esistono, ed
+# è il motivo per cui il tetto dei 300 al giorno resta su KV. Il conteggio è per
+# singolo data center di Cloudflare e dichiarato non accurato: va bene per una
+# guardia permissiva, non andrebbe bene per un tetto di spesa.
+#
+# `namespace_id` è un identificativo scelto da noi, non un id da creare altrove:
+# serve solo a tenere separati i due contatori.
+[[ratelimits]]
+name = "RAFFICA_IP"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 5
+  period = 60
+
+[[ratelimits]]
+name = "RAFFICA_INSTALL"
+namespace_id = "1002"
+
+  [ratelimits.simple]
+  limit = 5
+  period = 60
