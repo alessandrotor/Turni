@@ -120,6 +120,23 @@ export default function App() {
     setShifts(prev => ({ ...prev, [id]: { ...shiftData, id } }));
   }, [setShifts]);
 
+  // Molte giornate in UNA scrittura sola, e nella stessa passata via i turni
+  // che quelle giornate coprono: non si puo' lavorare ed essere in ferie lo
+  // stesso giorno. Scriverle una per una farebbe altrettanti render e
+  // altrettanti salvataggi su localStorage.
+  const addShifts = useCallback((lista, idsDaRimuovere = []) => {
+    if (!lista?.length) return;
+    setShifts(prev => {
+      const next = { ...prev };
+      for (const id of idsDaRimuovere) delete next[id];
+      for (const dati of lista) {
+        const id = genId();
+        next[id] = { ...dati, id };
+      }
+      return next;
+    });
+  }, [setShifts]);
+
   const updateShift = useCallback((shift) => {
     setShifts(prev => ({ ...prev, [shift.id]: shift }));
   }, [setShifts]);
@@ -204,11 +221,14 @@ export default function App() {
     });
   }, [setShifts]);
 
-  const handleSaveShift = useCallback((shiftData) => {
-    if (modal?.type === 'add') addShift(shiftData);
-    else updateShift(shiftData);
+  // Il modale manda un turno solo (caso di sempre) oppure una LISTA piu' gli
+  // id da rimuovere, quando si segna un periodo di assenza.
+  const handleSaveShift = useCallback((dati, idsDaRimuovere = []) => {
+    if (Array.isArray(dati)) addShifts(dati, idsDaRimuovere);
+    else if (modal?.type === 'add') addShift(dati);
+    else updateShift(dati);
     setModal(null);
-  }, [modal, addShift, updateShift]);
+  }, [modal, addShift, addShifts, updateShift]);
 
   return (
     <div className="app">
@@ -268,6 +288,7 @@ export default function App() {
         <ShiftForm
           modal={modal}
           settings={settings}
+          turni={allShifts}
           onSave={handleSaveShift}
           onDelete={(id) => { deleteShift(id); setModal(null); }}
           onClose={() => setModal(null)}
