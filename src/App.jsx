@@ -4,7 +4,8 @@ import useLocalStorage from './hooks/useLocalStorage';
 import { getMonthStart, parseDate, payrollMonthKey } from './utils/dates';
 import { calcTotalPay, computePayByShift } from './utils/pay';
 import { isMensilizzato } from './utils/ccnl';
-import { computeAnnualGrossFromShifts } from './utils/net';
+import { computeAnnualGrossFromShifts, projectAnnualIncome } from './utils/net';
+import { ENABLE_NET_CALC } from './config/features';
 import { genId } from './utils/id';
 import CalendarView from './components/CalendarView';
 import StatsView from './components/StatsView';
@@ -204,6 +205,20 @@ export default function App() {
     [allShifts, settings, year, payByShift],
   );
 
+  // Reddito dell'anno PROIETTATO a dicembre, non quello incassato finora.
+  // Serve al riquadro del bonus: le soglie del trattamento integrativo valgono
+  // sull'anno intero, quindi «quanto posso ancora guadagnare» misurato sul
+  // maturato racconta un margine che non esiste — ad agosto direbbe che ci sono
+  // seimila euro di spazio mentre quattro mesi di stipendio se li mangiano
+  // comunque. È la stessa grandezza che usa la pagina Statistiche: passarla da
+  // qui è ciò che impedisce alle due schermate di dire numeri diversi.
+  const annualProjection = useMemo(
+    () => projectAnnualIncome(annualGross.total, annualGross.extras, settings, year, {
+      enableNetCalc: ENABLE_NET_CALC,
+    }),
+    [annualGross, settings, year],
+  );
+
   const importShifts = useCallback((parsedShifts) => {
     setShifts(prev => {
       const next = { ...prev };
@@ -252,6 +267,7 @@ export default function App() {
             allShifts={allShifts}
             payByShift={payByShift}
             annualGross={annualGross.total}
+            annualProjection={annualProjection.value}
             annualExtras={annualGross.extras}
             onNavigate={setView}
           />

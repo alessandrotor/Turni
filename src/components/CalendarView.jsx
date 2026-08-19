@@ -56,6 +56,9 @@ export default function CalendarView({
   allShifts,
   payByShift,
   annualGross,
+  // Reddito dell'anno PROIETTATO a dicembre: e' la grandezza su cui si
+  // misurano le soglie del bonus, che valgono sull'anno intero.
+  annualProjection = 0,
   annualExtras = 0,
   onNavigate,
   // Giorno da mettere in evidenza arrivando da un'altra pagina (il
@@ -220,8 +223,20 @@ export default function CalendarView({
     ].filter(v => v.value >= 0.005 || v.minutes > 0);
   }, [pay, settings, totalMins]);
 
-  // Bonus busta paga: quanto manca alla soglia (reddito annuo dai turni)
-  const bonus = useMemo(() => calcBonusMargin(annualGross, settings), [annualGross, settings]);
+  // Bonus busta paga: quanto manca alla soglia.
+  //
+  // Si misura sulla PROIEZIONE dell'anno, non sul maturato. Le soglie del
+  // trattamento integrativo valgono sul reddito dell'anno intero: calcolare il
+  // margine su quanto si e' incassato finora annuncia uno spazio che non
+  // esiste, perche' i mesi che restano arrivano comunque. Ad agosto, con
+  // 10.000 incassati e la soglia a 16.600, il vecchio conto diceva «puoi
+  // ancora guadagnare 6.600» mentre quattro stipendi se li mangiavano quasi
+  // tutti. E' anche cio' che faceva dire numeri diversi a questa pagina e a
+  // Statistiche, che la proiezione la usava gia'.
+  const bonus = useMemo(
+    () => calcBonusMargin(annualProjection || annualGross, settings),
+    [annualProjection, annualGross, settings],
+  );
   const fmt0 = (n) => formatCurrency(Math.round(n));
 
   // Montante + confine automatico (granularità MESE): composizione del reddito e avviso.
@@ -923,16 +938,24 @@ export default function CalendarView({
             {showBonusDetail && (
               <>
                 <span className="bonus-strip-income">
-                  Reddito totale {currentMonth.getFullYear()}: <strong>{fmt0(bonus.income)}</strong>
+                  Reddito {currentMonth.getFullYear()} previsto a fine anno: <strong>{fmt0(bonus.income)}</strong>
                 </span>
 
-                {(montante > 0 || annualExtras > 0) && (
-                  <span className="bonus-strip-note">
-                    ={montante > 0 ? ` montante ${fmt0(montante)}${priorMonthLabel ? ` (fino a ${priorMonthLabel})` : ''} +` : ''}
-                    {' '}turni {fmt0(bonus.income - montante - annualExtras)}
-                    {annualExtras > 0 && ` + 13ª/14ª ${fmt0(annualExtras)}`}
-                  </span>
-                )}
+                {/* La scomposizione appartiene al MATURATO, non alla
+                    proiezione: sottrarre montante ed extra da un numero
+                    proiettato darebbe una voce «turni» che non corrisponde a
+                    nessun turno inserito. Il maturato si mostra accanto, così
+                    si vede da dove parte la previsione. */}
+                <span className="bonus-strip-note">
+                  Maturato finora <strong>{fmt0(annualGross)}</strong>
+                  {(montante > 0 || annualExtras > 0) && (
+                    <>
+                      {' ='}{montante > 0 ? ` montante ${fmt0(montante)}${priorMonthLabel ? ` (fino a ${priorMonthLabel})` : ''} +` : ''}
+                      {' '}turni {fmt0(annualGross - montante - annualExtras)}
+                      {annualExtras > 0 && ` + 13ª/14ª ${fmt0(annualExtras)}`}
+                    </>
+                  )}
+                </span>
                 {montanteMismatch && (
                   <span className="bonus-strip-note bonus-strip-note--warn">
                     ⚠️ Montante dichiarato {fmt0(montante)} diverso dai turni fino a {priorMonthLabel} ({fmt0(shiftsCovered)}). Normale se include altri redditi o paghe diverse.
@@ -946,7 +969,7 @@ export default function CalendarView({
                     </span>
                     <span className="bonus-strip-value">{fmt0(bonus.marginToFull)}</span>
                     <span className="bonus-strip-note">
-                      prima di superare i {fmt0(bonus.thresholdFullGross)} lordi e uscire dal bonus pieno
+                      prima di superare i {fmt0(bonus.thresholdFullGross)} lordi previsti a fine anno e uscire dal bonus pieno
                       <span className="bonus-strip-hint"> (= 15.000 € imponibili, al netto dei contributi)</span>
                     </span>
                   </div>
