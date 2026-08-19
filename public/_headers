@@ -1,0 +1,53 @@
+# Header di sicurezza per Cloudflare Pages.
+#
+# Questo file vale per ENTRAMBI i siti — produzione e prova condividono lo
+# stesso `dist` — quindi ogni indirizzo che serve a uno dei due deve stare qui.
+# È il motivo per cui `connect-src` elenca due proxy AI e non uno.
+#
+# ATTENZIONE AL FORMATO: un valore non può andare a capo. La CSP sta su una riga
+# sola, per quanto lunga. Spezzarla non dà un errore: le righe successive
+# vengono lette come header nuovi e ignorate, e la policy resta monca senza che
+# nessuno se ne accorga.
+#
+# ── Perché per ora è REPORT-ONLY ──────────────────────────────────────────
+# `Content-Security-Policy-Report-Only` fa scrivere le violazioni in console
+# senza bloccare nulla. È l'unico modo di scoprire cosa si romperebbe SENZA
+# romperlo: si percorre tutta l'app, si leggono le violazioni, si corregge la
+# policy, e solo dopo si toglie il suffisso `-Report-Only`.
+# Una CSP sbagliata non degrada — taglia netto una funzione, solo in rete e solo
+# per chi la usa. Questo passaggio esiste per non scoprirlo dagli utenti.
+#
+# ── Note sulle singole direttive ──────────────────────────────────────────
+# script-src / frame-src challenges.cloudflare.com: senza questi Turnstile non
+#   parte e l'import da foto muore. `connect-src` lo elenca come cintura oltre
+#   alle bretelle: la documentazione di Cloudflare chiede solo i primi due.
+#   NON serve 'unsafe-inline' in script-src — se qualcosa non va, la tentazione
+#   sarà aggiungerlo «per sicurezza»: non farlo, indebolisce proprio il punto
+#   che protegge di più.
+# style-src 'unsafe-inline': l'app usa attributi `style` inline. Toglierlo
+#   richiederebbe riscriverli, e non è il lavoro di questa settimana.
+# img-src data: blob:: l'immagine scelta viene ridimensionata su canvas prima
+#   di partire, e l'anteprima è un object URL.
+# worker-src blob:: il service worker e le librerie di export.
+# frame-ancestors 'none': nessuno può incorniciare l'app. `X-Frame-Options`
+#   qui sotto dice la stessa cosa ai browser che non leggono la CSP.
+
+/*
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; worker-src 'self' blob:; manifest-src 'self'; connect-src 'self' https://turni-ai-proxy.magnaopa.workers.dev https://turni-ai-proxy-test.magnaopa.workers.dev https://challenges.cloudflare.com https://cloudflareinsights.com https://static.cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+
+# La fotocamera è negata di proposito e non rompe l'import: l'input file usa
+# `accept="image/*"` senza `capture`, quindi apre il selettore di sistema — che
+# può a sua volta offrire la fotocamera, ma è il sistema a gestirla, non la
+# pagina.
+
+# Gli asset hanno l'impronta del contenuto nel nome, quindi non cambiano mai a
+# parità di nome e si possono dichiarare immutabili. Non è una rifinitura: oggi
+# Cloudflare li serve con `max-age=0, must-revalidate`, cioè una richiesta di
+# rete per ogni file a ogni visita.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
