@@ -7,16 +7,6 @@ import { minutiNotturniPagati, pctNotturno, fasciaNotturna } from '../utils/nott
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { isHoliday } from '../utils/holidays';
 
-// Chi ha chiesto al sistema di ridurre le animazioni non deve vedere la pagina
-// scorrere da sola: lo stesso salto, senza il movimento.
-function comportamentoScorrimento() {
-  try {
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
-  } catch {
-    return 'auto';
-  }
-}
-
 // Il badge dice quante ore cadono in fascia; il suggerimento dice se quelle ore
 // valgono davvero di più. Sono due cose diverse e vanno tenute distinte: la
 // fascia è un fatto dell'orario, la maggiorazione è un'impostazione che l'utente
@@ -45,41 +35,27 @@ export default function TimelineView({
   const todayRef = useRef(null);
   const focusRef = useRef(null);
 
-  // Vero solo al primo scorrimento dopo il montaggio, cioè quando si arriva
-  // qui dalla griglia. Serve a scegliere fra salto e animazione, vedi sotto.
-  const appenaMontato = useRef(true);
-
   // Porta sotto gli occhi il giorno focus, o oggi nel mese corrente.
+  //
+  // SALTO ISTANTANEO, non animato, e non e' una scelta di stile: misurato sul
+  // sito pubblicato il 19 agosto, dallo stesso punto di partenza e con il
+  // layout fermo, `behavior:'smooth'` lasciava la pagina a zero e «oggi» a
+  // 1304 pixel sotto il bordo, mentre `'auto'` centrava il giorno al pixel
+  // giusto. Era la causa dello schermo mezzo bianco al passaggio dalla
+  // griglia: sembrava un problema di layout non ancora assestato, ed era
+  // l'animazione che finiva dove capitava.
+  //
+  // Niente attese su `requestAnimationFrame`: `getBoundingClientRect`, che
+  // `scrollIntoView` usa internamente, forza gia' il ricalcolo del layout,
+  // quindi la posizione e' quella vera anche subito dopo il commit di React.
+  // Un rinvio in piu' aggiunge solo un modo di non scorrere affatto.
+  //
+  // Essendo istantaneo, non c'e' animazione da ridurre: chi ha chiesto meno
+  // movimento e' servito per costruzione.
   useEffect(() => {
     const bersaglio = focusRef.current || todayRef.current;
     if (!bersaglio) return;
-
-    // DUE FRAME DI ATTESA, e non è scaramanzia. L'effetto parte appena React ha
-    // scritto il DOM, ma il browser non ha ancora rifatto il layout: passando
-    // dalla griglia all'agenda la pagina raddoppia di altezza, e lo
-    // scorrimento partiva verso una posizione calcolata sulla pagina vecchia.
-    // Misurato il 19 agosto: finiva a 1628 su un massimo di 1628 — in fondo al
-    // documento — con «oggi» 324 pixel SOPRA il bordo dello schermo, cioè fuori
-    // dalla vista, e mezzo schermo bianco. Aspettare il paint fa calcolare la
-    // posizione sulla pagina vera.
-    // NIENTE scorciatoia «se è già visibile non scorrere»: l'avevo aggiunta e
-    // il risultato è stato che non scorreva MAI. Un ramo che esce senza fare
-    // nulla, in un effetto che dipende da misure prese mentre il layout si
-    // assesta, è il tipo di ottimizzazione che costa più di quanto renda.
-    let annullato = false;
-    const frame = requestAnimationFrame(() => requestAnimationFrame(() => {
-      if (annullato) return;
-
-      // Al cambio di vista il salto è istantaneo: animare millecinquecento
-      // pixel facendo sfilare mezzo mese non è una cortesia, è un capogiro.
-      // L'animazione resta per gli spostamenti successivi, dove il movimento
-      // dice davvero da dove a dove si è andati.
-      const comportamento = appenaMontato.current ? 'auto' : comportamentoScorrimento();
-      appenaMontato.current = false;
-      bersaglio.scrollIntoView({ block: 'center', behavior: comportamento });
-    }));
-
-    return () => { annullato = true; cancelAnimationFrame(frame); };
+    bersaglio.scrollIntoView({ block: 'center', behavior: 'auto' });
   }, [focusDate, month, year]);
 
   // I giorni si ricostruiscono solo quando cambia il mese o cambiano i turni:
