@@ -45,6 +45,36 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  ! Access-Control-Allow-Origin
+
+# ── Access-Control-Allow-Origin: perché si TOGLIE ─────────────────────────
+# Il punto esclamativo davanti al nome è la sintassi di Pages per staccare un
+# header. Serve perché quello non lo mettiamo noi: lo aggiunge Cloudflare Pages
+# di suo, con valore `*`, e sta identico anche sui siti senza questo file. È il
+# rilievo di bassa gravità dell'audit, quello che avevo dichiarato «si chiude
+# gratis» e che invece era rimasto lì.
+#
+# Non è una falla: dice solo che chiunque può leggere via fetch una pagina che
+# è comunque pubblica. Ma è una politica più larga del necessario, annunciata
+# senza motivo su un sito che dai Pages non espone alcuna API.
+#
+# ── Cross-Origin-Opener-Policy ────────────────────────────────────────────
+# Isola il contesto di navigazione da eventuali finestre che ci aprissero.
+# Sicuro qui: l'app non apre mai finestre esterne, e Turnstile usa un iframe,
+# che COOP non tocca.
+#
+# NON mettiamo `Cross-Origin-Embedder-Policy: require-corp`, che pure
+# securityheaders suggerisce: pretenderebbe che OGNI risorsa esterna dichiari
+# di poter essere incorporata, e l'iframe di Turnstile e il beacon di
+# Cloudflare quasi certamente non lo fanno. Guadagno teorico, rischio concreto
+# di spegnere l'import.
+#
+# ── Nota sulle Pages Functions ────────────────────────────────────────────
+# Questi header NON valgono per le risposte generate dalle Functions, quindi
+# `/robots.txt` (functions/robots.txt.js) non li riceve. È testo semplice senza
+# superficie d'attacco, quindi va bene — ma se un giorno una Function servisse
+# qualcosa di più, gli header andrebbero messi lì dentro.
 
 # La fotocamera è negata di proposito e non rompe l'import: l'input file usa
 # `accept="image/*"` senza `capture`, quindi apre il selettore di sistema — che
