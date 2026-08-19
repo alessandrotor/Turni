@@ -8,7 +8,9 @@
 // `tiDecision` in net.js. L'utente però ragiona sul LORDO (è quello che somma
 // dai turni): qui si converte, così le due schermate non si contraddicono più.
 // In lordo le soglie valgono circa 16.518 € e 30.834 €.
-import { grossToTaxable, taxableToGross } from './net';
+// Estensione esplicita: senza, Node puro non importa questo modulo e non si
+// puo' scrivere uno script di riscontro — che infatti mancava.
+import { grossToTaxable, taxableToGross } from './net.js';
 
 export const BONUS_CONST = {
   SOGLIA_BONUS_PIENO: 15000, // imponibile: fino a qui bonus pieno (1200€)
