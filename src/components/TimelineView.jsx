@@ -45,11 +45,45 @@ export default function TimelineView({
   const todayRef = useRef(null);
   const focusRef = useRef(null);
 
-  // Scorri sul giorno focus (o su oggi al primo caricamento del mese corrente)
+  // Vero solo al primo scorrimento dopo il montaggio, cioè quando si arriva
+  // qui dalla griglia. Serve a scegliere fra salto e animazione, vedi sotto.
+  const appenaMontato = useRef(true);
+
+  // Porta sotto gli occhi il giorno focus, o oggi nel mese corrente.
   useEffect(() => {
     const bersaglio = focusRef.current || todayRef.current;
     if (!bersaglio) return;
-    bersaglio.scrollIntoView({ block: 'center', behavior: comportamentoScorrimento() });
+
+    // DUE FRAME DI ATTESA, e non è scaramanzia. L'effetto parte appena React ha
+    // scritto il DOM, ma il browser non ha ancora rifatto il layout: passando
+    // dalla griglia all'agenda la pagina raddoppia di altezza, e lo
+    // scorrimento partiva verso una posizione calcolata sulla pagina vecchia.
+    // Misurato il 19 agosto: finiva a 1628 su un massimo di 1628 — in fondo al
+    // documento — con «oggi» 324 pixel SOPRA il bordo dello schermo, cioè fuori
+    // dalla vista, e mezzo schermo bianco. Aspettare il paint fa calcolare la
+    // posizione sulla pagina vera.
+    let annullato = false;
+    const frame = requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (annullato) return;
+
+      // Già sotto gli occhi: fermarsi è meglio che spostare la pagina addosso
+      // a chi sta leggendo.
+      const r = bersaglio.getBoundingClientRect();
+      if (r.top >= 0 && r.bottom <= window.innerHeight) {
+        appenaMontato.current = false;
+        return;
+      }
+
+      // Al cambio di vista il salto è istantaneo: animare millecinquecento
+      // pixel facendo sfilare mezzo mese non è una cortesia, è un capogiro.
+      // L'animazione resta per gli spostamenti successivi, dove il movimento
+      // dice da dove a dove si è andati.
+      const comportamento = appenaMontato.current ? 'auto' : comportamentoScorrimento();
+      appenaMontato.current = false;
+      bersaglio.scrollIntoView({ block: 'center', behavior: comportamento });
+    }));
+
+    return () => { annullato = true; cancelAnimationFrame(frame); };
   }, [focusDate, month, year]);
 
   // I giorni si ricostruiscono solo quando cambia il mese o cambiano i turni:
