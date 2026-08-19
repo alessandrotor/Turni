@@ -115,9 +115,29 @@ verifica('totale', dom.totale, 71, '2 h diurne al 115% + 4 h notturne al 120%');
 const domSomma = euro({ ...base, sundaySurchargePct: 15, nightSurchargePct: 20, nightCumuloMode: 'somma' }, turnoDomenica);
 verifica('con cumulo a somma', domSomma.totale, 77, '60 + 9 + 8');
 
+// ── 6. La pausa: minuti di orologio contro minuti pagati ───────────────────
+// Un 22:00–06:00 con mezz'ora di pausa tocca la fascia per 8 ore ma ne paga
+// 7 e mezza. Motore e interfaccia devono dire lo STESSO numero, altrimenti il
+// riepilogo del mese contraddice il singolo turno.
+
+const { minutiNotturni, minutiNotturniPagati } = await import('../src/utils/notturno.js');
+const { calcShiftMinutes } = await import('../src/utils/pay.js');
+
+console.log('\nPausa: orologio contro pagato\n');
+const conPausa = { date: '2026-06-10', startTime: '22:00', endTime: '06:00', breakMinutes: 30 };
+verifica('minuti di orologio in fascia', minutiNotturni(conPausa), 480, 'il turno tocca la fascia per 8 ore');
+verifica('minuti pagati del turno', calcShiftMinutes(conPausa), 450, 'meno la pausa');
+verifica('minuti notturni pagabili', minutiNotturniPagati(conPausa, {}, calcShiftMinutes(conPausa)), 450, 'mai piu dei pagati');
+
+const senzaPausa = { date: '2026-06-10', startTime: '20:00', endTime: '02:00', breakMinutes: 0 };
+verifica('senza pausa il tetto non morde', minutiNotturniPagati(senzaPausa, {}, calcShiftMinutes(senzaPausa)), 240, 'restano i 240 in fascia');
+
+const euroPausa = euro({ ...base, nightSurchargePct: 20 }, { ...conPausa, id: 't3' });
+verifica('e in euro: minuti usati', euroPausa.minutiNotte, 450, 'non 480');
+
 console.log();
 if (falliti) {
   console.error(`${falliti} caso/i su ${totale} non tornano.`);
   process.exit(1);
 }
-console.log(`Tutti i ${totale} casi tornano, regola e motore.`);
+console.log(`Tutti i ${totale} casi tornano.`);

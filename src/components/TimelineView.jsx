@@ -3,7 +3,7 @@ import {
   formatDate, formatDayShort, isToday, isWeekend, formatMinutes,
 } from '../utils/dates';
 import { calcShiftMinutes, getShiftSurchargePct } from '../utils/pay';
-import { minutiNotturni, pctNotturno, fasciaNotturna } from '../utils/notturno';
+import { minutiNotturniPagati, pctNotturno, fasciaNotturna } from '../utils/notturno';
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { isHoliday } from '../utils/holidays';
 
@@ -117,7 +117,10 @@ export default function TimelineView({
                     const tipo = tipoTurno(shift);
                     const isAssenza = tipo !== TIPO.LAVORO;
                     const mins = calcShiftMinutes(shift);
-                    const notteMin = isAssenza ? 0 : minutiNotturni(shift, settings);
+                    // Gli stessi minuti che il motore paga, non quelli di
+                    // orologio: con una pausa i due numeri differiscono, e il
+                    // riepilogo del mese direbbe una cosa diversa dal turno.
+                    const notteMin = isAssenza ? 0 : minutiNotturniPagati(shift, settings, mins);
                     const night = notteMin > 0;
                     const surchargePct = getShiftSurchargePct(shift, settings);
                     const descrizione = isAssenza

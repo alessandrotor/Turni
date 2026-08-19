@@ -9,13 +9,19 @@
 # vengono lette come header nuovi e ignorate, e la policy resta monca senza che
 # nessuno se ne accorga.
 #
-# ── Perché per ora è REPORT-ONLY ──────────────────────────────────────────
-# `Content-Security-Policy-Report-Only` fa scrivere le violazioni in console
-# senza bloccare nulla. È l'unico modo di scoprire cosa si romperebbe SENZA
-# romperlo: si percorre tutta l'app, si leggono le violazioni, si corregge la
-# policy, e solo dopo si toglie il suffisso `-Report-Only`.
-# Una CSP sbagliata non degrada — taglia netto una funzione, solo in rete e solo
-# per chi la usa. Questo passaggio esiste per non scoprirlo dagli utenti.
+# ── La CSP è in vigore, dopo un giro in sola segnalazione ─────────────────
+# È nata come `Content-Security-Policy-Report-Only`, che segnala senza bloccare:
+# l'unico modo di scoprire cosa si romperebbe SENZA romperlo. Una CSP sbagliata
+# non degrada — taglia netto una funzione, solo in rete e solo per chi la usa.
+#
+# Il giro del 19 agosto sul sito di prova, con l'evento `securitypolicyviolation`
+# in ascolto: caricamento pagina, calendario in entrambe le viste, statistiche,
+# impostazioni, export Excel, export PDF e un token Turnstile ottenuto per
+# intero. **Zero violazioni**, e le sole risorse esterne caricate sono
+# `static.cloudflareinsights.com` e `challenges.cloudflare.com`.
+#
+# Chi tocca questa policy rifaccia quel giro prima di pubblicare, tornando in
+# sola segnalazione se il cambiamento non è banale.
 #
 # ── Note sulle singole direttive ──────────────────────────────────────────
 # script-src / frame-src challenges.cloudflare.com: senza questi Turnstile non
@@ -33,7 +39,7 @@
 #   qui sotto dice la stessa cosa ai browser che non leggono la CSP.
 
 /*
-  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; worker-src 'self' blob:; manifest-src 'self'; connect-src 'self' https://turni-ai-proxy.magnaopa.workers.dev https://turni-ai-proxy-test.magnaopa.workers.dev https://challenges.cloudflare.com https://cloudflareinsights.com https://static.cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; worker-src 'self' blob:; manifest-src 'self'; connect-src 'self' https://turni-ai-proxy.magnaopa.workers.dev https://turni-ai-proxy-test.magnaopa.workers.dev https://challenges.cloudflare.com https://cloudflareinsights.com https://static.cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff

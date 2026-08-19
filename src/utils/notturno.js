@@ -83,9 +83,28 @@ export function minutiInFasciaNotturna(startTime, endTime, settings = {}) {
   return minuti;
 }
 
-/** Come sopra, ma a partire da un turno. */
+/** Come sopra, ma a partire da un turno. Minuti di ORARIO, pausa esclusa. */
 export function minutiNotturni(shift, settings = {}) {
   return minutiInFasciaNotturna(shift?.startTime, shift?.endTime, settings);
+}
+
+/**
+ * Minuti notturni che si possono davvero PAGARE: mai più dei minuti pagati del
+ * turno.
+ *
+ * Serve perché la pausa si sottrae al totale del turno ma non si sa in che
+ * punto cada, quindi non la si può sottrarre alla sola fascia. Senza il tetto
+ * un 22:00–06:00 con mezz'ora di pausa risulterebbe di 8 ore notturne su 7 e
+ * mezza pagate — e il riepilogo del mese direbbe un numero diverso da quello
+ * mostrato sul turno.
+ *
+ * Il tetto sta qui e non nei due chiamanti proprio per questo: la regola deve
+ * essere una sola, altrimenti motore e interfaccia divergono in silenzio.
+ * Il numero dei minuti pagati arriva da fuori (`calcShiftMinutes`) per non
+ * creare una dipendenza circolare con `pay.js`, che importa questo modulo.
+ */
+export function minutiNotturniPagati(shift, settings = {}, minutiPagati = 0) {
+  return Math.min(minutiNotturni(shift, settings), Math.max(0, minutiPagati));
 }
 
 /**
