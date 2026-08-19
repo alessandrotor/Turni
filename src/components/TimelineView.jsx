@@ -62,22 +62,18 @@ export default function TimelineView({
     // documento — con «oggi» 324 pixel SOPRA il bordo dello schermo, cioè fuori
     // dalla vista, e mezzo schermo bianco. Aspettare il paint fa calcolare la
     // posizione sulla pagina vera.
+    // NIENTE scorciatoia «se è già visibile non scorrere»: l'avevo aggiunta e
+    // il risultato è stato che non scorreva MAI. Un ramo che esce senza fare
+    // nulla, in un effetto che dipende da misure prese mentre il layout si
+    // assesta, è il tipo di ottimizzazione che costa più di quanto renda.
     let annullato = false;
     const frame = requestAnimationFrame(() => requestAnimationFrame(() => {
       if (annullato) return;
 
-      // Già sotto gli occhi: fermarsi è meglio che spostare la pagina addosso
-      // a chi sta leggendo.
-      const r = bersaglio.getBoundingClientRect();
-      if (r.top >= 0 && r.bottom <= window.innerHeight) {
-        appenaMontato.current = false;
-        return;
-      }
-
       // Al cambio di vista il salto è istantaneo: animare millecinquecento
       // pixel facendo sfilare mezzo mese non è una cortesia, è un capogiro.
       // L'animazione resta per gli spostamenti successivi, dove il movimento
-      // dice da dove a dove si è andati.
+      // dice davvero da dove a dove si è andati.
       const comportamento = appenaMontato.current ? 'auto' : comportamentoScorrimento();
       appenaMontato.current = false;
       bersaglio.scrollIntoView({ block: 'center', behavior: comportamento });
