@@ -24,7 +24,7 @@
     "vigente": true,
     "idAccordo": null,
     "fonte": "https://www.cnel.it/Archivio-Contratti",
-    "note": null,
+    "note": "Divisore orario 4,3 e mensilizzazione riscontrati sulle buste di giugno e luglio 2026. MAGGIORAZIONI riscontrate su 17 cedolini 2024-2025 (pubblici esercizi, part-time 60%, livello 6S): notturno 25%, domenicale 10%, supplementare 30%, festivo 20%. Attenzione a come il cedolino le SCRIVE: domenicale e notturno riportano la sola maggiorazione («Magg. dom. 10%» = base x 0,10), mentre il festivo riporta il TOTALE («Magg. fest. 120%» = base x 1,20, cioe' +20%). Nell'app va sempre il «quanto in piu'», quindi 20 e non 120. La FASCIA notturna non e' nota: le buste non riportano le timbrature, e l'art. 13 CCNL prevede orari diversi per settore (24:00-06:00 ordinario, 23:00-06:00 pubblici esercizi, 23:30-06:30 alberghiero). Questi valori dipendono da livello e firmatario: vanno confermati sul proprio cedolino.",
     "verificato": true,
     "monthlyHoursFactor": 4.3,
     "mensilizzato": true,

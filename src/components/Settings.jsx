@@ -9,6 +9,7 @@ import { ENABLE_NET_CALC } from '../config/features';
 import { genId } from '../utils/id';
 import { minutiGiornoAssenza } from '../utils/assenze';
 import { FASCIA_NOTTURNA_DEFAULT, CUMULO_DEFAULT } from '../utils/notturno';
+import { normalizzaMaggiorazione, messaggioMaggiorazione } from '../utils/maggiorazioni';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
 const toInput = (n) => {
@@ -115,6 +116,24 @@ export default function Settings({ settings, onSave }) {
     setForm(f => ({ ...f, [field]: e.target.checked }));
     setSaved(false);
   };
+
+  // Le percentuali si normalizzano quando si LASCIA il campo, non mentre si
+  // scrive: chi digita «120» passa da «1», «12», «120», e convertire a metà
+  // strada sarebbe un campo che combatte con chi ci scrive dentro.
+  // La regola, e il perché sopra il 100% non è un indovinello, stanno in
+  // utils/maggiorazioni.js.
+  const [avvisiMagg, setAvvisiMagg] = useState({});
+  const controllaMagg = (field) => () => {
+    const esito = normalizzaMaggiorazione(form[field]);
+    if (esito.convertito) {
+      setForm(f => ({ ...f, [field]: esito.valore }));
+      setSaved(false);
+    }
+    setAvvisiMagg(a => ({ ...a, [field]: messaggioMaggiorazione(esito) }));
+  };
+  const avvisoMagg = (field) => (avvisiMagg[field]
+    ? <p className="form-hint form-hint--attenzione">⚠️ {avvisiMagg[field]}</p>
+    : null);
 
   const addPreviousRate = () => {
     setForm(f => ({ ...f, previousRates: [...f.previousRates, { id: genId(), until: '', rate: '' }] }));
@@ -575,8 +594,10 @@ export default function Settings({ settings, onSave }) {
                 placeholder="es. 30"
                 value={form.sundaySurchargePct || ''}
                 onChange={set('sundaySurchargePct')}
+                onBlur={controllaMagg('sundaySurchargePct')}
               />
             </div>
+            {avvisoMagg('sundaySurchargePct')}
           </div>
 
           <div className="form-group">
@@ -593,8 +614,10 @@ export default function Settings({ settings, onSave }) {
                 placeholder="es. 50"
                 value={form.holidaySurchargePct || ''}
                 onChange={set('holidaySurchargePct')}
+                onBlur={controllaMagg('holidaySurchargePct')}
               />
             </div>
+            {avvisoMagg('holidaySurchargePct')}
           </div>
 
           <div className="form-group">
@@ -626,8 +649,10 @@ export default function Settings({ settings, onSave }) {
                 placeholder="es. 20"
                 value={form.nightSurchargePct || ''}
                 onChange={set('nightSurchargePct')}
+                onBlur={controllaMagg('nightSurchargePct')}
               />
             </div>
+            {avvisoMagg('nightSurchargePct')}
             <p className="form-hint">
               Si applica <strong>alle sole ore che cadono nella fascia</strong>, non a tutto il
               turno: un 20:00–02:00 ha quattro ore notturne e due diurne. Lascia vuoto se il tuo
@@ -716,8 +741,10 @@ export default function Settings({ settings, onSave }) {
                 placeholder="es. 15"
                 value={form.overtimeSurchargePct || ''}
                 onChange={set('overtimeSurchargePct')}
+                onBlur={controllaMagg('overtimeSurchargePct')}
               />
             </div>
+            {avvisoMagg('overtimeSurchargePct')}
             <p className="form-hint">
               {form.onCall
                 ? `Applicata alle ore oltre le ${parseNum(form.dailyOvertimeThreshold) || 0}h giornaliere.`
@@ -745,8 +772,10 @@ export default function Settings({ settings, onSave }) {
                   placeholder="es. 30"
                   value={form.straordinarioSurchargePct}
                   onChange={set('straordinarioSurchargePct')}
+                onBlur={controllaMagg('straordinarioSurchargePct')}
                 />
               </div>
+            {avvisoMagg('straordinarioSurchargePct')}
               <p className="form-hint">
                 {haStraordinari
                   ? `Applicata alle ore oltre le ${mensilizzato ? `${oreMensiliFullTime}h del mese` : `${fullTimeWeeklyHours || 0}h settimanali`} full-time.`

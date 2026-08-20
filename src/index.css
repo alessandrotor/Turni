@@ -2246,3 +2246,13 @@ input, select, textarea { font: inherit; }
   color: var(--c-muted);
   font-size: .8em;
 }
+
+/* Avviso su un valore che merita un'occhiata: giallo, non rosso — non è un
+   errore che impedisce di salvare, è una cosa da guardare. */
+.form-hint--attenzione {
+  color: var(--c-warning);
+  background: var(--c-warning-light);
+  border-radius: var(--radius-sm);
+  padding: .4rem .55rem;
+  margin-top: .35rem;
+}
