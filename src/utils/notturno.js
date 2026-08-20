@@ -8,16 +8,34 @@
 // Per questo il notturno non poteva entrare in `getShiftSurchargeParts`: quella
 // funzione restituisce percentuali sul turno intero.
 //
-// LA FASCIA
-// Riscontrata su quattro contratti (agosto 2026):
-//   Vigilanza e servizi fiduciari  22:00–06:00
-//   Commercio / Terziario          22:00–06:00
-//   Metalmeccanici industria       22:00–06:00
-//   Turismo / Pubblici esercizi    22:00–06:00, MA 23:00–06:00 per i
-//                                  «lavoratori notturni» di pubblici esercizi,
-//                                  ristorazione e alberghi diurni
-// Default 22:00–06:00, ma configurabile: l'eccezione del Turismo riguarda
-// proprio il settore da cui viene la busta di riscontro dell'app.
+// LA FASCIA — e perché è configurabile e non una costante
+//
+// 22:00–06:00 è la definizione del D.Lgs 66/2003, e la usano vigilanza e
+// servizi fiduciari, commercio/terziario e metalmeccanici industria.
+//
+// Il TURISMO fa storia a sé, e non di poco: l'art. 13 del CCNL distingue più
+// casi e NESSUNO comincia alle 22. Il testo consultato ad agosto 2026 riporta
+// 24:00–06:00 per il lavoro notturno ordinario, 23:00–06:00 per i «lavoratori
+// notturni» di pubblici esercizi e ristorazione, 23:30–06:30 per alberghiero e
+// agenzie di viaggio.
+//
+// MA QUEI NUMERI NON VANNO PRESI COME ORO COLATO, e il codice non li impone
+// per questo. Sotto l'etichetta «turismo / pubblici esercizi» esistono contratti
+// firmati da associazioni diverse (Confcommercio, Conflavoro, ANPIT…) con
+// clausole che non coincidono, e i rinnovi hanno spostato anche la percentuale
+// fra il 20% e il 25%. L'utente di riferimento di quest'app ricorda dalle
+// proprie buste una fascia 23:30–06:00 in ristorazione, che non corrisponde a
+// nessuna delle tre: può essere una versione diversa del contratto o un
+// accordo aziendale, e in ogni caso la busta batte la ricerca.
+//
+// Da qui due conseguenze di disegno:
+//  - la fascia è CONFIGURABILE agli estremi, e `fasciaNotturna` non assume
+//    nulla sulla durata (23:30–06:30 dura sette ore, non otto);
+//  - il suggerimento in Impostazioni non spaccia una tabella per verità: dice
+//    che le fasce variano e che il numero giusto sta sul cedolino.
+//
+// Il default resta 22:00–06:00 perché è la definizione di legge e copre tre
+// contratti su quattro fra quelli guardati.
 //
 // LA PERCENTUALE NON STA QUI
 // Va dal 10% al 65% secondo classificazione (turnista o no, notturno abituale

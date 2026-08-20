@@ -656,9 +656,13 @@ export default function Settings({ settings, onSave }) {
                   />
                 </div>
                 <p className="form-hint">
-                  22:00–06:00 su vigilanza, commercio e metalmeccanici. Nel <strong>turismo</strong>{' '}
-                  è 22:00–06:00 in generale, ma <strong>23:00–06:00</strong> per i lavoratori
-                  notturni di pubblici esercizi, ristorazione e alberghi.
+                  <strong>22:00–06:00</strong> è la fascia di legge, e vale per vigilanza,
+                  commercio e metalmeccanici.{' '}
+                  <strong>Nel turismo quasi certamente non è questa.</strong> Lì la fascia
+                  comincia più tardi e cambia da settore a settore — si trovano 24:00, 23:00 e
+                  23:30 — e non coincide nemmeno fra i vari contratti firmati sotto quel nome.{' '}
+                  <strong>Copiala dal tuo cedolino</strong>: è l'unico posto dove il numero è
+                  quello vero.
                 </p>
               </div>
 

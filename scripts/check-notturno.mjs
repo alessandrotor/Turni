@@ -55,6 +55,44 @@ verifica('20:00–02:00', minutiInFasciaNotturna('20:00', '02:00', turismo), 180
 verifica('22:00–23:00', minutiInFasciaNotturna('22:00', '23:00', turismo), 0, 'fuori fascia con questo contratto');
 verifica('durata fascia', fasciaNotturna(turismo).durata, 420, '7 ore invece di 8');
 
+// ── 2-bis. Le altre due fasce dell'art. 13 CCNL Turismo ────────────────────
+// Il turismo non usa mai le 22: comma 1 lavoro ordinario 24:00-06:00, comma 2
+// lavoratori notturni di pubblici esercizi 23:00-06:00, comma 3 alberghiero e
+// agenzie di viaggio 23:30-06:30. Quest'ultima finisce alle 6:30, quindi la
+// fascia NON e' sempre lunga otto ore.
+console.log("\nArt. 13 CCNL Turismo: le tre fasce\n");
+
+const albergo = { nightStart: '23:30', nightEnd: '06:30' };
+verifica('c3 alberghiero: durata fascia', fasciaNotturna(albergo).durata, 420, '7 ore, e finisce alle 6:30');
+verifica('c3: turno 22:00-06:00', minutiInFasciaNotturna('22:00', '06:00', albergo), 390, 'dalle 23:30 alle 6');
+verifica('c3: turno 06:00-07:00', minutiInFasciaNotturna('06:00', '07:00', albergo), 30, 'la mezz ora fino alle 6:30 conta');
+verifica('c3: turno 23:00-23:30', minutiInFasciaNotturna('23:00', '23:30', albergo), 0, 'finisce quando la fascia comincia');
+
+const ordinario = { nightStart: '00:00', nightEnd: '06:00' };
+verifica('c1 lavoro ordinario: durata', fasciaNotturna(ordinario).durata, 360, '6 ore dalla mezzanotte');
+verifica('c1: turno 22:00-02:00', minutiInFasciaNotturna('22:00', '02:00', ordinario), 120, 'solo dopo mezzanotte');
+
+const pubbliciEsercizi = { nightStart: '23:00', nightEnd: '06:00' };
+verifica('c2 pubblici esercizi: durata', fasciaNotturna(pubbliciEsercizi).durata, 420, '');
+// Un turno 23:00-01:00 le separa tutte e tre: e' la prova che sceglierne una
+// a caso costa soldi veri, non un dettaglio di forma.
+// (NB: '24:00' non e' un orario valido — parseTime si ferma alle 23:59.)
+verifica('  fasce diverse, risultati diversi',
+  new Set([
+    minutiInFasciaNotturna('23:00', '01:00', albergo),          //  90: dalle 23:30
+    minutiInFasciaNotturna('23:00', '01:00', ordinario),        //  60: solo dopo mezzanotte
+    minutiInFasciaNotturna('23:00', '01:00', pubbliciEsercizi), // 120: tutto il turno
+  ]).size, 3, 'due ore di lavoro valgono 60, 90 o 120 minuti notturni');
+
+// La fascia che l'utente ricorda dalle proprie buste in ristorazione: comincia
+// alle 23:30 ma finisce alle 6:00, quindi non e' nessuna delle tre trovate
+// nelle fonti. Il motore deve reggerla comunque — e' il motivo per cui gli
+// estremi sono configurabili invece che scelti dal contratto.
+const bustaReale = { nightStart: '23:30', nightEnd: '06:00' };
+verifica('fascia 23:30-06:00 (da busta)', fasciaNotturna(bustaReale).durata, 390, '6 ore e mezza');
+verifica('  turno 22:00-06:00', minutiInFasciaNotturna('22:00', '06:00', bustaReale), 390, 'tutta la fascia');
+verifica('  turno 06:00-07:00', minutiInFasciaNotturna('06:00', '07:00', bustaReale), 0, 'qui finisce alle 6, non alle 6:30');
+
 // ── 3. Fascia non a cavallo della mezzanotte ───────────────────────────────
 console.log('\nFascia 00:00–06:00 (non scavalca la mezzanotte)\n');
 
