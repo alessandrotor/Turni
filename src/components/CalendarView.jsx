@@ -7,6 +7,8 @@ import {
 import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
+import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
+import { minutiGiornoAssenza } from '../utils/assenze';
 import { EXTRA_MONTHS } from '../utils/net';
 import { ENABLE_DEBUG } from '../config/features';
 import useMonthlyNet from '../hooks/useMonthlyNet';
@@ -55,6 +57,9 @@ export default function CalendarView({
   onAddShift,
   onEditShift,
   onImportShifts,
+  // Crea più giornate in una sola scrittura: serve alla proposta delle
+  // festività non lavorate qui sotto (la stessa usata per le assenze a periodo).
+  onAddShifts,
   settings,
   onUpdateSettings,
   allShifts,
@@ -226,6 +231,17 @@ export default function CalendarView({
       // giorni in cui serve di più capire dove sono finite le ore.
     ].filter(v => v.value >= 0.005 || v.minutes > 0);
   }, [pay, settings, totalMins]);
+
+  // Festività del mese senza alcun turno segnato. Una festività non lavorata
+  // viene pagata — in busta è un giustificativo a sé — ed è la cosa più facile
+  // da dimenticare: sono undici giorni sparsi nell'anno, e chi non lavora quel
+  // giorno non ha motivo di aprire l'app. Qui si PROPONE soltanto: chi è
+  // mensilizzato o non ne ha diritto non tocca niente.
+  const festivitaDaSegnare = useMemo(
+    () => festivitaSenzaTurno(year, month, allShifts || shifts, settings),
+    [year, month, allShifts, shifts, settings],
+  );
+  const oreFestivita = minutiGiornoAssenza(settings);
 
   // Bonus busta paga: quanto manca alla soglia.
   //
@@ -624,6 +640,26 @@ export default function CalendarView({
             {payrollRange && (
               <span className="summary-sublabel">
                 mese di paga: settimane intere, {payrollRange}
+              </span>
+            )}
+            {festivitaDaSegnare.length > 0 && oreFestivita > 0 && onAddShifts && (
+              <span className="summary-sublabel festivita-proposta">
+                {festivitaDaSegnare.length === 1 ? 'C’è ' : 'Ci sono '}
+                <strong>
+                  {festivitaDaSegnare.length}
+                  {festivitaDaSegnare.length === 1 ? ' giorno festivo' : ' giorni festivi'}
+                </strong>
+                {' '}senza turno ({festivitaDaSegnare.map(d => Number(d.slice(8))).join(', ')}
+                {' '}{formatMonthYear(currentMonth).split(' ')[0].toLowerCase()}).
+                {' '}Se ti vengono pagati, aggiungili —{' '}
+                {formatMinutesShort(oreFestivita)} ciascuno.
+                <button
+                  type="button"
+                  className="linklike festivita-proposta-btn"
+                  onClick={() => onAddShifts(giornateFestive(festivitaDaSegnare, oreFestivita))}
+                >
+                  Aggiungi
+                </button>
               </span>
             )}
           </div>

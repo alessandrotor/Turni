@@ -4,7 +4,7 @@ import { proponiPeriodo, totalePeriodo } from '../utils/periodo-assenza';
 import useModalDismiss from '../hooks/useModalDismiss';
 import { TIPO, ETICHETTA, ICONA, tipoTurno, isAssenza, minutiGiornoAssenza } from '../utils/assenze';
 
-const TIPI = [TIPO.LAVORO, TIPO.FERIE, TIPO.PERMESSO, TIPO.MALATTIA];
+const TIPI = [TIPO.LAVORO, TIPO.FERIE, TIPO.PERMESSO, TIPO.MALATTIA, TIPO.FESTIVITA];
 
 const BREAK_PRESETS = [
   { label: 'Nessuna', value: 0 },
@@ -189,6 +189,7 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
     [TIPO.FERIE]: 'giorno di ferie',
     [TIPO.PERMESSO]: 'permesso',
     [TIPO.MALATTIA]: 'giorno di malattia',
+    [TIPO.FESTIVITA]: 'giorno di festività',
   };
   const nomeTipo = NOME[form.kind];
   const titolo = `${isEdit ? 'Modifica' : 'Nuovo'} ${nomeTipo}`;

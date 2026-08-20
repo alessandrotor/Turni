@@ -262,6 +262,7 @@ export default function App() {
             onAddShift={(date) => setModal({ type: 'add', date })}
             onEditShift={(shift) => setModal({ type: 'edit', shift })}
             onImportShifts={importShifts}
+            onAddShifts={addShifts}
             settings={settings}
             onUpdateSettings={updateSettings}
             allShifts={allShifts}

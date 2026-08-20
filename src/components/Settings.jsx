@@ -882,11 +882,16 @@ export default function Settings({ settings, onSave }) {
             </div>
           </div>
           <p className="form-hint form-hint--warn">
-            ⚠️ Questi valori <strong>non sono verificati su nessuna busta paga</strong>, a
-            differenza di contributi e aliquote fiscali: nessuno dei cedolini usati per tarare
-            l'app contiene malattia. La struttura è quella dello schema INPS (primi tre giorni
-            a parte), ma quanto paghi davvero dipende dal tuo CCNL. Controlla su una tua busta
-            con malattia e correggi qui.
+            ⚠️ Questi valori <strong>non sono verificati</strong>, a differenza di contributi e
+            aliquote fiscali. La struttura è quella dello schema INPS (primi giorni a parte), ma
+            quanto prendi davvero dipende dal contratto <em>e dall'azienda</em>.
+          </p>
+          <p className="form-hint">
+            I primi giorni sono proposti a <strong>0%</strong> perché molti contratti non li
+            pagano — ma <strong>certe aziende li pagano lo stesso</strong>, per scelta propria:
+            in due cedolini esaminati compare una voce «Carenza malattia» con un importo. Se hai
+            una busta con un periodo di malattia, guardala prima di lasciare zero: la differenza
+            su una settimana di assenza non è piccola.
           </p>
         </details>
 

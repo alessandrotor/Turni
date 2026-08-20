@@ -2256,3 +2256,29 @@ input, select, textarea { font: inherit; }
   padding: .4rem .55rem;
   margin-top: .35rem;
 }
+
+/* Festività non lavorata: stessa famiglia dei giorni di riposo (verde tenue),
+   perché è una giornata NON lavorata — distinguerla dalle ferie con una tinta
+   sua eviterebbe di confonderle nel calendario. */
+.cal-shift-pill--festivita { background: #fef3c7; color: #b45309; }
+.cal-shift-pill--festivita:hover { background: #fde68a; }
+.timeline-card--festivita { border-left-color: var(--c-warning); background: var(--c-warning-light); }
+
+/* La proposta delle festività da segnare: è un suggerimento, non un allarme.
+   Sta dentro il riepilogo del mese, dove si guardano le ore. */
+.festivita-proposta {
+  display: block;
+  margin-top: .35rem;
+  padding: .45rem .6rem;
+  background: var(--c-warning-light);
+  color: var(--c-warning);
+  border-radius: var(--radius-sm);
+  line-height: 1.5;
+}
+.festivita-proposta strong { color: inherit; }
+.festivita-proposta-btn {
+  margin-left: .4rem;
+  font-weight: 700;
+  color: var(--c-warning);
+  text-decoration: underline;
+}
