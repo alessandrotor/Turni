@@ -421,12 +421,12 @@ export function projectAnnualGross(settings = {}, year = new Date().getFullYear(
  *    sa che il resto dell'anno non somiglierà a quello appena passato;
  *  - lavoro a chiamata: solo il maturato annualizzato (non c'è un contratto
  *    da cui proiettare);
- *  - modalità 'ytd': il maturato annualizzato, sempre (nessun confronto col
- *    contratto) — per chi preferisce ragionare sul reddito effettivo finora;
- *  - altrimenti la più alta fra la proiezione da contratto e il maturato
- *    annualizzato — il maturato non va scartato: il contratto conosce solo le
- *    ore contrattuali e ignora supplementari e festivi, che pesano parecchio
- *    su lavoro a turni.
+ *  - modalità 'ytd': il maturato annualizzato, sempre — per chi preferisce
+ *    ragionare sul reddito effettivo finora ed è una scelta esplicita;
+ *  - altrimenti la PREVISIONE IN AVANTI: quello che si è già guadagnato più
+ *    quello che resta da contratto fino a dicembre. Vedi il commento nel corpo
+ *    della funzione: è ciò che rende «quanto posso ancora guadagnare» un numero
+ *    su cui si può decidere, invece di uno che si muove per conto suo.
  * A questo si sommano voci fisse mensili e bonus dell'anno (possono far
  * superare le soglie del trattamento integrativo).
  *
@@ -492,11 +492,39 @@ export function projectAnnualIncome(
 
   if (settings.onCall) return { value: extras(annualize(recurring)), source: 'maturato' };
 
-  const projectedAnnual = enableNetCalc ? projectAnnualGross(settings, year) : 0;
-  const fromActual = annualize(recurring) + extrasFullYear;
-  const value = Math.max(projectedAnnual, fromActual, annualGross);
-  const source = value === projectedAnnual ? 'contratto' : 'maturato';
-  return { value: extras(value), source };
+  // ── Previsione IN AVANTI: maturato reale + quello che resta da contratto ──
+  //
+  // Non si annualizza il passato, si somma il futuro. La differenza non è
+  // estetica: decide se il riquadro del bonus serve a qualcosa.
+  //
+  // La domanda a cui questo numero deve rispondere è «accetto questo
+  // straordinario, o mi fa superare la soglia?». Con l'annualizzazione — il
+  // maturato moltiplicato per 12/mesi-trascorsi — un euro guadagnato ad agosto
+  // ne spostava uno e mezzo, a gennaio dodici. E il vecchio `Math.max` con la
+  // proiezione da contratto faceva da PAVIMENTO: finché il maturato
+  // annualizzato le stava sotto, aggiungere turni non muoveva il margine di un
+  // centesimo. Misurato il 21 agosto: i primi 200 € di straordinari lasciavano
+  // il margine fermo a 4.238 €, i successivi lo abbassavano di 300 € ogni 200.
+  // Un numero che non si muove e poi si muove troppo non è una risposta.
+  //
+  // Così invece ogni euro in più sposta la previsione di esattamente un euro.
+  //
+  // Il `Math.max` col contratto non serve più, e la ragione per cui c'era —
+  // «il contratto conosce solo le ore contrattuali e ignora supplementari e
+  // festivi» — è soddisfatta meglio da qui: quei supplementari sono già dentro
+  // il maturato, per intero e senza moltiplicatori. Chi non ha ancora
+  // lavorato nulla ottiene comunque 12 mensilità piene, perché il maturato è
+  // zero e il resto dell'anno vale l'anno intero.
+  const mensile = enableNetCalc ? monthlyBaseGross(settings) : 0;
+  const mesiRestanti = Math.max(0, 12 - monthsElapsed);
+  // Le mensilità aggiuntive già incassate stanno dentro `annualGross`: qui si
+  // aggiungono solo quelle che devono ancora arrivare, altrimenti la 14ª di
+  // giugno verrebbe contata due volte.
+  const extraResidue = enableNetCalc
+    ? mensile * Math.max(0, extraMonthsAccrued(settings, year) - receivedExtraMonthsCount(settings, monthsElapsed - 1, year))
+    : 0;
+  const value = annualGross + mesiRestanti * mensile + extraResidue;
+  return { value: extras(value), source: 'previsione' };
 }
 
 /**

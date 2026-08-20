@@ -17,6 +17,10 @@ const fmtPct = (pct) => String(Number(pct.toFixed(3))).replace('.', ',');
 
 // Da dove arriva il reddito annuo di riferimento, per dirlo all'utente.
 const PROJECTION_LABEL = {
+  // 'previsione' è il caso normale: maturato finora + quello che resta da
+  // contratto. Gli altri tre restano perché rispondono a domande diverse e la
+  // funzione li tratta ancora a parte (vedi projectAnnualIncome in net.js).
+  previsione: 'da quanto hai segnato più i mesi che restano',
   contratto: 'da contratto',
   maturato: 'dal maturato annualizzato',
   manuale: 'inserita a mano',

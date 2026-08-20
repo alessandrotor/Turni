@@ -41,6 +41,10 @@ const conArticolo = (prep, iso) => {
 // Da dove arriva la proiezione annua, per dirlo all'utente — stessa etichetta
 // che il pannello netto di Calendario usa per lo stesso valore.
 const PROJECTION_LABEL = {
+  // 'previsione' è il caso normale: maturato finora + quello che resta da
+  // contratto. Gli altri tre restano perché rispondono a domande diverse e la
+  // funzione li tratta ancora a parte (vedi projectAnnualIncome in net.js).
+  previsione: 'da quanto hai segnato più i mesi che restano',
   contratto: 'da contratto',
   maturato: 'dal maturato annualizzato',
   manuale: 'inserita a mano',
