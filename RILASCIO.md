@@ -10,6 +10,13 @@ agosto abbiamo scoperto che il worker in rete era il codice di dieci giorni
 prima, e nessuno se n'era accorto perché tutti leggevano il repository invece
 del server.
 
+**Legenda:** `[x]` chiusa e verificata · `[~]` il lavoro è fatto ma la prova va
+rifatta sul sito vero · `[ ]` da fare.
+
+**Stato al 21 agosto 2026 (venerdì): 2 chiuse, 2 a metà, 3 da fare.**
+Le due che possono spostare il rilascio sono la **4** (informativa) e la **5**
+(rete di sicurezza): nessuna delle due è cominciata.
+
 Questo file si cancella dopo la pubblicazione.
 
 ---
@@ -42,7 +49,7 @@ Questo file si cancella dopo la pubblicazione.
   > **Da rifare dopo ogni `wrangler deploy` del worker** — martedì è previsto
   > il rifacimento dei contatori, quindi questa spunta va tolta e riconquistata.
 
-- [ ] **2. So con certezza su che piano è il progetto Gemini**, perché l'ho
+- [x] **2. So con certezza su che piano è il progetto Gemini**, perché l'ho
       guardato. Se è gratuito non c'è spesa da fermare e i contatori del worker
       sono la difesa; se la fatturazione è attiva, il tetto in AI Studio è
       impostato.
@@ -59,7 +66,18 @@ Questo file si cancella dopo la pubblicazione.
   al punto 4.
   </details>
 
-- [ ] **3. Il sito manda gli header di sicurezza**, e girando per tutta l'app
+  > **Guardato il 19/08/2026: piano gratuito**, nessuna fatturazione attiva.
+  > Non c'è spesa da fermare, quindi il tetto in AI Studio è rinviato al
+  > dopo-lancio — decisione presa a ragion veduta, non dimenticanza. In cambio
+  > i contatori del worker sono diventati la difesa principale, ed è per questo
+  > che il 19 sono passati da rifinitura a lavoro vero (raffica 5/60s per IP e
+  > per installazione).
+  >
+  > **Ma resta un debito al punto 4:** sul piano gratuito Google può usare le
+  > immagini per migliorare i propri servizi, e sono fogli turni con i nomi dei
+  > colleghi. L'informativa deve dirlo.
+
+- [~] **3. Il sito manda gli header di sicurezza**, e girando per tutta l'app
       non compare nessun errore nella finestra degli errori.
 
   <details><summary>come si verifica</summary>
@@ -81,6 +99,16 @@ Questo file si cancella dopo la pubblicazione.
   `'unsafe-inline'`: se qualcosa non va, non aggiungerlo «per sicurezza».
   </details>
 
+  > **Fatta e verificata sul sito di PROVA il 19/08/2026.** `public/_headers`
+  > esiste; securityheaders.com dà **A+**; il giro dei nove flussi con
+  > l'ascoltatore `securitypolicyviolation` attivo ha dato **zero violazioni**,
+  > compreso un token Turnstile ottenuto per intero. La CSP è nata in sola
+  > segnalazione ed è passata in vigore solo dopo quel giro.
+  >
+  > **Non ancora in produzione**, dove il deploy è manuale: gli header partono
+  > col rilascio. La spunta si chiude **dopo** aver rifatto `curl -I` sul sito
+  > vero — non prima.
+
 - [ ] **4. L'informativa si apre da un indirizzo pubblico**, è collegata dentro
       l'app, e dice il vero.
 
@@ -89,6 +117,15 @@ Questo file si cancella dopo la pubblicazione.
   Aprila **dal telefono, partendo dal link dentro l'app**, non dal file nel
   repository. Oggi `docs/privacy.md` esiste ma non è pubblicata da nessuna
   parte, quindi nessun utente la incontrerà mai.
+
+  **Il codice HTTP da solo mente.** Verificato il 21/08: `/privacy` risponde
+  **200**, ma è la SPA che serve `index.html` a qualunque indirizzo — dentro
+  non c'è una riga di informativa. Guarda il CONTENUTO:
+
+  ```bash
+  curl -s https://turni-9vr.pages.dev/privacy | grep -ci informativa
+  ```
+  Zero occorrenze = non è pubblicata, per quanto il 200 dica il contrario.
 
   «Dice il vero» include le cose scomode: destinatari (Google, Cloudflare),
   trasferimento fuori dall'Unione, e — se il progetto resta sul piano gratuito
@@ -143,6 +180,14 @@ Questo file si cancella dopo la pubblicazione.
 
   Sul ramo che va online, non su quello di ieri.
   </details>
+
+  > **Verdi su `experimental` al 21/08/2026** — tredici script, compresi i
+  > quattro sulle buste reali. Ma «il ramo che va online» è `main` **dopo il
+  > merge di rilascio**, che non è ancora avvenuto: la spunta si chiude lì.
+  >
+  > Nel frattempo il motore è stato toccato altre due volte (maggiorazione
+  > notturna, e il 21 la previsione del reddito annuo), quindi questa verifica
+  > conta più di quanto contasse quando è stata scritta.
 
 ---
 
