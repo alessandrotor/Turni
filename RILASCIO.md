@@ -131,7 +131,7 @@ Questo file si cancella dopo la pubblicazione.
   perché la SPA serve `index.html` a qualunque indirizzo. Guarda il CONTENUTO:
 
   ```bash
-  curl -s https://turni-9vr.pages.dev/privacy/ | grep -ci "resta sul tuo dispositivo"
+  curl -s https://turni-9vr.pages.dev/privacy/ | grep -ci "identificativo di sessione"
   ```
   Zero occorrenze = non è pubblicata, per quanto il 200 dica il contrario.
 
