@@ -27,3 +27,8 @@ worker/.wrangler
 src/data/ccnl.csv
 /ccnl.csv
 /ccnl.json
+
+# Cedolini: fixture derivate dai PDF personali. Il repository e pubblico e
+# tre anni di importi sono una storia retributiva. Si rigenerano con:
+#   node scripts/leggi-cedolini.mjs "<cartella>"
+dati-buste/
