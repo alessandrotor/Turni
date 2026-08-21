@@ -14,8 +14,18 @@ const ENDPOINT = import.meta.env.VITE_TELEMETRY_URL || '';
 // l'endpoint in .env.local, puoi spegnerla dall'interruttore in Impostazioni.
 const IS_TEST_ENV = typeof location !== 'undefined' && location.hostname.startsWith('test.');
 
+// La telemetria ESISTE davvero solo se c'è un endpoint. Nel pacchetto di
+// produzione non c'è (l'auto-deploy non imposta VITE_TELEMETRY_URL), e senza
+// questo l'interfaccia mostrava comunque l'interruttore «Invia statistiche
+// anonime»: un comando che non governava niente, e che per di più lasciava
+// credere che qualcosa partisse. In un'app che promette di non inviare dati è
+// la bugia peggiore — chi lo lascia acceso pensa di aver scelto, e chi lo
+// spegne pensa di essersi protetto da qualcosa che non c'era.
+export const telemetriaDisponibile = !!ENDPOINT && !IS_TEST_ENV;
+
 // ID installazione casuale e anonimo, per distinguere i tester senza sapere chi.
-// Esportato perché serve anche al proxy AI come chiave dei limiti di richiesta.
+// NON serve più al proxy AI: quello usa un identificativo di sessione, che non
+// viene salvato. Qui invece distinguere le installazioni è proprio lo scopo.
 export function installId() {
   try {
     let id = localStorage.getItem('turni_install_id');

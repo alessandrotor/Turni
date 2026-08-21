@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Informativa sulla privacy — Turni</title>
+<meta name="description" content="Quali dati escono dal tuo dispositivo usando Turni, dove vanno e perche.">
+<style>
+  :root { color-scheme: light dark; --testo:#1f2933; --sfondo:#fff; --tenue:#5b6570;
+          --bordo:#e3e8ee; --accento:#2563eb; --nota:#fff8e1; }
+  @media (prefers-color-scheme: dark) {
+    :root { --testo:#e6e9ee; --sfondo:#14181d; --tenue:#9aa4b2; --bordo:#2a3138;
+            --accento:#7aa2f7; --nota:#2a2617; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--sfondo); color:var(--testo);
+         font:16px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  main { max-width:44rem; margin:0 auto; padding:2.5rem 1.25rem 5rem; }
+  h1 { font-size:1.9rem; line-height:1.25; margin:0 0 .4rem; }
+  h2 { font-size:1.3rem; margin:2.5rem 0 .6rem; padding-top:1.2rem;
+       border-top:1px solid var(--bordo); }
+  h3 { font-size:1.05rem; margin:1.8rem 0 .4rem; }
+  p, ul { margin:.7rem 0; }
+  ul { padding-left:1.3rem; }
+  li { margin:.35rem 0; }
+  a { color:var(--accento); }
+  code { font-size:.9em; background:rgba(127,127,127,.14); padding:.1em .35em; border-radius:4px; }
+  pre { background:rgba(127,127,127,.1); padding:.9rem 1rem; border-radius:8px; overflow-x:auto; }
+  pre code { background:none; padding:0; }
+  .tabella { overflow-x:auto; margin:1rem 0; }
+  table { border-collapse:collapse; width:100%; min-width:30rem; }
+  th, td { text-align:left; padding:.6rem .7rem; border-bottom:1px solid var(--bordo);
+           vertical-align:top; font-size:.95rem; }
+  th { font-weight:600; }
+  .torna { display:inline-block; margin-bottom:1.5rem; font-size:.9rem; }
+</style>
+</head>
+<body>
+<main>
+<a class="torna" href="/">← Torna a Turni</a>
+<h1>Informativa sulla privacy — Turni</h1>
+<p><strong>Ultimo aggiornamento:</strong> 21 agosto 2026</p>
+<p>Turni serve a tenere traccia dei propri turni di lavoro e a stimare quanto si guadagna. Questa informativa dice quali dati escono dal tuo dispositivo, dove vanno e perché. È scritta per essere letta, non per essere firmata.</p>
+<p>Vale sia per il sito (turni-9vr.pages.dev) sia per l'app Android.</p>
+<h2>In breve</h2>
+<p><strong>I tuoi turni non stanno su nessun server.</strong> Non c'è un account da creare, non c'è una sincronizzazione, e chi sviluppa l'app non può vedere i tuoi dati nemmeno volendo.</p>
+<p>Escono dal dispositivo <strong>solo</strong> due cose, e solo se usi l'import da foto: la foto che scegli e il nome da cercarci dentro. Tutto il resto — turni, orari, paga, contratto, calcoli — resta dove l'hai scritto.</p>
+<h2>Dati che restano sul tuo dispositivo</h2>
+<p>Turni, orari, paga oraria, dati del contratto e tutto ciò che serve alla stima del netto sono salvati <strong>solo nella memoria locale del browser o dell'app</strong>.</p>
+<p>Questo ha un rovescio che è giusto conoscere: se cancelli i dati del sito, disinstalli l'app, o svuoti la memoria del browser, <strong>i tuoi turni spariscono e non sono recuperabili da nessuna parte</strong>. Non esiste una copia altrove. Per questo c'è la funzione di backup in Impostazioni: il file che produce resta a te, non viene inviato da nessuna parte.</p>
+<h2>Import dei turni da foto</h2>
+<p>È l'unica funzione che manda qualcosa fuori, ed è facoltativa. Se non la usi, nessuna immagine lascia mai il dispositivo.</p>
+<p>Quando la usi, partono:</p>
+<ul><li><strong>la foto che scegli tu</strong>, volta per volta, dal selettore del sistema;</li><li><strong>il nome</strong> che hai indicato, perché serve a trovare la tua riga nel foglio e a non far leggere i turni di tutti gli altri;</li><li><strong>un identificativo di sessione</strong>, generato quando apri la pagina e <strong>mai salvato</strong>: cambia a ogni ricaricamento e serve solo a fermare chi tenta di inviare centinaia di richieste di fila. Non collega fra loro i tuoi import.</li></ul>
+<p>Il percorso è: dispositivo → un server intermedio gestito da chi sviluppa l'app (Cloudflare Workers) → <strong>Google Gemini</strong>, che legge l'immagine e restituisce date e orari. Il server intermedio non conserva né la foto né il nome.</p>
+<h3>Le cose scomode, dette</h3>
+<ul><li><strong>La foto esce dall'Unione Europea.</strong> Google tratta i dati anche su server fuori dallo Spazio economico europeo.</li><li><strong>Finché il progetto Gemini resta sul piano gratuito, Google può usare i contenuti inviati per migliorare i propri servizi, e revisori umani possono vederli.</strong> Sono le condizioni del piano gratuito: <a href="https://ai.google.dev/gemini-api/terms" rel="noopener">https://ai.google.dev/gemini-api/terms</a></li><li><strong>Se il foglio contiene i nomi dei tuoi colleghi, partono anche quelli</strong> — e loro non hanno scelto nulla. Puoi ritagliare la foto sulla tua riga prima di caricarla: l'app lo dice anche a schermo, prima del primo invio.</li></ul>
+<p>Per questo la prima volta compare un avviso: perché la decisione la prenda tu, sapendo queste tre cose e non dopo.</p>
+<h2>Altri servizi coinvolti</h2>
+<div class="tabella"><table><thead><tr><th>Chi</th><th>Perché</th><th>Cosa vede</th></tr></thead><tbody><tr><td><strong>Cloudflare</strong> (Pages)</td><td>ospita il sito</td><td>l'indirizzo IP, come qualunque sito</td></tr><tr><td><strong>Cloudflare Turnstile</strong></td><td>verifica che dall'altra parte ci sia un browser vero, prima di spendere quota</td><td>segnali tecnici del browser, <strong>nessun cookie di tracciamento</strong></td></tr><tr><td><strong>Cloudflare Web Analytics</strong></td><td>conteggio delle visite</td><td>pagina visitata e dati aggregati, <strong>senza cookie e senza profilazione</strong></td></tr><tr><td><strong>Google Gemini</strong></td><td>legge la foto dei turni</td><td>vedi sopra</td></tr></tbody></table></div>
+<h2>Statistiche d'uso</h2>
+<p><strong>Sul sito non ne viene raccolta nessuna.</strong> Non c'è un contatore di quante volte importi, né di quanto costa la funzione. Il codice per farlo esiste nel repository ma nella versione pubblicata non è attivo, e si può verificare:</p>
+<pre><code>node scripts/check-dati-in-uscita.mjs</code></pre>
+<p>Nelle versioni di prova dell'app Android può essere attiva una statistica tecnica — numero di token consumati, versione dell'app, un identificativo casuale dell'installazione — con un interruttore per spegnerla in Impostazioni. Quell'interruttore compare <strong>solo dove la statistica esiste davvero</strong>.</p>
+<h2>Dati che non vengono raccolti</h2>
+<p>Nessun dato di contatto (email, telefono, rubrica), nessuna posizione, nessun identificatore pubblicitario, nessuna cronologia. Non ci sono inserzioni e non c'è profilazione.</p>
+<p>Il <strong>nome</strong> che indichi per l'import è l'unica eccezione, e viaggia solo con la foto, solo quando usi quella funzione: è spiegato sopra.</p>
+<h2>Permessi</h2>
+<p>L'app Android chiede il solo permesso <strong>Internet</strong>, necessario all'import da foto. L'accesso alle immagini passa dal selettore di sistema, quindi riguarda solo il file che scegli tu, una volta per volta: l'app non può sfogliare la tua galleria.</p>
+<h2>I tuoi diritti</h2>
+<p>Poiché i dati restano sul tuo dispositivo, li controlli direttamente: puoi vederli, modificarli, esportarli in un file e cancellarli dalle Impostazioni, senza chiedere niente a nessuno.</p>
+<p>Per le foto già inviate a Google valgono le condizioni di Google, e sono irrecuperabili dalla nostra parte perché non le conserviamo.</p>
+<h2>Minori</h2>
+<p>L'app non è rivolta a minori di 13 anni e non raccoglie consapevolmente dati che li riguardano.</p>
+<h2>Stime economiche</h2>
+<p>Il calcolo del netto e delle voci in busta paga è una <strong>stima indicativa</strong>. Non sostituisce la busta paga, il conguaglio fiscale, né un professionista.</p>
+<h2>Contatti</h2>
+<p>Per domande su questa informativa o sui tuoi dati: <strong>g.asriel@gmail.com</strong></p>
+<h2>Modifiche</h2>
+<p>Le modifiche vengono pubblicate a questo stesso indirizzo, con la data di aggiornamento in cima.</p>
+</main>
+</body>
+</html>

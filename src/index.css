@@ -1412,6 +1412,22 @@ input, select, textarea { font: inherit; }
   padding: .25rem 0;
 }
 
+.settings-privacy {
+  margin: .9rem 0 0;
+  text-align: center;
+  font-size: .85rem;
+}
+
+.settings-privacy a {
+  color: var(--c-text-2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.settings-privacy a:hover {
+  color: var(--c-primary);
+}
+
 /* ── Bonus busta paga: striscia nel calendario ──────────────────── */
 .bonus-strip {
   margin-top: 1rem;

@@ -109,28 +109,40 @@ Questo file si cancella dopo la pubblicazione.
   > col rilascio. La spunta si chiude **dopo** aver rifatto `curl -I` sul sito
   > vero — non prima.
 
-- [ ] **4. L'informativa si apre da un indirizzo pubblico**, è collegata dentro
+- [~] **4. L'informativa si apre da un indirizzo pubblico**, è collegata dentro
       l'app, e dice il vero.
 
   <details><summary>come si verifica</summary>
 
-  Aprila **dal telefono, partendo dal link dentro l'app**, non dal file nel
-  repository. Oggi `docs/privacy.md` esiste ma non è pubblicata da nessuna
-  parte, quindi nessun utente la incontrerà mai.
+  **Fatto il 21/08:** l'informativa è riscritta, generata come pagina statica e
+  collegata in fondo alle Impostazioni («Come vengono trattati i tuoi dati»).
+  Resta da **verificarla dal telefono sul sito di prova**, e da pubblicarla in
+  produzione con il deploy manuale.
 
-  **Il codice HTTP da solo mente.** Verificato il 21/08: `/privacy` risponde
-  **200**, ma è la SPA che serve `index.html` a qualunque indirizzo — dentro
-  non c'è una riga di informativa. Guarda il CONTENUTO:
+  Prima diceva il falso in un punto non piccolo: «l'app non trasmette il nome»,
+  mentre il nome parte a ogni import. Ora la tabella dei destinatari, il
+  trasferimento fuori dall'Unione e l'uso dei contenuti da parte di Google sul
+  piano gratuito sono scritti, non impliciti.
+
+  Aprila **dal telefono, partendo dal link dentro l'app**, non dal file nel
+  repository.
+
+  **Il codice HTTP da solo mente.** Il 21/08 `/privacy` rispondeva **200**
+  perché la SPA serve `index.html` a qualunque indirizzo. Guarda il CONTENUTO:
 
   ```bash
-  curl -s https://turni-9vr.pages.dev/privacy | grep -ci informativa
+  curl -s https://turni-9vr.pages.dev/privacy/ | grep -ci "resta sul tuo dispositivo"
   ```
   Zero occorrenze = non è pubblicata, per quanto il 200 dica il contrario.
 
-  «Dice il vero» include le cose scomode: destinatari (Google, Cloudflare),
-  trasferimento fuori dall'Unione, e — se il progetto resta sul piano gratuito
-  — che le immagini possono essere usate per migliorare i servizi di Google e
-  viste da revisori umani. Sono fogli turni con i nomi dei colleghi.
+  **E provala anche dalla PWA installata**, non solo dal browser: il service
+  worker devia ogni navigazione su `index.html`, e senza l'esclusione aggiunta
+  in `vite.config.js` il link aprirebbe il calendario. Sarebbe un'informativa
+  «pubblicata» che nessun utente può leggere.
+
+  Una sola sorgente: `docs/privacy.md`. La pagina si rigenera da sola a ogni
+  build (`npm run prebuild`), perché due copie a mano divergono e quella
+  sbagliata è sempre la copia che legge l'utente.
   </details>
 
 - [ ] **5. Nessun punto dell'app lascia lo schermo bianco**, e la schermata di

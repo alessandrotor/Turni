@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { formatCurrency, parseNum } from '../utils/pay';
 import { CCNL_LIST, getCcnl } from '../utils/ccnl';
 import { FASCE_DIPENDENTI, FASCIA_DEFAULT, contributiDiLegge } from '../utils/contributi-legge';
-import { isTelemetryEnabled, setTelemetryEnabled } from '../services/telemetry';
+import { isTelemetryEnabled, setTelemetryEnabled, telemetriaDisponibile } from '../services/telemetry';
 import { esportaBackup, importaBackup, contaTurniSalvati } from '../services/backup';
 import { elencoOrariDaCorreggere, applicaCorrezioneOrari } from '../services/correzioni';
 import { ENABLE_NET_CALC } from '../config/features';
@@ -1060,19 +1060,32 @@ export default function Settings({ settings, onSave }) {
             te lo chiede l'app al primo import da immagine (e potrai cambiarlo da lì).
           </p>
 
-          <label className="check-row">
-            <input
-              type="checkbox"
-              checked={form.telemetry}
-              onChange={(e) => { setTelemetryEnabled(e.target.checked); setForm(f => ({ ...f, telemetry: e.target.checked })); }}
-            />
-            <span>Invia statistiche anonime d'uso dell'import</span>
-          </label>
-          <p className="form-hint">
-            Solo il numero di token consumati e un identificativo casuale dell'installazione:
-            nessun turno, nessuna immagine, niente che ti identifichi. Serve a capire quanto
-            costa la funzione durante la beta.
-          </p>
+          {/* L'interruttore compare SOLO dove la telemetria esiste davvero (l'APK
+              di prova). Nel sito non c'è endpoint: mostrarlo lo stesso sarebbe un
+              comando che non governa niente e che lascia credere che qualcosa
+              parta. Vedi `telemetriaDisponibile` in services/telemetry.js. */}
+          {telemetriaDisponibile ? (
+            <>
+              <label className="check-row">
+                <input
+                  type="checkbox"
+                  checked={form.telemetry}
+                  onChange={(e) => { setTelemetryEnabled(e.target.checked); setForm(f => ({ ...f, telemetry: e.target.checked })); }}
+                />
+                <span>Invia statistiche anonime d'uso dell'import</span>
+              </label>
+              <p className="form-hint">
+                Solo il numero di token consumati e un identificativo casuale dell'installazione:
+                nessun turno, nessuna immagine, niente che ti identifichi. Serve a capire quanto
+                costa la funzione durante la beta.
+              </p>
+            </>
+          ) : (
+            <p className="form-hint">
+              Di questa app non viene raccolta nessuna statistica d'uso: né quante volte
+              importi, né quanto costa. Non c'è niente da spegnere.
+            </p>
+          )}
         </details>
 
         {/* Backup e ripristino: i dati vivono solo in localStorage */}
@@ -1568,6 +1581,15 @@ export default function Settings({ settings, onSave }) {
           <button type="submit" className="btn btn-primary btn--full">
             {saved ? '✓ Salvato!' : 'Salva impostazioni'}
           </button>
+          {/* Un'informativa che nessuno incontra non informa nessuno. Sta qui in
+              fondo alle impostazioni, che è dove la si cerca, e punta a una
+              pagina statica: resta leggibile anche se l'app è rotta.
+              `target="_blank"` per non far perdere le modifiche non salvate. */}
+          <p className="settings-privacy">
+            <a href="/privacy/" target="_blank" rel="noopener">
+              Come vengono trattati i tuoi dati
+            </a>
+          </p>
         </div>
       </form>
     </div>
