@@ -8,6 +8,7 @@ import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
+import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../utils/assenze';
 import { EXTRA_MONTHS } from '../utils/net';
 import { ENABLE_DEBUG } from '../config/features';
@@ -94,6 +95,9 @@ export default function CalendarView({
   // in periodi di paga a settimane intere (quelli sono un dettaglio interno
   // del calcolo del netto, non come l'utente registra le cose giorno per giorno).
   const [exportPeriod, setExportPeriod] = useState('calendar');
+  // Avvertenza sull'invio della foto: mostrata una volta sola, ricordata nel
+  // browser. Vedi `accettatoInvioFoto` in services/gemini.js.
+  const [mostraAvvisoFoto, setMostraAvvisoFoto] = useState(false);
   const [calLayout, setCalLayout] = useState(() => {
     try { return localStorage.getItem(KEY_CAL_LAYOUT) || 'grid'; } catch { return 'grid'; }
   });
@@ -361,6 +365,10 @@ export default function CalendarView({
   // Avvio import dal pulsante: il nome è obbligatorio. Se manca, si chiede PRIMA
   // di aprire il selettore immagini (così non si carica nulla senza nome).
   function startImport() {
+    // La prima volta si dice dove va la foto, PRIMA di sceglierla: è l'unico
+    // momento in cui l'avvertenza può ancora cambiare la decisione. Dopo, il
+    // file è già scelto e il messaggio diventa un ostacolo da scacciare.
+    if (!accettatoInvioFoto()) { setMostraAvvisoFoto(true); return; }
     if (settings.workerName) { fileInputRef.current?.click(); return; }
     setNameInput('');
     setPickAfterName(true);
@@ -1050,6 +1058,52 @@ export default function CalendarView({
           onConfirm={handleImportConfirm}
           onClose={() => setImportParsed(null)}
         />
+      )}
+
+      {mostraAvvisoFoto && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setMostraAvvisoFoto(false)}>
+          <div className="modal" role="dialog" aria-modal="true" aria-label="Prima di inviare la foto">
+            <div className="modal-header">
+              <h2 className="modal-title">Prima di inviare la foto</h2>
+            </div>
+            <div className="modal-form">
+              <p className="form-hint">
+                Per leggere i turni, la foto viene inviata a un servizio di riconoscimento
+                di <strong>Google</strong>, passando da un server intermedio di chi sviluppa
+                l'app. Non viene conservata da nessuno dei due.
+              </p>
+              <p className="form-hint form-hint--warn">
+                ⚠️ Se il foglio contiene i <strong>nomi dei tuoi colleghi</strong>, partono
+                anche quelli — e loro non hanno scelto nulla. Puoi ritagliare la foto sulla
+                tua riga prima di caricarla.
+              </p>
+              <p className="form-hint">
+                Tutto il resto — turni, orari, paga — resta sul tuo telefono e non viene
+                inviato mai. Questo avviso compare una volta sola.
+              </p>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setMostraAvvisoFoto(false)}
+                >
+                  Annulla
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    accettaInvioFoto();
+                    setMostraAvvisoFoto(false);
+                    startImport();
+                  }}
+                >
+                  Ho capito, scegli la foto
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {(pendingImportFile || editingName) && (

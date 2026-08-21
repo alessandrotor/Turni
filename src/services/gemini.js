@@ -1,6 +1,44 @@
 import { isIsoDate } from '../utils/dates';
-import { installId } from './telemetry';
 import { ottieniToken, turnstileAttivo } from './turnstile';
+
+// Identificativo di SESSIONE: nasce al caricamento della pagina e non viene
+// salvato da nessuna parte. Serve al proxy per una cosa sola — fare da chiave
+// alla guardia contro la raffica di richieste — e per quella basta e avanza,
+// perché un ciclo di richieste avviene in pochi secondi.
+//
+// Prima qui viaggiava `installId()`, che è generato al PRIMO avvio e resta in
+// localStorage per sempre: un filo che collegava tutti gli import di una stessa
+// persona nel tempo, per un bisogno che dura un minuto. `installId` esiste
+// ancora, ma in telemetry.js, dove distinguere le installazioni è lo scopo.
+const sessionId = 'ses_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+
+// ── Avvertenza sull'invio della foto ──────────────────────────────────────
+// La foto di un foglio turni contiene i nomi dei COLLEGHI, che non hanno
+// scelto nulla e non leggeranno mai un'informativa. Prima di mandarla a un
+// servizio esterno bisogna almeno dire a chi la manda cosa comporta — e dirlo
+// PRIMA che scelga il file, che è l'unico momento in cui l'avvertenza può
+// ancora cambiare la decisione.
+//
+// Vive qui e non nel componente perché è una proprietà dell'INVIO, non della
+// schermata: se domani l'import partisse da un altro punto dell'app, il
+// controllo verrebbe con lui.
+const KEY_INVIO_FOTO = 'turni_invio_foto_ok';
+
+export function accettatoInvioFoto() {
+  try {
+    return localStorage.getItem(KEY_INVIO_FOTO) === '1';
+  } catch {
+    // Storage non disponibile: si mostra l'avvertenza ogni volta. Mostrarla di
+    // troppo è meglio che saltarla.
+    return false;
+  }
+}
+
+export function accettaInvioFoto() {
+  try {
+    localStorage.setItem(KEY_INVIO_FOTO, '1');
+  } catch { /* senza storage ricomparirà: non è un errore da mostrare */ }
+}
 
 // La chiamata a Gemini NON avviene più da qui: la fa il proxy in `worker/`.
 // Motivo: Vite sostituisce le `import.meta.env.*` a build time, quindi una
@@ -97,7 +135,7 @@ export async function parseShiftsFromImage(imageFile, workerName = '') {
         image: image.data,
         mimeType: image.mimeType,
         workerName,
-        installId: installId(),
+        installId: sessionId,
         turnstileToken,
       }),
     });

@@ -168,7 +168,12 @@ async function raffica(limiter, key) {
     const { success } = await limiter.limit({ key });
     return success;
   } catch (e) {
-    console.error('raffica', key, e?.message || e);
+    // Si registra QUALE guardia si è rotta, non PER CHI: `key` vale
+    // «ip:1.2.3.4», e l'IP è un dato personale che finirebbe nei log di
+    // Cloudflare. Per capire il guasto basta sapere che è saltato il limitatore
+    // per IP invece di quello per installazione — l'indirizzo non aggiunge
+    // niente alla diagnosi e non deve essere conservato.
+    console.error('raffica', String(key).split(':')[0], e?.message || e);
     return true;
   }
 }
