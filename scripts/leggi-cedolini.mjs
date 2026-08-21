@@ -132,22 +132,68 @@ function voceDa(riga) {
  * giorno per giorno, contro cui si puo' riscontrare il motore dei turni e non
  * soltanto quello del netto.
  */
+// «5,30» nella griglia vale 5 ore e 30 MINUTI, non 5,30 decimale: e' la
+// notazione «hm» che il cedolino dichiara in fondo («122,00hm»). Leggerla come
+// decimale sbaglia di poco su un giorno e di parecchio su un mese.
+const daHm = (s) => {
+  const [h, mm] = s.split(',');
+  return Number(h) + Number(mm || 0) / 60;
+};
+const ORE_HM = /^\d{1,2},\d{2}$/;
+
+// Le colonne della griglia: giorno della settimana, numero, ore, poi «SU» e le
+// supplementari. Le ore stanno in una fascia stretta, e leggerle per posizione
+// evita di raccogliere numeri di altre colonne che capitano alla stessa altezza.
+const X_GRIGLIA_ORE = [60, 90];
+
 function grigliaDa(righe) {
   const giorni = [];
   for (const r of righe) {
-    const sx = r.pezzi.filter((p) => p.x < X_VALORI).map((p) => p.t.trim());
-    const gs = sx.find((t) => /^(LU|MA|ME|GI|VE|SA|DO)$/.test(t));
+    const sx = r.pezzi.filter((p) => p.x < X_VALORI).map((p) => ({ x: p.x, t: p.t.trim() }));
+    const gs = sx.find((p) => /^(LU|MA|ME|GI|VE|SA|DO)$/.test(p.t));
     if (!gs) continue;
-    const dopo = sx.slice(sx.indexOf(gs) + 1);
-    const giorno = dopo.map(numeroDiPezzo).find((n) => n !== null && Number.isInteger(n) && n >= 1 && n <= 31);
-    const iSu = dopo.indexOf('SU');
-    const ore = dopo.slice(0, iSu < 0 ? undefined : iSu).map(numeroDiPezzo)
-      .filter((n) => n !== null && !Number.isInteger(n));
-    const supp = iSu < 0 ? null : dopo.slice(iSu + 1).map(numeroDiPezzo).find((n) => n !== null);
+    const giorno = sx.filter((p) => p.x > gs.x && p.x < X_GRIGLIA_ORE[0])
+      .map((p) => numeroDiPezzo(p.t)).find((n) => n !== null && Number.isInteger(n) && n >= 1 && n <= 31);
     if (giorno == null) continue;
-    giorni.push({ gs, giorno, ore: ore.length ? ore[ore.length - 1] : 0, supplementari: supp ?? 0 });
+    const ore = sx.find((p) => p.x >= X_GRIGLIA_ORE[0] && p.x <= X_GRIGLIA_ORE[1] && ORE_HM.test(p.t));
+    const su = sx.find((p) => p.t === 'SU');
+    const supp = su ? sx.find((p) => p.x > su.x && ORE_HM.test(p.t)) : null;
+    giorni.push({
+      gs: gs.t,
+      giorno,
+      ore: ore ? daHm(ore.t) : 0,
+      supplementari: supp ? daHm(supp.t) : 0,
+    });
   }
   return giorni;
+}
+
+/**
+ * Il cedolino stampa i totali del mese: «Ore ordinarie 122,00hm SU Ore
+ * supplementare 16,00hm». La griglia si tiene SOLO se li riproduce — dati
+ * giornalieri sbagliati sarebbero peggio che assenti, perche' un riscontro
+ * futuro si fiderebbe.
+ */
+function grigliaAttendibile(righe, griglia) {
+  const r = righe.find((x) => /Ore ordinarie/i.test(x.testo));
+  if (!r) return { ok: false, perche: 'totale ore non stampato' };
+  const n = (r.testo.match(/\d{1,3},\d{2}(?=hm)/g) || []).map(daHm);
+  if (n.length < 2) return { ok: false, perche: 'totale ore illeggibile' };
+  const [ord, sup] = n;
+  const so = griglia.reduce((a, g) => a + g.ore, 0);
+  const ss = griglia.reduce((a, g) => a + g.supplementari, 0);
+
+  // Le ORDINARIE tornano su ogni cedolino: quella colonna e' letta bene.
+  if (Math.abs(so - ord) > 0.02) {
+    return { ok: false, perche: `ore ordinarie ${so.toFixed(2)} vs stampato ${ord.toFixed(2)}` };
+  }
+  // Le SUPPLEMENTARI no: il marcatore «SU» non sta sempre nella stessa colonna,
+  // e su otto cedolini il totale non torna. Si tiene comunque la griglia — le
+  // ore ordinarie giorno per giorno valgono da sole — ma le supplementari
+  // vengono azzerate e dichiarate inattendibili, cosi' nessun riscontro
+  // costruito dopo puo' fidarsene per sbaglio.
+  const suOk = Math.abs(ss - sup) <= 0.02;
+  return { ok: true, ordinarie: ord, supplementari: sup, suOk };
 }
 
 export function leggiCedolino(percorso) {
@@ -223,9 +269,22 @@ export function leggiCedolino(percorso) {
     }
   }
 
-  // La griglia delle presenze, dove il cedolino la stampa.
+  // La griglia delle presenze, dove il cedolino la stampa — e solo se i suoi
+  // totali coincidono con quelli stampati.
   const griglia = grigliaDa(righe);
-  if (griglia.length) fx.presenze = griglia;
+  if (griglia.length) {
+    const g = grigliaAttendibile(righe, griglia);
+    if (!g.ok) fx.avvisi.push(`presenze scartate: ${g.perche}`);
+    else {
+      if (!g.suOk) for (const d of griglia) d.supplementari = null;
+      fx.presenze = {
+        giorni: griglia,
+        ordinarie: g.ordinarie,
+        supplementari: g.suOk ? g.supplementari : null,
+        supplementariAttendibili: g.suOk,
+      };
+    }
+  }
 
   // Progressivi dell'anno: la riga di numeri sotto l'intestazione.
   const iProg = righe.findIndex((r) => /Imp\.\s*INPS.*Imp\.\s*INAIL/i.test(r.testo));
