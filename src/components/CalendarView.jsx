@@ -6,6 +6,7 @@ import {
 } from '../utils/dates';
 import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
+import { isMensilizzato } from '../utils/ccnl';
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
@@ -153,6 +154,12 @@ export default function CalendarView({
   const payrollRange = payrollShifts && payrollShifts !== shifts
     ? formatPayrollRange(year, month)
     : null;
+  // Il toggle del periodo esiste solo dove i due periodi differiscono davvero.
+  // Si guarda il CONTRATTO e non `payrollRange`, che diventa null appena si
+  // sceglie il mese di calendario — e il comando sparirebbe subito dopo averlo
+  // usato, senza modo di tornare indietro.
+  const mensilizzato = !settings.onCall && isMensilizzato(settings);
+  const periodoPaga = settings.periodoConteggio !== 'calendario';
   const totalMins = useMemo(
     () => counted.reduce((sum, s) => sum + calcShiftMinutes(s), 0),
     [counted],
@@ -664,9 +671,35 @@ export default function CalendarView({
                 {' '}= {formatMinutesShort(totalMins)} contate in busta
               </span>
             )}
-            {payrollRange && (
-              <span className="summary-sublabel">
-                mese di paga: settimane intere, {payrollRange}
+            {/* Mese di paga o mese di calendario. Il toggle compare solo sui
+                CCNL mensilizzati: altrove i due periodi coincidono già e
+                sarebbe un comando che non cambia niente.
+                NON cambia il calcolo degli straordinari, che resta ancorato al
+                periodo di paga — le ore oltre soglia sono un fatto del
+                contratto, non della finestra che si sta guardando. */}
+            {mensilizzato && (
+              <span className="summary-sublabel periodo-toggle">
+                <button
+                  type="button"
+                  className={`periodo-btn${periodoPaga ? ' active' : ''}`}
+                  onClick={() => onUpdateSettings?.({ periodoConteggio: 'paga' })}
+                  aria-pressed={periodoPaga}
+                >
+                  Mese di paga
+                </button>
+                <button
+                  type="button"
+                  className={`periodo-btn${periodoPaga ? '' : ' active'}`}
+                  onClick={() => onUpdateSettings?.({ periodoConteggio: 'calendario' })}
+                  aria-pressed={!periodoPaga}
+                >
+                  Mese di calendario
+                </button>
+                <em className="periodo-nota">
+                  {periodoPaga
+                    ? `settimane intere, ${formatPayrollRange(year, month)} — come in busta`
+                    : `dal 1 al ${daysInMonth} ${formatMonthYear(currentMonth).split(' ')[0].toLowerCase()}`}
+                </em>
               </span>
             )}
             {festivitaDaSegnare.length > 0 && oreFestivita > 0 && onAddShifts && (

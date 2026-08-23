@@ -75,6 +75,11 @@ const DEFAULT_SETTINGS = {
   malattiaCarenzaGiorni: 3,  // primi giorni di ogni evento pagati diversamente
   malattiaCarenzaPct: 0,     // % della paga in quei giorni
   malattiaPct: 100,          // % della paga dal giorno successivo
+  // Su quale periodo si contano ore e paga del mese: 'paga' = settimane intere
+  // come in busta (primo lunedì → domenica prima del primo lunedì dopo),
+  // 'calendario' = dal 1 all'ultimo del mese. Conta solo sui CCNL mensilizzati:
+  // altrove i due periodi coincidono già.
+  periodoConteggio: 'paga',
 };
 
 export default function App() {
@@ -185,8 +190,13 @@ export default function App() {
   // fine mese ma a fine settimana (vedi payrollMonthKey), quindi ore e
   // retribuzione del mese si contano su un insieme diverso da quello disegnato
   // sul calendario. Negli altri casi i due insiemi coincidono.
+  //
+  // `periodoConteggio` lascia scegliere: il mese di paga fa quadrare i conti
+  // con la busta, il mese di calendario risponde alla domanda «quanto ho
+  // lavorato a luglio». Sono due domande diverse ed entrambe legittime, e
+  // l'app non può decidere quale interessa oggi.
   const payrollShifts = useMemo(() => {
-    if (!isMensilizzato(settings)) return monthShifts;
+    if (!isMensilizzato(settings) || settings.periodoConteggio === 'calendario') return monthShifts;
     const key = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
     return allShifts.filter(s => payrollMonthKey(s.date) === key);
   }, [allShifts, monthShifts, currentMonth, settings]);
