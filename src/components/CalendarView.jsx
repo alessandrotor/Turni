@@ -46,6 +46,10 @@ function formatMinutesShort(mins) {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
+// Ore di una giornata, assenze comprese: è il totale che quel giorno vale in
+// busta, non le sole ore lavorate.
+const minutiDelGiorno = (turni) => turni.reduce((somma, s) => somma + calcShiftMinutes(s), 0);
+
 export default function CalendarView({
   currentMonth,
   onMonthChange,
@@ -614,6 +618,19 @@ export default function CalendarView({
                     );
                   })}
                 </div>
+                {/* Con più turni nello stesso giorno le pill dicono solo l'ora
+                    di inizio: per sapere quanto dura la giornata bisognerebbe
+                    aprirli uno per uno e sommare a mente. Il totale compare
+                    solo quando ce n'è più di uno — su una giornata singola
+                    ripeterebbe un dato già visibile aprendo il turno. */}
+                {dayShifts.length > 1 && (
+                  <span
+                    className="cal-day-total"
+                    title={`${dayShifts.length} turni, ${formatMinutesShort(minutiDelGiorno(dayShifts))} in totale`}
+                  >
+                    {formatMinutesShort(minutiDelGiorno(dayShifts))}
+                  </span>
+                )}
               </div>
             );
           })}

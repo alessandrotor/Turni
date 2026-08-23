@@ -204,6 +204,19 @@ export default function TimelineView({
                     );
                   })}
 
+                  {/* Con più turni nello stesso giorno ogni riquadro dice le
+                      proprie ore, ma la somma resta da fare a mente: qui c'è
+                      già fatta. Su un turno solo il totale ripeterebbe il
+                      numero appena sopra. */}
+                  {d.dayShifts.length > 1 && (
+                    <div className="timeline-day-total">
+                      Totale del giorno
+                      <strong>
+                        {formatMinutes(d.dayShifts.reduce((s, t) => s + calcShiftMinutes(t), 0))}
+                      </strong>
+                    </div>
+                  )}
+
                   {/* Pulsante per aggiungere un secondo turno nello stesso giorno */}
                   <button
                     type="button"
