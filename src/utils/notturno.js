@@ -28,14 +28,24 @@
 // nessuna delle tre: può essere una versione diversa del contratto o un
 // accordo aziendale, e in ogni caso la busta batte la ricerca.
 //
-// Da qui due conseguenze di disegno:
+// Da qui tre conseguenze di disegno:
 //  - la fascia è CONFIGURABILE agli estremi, e `fasciaNotturna` non assume
 //    nulla sulla durata (23:30–06:30 dura sette ore, non otto);
 //  - il suggerimento in Impostazioni non spaccia una tabella per verità: dice
-//    che le fasce variano e che il numero giusto sta sul cedolino.
+//    che le fasce variano e che il numero giusto sta sul cedolino;
+//  - la fascia di partenza NON è più una costante uguale per tutti: sta nel
+//    preset del contratto (`fasciaNotturna` in ccnl.json), accanto agli altri
+//    dati che dipendono dal CCNL. Il turismo parte dalle 23:00.
 //
-// Il default resta 22:00–06:00 perché è la definizione di legge e copre tre
-// contratti su quattro fra quelli guardati.
+// Le 22:00–06:00 restano il ripiego per i contratti che non dichiarano nulla,
+// perché sono la definizione di legge. Ma per il turismo erano semplicemente
+// SBAGLIATE, e un default sbagliato è peggio di un campo vuoto: conta come
+// notturne ore che in busta non lo sono, e gonfia la stima verso l'alto — cioè
+// nella direzione che fa male, perché ci si fa un conto che poi non arriva.
+//
+// L'ordine con cui si decide la fascia: quello che ha scritto l'utente, poi il
+// contratto, poi la legge. La busta batte il contratto, il contratto batte la
+// regola generale.
 //
 // LA PERCENTUALE NON STA QUI
 // Va dal 10% al 65% secondo classificazione (turnista o no, notturno abituale
@@ -48,8 +58,28 @@
 // Estensione esplicita: senza, i riscontri in `scripts/` (che girano fuori da
 // Vite, su Node puro) non riescono a importare questo modulo.
 import { parseTime, minutesDiff } from './dates.js';
+import { getCcnl } from './ccnl.js';
 
+// Ripiego di LEGGE (D.Lgs. 66/2003), per i contratti che non dichiarano una
+// fascia propria. Non è «il default del turismo»: quello sta in ccnl.json.
 export const FASCIA_NOTTURNA_DEFAULT = { inizio: '22:00', fine: '06:00' };
+
+/**
+ * Fascia che vale per queste impostazioni, come testo: prima quella scritta
+ * dall'utente, poi quella del contratto, infine quella di legge.
+ *
+ * Serve anche alla UI, che deve poter mostrare da dove arriva il valore
+ * proposto invece di far comparire due orari senza spiegazione.
+ */
+export function fasciaNotturnaRisolta(settings = {}) {
+  const daCcnl = getCcnl(settings.ccnl).fasciaNotturna;
+  const inizio = settings.nightStart || daCcnl?.inizio || FASCIA_NOTTURNA_DEFAULT.inizio;
+  const fine = settings.nightEnd || daCcnl?.fine || FASCIA_NOTTURNA_DEFAULT.fine;
+  const fonte = settings.nightStart || settings.nightEnd
+    ? 'impostata'
+    : (daCcnl ? 'contratto' : 'legge');
+  return { inizio, fine, fonte, daCcnl: daCcnl || null };
+}
 
 // Non cumulabile è la regola, non l'eccezione: Commercio e Vigilanza lo
 // scrivono a chiare lettere («le maggiorazioni non sono cumulabili fra loro, la
@@ -67,8 +97,9 @@ const sovrapposizione = (a1, a2, b1, b2) => Math.max(0, Math.min(a2, b2) - Math.
  * Estremi non validi o coincidenti = nessuna fascia (durata 0).
  */
 export function fasciaNotturna(settings = {}) {
-  const inizio = parseTime(settings.nightStart ?? FASCIA_NOTTURNA_DEFAULT.inizio);
-  const fine = parseTime(settings.nightEnd ?? FASCIA_NOTTURNA_DEFAULT.fine);
+  const testo = fasciaNotturnaRisolta(settings);
+  const inizio = parseTime(testo.inizio);
+  const fine = parseTime(testo.fine);
   if (inizio === null || fine === null) return { inizio: 0, durata: 0 };
   // (fine − inizio) modulo 24h: copre sia 22→06 (480) sia 00→06 (360).
   const durata = ((fine - inizio) % GIORNO + GIORNO) % GIORNO;

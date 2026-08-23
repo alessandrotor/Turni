@@ -34,7 +34,11 @@
       "pct": 0.2,
       "quotaDitta": 0.2
     },
-    "ammortizzatori": "fis"
+    "ammortizzatori": "fis",
+    "fasciaNotturna": {
+      "inizio": "23:00",
+      "fine": "06:00"
+    }
   },
   {
     "codice": "commercio",

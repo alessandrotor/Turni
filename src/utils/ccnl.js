@@ -36,6 +36,11 @@ const DEFAULTS = {
   // oppure null se non lo sappiamo). Le ALIQUOTE non stanno qui: dipendono
   // dalla dimensione dell'azienda, non dal contratto — vedi contributi-legge.js.
   ammortizzatori: null,
+  // Estremi della fascia notturna, quando il contratto se ne discosta dalla
+  // definizione di legge (22:00–06:00 del D.Lgs. 66/2003). `null` = vale la
+  // legge. La PERCENTUALE non sta qui: dipende dalla classificazione del
+  // lavoratore, non dal contratto, ed è un'impostazione dell'utente.
+  fasciaNotturna: null,
 };
 
 // Normalizza una voce grezza del JSON in un preset completo e sicuro da usare.
@@ -51,6 +56,12 @@ function toPreset(entry) {
     contributiExtra: Array.isArray(entry.contributiExtra) ? entry.contributiExtra : [],
     enteBilaterale: entry.enteBilaterale || null,
     ammortizzatori: entry.ammortizzatori || null,
+    // Serve che ci siano ENTRAMBI gli estremi: mezza fascia non è una fascia,
+    // e ripiegare in silenzio su un estremo di legge e uno di contratto darebbe
+    // una finestra che non esiste in nessun contratto.
+    fasciaNotturna: (entry.fasciaNotturna?.inizio && entry.fasciaNotturna?.fine)
+      ? { inizio: entry.fasciaNotturna.inizio, fine: entry.fasciaNotturna.fine }
+      : null,
   };
 }
 

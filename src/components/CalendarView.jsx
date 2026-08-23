@@ -618,15 +618,17 @@ export default function CalendarView({
                     );
                   })}
                 </div>
-                {/* Con più turni nello stesso giorno le pill dicono solo l'ora
-                    di inizio: per sapere quanto dura la giornata bisognerebbe
-                    aprirli uno per uno e sommare a mente. Il totale compare
-                    solo quando ce n'è più di uno — su una giornata singola
-                    ripeterebbe un dato già visibile aprendo il turno. */}
-                {dayShifts.length > 1 && (
+                {/* Le pill dicono solo l'ora di INIZIO: senza il totale, per
+                    sapere quanto dura la giornata bisogna aprire i turni. Vale
+                    anche con un turno solo — la durata non è scritta da nessuna
+                    parte nella cella — e a maggior ragione con più turni, dove
+                    andrebbe pure sommata a mente. */}
+                {dayShifts.length > 0 && (
                   <span
                     className="cal-day-total"
-                    title={`${dayShifts.length} turni, ${formatMinutesShort(minutiDelGiorno(dayShifts))} in totale`}
+                    title={dayShifts.length > 1
+                      ? `${dayShifts.length} turni, ${formatMinutesShort(minutiDelGiorno(dayShifts))} in totale`
+                      : `${formatMinutesShort(minutiDelGiorno(dayShifts))} in questa giornata`}
                   >
                     {formatMinutesShort(minutiDelGiorno(dayShifts))}
                   </span>

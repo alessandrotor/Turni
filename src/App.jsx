@@ -28,8 +28,12 @@ const DEFAULT_SETTINGS = {
   // utils/notturno.js). 0 = spento, ed e' il default: chi non lo imposta ha il
   // motore identico a prima che esistesse.
   nightSurchargePct: 0,
-  nightStart: '22:00',
-  nightEnd: '06:00',
+  // Vuoto = la fascia la decide il CCNL (vedi `fasciaNotturnaRisolta`), e solo
+  // se il contratto non dice nulla si ripiega sulle 22:00–06:00 di legge.
+  // Scriverci '22:00' come faceva prima significava imporre a TUTTI la
+  // definizione di legge, che per il turismo è sbagliata.
+  nightStart: '',
+  nightEnd: '',
   nightCumuloMode: 'max',        // notturno vs domenica/festivo: 'max' | 'somma'
   patronSaintDate: '',           // santo patrono locale, formato 'MM-DD'
   priorTaxableIncome: 0,

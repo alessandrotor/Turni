@@ -8,7 +8,7 @@ import { elencoOrariDaCorreggere, applicaCorrezioneOrari } from '../services/cor
 import { ENABLE_NET_CALC } from '../config/features';
 import { genId } from '../utils/id';
 import { minutiGiornoAssenza } from '../utils/assenze';
-import { FASCIA_NOTTURNA_DEFAULT, CUMULO_DEFAULT } from '../utils/notturno';
+import { fasciaNotturnaRisolta, CUMULO_DEFAULT } from '../utils/notturno';
 import { normalizzaMaggiorazione, messaggioMaggiorazione } from '../utils/maggiorazioni';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
@@ -34,8 +34,10 @@ export default function Settings({ settings, onSave }) {
     holidaySurchargePct: settings.holidaySurchargePct ?? 0,
     holidaySundayMode: settings.holidaySundayMode || 'max',
     nightSurchargePct: settings.nightSurchargePct ?? 0,
-    nightStart: settings.nightStart || FASCIA_NOTTURNA_DEFAULT.inizio,
-    nightEnd: settings.nightEnd || FASCIA_NOTTURNA_DEFAULT.fine,
+    // Non più il ripiego di legge: se l'utente non ha scelto, i campi partono
+    // dalla fascia del suo contratto (per il turismo le 23:00, non le 22:00).
+    nightStart: fasciaNotturnaRisolta(settings).inizio,
+    nightEnd: fasciaNotturnaRisolta(settings).fine,
     nightCumuloMode: settings.nightCumuloMode || CUMULO_DEFAULT,
     patronSaintDate: settings.patronSaintDate || '',
     priorTaxableIncome: toInput(settings.priorTaxableIncome),
@@ -283,8 +285,8 @@ export default function Settings({ settings, onSave }) {
       holidaySurchargePct: parseNum(form.holidaySurchargePct),
       holidaySundayMode: form.holidaySundayMode,
       nightSurchargePct: parseNum(form.nightSurchargePct),
-      nightStart: form.nightStart || FASCIA_NOTTURNA_DEFAULT.inizio,
-      nightEnd: form.nightEnd || FASCIA_NOTTURNA_DEFAULT.fine,
+      nightStart: form.nightStart || '',
+      nightEnd: form.nightEnd || '',
       nightCumuloMode: form.nightCumuloMode,
       patronSaintDate: form.patronSaintDate,
       priorTaxableIncome: newMontante,
@@ -374,6 +376,13 @@ export default function Settings({ settings, onSave }) {
       workingDaysPerWeek: parseNum(form.workingDaysPerWeek),
     }) / 60
   ).toFixed(2).replace('.', ',');
+  // Fascia notturna del contratto scelto, e se quella impostata se ne discosta.
+  // Non si allinea da sola: chi ha copiato gli orari dal proprio cedolino ha
+  // ragione anche quando il contratto dice altro, e sovrascriverglieli in
+  // silenzio sarebbe il modo peggiore di «aiutarlo».
+  const fasciaCcnl = ccnlPreset.fasciaNotturna;
+  const fasciaDiversaDalCcnl = !!fasciaCcnl
+    && (form.nightStart !== fasciaCcnl.inizio || form.nightEnd !== fasciaCcnl.fine);
   const fullTimeWeeklyHours = parseNum(form.fullTimeWeeklyHours);
   const oreMensiliFullTime = (fullTimeWeeklyHours * ccnlPreset.monthlyHoursFactor).toFixed(2).replace('.', ',');
   // Soglia degli straordinari attiva solo se il full-time supera davvero le
@@ -680,12 +689,31 @@ export default function Settings({ settings, onSave }) {
                     onChange={set('nightEnd')}
                   />
                 </div>
+                {fasciaCcnl && fasciaDiversaDalCcnl && (
+                  <p className="form-hint form-hint--warn">
+                    ⚠️ Il contratto <strong>{ccnlPreset.label}</strong> usa la fascia{' '}
+                    <strong>{fasciaCcnl.inizio}–{fasciaCcnl.fine}</strong>, diversa da quella
+                    qui sopra. Se l'hai copiata dal tuo cedolino tienila com'è — la busta
+                    batte il contratto. Altrimenti{' '}
+                    <button
+                      type="button"
+                      className="linklike"
+                      onClick={() => {
+                        setForm(f => ({ ...f, nightStart: fasciaCcnl.inizio, nightEnd: fasciaCcnl.fine }));
+                        setSaved(false);
+                      }}
+                    >
+                      usa quella del contratto
+                    </button>.
+                  </p>
+                )}
                 <p className="form-hint">
                   <strong>22:00–06:00</strong> è la fascia di legge, e vale per vigilanza,
                   commercio e metalmeccanici.{' '}
-                  <strong>Nel turismo quasi certamente non è questa.</strong> Lì la fascia
-                  comincia più tardi e cambia da settore a settore — si trovano 24:00, 23:00 e
-                  23:30 — e non coincide nemmeno fra i vari contratti firmati sotto quel nome.{' '}
+                  <strong>Nel turismo non è questa</strong>, e non lo è di sicuro: lì comincia
+                  più tardi e cambia da settore a settore — si trovano 23:00, 23:30 e 24:00 —
+                  e non coincide nemmeno fra i vari contratti firmati sotto quel nome. L'app
+                  parte dalle 23:00, che è il più prudente fra i valori plausibili.{' '}
                   <strong>Copiala dal tuo cedolino</strong>: è l'unico posto dove il numero è
                   quello vero.
                 </p>

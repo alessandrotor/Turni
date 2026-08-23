@@ -173,6 +173,28 @@ verifica('senza pausa il tetto non morde', minutiNotturniPagati(senzaPausa, {}, 
 const euroPausa = euro({ ...base, nightSurchargePct: 20 }, { ...conPausa, id: 't3' });
 verifica('e in euro: minuti usati', euroPausa.minutiNotte, 450, 'non 480');
 
+// ── Da dove arriva la fascia: contratto prima della legge ──────────────────
+//
+// Il turismo NON parte dalle 22: il default di legge, applicato a tutti, ci
+// contava un'ora notturna che in busta non c'è — e sbagliava verso l'alto,
+// cioè nella direzione che fa fare conti che poi non arrivano.
+
+const { fasciaNotturnaRisolta } = await import('../src/utils/notturno.js');
+
+console.log('\nDa dove arriva la fascia\n');
+
+const fascia = (s) => { const r = fasciaNotturnaRisolta(s); return `${r.inizio}-${r.fine}/${r.fonte}`; };
+
+verifica('turismo: la dice il contratto', fascia({ ccnl: 'turismo' }), '23:00-06:00/contratto', 'non le 22 di legge');
+verifica('vigilanza: nessuna sua, vale la legge', fascia({ ccnl: 'vigilanza' }), '22:00-06:00/legge', 'D.Lgs. 66/2003');
+verifica('senza contratto: vale la legge', fascia({}), '22:00-06:00/legge', '');
+verifica('la scelta dell utente vince', fascia({ ccnl: 'turismo', nightStart: '23:30', nightEnd: '06:00' }), '23:30-06:00/impostata', 'la busta batte il contratto');
+verifica('mezza fascia nel CCNL si ignora', fascia({ ccnl: 'turismo', nightStart: '23:30' }), '23:30-06:00/impostata', 'estremo mancante preso dal contratto');
+
+// L'ora che separa le due fasce vale davvero: stesso turno, un'ora in meno.
+verifica('20:00-02:00 nel turismo', minutiInFasciaNotturna('20:00', '02:00', { ccnl: 'turismo' }), 180, 'tre ore, non quattro');
+verifica('20:00-02:00 con la legge', minutiInFasciaNotturna('20:00', '02:00', {}), 240, 'quattro ore');
+
 console.log();
 if (falliti) {
   console.error(`${falliti} caso/i su ${totale} non tornano.`);
