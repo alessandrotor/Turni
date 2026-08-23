@@ -116,6 +116,35 @@ verifica('la 13ª che deve ancora arrivare si aggiunge',
 verifica('  e vale una mensilita intera',
   arr(prev(9000, 0, conExtra) - prev(9000, 0, S)), arr(MENSILE), 'la 14ª di giugno e gia nel maturato');
 
+// ── La spiegazione deve sommare alla cifra che spiega ──────────────────────
+//
+// La pagina Statistiche apre un «Come e' calcolato?» che elenca le voci della
+// previsione. Le voci arrivano da qui e non sono ricalcolate dalla UI proprio
+// perche' non possano divergere — ma l'invariante va verificata, altrimenti
+// «non possono divergere» resta un'intenzione. Un pannello che esiste per
+// farsi controllare e che non quadra e' peggio di nessun pannello.
+
+console.log('\nLe voci sommano al totale\n');
+
+const casiVoci = [
+  ['previsione, caso normale', 13000, 900, S],
+  ['con voci fisse e bonus', 13000, 900, { ...S, fixedMonthlyItems: [{ amount: 10 }], monthlyBonusAmount: 120, monthlyBonus: { [`${ANNO}-06`]: true } }],
+  ['reddito scritto a mano', 13000, 0, { ...S, annualGrossManual: 18000 }],
+  ['lavoro a chiamata', 12000, 0, { onCall: true, hourlyRate: 10 }],
+  ['modalita ytd', 12000, 800, { ...S, tiProjectionMode: 'ytd' }],
+  ['nessun turno segnato', 0, 0, S],
+];
+for (const [nome, ag, ae, st] of casiVoci) {
+  const r = projectAnnualIncome(ag, ae, st, ANNO);
+  const somma = (r.voci || []).reduce((t, v) => t + v.valore, 0);
+  verifica(nome, arr(somma), arr(r.value), `fonte: ${r.source}`);
+}
+
+// Ogni voce deve avere un'etichetta: una riga senza nome nel pannello e' una
+// cifra che compare dal nulla.
+const senzaEtichetta = projectAnnualIncome(13000, 900, S, ANNO).voci.filter(v => !v.label).length;
+verifica('tutte le voci hanno un nome', senzaEtichetta, 0, '');
+
 console.log();
 if (falliti) {
   console.error(`${falliti} caso/i su ${totale} non tornano.`);

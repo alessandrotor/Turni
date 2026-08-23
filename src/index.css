@@ -2413,3 +2413,20 @@ input, select, textarea { font: inherit; }
   font-size: .85rem;
   color: var(--c-text);
 }
+
+/* Spiegazione della proiezione annua in Statistiche. Riusa `.net-detail` e
+   `.net-line` del pannello gemello in Calendario: stessa cosa, stesso aspetto. */
+.stats-calcolo-nota {
+  display: block;
+  font-size: .68rem;
+  color: var(--c-muted);
+  font-style: italic;
+  line-height: 1.35;
+}
+
+.stats-calcolo-spiega {
+  font-size: .78rem;
+  color: var(--c-text-2);
+  line-height: 1.5;
+  margin-top: .6rem;
+}

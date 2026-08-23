@@ -450,6 +450,10 @@ export function projectAnnualGross(settings = {}, year = new Date().getFullYear(
  *   dicembre per un anno passato.
  * @returns {{ value: number, source: 'contratto'|'maturato'|'manuale' }}
  */
+// «1 mese» / «5 mesi»: compare nelle note della spiegazione, e «1 mesi» in un
+// pannello che deve ispirare fiducia sui numeri stona più del dovuto.
+const fmtMesi = (n) => `${n} mes${n === 1 ? 'e' : 'i'}`;
+
 export function projectAnnualIncome(
   annualGross, annualExtras, settings = {}, year = new Date().getFullYear(),
   { enableNetCalc = true, viewedMonth = null } = {},
@@ -482,15 +486,41 @@ export function projectAnnualIncome(
   const annualize = (v) => (monthsElapsed > 0 ? (v * 12) / monthsElapsed : v);
   const extras = (v) => v + fixedAnnual + bonusYearAll;
 
+  // Le voci che compongono il totale, restituite insieme al totale stesso.
+  // Stanno qui e non nella UI di proposito: una spiegazione che ricalcola i
+  // numeri per conto proprio prima o poi smette di combaciare con la cifra che
+  // pretende di spiegare, ed è il difetto peggiore per un pannello che esiste
+  // apposta per farsi controllare.
+  const voci = [];
+  const aggiungi = (label, valore, nota = null) => {
+    if (Math.abs(valore) >= 0.005) voci.push({ label, valore, nota });
+  };
+  const conVociFisse = () => {
+    aggiungi('Voci fisse mensili × 12', fixedAnnual);
+    aggiungi('Bonus segnati nell\'anno', bonusYearAll);
+  };
+
   if ((settings.tiProjectionMode || 'stimato') === 'ytd') {
     const cumulativo = recurring + fixedMonthlyTotal * monthsElapsed + bonusYTD;
-    return { value: annualize(cumulativo) + extrasFullYear, source: 'maturato' };
+    aggiungi('Maturato finora, annualizzato', annualize(cumulativo),
+      `${fmtMesi(monthsElapsed)} × 12 ⁄ ${monthsElapsed}`);
+    aggiungi('13ª/14ª previste nell\'anno', extrasFullYear);
+    return { value: annualize(cumulativo) + extrasFullYear, source: 'maturato', voci, mesiTrascorsi: monthsElapsed };
   }
 
   const manual = Number(settings.annualGrossManual) || 0;
-  if (manual > 0) return { value: extras(manual), source: 'manuale' };
+  if (manual > 0) {
+    aggiungi('Reddito annuo scritto a mano', manual);
+    conVociFisse();
+    return { value: extras(manual), source: 'manuale', voci, mesiTrascorsi: monthsElapsed };
+  }
 
-  if (settings.onCall) return { value: extras(annualize(recurring)), source: 'maturato' };
+  if (settings.onCall) {
+    aggiungi('Maturato finora, annualizzato', annualize(recurring),
+      `${fmtMesi(monthsElapsed)} × 12 ⁄ ${monthsElapsed}`);
+    conVociFisse();
+    return { value: extras(annualize(recurring)), source: 'maturato', voci, mesiTrascorsi: monthsElapsed };
+  }
 
   // ── Previsione IN AVANTI: maturato reale + quello che resta da contratto ──
   //
@@ -524,7 +554,15 @@ export function projectAnnualIncome(
     ? mensile * Math.max(0, extraMonthsAccrued(settings, year) - receivedExtraMonthsCount(settings, monthsElapsed - 1, year))
     : 0;
   const value = annualGross + mesiRestanti * mensile + extraResidue;
-  return { value: extras(value), source: 'previsione' };
+
+  aggiungi('Maturato finora', annualGross,
+    'turni segnati, più il montante e le 13ª/14ª già prese');
+  aggiungi(`I ${fmtMesi(mesiRestanti)} che restano`, mesiRestanti * mensile,
+    mesiRestanti > 0 ? `${mesiRestanti} × la mensilità da contratto` : null);
+  aggiungi('13ª/14ª ancora da arrivare', extraResidue);
+  conVociFisse();
+
+  return { value: extras(value), source: 'previsione', voci, mesiTrascorsi: monthsElapsed, mesiRestanti };
 }
 
 /**

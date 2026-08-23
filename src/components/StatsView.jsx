@@ -89,6 +89,9 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
   );
   const minYear = yearsWithData[0] ?? currentYear;
   const maxYear = yearsWithData[yearsWithData.length - 1] ?? currentYear;
+  // Chiuso di partenza, come il pannello gemello in Calendario: la spiegazione
+  // serve a chi la cerca, non deve allungare la pagina a chi guarda il numero.
+  const [showCalcolo, setShowCalcolo] = useState(false);
 
   const annualGross = useMemo(
     () => computeAnnualGrossFromShifts(year, allShifts, settings, payByShift),
@@ -330,6 +333,70 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
             <p className="stats-projection-source">
               proiezione {PROJECTION_LABEL[projection.source] || projection.source}
             </p>
+
+            <button
+              type="button"
+              className="net-toggle"
+              onClick={() => setShowCalcolo(v => !v)}
+              aria-expanded={showCalcolo}
+            >
+              {showCalcolo ? 'Nascondi dettaglio ▲' : 'Come è calcolato? ▼'}
+            </button>
+
+            {showCalcolo && (
+              <div className="net-detail">
+                {/* Le voci arrivano da `projectAnnualIncome` e non sono
+                    ricalcolate qui: sommano al totale per costruzione. */}
+                {(projection.voci || []).map(v => (
+                  <div className="net-line" key={v.label}>
+                    <span>
+                      {v.label}
+                      {v.nota && <em className="stats-calcolo-nota">{v.nota}</em>}
+                    </span>
+                    <span>{fmt0(v.valore)}</span>
+                  </div>
+                ))}
+                <div className="net-line net-line--total">
+                  <span>Stima fine anno</span><span>{fmt0(projection.value)}</span>
+                </div>
+
+                <p className="stats-calcolo-spiega">
+                  {projection.source === 'previsione' && (
+                    <>
+                      La stima guarda <strong>avanti</strong>: prende quello che hai già
+                      segnato e ci somma i mesi che mancano a dicembre, non moltiplica il
+                      passato. Così ogni ora di straordinario in più sposta la previsione
+                      esattamente di quello che vale — se moltiplicasse il maturato, un euro
+                      guadagnato ad agosto ne sposterebbe uno e mezzo, e a gennaio dodici.
+                    </>
+                  )}
+                  {projection.source === 'maturato' && (
+                    <>
+                      Non c'è un orario da contratto da cui proiettare, quindi si prende
+                      quello che hai guadagnato nei {projection.mesiTrascorsi} mesi trascorsi
+                      e lo si riporta a dodici. Se i mesi che restano saranno diversi da
+                      quelli passati, la stima si sposterà di conseguenza.
+                    </>
+                  )}
+                  {projection.source === 'manuale' && (
+                    <>
+                      Stai usando il reddito annuo scritto a mano in Impostazioni: vince su
+                      qualunque calcolo dai turni. Svuota quel campo per tornare alla stima
+                      automatica.
+                    </>
+                  )}
+                  {projection.source === 'contratto' && (
+                    <>Il numero viene dall'orario contrattuale moltiplicato per le mensilità dell'anno.</>
+                  )}
+                </p>
+                <p className="stats-calcolo-spiega">
+                  È su questa cifra — non sul maturato — che si misurano le soglie del
+                  trattamento integrativo: contano sull'anno intero, quindi vanno
+                  confrontate con l'anno intero.
+                </p>
+              </div>
+            )}
+
             {ENABLE_NET_CALC && (
               <p className="net-disclaimer--prominent">
                 ⚠️ Funzione beta: i calcoli possono contenere errori. Fai sempre controllare
