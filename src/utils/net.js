@@ -555,11 +555,34 @@ export function projectAnnualIncome(
     : 0;
   const value = annualGross + mesiRestanti * mensile + extraResidue;
 
+  // 13ª e 14ª come DUE righe distinte, ciascuna col proprio rateo. Una riga
+  // sola «13ª/14ª ancora da arrivare» non diceva quale delle due fosse, né che
+  // l'altra era già dentro il maturato, né perché il rateo non fosse intero —
+  // ed è la prima cosa che si chiede guardando quel numero.
+  const rateo = (kind) => (settings[kind === 'tredicesima' ? 'hasTredicesima' : 'hasQuattordicesima']
+    ? extraMonthAccrual(kind, year, settings) : 0);
+  const notaRateo = (frazione) => {
+    const dodicesimi = Math.round(frazione * 12);
+    return dodicesimi >= 12
+      ? 'rateo intero, 12/12'
+      : `${dodicesimi}/12 — il periodo di competenza comincia prima dell'assunzione`;
+  };
+
   aggiungi('Maturato finora', annualGross,
-    'turni segnati, più il montante e le 13ª/14ª già prese');
+    'turni segnati, più il montante e le 13ª/14ª già incassate');
   aggiungi(`I ${fmtMesi(mesiRestanti)} che restano`, mesiRestanti * mensile,
     mesiRestanti > 0 ? `${mesiRestanti} × la mensilità da contratto` : null);
-  aggiungi('13ª/14ª ancora da arrivare', extraResidue);
+
+  for (const kind of ['quattordicesima', 'tredicesima']) {
+    const frazione = rateo(kind);
+    if (frazione <= 0) continue;
+    // Già incassata = sta dentro «Maturato finora», non va riaggiunta qui.
+    if (monthsElapsed - 1 >= EXTRA_MONTHS[kind]) continue;
+    const nome = kind === 'tredicesima' ? 'Tredicesima' : 'Quattordicesima';
+    const mese = kind === 'tredicesima' ? 'dicembre' : 'giugno';
+    aggiungi(`${nome} di ${mese}`, mensile * frazione, notaRateo(frazione));
+  }
+
   conVociFisse();
 
   return { value: extras(value), source: 'previsione', voci, mesiTrascorsi: monthsElapsed, mesiRestanti };
