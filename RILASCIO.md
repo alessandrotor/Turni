@@ -13,9 +13,11 @@ del server.
 **Legenda:** `[x]` chiusa e verificata · `[~]` il lavoro è fatto ma la prova va
 rifatta sul sito vero · `[ ]` da fare.
 
-**Stato al 21 agosto 2026 (venerdì): 2 chiuse, 2 a metà, 3 da fare.**
-Le due che possono spostare il rilascio sono la **4** (informativa) e la **5**
-(rete di sicurezza): nessuna delle due è cominciata.
+**Stato al 23 agosto 2026 (domenica): 2 chiuse, 3 a metà, 2 da fare.**
+La **5** (rete di sicurezza) è passata da «non cominciata» a fatta e provata:
+resta a metà solo perché manca il collaudo su un telefono vero. Quella che può
+ancora spostare il rilascio è la **4** (informativa), che aspetta il deploy
+manuale in produzione.
 
 Questo file si cancella dopo la pubblicazione.
 
@@ -145,7 +147,7 @@ Questo file si cancella dopo la pubblicazione.
   sbagliata è sempre la copia che legge l'utente.
   </details>
 
-- [ ] **5. Nessun punto dell'app lascia lo schermo bianco**, e la schermata di
+- [~] **5. Nessun punto dell'app lascia lo schermo bianco**, e la schermata di
       errore permette di salvare i propri dati.
 
   <details><summary>come si verifica</summary>
@@ -155,7 +157,33 @@ Questo file si cancella dopo la pubblicazione.
   da `localStorage` e non dipende dall'interfaccia.
 
   Provalo **stando sulla vista Agenda**: è il codice più giovane dell'app.
+
+  Non basta vedere la schermata: il file va **aperto**, e dentro ci devono
+  essere i turni. Una schermata d'errore con un pulsante che non produce nulla
+  è peggio di nessun pulsante, perché toglie anche il sospetto.
   </details>
+
+  > **Fatto e verificato il 23/08/2026 sul pacchetto di produzione**
+  > (`vite preview` su `dist`, non sul server di sviluppo: l'overlay di Vite
+  > nasconde proprio ciò che si vuole guardare).
+  >
+  > `ErrorBoundary` avvolge `App` in `main.jsx` — fuori e non dentro, altrimenti
+  > un errore nella radice porterebbe via anche il salvagente. Caduta forzata
+  > nel render della vista Agenda, con 12 turni in memoria:
+  > `#root` non resta vuoto, compare la schermata; il pulsante ha **scaricato
+  > davvero** `Turni_backup_2026-08-23.json`, e il file aperto conteneva i 12
+  > turni, le impostazioni e la vista scelta. Ricaricando senza la caduta
+  > armata l'app torna normale.
+  >
+  > Se il download fallisce — su Android `deliver()` carica i plugin Capacitor
+  > con import dinamici, che in uno stato rotto possono fallire a loro volta —
+  > la schermata ripiega sul backup in chiaro dentro un riquadro di testo, da
+  > copiare a mano. Quella via non dipende da niente.
+  >
+  > **Resta [~] e non [x]** per due ragioni oneste: la prova è su Chromium da
+  > riga di comando, non su un telefono vero; e un error boundary intercetta gli
+  > errori di RENDER, non quelli nei gestori di eventi né quelli asincroni. Lo
+  > schermo bianco è coperto, «nessun punto dell'app» è più di così.
 
 - [ ] **6. Online c'è la versione aggiornata**, provata su due computer e due
       telefoni seguendo una lista scritta.

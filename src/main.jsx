@@ -3,10 +3,16 @@ import { createRoot } from 'react-dom/client';
 import { Capacitor } from '@capacitor/core';
 import './index.css';
 import App from './App.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 
+// L'ErrorBoundary sta FUORI da App e non dentro: deve sopravvivere alla caduta
+// di qualunque cosa ci sia sotto, App compresa. Messo più in basso, un errore
+// nella radice dell'app porterebbe via anche il salvagente.
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>
 );
 
