@@ -194,18 +194,38 @@ export function computePayByShift(allShifts, settings) {
       // non prende il domenicale, non ci si è andati.
       const parts = assenza ? { sunday: 0, holiday: 0, manual: 0 } : getShiftSurchargeParts(s, settings);
 
+      // LE ORE FESTIVE STANNO FUORI DAL CONTEGGIO DELLE ECCEDENZE.
+      //
+      // In busta un giorno festivo lavorato ha una riga sua — «Lavoro festivo
+      // ordinario» al 100%, piu' «Magg. festivo» — e quelle ore NON compaiono
+      // fra le supplementari. Contarle in entrambi i posti le pagava al 130% +
+      // 20% invece che al 120%.
+      //
+      // Si mettono da parte PRIMA della soglia, non solo dopo: e' la differenza
+      // fra le due letture possibili, e la busta di giugno 2026 la decide.
+      // 145,20 ore lavorate, 13,75 festive, soglia 103,20 →
+      //   131,45 − 103,20 = 28,25 supplementari, esattamente quanto stampato.
+      // Lasciandole nel monte ore (togliendole solo dalle supplementari) le 6,75
+      // ore del 2 giugno riempirebbero parte della soglia e ne uscirebbero
+      // 35,00. Vedi scripts/check-festivo-supplementare.mjs.
+      //
+      // Si guarda il GIORNO con `isHoliday`, non `parts.holiday`: con la
+      // maggiorazione festiva impostata a zero quest'ultimo sarebbe zero, e le
+      // ore rientrerebbero di nascosto fra le supplementari.
+      const festivoLavorato = !assenza && isHoliday(s.date, settings);
+
       const before = cumMin;
-      const after = cumMin + m;
+      const after = cumMin + (festivoLavorato ? 0 : m);
       // Le assenze RIEMPIONO la soglia contrattuale — è così che la busta
       // arriva comunque alle ore del mese quando ci sono ferie — ma non
       // possono essere supplementari o straordinarie: in un giorno di ferie
       // non si lavora, e pagarle in più sarebbe un guadagno per essere stati
       // assenti.
-      const supplementareMin = (!assenza && applyOvertime)
+      const supplementareMin = (!assenza && !festivoLavorato && applyOvertime)
         ? minutesInBand(before, after, thresholdMin, applyExtra ? fullTimeThresholdMin : Infinity)
         : 0;
       // Fascia straordinaria: oltre la soglia-full-time.
-      const straordinarioMin = (!assenza && applyExtra)
+      const straordinarioMin = (!assenza && !festivoLavorato && applyExtra)
         ? minutesInBand(before, after, fullTimeThresholdMin, Infinity)
         : 0;
 
@@ -268,7 +288,8 @@ export function computePayByShift(allShifts, settings) {
         // segnalato, altrimenti il totale è silenziosamente sottostimato.
         missingRate: ratePerMin <= 0 && m > 0,
       };
-      cumMin += m;
+      // Le ore festive non avanzano il contatore: vedi sopra.
+      cumMin = after;
     }
   }
   return result;
