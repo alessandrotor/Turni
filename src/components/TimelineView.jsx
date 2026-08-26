@@ -1,6 +1,6 @@
 import { useRef, useEffect, useMemo } from 'react';
 import {
-  formatDate, formatDayShort, isToday, isWeekend, formatMinutes,
+  formatDayShort, isToday, isWeekend, formatMinutes, MONTH_NAMES,
 } from '../utils/dates';
 import { calcShiftMinutes, getShiftSurchargePct } from '../utils/pay';
 import { minutiNotturniPagati, pctNotturno, fasciaNotturna } from '../utils/notturno';
@@ -23,7 +23,10 @@ function spiegaNotturno(minuti, settings) {
 }
 
 export default function TimelineView({
-  daysInMonth,
+  // Le stesse giornate disegnate dalla griglia: col mese di paga il periodo
+  // contato non è il mese di calendario, e le due viste devono mostrare gli
+  // stessi giorni o una delle due mente sul totale.
+  giorni,
   year,
   month,
   byDate,
@@ -61,22 +64,18 @@ export default function TimelineView({
   // I giorni si ricostruiscono solo quando cambia il mese o cambiano i turni:
   // senza questo, ogni stato del calendario (menù export, modali, barra import)
   // rifaceva da capo trentun giorni di celle.
-  const days = useMemo(() => Array.from({ length: daysInMonth }, (_, i) => {
-    const dayNum = i + 1;
-    const date = new Date(year, month, dayNum);
-    const dateStr = formatDate(date);
-
-    return {
-      dayNum,
-      date,
-      dateStr,
-      dayName: formatDayShort(date),
-      dayShifts: byDate[dateStr] || [],
-      today: isToday(date),
-      weekend: isWeekend(date),
-      holiday: isHoliday(dateStr, settings),
-    };
-  }), [daysInMonth, year, month, byDate, settings]);
+  const days = useMemo(() => giorni.map(({ date, dayNum, iso, altroMese, fuoriPeriodo }) => ({
+    dayNum,
+    date,
+    dateStr: iso,
+    dayName: formatDayShort(date),
+    dayShifts: byDate[iso] || [],
+    today: isToday(date),
+    weekend: isWeekend(date),
+    holiday: isHoliday(iso, settings),
+    altroMese,
+    fuoriPeriodo,
+  })), [giorni, byDate, settings]);
 
   return (
     <div className="timeline-view" role="list" aria-label="Agenda dei turni">
@@ -94,6 +93,8 @@ export default function TimelineView({
               d.today ? 'timeline-item--today' : '',
               d.weekend ? 'timeline-item--weekend' : '',
               d.holiday ? 'timeline-item--holiday' : '',
+              d.altroMese ? 'timeline-item--altro-mese' : '',
+              d.fuoriPeriodo ? 'timeline-item--fuori' : '',
               isFocus ? 'timeline-item--focus' : '',
             ].filter(Boolean).join(' ')}
           >
@@ -103,6 +104,14 @@ export default function TimelineView({
               <span className={`timeline-day-num ${d.today ? 'timeline-day-num--today' : ''}`}>
                 {d.dayNum}
               </span>
+              {/* Il mese, solo dove il giorno non è quello che intesta la
+                  pagina: le giornate del mese dopo tirate dentro dal periodo
+                  di paga, e quelle iniziali che invece ne restano fuori. */}
+              {(d.altroMese || d.fuoriPeriodo) && (
+                <span className="timeline-day-mese">
+                  {d.fuoriPeriodo ? 'fuori periodo' : MONTH_NAMES[d.date.getMonth()]}
+                </span>
+              )}
               {d.today && <span className="timeline-badge-today">Oggi</span>}
               {d.holiday && !d.today && (
                 <span className="timeline-badge-holiday" title="Festivo">Festivo</span>
@@ -130,8 +139,8 @@ export default function TimelineView({
                     const night = notteMin > 0;
                     const surchargePct = getShiftSurchargePct(shift, settings);
                     const descrizione = isAssenza
-                      ? `${ETICHETTA[tipo].toLowerCase()} del ${d.dayNum}/${month + 1}`
-                      : `turno ${shift.startTime}–${shift.endTime} del ${d.dayNum}/${month + 1}`;
+                      ? `${ETICHETTA[tipo].toLowerCase()} del ${d.dayNum}/${d.date.getMonth() + 1}`
+                      : `turno ${shift.startTime}–${shift.endTime} del ${d.dayNum}/${d.date.getMonth() + 1}`;
 
                     // Il riquadro resta cliccabile col mouse, ma NON è un
                     // comando per la tastiera: il comando vero è il pulsante
@@ -233,7 +242,7 @@ export default function TimelineView({
                   type="button"
                   className="timeline-rest-card"
                   onClick={() => onAddShift(d.dateStr)}
-                  aria-label={`Giorno di riposo: aggiungi un turno il ${d.dayNum}/${month + 1}`}
+                  aria-label={`Giorno di riposo: aggiungi un turno il ${d.dayNum}/${d.date.getMonth() + 1}`}
                 >
                   <span className="timeline-rest-content">
                     <span className="timeline-rest-label">🌿 Riposo</span>

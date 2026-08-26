@@ -3,8 +3,10 @@ import useModalDismiss from '../hooks/useModalDismiss';
 import {
   formatDate, formatMonthYear, isToday, isWeekend,
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth, formatPayrollRange,
+  MONTH_NAMES,
 } from '../utils/dates';
 import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
+import { celleMese } from '../utils/griglia';
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { isMensilizzato } from '../utils/ccnl';
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
@@ -126,26 +128,6 @@ export default function CalendarView({
   const month = currentMonth.getMonth();
   const daysInMonth = getDaysInMonth(year, month);
 
-  // Monday-first offset
-  const firstOffset = (new Date(year, month, 1).getDay() + 6) % 7;
-  const totalCells = Math.ceil((firstOffset + daysInMonth) / 7) * 7;
-  const cells = Array.from({ length: totalCells }, (_, i) => {
-    const d = i - firstOffset + 1;
-    return d >= 1 && d <= daysInMonth ? d : null;
-  });
-
-  // Turni raggruppati per data e ordinati per ora di inizio: senza sort le pill
-  // seguirebbero l'ordine di inserimento nell'oggetto, non quello cronologico.
-  const byDate = useMemo(() => {
-    const map = {};
-    shifts.forEach(s => {
-      if (!map[s.date]) map[s.date] = [];
-      map[s.date].push(s);
-    });
-    Object.values(map).forEach(list =>
-      list.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || '')));
-    return map;
-  }, [shifts]);
 
   // Monthly totals — sul mese di PAGA (vedi prop payrollShifts).
   const counted = payrollShifts || shifts;
@@ -160,6 +142,40 @@ export default function CalendarView({
   // usato, senza modo di tornare indietro.
   const mensilizzato = !settings.onCall && isMensilizzato(settings);
   const periodoPaga = settings.periodoConteggio !== 'calendario';
+  // La griglia disegna il PERIODO CHE VIENE CONTATO, non per forza il mese di
+  // calendario: col mese di paga agosto 2026 si conta dal 3 ago al 6 set, e i
+  // giorni di quella prima settimana di settembre devono vedersi, altrimenti il
+  // riepilogo conta giornate che sullo schermo non ci sono. Regola e casi
+  // limite stanno in utils/griglia.js, con il loro riscontro.
+  const grigliaPaga = payrollRange !== null;
+  const cells = useMemo(
+    () => celleMese(year, month, grigliaPaga),
+    [year, month, grigliaPaga],
+  );
+  const giorniPeriodo = useMemo(() => cells.filter(Boolean), [cells]);
+
+  // Turni raggruppati per data e ordinati per ora di inizio: senza sort le pill
+  // seguirebbero l'ordine di inserimento nell'oggetto, non quello cronologico.
+  //
+  // La griglia mostra anche i giorni del mese dopo che rientrano nel periodo di
+  // paga, quindi ai turni del mese di calendario vanno uniti quelli contati:
+  // sono gli stessi che fanno il totale, e senza di loro le celle di coda
+  // resterebbero vuote proprio dove il conteggio dice che c'è qualcosa.
+  const byDate = useMemo(() => {
+    const visti = new Set(shifts.map(s => s.id));
+    const tutti = counted === shifts
+      ? shifts
+      : [...shifts, ...counted.filter(s => !visti.has(s.id))];
+    const map = {};
+    tutti.forEach(s => {
+      if (!map[s.date]) map[s.date] = [];
+      map[s.date].push(s);
+    });
+    Object.values(map).forEach(list =>
+      list.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || '')));
+    return map;
+  }, [shifts, counted]);
+
   const totalMins = useMemo(
     () => counted.reduce((sum, s) => sum + calcShiftMinutes(s), 0),
     [counted],
@@ -197,14 +213,15 @@ export default function CalendarView({
     const dettaglio = voci
       .map(([t, v]) => `${formatMinutesShort(v.minuti)} di ${ETICHETTA[t].toLowerCase()}`)
       .join(' · ');
-    // «3 giorni di ferie · 1 di festività»: la parola «giorni» una volta sola,
-    // altrimenti la riga diventa una filastrocca. Il singolare va scritto
-    // (1 giorno), perché con una sola voce è l'unico posto in cui si legge.
+    // «3 giorni di ferie · 1 di festività»: la parola «giorni» una volta sola
+    // — ripeterla a ogni voce fa filastrocca — ma il «di» resta su tutte,
+    // altrimenti si legge «7 ferie». Il singolare va scritto (1 giorno):
+    // con una voce sola è l'unico posto in cui si legge.
     const dettaglioGiorni = voci
       .map(([t, v], i) => {
         const nome = ETICHETTA[t].toLowerCase();
-        const unita = i === 0 ? `${v.giorni === 1 ? 'giorno' : 'giorni'} di ` : '';
-        return `${v.giorni} ${unita}${nome}`;
+        const unita = i === 0 ? `${v.giorni === 1 ? 'giorno' : 'giorni'} ` : '';
+        return `${v.giorni} ${unita}di ${nome}`;
       })
       .join(' · ');
     return { minuti, giorni, dettaglio, dettaglioGiorni };
@@ -571,7 +588,7 @@ export default function CalendarView({
       {/* Main shifts view: Timeline or Grid */}
       {calLayout === 'timeline' ? (
         <TimelineView
-          daysInMonth={daysInMonth}
+          giorni={giorniPeriodo}
           year={year}
           month={month}
           byDate={byDate}
@@ -586,14 +603,15 @@ export default function CalendarView({
             <div key={d} className="cal-day-header">{d}</div>
           ))}
 
-          {cells.map((dayNum, i) => {
-            if (!dayNum) return <div key={`e${i}`} className="cal-cell cal-cell--empty" />;
+          {cells.map((cell, i) => {
+            if (!cell) return <div key={`e${i}`} className="cal-cell cal-cell--empty" />;
 
-            const date = new Date(year, month, dayNum);
-            const dateStr = formatDate(date);
+            const { date, dayNum, altroMese, fuoriPeriodo } = cell;
+            const dateStr = cell.iso;
             const dayShifts = byDate[dateStr] || [];
             const today = isToday(date);
             const weekend = isWeekend(date);
+            const mese = date.getMonth();
 
             // La cella è un contenitore cliccabile, non un pulsante: annidare
             // controlli dentro un role="button" è invalido e confonde gli screen
@@ -606,19 +624,29 @@ export default function CalendarView({
                   'cal-cell',
                   today ? 'cal-cell--today' : '',
                   weekend ? 'cal-cell--weekend' : '',
+                  altroMese ? 'cal-cell--altro-mese' : '',
+                  fuoriPeriodo ? 'cal-cell--fuori' : '',
                   dateStr === focusDate ? 'cal-cell--focus' : '',
                 ].join(' ')}
+                title={fuoriPeriodo
+                  ? `${dayNum} ${MONTH_NAMES[mese]}: fuori dal periodo di paga, conta nel mese precedente`
+                  : undefined}
                 onClick={e => { if (e.target === e.currentTarget) onAddShift(dateStr); }}
               >
                 <button
                   type="button"
                   className="cal-cell-add"
                   onClick={() => onAddShift(dateStr)}
-                  aria-label={`Aggiungi turno il ${dayNum}/${month + 1}`}
+                  aria-label={`Aggiungi turno il ${dayNum}/${mese + 1}`}
                 >
                   <span className={`cal-day-num${today ? ' cal-day-num--today' : ''}`}>
                     {dayNum}
                   </span>
+                  {/* Il mese scritto accanto al numero solo dove serve: sulle
+                      giornate del mese dopo tirate dentro dal periodo di paga,
+                      altrimenti «1» in fondo ad agosto si legge come un
+                      errore di stampa. */}
+                  {altroMese && <span className="cal-day-mese">{MONTH_NAMES[mese]}</span>}
                 </button>
                 <div className="cal-shifts">
                   {dayShifts.map(s => {
@@ -637,7 +665,7 @@ export default function CalendarView({
                           ? `${ETICHETTA[t]} · ${ore} h${s.note ? ` | ${s.note}` : ''}`
                           : `${s.startTime}–${s.endTime}${s.note ? ` | ${s.note}` : ''}`}
                         aria-label={assente
-                          ? `Modifica ${ETICHETTA[t].toLowerCase()} del ${dayNum}/${month + 1}`
+                          ? `Modifica ${ETICHETTA[t].toLowerCase()} del ${dayNum}/${mese + 1}`
                           : `Modifica turno ${s.startTime}–${s.endTime}`}
                       >
                         {assente ? ICONA[t] : s.startTime}
