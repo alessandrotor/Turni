@@ -248,18 +248,6 @@ input, select, textarea { font: inherit; }
   color: var(--c-primary);
 }
 
-/* Come nella griglia: il mese sulle giornate tirate dentro dal periodo di
-   paga, l'avviso su quelle che ne restano fuori. */
-.timeline-day-mese {
-  font-size: .6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .02em;
-  color: var(--c-text-2);
-  text-align: center;
-}
-.timeline-item--fuori { opacity: .55; }
-
 .timeline-badge-today {
   font-size: .6rem;
   font-weight: 700;
@@ -497,10 +485,7 @@ input, select, textarea { font: inherit; }
 
 .cal-grid {
   display: grid;
-  /* minmax(0, 1fr) e non 1fr: con `auto` come minimo, l'etichetta del mese
-     sulle celle di coda («1 SET») allargava la colonna oltre lo schermo e la
-     griglia usciva di lato. */
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(7, 1fr);
   gap: 1px;
   background: var(--c-border);
   border-radius: var(--radius);
@@ -557,9 +542,7 @@ input, select, textarea { font: inherit; }
 /* Il numero del giorno è il pulsante "aggiungi turno" della cella */
 .cal-cell-add {
   align-self: flex-start;
-  display: flex;
-  align-items: center;
-  gap: 3px;
+  display: block;
   padding: 0;
   color: inherit;
 }
@@ -582,32 +565,6 @@ input, select, textarea { font: inherit; }
   color: #fff;
   font-weight: 700;
 }
-
-/* Griglia sul MESE DI PAGA: le ultime celle sono giorni del mese dopo, e le
-   prime possono cadere fuori dal periodo contato. Vanno distinti a colpo
-   d'occhio, altrimenti il riepilogo conta giornate che sembrano non esserci
-   (o che sembrano esserci due volte). */
-.cal-day-mese {
-  font-size: .6rem;
-  font-weight: 700;
-  letter-spacing: .02em;
-  text-transform: uppercase;
-  color: var(--c-text-2);
-  opacity: .75;
-}
-.cal-cell--altro-mese { background: #fbfcfe; }
-.cal-cell--altro-mese:hover { background: #f3f6fb; }
-/* Fuori periodo: la giornata esiste e resta modificabile, ma NON entra nei
-   totali di questo mese — sta nella busta precedente. Sbiadita, non nascosta:
-   toglierla dalla griglia farebbe sparire dal calendario un giorno di agosto. */
-.cal-cell--fuori {
-  background: repeating-linear-gradient(
-    -45deg, #fafafa, #fafafa 6px, #f1f2f4 6px, #f1f2f4 12px
-  );
-}
-.cal-cell--fuori .cal-day-num,
-.cal-cell--fuori .cal-shift-pill,
-.cal-cell--fuori .cal-day-total { opacity: .5; }
 
 .cal-shifts {
   display: flex;
@@ -2478,12 +2435,23 @@ input, select, textarea { font: inherit; }
    e non fra le impostazioni perché è una lente che si cambia spesso: una volta
    per quadrare col cedolino, un'altra per sapere quanto si è lavorato nel mese
    solare. */
+/* Testata del riepilogo: dice su quale periodo sono i numeri che seguono,
+   prima che li si legga. Col mese di paga il conteggio esce dal mese
+   visualizzato, e senza dirlo le giornate di ferie non tornano. */
+.periodo-testata {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .35rem;
+  padding-bottom: .7rem;
+  border-bottom: 1px solid var(--c-border);
+}
+
 .periodo-toggle {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: .3rem;
-  margin-top: .2rem;
 }
 
 .periodo-btn {
@@ -2505,6 +2473,7 @@ input, select, textarea { font: inherit; }
 
 .periodo-nota {
   flex-basis: 100%;
+  margin: 0;
   font-size: .68rem;
   color: var(--c-muted);
   font-style: italic;

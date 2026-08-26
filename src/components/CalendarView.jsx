@@ -3,10 +3,8 @@ import useModalDismiss from '../hooks/useModalDismiss';
 import {
   formatDate, formatMonthYear, isToday, isWeekend,
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth, formatPayrollRange,
-  MONTH_NAMES,
 } from '../utils/dates';
 import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
-import { celleMese } from '../utils/griglia';
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { isMensilizzato } from '../utils/ccnl';
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
@@ -128,6 +126,26 @@ export default function CalendarView({
   const month = currentMonth.getMonth();
   const daysInMonth = getDaysInMonth(year, month);
 
+  // Monday-first offset
+  const firstOffset = (new Date(year, month, 1).getDay() + 6) % 7;
+  const totalCells = Math.ceil((firstOffset + daysInMonth) / 7) * 7;
+  const cells = Array.from({ length: totalCells }, (_, i) => {
+    const d = i - firstOffset + 1;
+    return d >= 1 && d <= daysInMonth ? d : null;
+  });
+
+  // Turni raggruppati per data e ordinati per ora di inizio: senza sort le pill
+  // seguirebbero l'ordine di inserimento nell'oggetto, non quello cronologico.
+  const byDate = useMemo(() => {
+    const map = {};
+    shifts.forEach(s => {
+      if (!map[s.date]) map[s.date] = [];
+      map[s.date].push(s);
+    });
+    Object.values(map).forEach(list =>
+      list.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || '')));
+    return map;
+  }, [shifts]);
 
   // Monthly totals — sul mese di PAGA (vedi prop payrollShifts).
   const counted = payrollShifts || shifts;
@@ -142,40 +160,6 @@ export default function CalendarView({
   // usato, senza modo di tornare indietro.
   const mensilizzato = !settings.onCall && isMensilizzato(settings);
   const periodoPaga = settings.periodoConteggio !== 'calendario';
-  // La griglia disegna il PERIODO CHE VIENE CONTATO, non per forza il mese di
-  // calendario: col mese di paga agosto 2026 si conta dal 3 ago al 6 set, e i
-  // giorni di quella prima settimana di settembre devono vedersi, altrimenti il
-  // riepilogo conta giornate che sullo schermo non ci sono. Regola e casi
-  // limite stanno in utils/griglia.js, con il loro riscontro.
-  const grigliaPaga = payrollRange !== null;
-  const cells = useMemo(
-    () => celleMese(year, month, grigliaPaga),
-    [year, month, grigliaPaga],
-  );
-  const giorniPeriodo = useMemo(() => cells.filter(Boolean), [cells]);
-
-  // Turni raggruppati per data e ordinati per ora di inizio: senza sort le pill
-  // seguirebbero l'ordine di inserimento nell'oggetto, non quello cronologico.
-  //
-  // La griglia mostra anche i giorni del mese dopo che rientrano nel periodo di
-  // paga, quindi ai turni del mese di calendario vanno uniti quelli contati:
-  // sono gli stessi che fanno il totale, e senza di loro le celle di coda
-  // resterebbero vuote proprio dove il conteggio dice che c'è qualcosa.
-  const byDate = useMemo(() => {
-    const visti = new Set(shifts.map(s => s.id));
-    const tutti = counted === shifts
-      ? shifts
-      : [...shifts, ...counted.filter(s => !visti.has(s.id))];
-    const map = {};
-    tutti.forEach(s => {
-      if (!map[s.date]) map[s.date] = [];
-      map[s.date].push(s);
-    });
-    Object.values(map).forEach(list =>
-      list.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || '')));
-    return map;
-  }, [shifts, counted]);
-
   const totalMins = useMemo(
     () => counted.reduce((sum, s) => sum + calcShiftMinutes(s), 0),
     [counted],
@@ -588,7 +572,7 @@ export default function CalendarView({
       {/* Main shifts view: Timeline or Grid */}
       {calLayout === 'timeline' ? (
         <TimelineView
-          giorni={giorniPeriodo}
+          daysInMonth={daysInMonth}
           year={year}
           month={month}
           byDate={byDate}
@@ -603,15 +587,14 @@ export default function CalendarView({
             <div key={d} className="cal-day-header">{d}</div>
           ))}
 
-          {cells.map((cell, i) => {
-            if (!cell) return <div key={`e${i}`} className="cal-cell cal-cell--empty" />;
+          {cells.map((dayNum, i) => {
+            if (!dayNum) return <div key={`e${i}`} className="cal-cell cal-cell--empty" />;
 
-            const { date, dayNum, altroMese, fuoriPeriodo } = cell;
-            const dateStr = cell.iso;
+            const date = new Date(year, month, dayNum);
+            const dateStr = formatDate(date);
             const dayShifts = byDate[dateStr] || [];
             const today = isToday(date);
             const weekend = isWeekend(date);
-            const mese = date.getMonth();
 
             // La cella è un contenitore cliccabile, non un pulsante: annidare
             // controlli dentro un role="button" è invalido e confonde gli screen
@@ -624,29 +607,19 @@ export default function CalendarView({
                   'cal-cell',
                   today ? 'cal-cell--today' : '',
                   weekend ? 'cal-cell--weekend' : '',
-                  altroMese ? 'cal-cell--altro-mese' : '',
-                  fuoriPeriodo ? 'cal-cell--fuori' : '',
                   dateStr === focusDate ? 'cal-cell--focus' : '',
                 ].join(' ')}
-                title={fuoriPeriodo
-                  ? `${dayNum} ${MONTH_NAMES[mese]}: fuori dal periodo di paga, conta nel mese precedente`
-                  : undefined}
                 onClick={e => { if (e.target === e.currentTarget) onAddShift(dateStr); }}
               >
                 <button
                   type="button"
                   className="cal-cell-add"
                   onClick={() => onAddShift(dateStr)}
-                  aria-label={`Aggiungi turno il ${dayNum}/${mese + 1}`}
+                  aria-label={`Aggiungi turno il ${dayNum}/${month + 1}`}
                 >
                   <span className={`cal-day-num${today ? ' cal-day-num--today' : ''}`}>
                     {dayNum}
                   </span>
-                  {/* Il mese scritto accanto al numero solo dove serve: sulle
-                      giornate del mese dopo tirate dentro dal periodo di paga,
-                      altrimenti «1» in fondo ad agosto si legge come un
-                      errore di stampa. */}
-                  {altroMese && <span className="cal-day-mese">{MONTH_NAMES[mese]}</span>}
                 </button>
                 <div className="cal-shifts">
                   {dayShifts.map(s => {
@@ -665,7 +638,7 @@ export default function CalendarView({
                           ? `${ETICHETTA[t]} · ${ore} h${s.note ? ` | ${s.note}` : ''}`
                           : `${s.startTime}–${s.endTime}${s.note ? ` | ${s.note}` : ''}`}
                         aria-label={assente
-                          ? `Modifica ${ETICHETTA[t].toLowerCase()} del ${dayNum}/${mese + 1}`
+                          ? `Modifica ${ETICHETTA[t].toLowerCase()} del ${dayNum}/${month + 1}`
                           : `Modifica turno ${s.startTime}–${s.endTime}`}
                       >
                         {assente ? ICONA[t] : s.startTime}
@@ -696,6 +669,45 @@ export default function CalendarView({
 
       {/* Monthly summary */}
       <div className="cal-summary">
+        {/* Il periodo si dichiara PRIMA dei numeri, non in mezzo a una riga.
+            Col mese di paga i conteggi arrivano oltre la fine del mese — agosto
+            2026 si conta fino al 6 settembre — e senza dirlo in cima si legge
+            «7 giorni di ferie» sotto un mese in cui se ne vede uno: gli altri
+            sei sono nella settimana a cavallo. Vale già per le ore e per la
+            retribuzione; le ferie, contandosi a giornate, lo rendono evidente.
+
+            Il toggle compare solo sui CCNL mensilizzati: altrove i due periodi
+            coincidono e sarebbe un comando che non cambia niente. NON cambia il
+            calcolo degli straordinari, che resta ancorato al periodo di paga —
+            le ore oltre soglia sono un fatto del contratto, non della finestra
+            che si sta guardando. */}
+        {mensilizzato && (
+          <div className="periodo-testata">
+            <span className="periodo-toggle">
+              <button
+                type="button"
+                className={`periodo-btn${periodoPaga ? ' active' : ''}`}
+                onClick={() => onUpdateSettings?.({ periodoConteggio: 'paga' })}
+                aria-pressed={periodoPaga}
+              >
+                Mese di paga
+              </button>
+              <button
+                type="button"
+                className={`periodo-btn${periodoPaga ? '' : ' active'}`}
+                onClick={() => onUpdateSettings?.({ periodoConteggio: 'calendario' })}
+                aria-pressed={!periodoPaga}
+              >
+                Mese di calendario
+              </button>
+            </span>
+            <em className="periodo-nota">
+              {periodoPaga
+                ? `Conteggi del periodo ${formatPayrollRange(year, month)}: settimane intere, come in busta`
+                : `Conteggi del mese: dal 1 al ${daysInMonth} ${formatMonthYear(currentMonth).split(' ')[0].toLowerCase()}`}
+            </em>
+          </div>
+        )}
         <div className="cal-summary-row">
           <div className="summary-item">
             <span className="summary-label">Turni</span>
@@ -716,37 +728,6 @@ export default function CalendarView({
             {assenze.minuti > 0 && (
               <span className="summary-sublabel">
                 + {assenze.dettaglio} = {formatMinutesShort(totalMins)} contate in busta
-              </span>
-            )}
-            {/* Mese di paga o mese di calendario. Il toggle compare solo sui
-                CCNL mensilizzati: altrove i due periodi coincidono già e
-                sarebbe un comando che non cambia niente.
-                NON cambia il calcolo degli straordinari, che resta ancorato al
-                periodo di paga — le ore oltre soglia sono un fatto del
-                contratto, non della finestra che si sta guardando. */}
-            {mensilizzato && (
-              <span className="summary-sublabel periodo-toggle">
-                <button
-                  type="button"
-                  className={`periodo-btn${periodoPaga ? ' active' : ''}`}
-                  onClick={() => onUpdateSettings?.({ periodoConteggio: 'paga' })}
-                  aria-pressed={periodoPaga}
-                >
-                  Mese di paga
-                </button>
-                <button
-                  type="button"
-                  className={`periodo-btn${periodoPaga ? '' : ' active'}`}
-                  onClick={() => onUpdateSettings?.({ periodoConteggio: 'calendario' })}
-                  aria-pressed={!periodoPaga}
-                >
-                  Mese di calendario
-                </button>
-                <em className="periodo-nota">
-                  {periodoPaga
-                    ? `settimane intere, ${formatPayrollRange(year, month)} — come in busta`
-                    : `dal 1 al ${daysInMonth} ${formatMonthYear(currentMonth).split(' ')[0].toLowerCase()}`}
-                </em>
               </span>
             )}
             {festivitaDaSegnare.length > 0 && oreFestivita > 0 && onAddShifts && (
