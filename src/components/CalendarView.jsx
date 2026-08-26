@@ -169,9 +169,15 @@ export default function CalendarView({
     [counted, settings, allShifts, payByShift],
   );
 
-  // Assenze del mese, contate dai turni e non da `pay`: senza una paga oraria
-  // impostata `calcTotalPay` restituisce null, ma le ore di ferie e malattia
-  // esistono lo stesso e vanno mostrate.
+  // Giornate pagate senza turno del mese, contate dai turni e non da `pay`:
+  // senza una paga oraria impostata `calcTotalPay` restituisce null, ma le ore
+  // di ferie, malattia e festività esistono lo stesso e vanno mostrate.
+  //
+  // A schermo non si chiamano mai «assenze»: una festività, o un giorno di
+  // ferie concordato, era previsto che non si lavorasse — chiamarlo assenza
+  // suona come un buco da giustificare e confonde. Ogni voce compare col
+  // proprio nome (ferie, permesso, malattia, festività), che è anche quello
+  // che si legge in busta.
   const assenze = useMemo(() => {
     const per = new Map();
     let minuti = 0;
@@ -180,14 +186,28 @@ export default function CalendarView({
       const t = tipoTurno(s);
       if (t === TIPO.LAVORO) continue;
       const m = calcShiftMinutes(s);
-      per.set(t, (per.get(t) || 0) + m);
+      const v = per.get(t) || { minuti: 0, giorni: 0 };
+      v.minuti += m;
+      v.giorni += 1;
+      per.set(t, v);
       minuti += m;
       giorni += 1;
     }
-    const dettaglio = [...per.entries()]
-      .map(([t, m]) => `${formatMinutesShort(m)} ${ETICHETTA[t].toLowerCase()}`)
+    const voci = [...per.entries()];
+    const dettaglio = voci
+      .map(([t, v]) => `${formatMinutesShort(v.minuti)} di ${ETICHETTA[t].toLowerCase()}`)
       .join(' · ');
-    return { minuti, giorni, dettaglio };
+    // «3 giorni di ferie · 1 di festività»: la parola «giorni» una volta sola,
+    // altrimenti la riga diventa una filastrocca. Il singolare va scritto
+    // (1 giorno), perché con una sola voce è l'unico posto in cui si legge.
+    const dettaglioGiorni = voci
+      .map(([t, v], i) => {
+        const nome = ETICHETTA[t].toLowerCase();
+        const unita = i === 0 ? `${v.giorni === 1 ? 'giorno' : 'giorni'} di ` : '';
+        return `${v.giorni} ${unita}${nome}`;
+      })
+      .join(' · ');
+    return { minuti, giorni, dettaglio, dettaglioGiorni };
   }, [counted]);
 
   // Competenze del mese nelle stesse voci del cedolino, così che le due colonne
@@ -654,21 +674,20 @@ export default function CalendarView({
             <span className="summary-value">{counted.length - assenze.giorni}</span>
             {assenze.giorni > 0 && (
               <span className="summary-sublabel">
-                + {assenze.giorni} giorn{assenze.giorni === 1 ? 'o' : 'i'} di assenza
+                + {assenze.dettaglioGiorni}
               </span>
             )}
           </div>
           <div className="summary-item">
             {/* «Ore lavorate» deve contare SOLO il lavoro: sommarci ferie e
-                malattia renderebbe falsa proprio l'etichetta. Le ore di
-                assenza contano eccome per la busta, e stanno nella riga
-                sotto — visibili, ma non spacciate per lavoro. */}
+                malattia renderebbe falsa proprio l'etichetta. Le ore pagate
+                senza turno contano eccome per la busta, e stanno nella riga
+                sotto — visibili, col loro nome, ma non spacciate per lavoro. */}
             <span className="summary-label">Ore lavorate</span>
             <span className="summary-value">{formatMinutesShort(totalMins - assenze.minuti)}</span>
             {assenze.minuti > 0 && (
               <span className="summary-sublabel">
-                + {formatMinutesShort(assenze.minuti)} di assenza ({assenze.dettaglio})
-                {' '}= {formatMinutesShort(totalMins)} contate in busta
+                + {assenze.dettaglio} = {formatMinutesShort(totalMins)} contate in busta
               </span>
             )}
             {/* Mese di paga o mese di calendario. Il toggle compare solo sui

@@ -300,7 +300,7 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
                   <p className="form-hint">
                     {form.kind === TIPO.MALATTIA
                       ? 'La malattia copre giorni consecutivi, riposi compresi: se ne togli uno l\'app vede due eventi separati e ricomincia a contare i giorni iniziali, sbagliando la paga.'
-                      : 'Sono proposti tutti i giorni, con le ore da contratto. Togli i tuoi riposi: non si consumano come assenza, e lasciarli gonfierebbe le ore del mese.'}
+                      : `Sono proposti tutti i giorni, con le ore da contratto. Togli i tuoi riposi: non si consumano come ${ETICHETTA[form.kind].toLowerCase()}, e lasciarli gonfierebbe le ore del mese.`}
                   </p>
                 </>
               )}

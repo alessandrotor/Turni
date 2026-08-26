@@ -368,7 +368,7 @@ export default function Settings({ settings, onSave }) {
   // fisso al mese e il supplementare si conta su quello, non sulla settimana.
   const mensilizzato = !form.onCall && ccnlPreset.mensilizzato;
   const oreMensili = (weeklyHours * ccnlPreset.monthlyHoursFactor).toFixed(2).replace('.', ',');
-  // Ore di un giorno di assenza calcolate dal contratto, mostrate come
+  // Ore di una giornata non lavorata calcolate dal contratto, mostrate come
   // suggerimento accanto al campo che le può sovrascrivere.
   const oreAssenzaCalcolate = (
     minutiGiornoAssenza({
@@ -818,9 +818,9 @@ export default function Settings({ settings, onSave }) {
         <details className="settings-section">
           <summary className="settings-section-title">🏖 Ferie, permessi e malattia</summary>
           <p className="settings-section-desc">
-            In busta un giorno di assenza vale un <strong>numero fisso di ore</strong>, non
-            l'orario che avresti fatto. Senza segnarle, le ore dell'app restano sotto quelle
-            del cedolino.
+            In busta una giornata di ferie, permesso, malattia o festività vale un
+            <strong> numero fisso di ore</strong>, non l'orario che avresti fatto. Senza
+            segnarle, le ore dell'app restano sotto quelle del cedolino.
           </p>
 
           <div className="form-row">
@@ -838,7 +838,7 @@ export default function Settings({ settings, onSave }) {
               />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="absence-hours-setting">Ore di un giorno di assenza</label>
+              <label className="form-label" htmlFor="absence-hours-setting">Ore di una giornata non lavorata</label>
               <input
                 id="absence-hours-setting"
                 type="number"
@@ -919,7 +919,7 @@ export default function Settings({ settings, onSave }) {
             pagano — ma <strong>certe aziende li pagano lo stesso</strong>, per scelta propria:
             in due cedolini esaminati compare una voce «Carenza malattia» con un importo. Se hai
             una busta con un periodo di malattia, guardala prima di lasciare zero: la differenza
-            su una settimana di assenza non è piccola.
+            su una settimana di malattia non è piccola.
           </p>
         </details>
 
