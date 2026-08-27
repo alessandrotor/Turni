@@ -17,16 +17,21 @@
 //
 // LA CATENA
 //   1.057,72 + 522,37 + 5,41 = 1.585,50   ← mensile a tempo pieno
+//              ↑ terzo elemento, letto in busta
 //   1.585,50 ÷ 172 = 9,21802              ← il divisore orario del Turismo
 //   1.585,50 × 60% = 951,30               ← la voce del cedolino, al centesimo
 //
-// I 5,41 sono il residuo: nel Turismo è il TERZO ELEMENTO (EDR), che il
-// cedolino stampa come voce a sé accanto a tabellare e contingenza — le buste
-// «fiduciari» lo riportano, e su quel datore la maggiorazione domenicale si
-// calcolava proprio sulla paga oraria SENZA di esso (vedi
-// check-busta-maggiorazioni-reali.mjs). Non entra nella base dell'Ente
-// Bilaterale, ed è esattamente da lì che nascono i 3,25 € di scarto fra 951,30
-// e 948,05 già annotati in check-busta-luglio-2026.mjs.
+// I 5,41 nascevano come residuo del conto; il cedolino li CONFERMA: è il TERZO
+// ELEMENTO, stampato come voce a sé accanto a tabellare e contingenza. Non è
+// quindi un numero dedotto, è una voce letta.
+//
+// È un importo fisso mensile della contrattazione territoriale: entra nella
+// retribuzione, e quindi nella paga oraria, ma non in tutte le basi che il
+// cedolino calcola. Non sta nella base dell'Ente Bilaterale — ed è esattamente
+// da lì che nascono i 3,25 € di scarto fra 951,30 e 948,05 annotati in
+// check-busta-luglio-2026.mjs — e sul datore 2024-2025 non stava nemmeno nella
+// base della maggiorazione domenicale (vedi check-busta-maggiorazioni-reali.mjs,
+// rapporto 0,99547).
 //
 // COSA NON DIMOSTRA
 // L'ultimo blocco: le ore ordinarie restano 103,20 — e quindi 951,30 € —
@@ -42,6 +47,7 @@ const round2 = (n) => Math.round(n * 100) / 100;
 
 const TABELLARE = 1057.72;
 const CONTINGENZA = 522.37;
+const TERZO_BUSTA = 5.41;      // voce «terzo elemento», letta sul cedolino
 const RATE = 9.21802;
 const PART_TIME = 0.60;
 const DIVISORE = 172;          // ore mensili convenzionali a tempo pieno
@@ -82,8 +88,9 @@ eq('172 × 60% = le ore del contratto', DIVISORE * PART_TIME, ORE_MESE);
 const MENSILE_FT = RATE * DIVISORE;
 eq('mensile full-time (paga oraria × 172)', MENSILE_FT, 1585.50);
 const TERZO = round2(MENSILE_FT - TABELLARE - CONTINGENZA);
-eq('terzo elemento = mensile − tabellare − contingenza', TERZO, 5.41);
-check('il terzo elemento è una voce piccola, come da CCNL', TERZO > 0 && TERZO < 20, `${TERZO} €`);
+// 5,41 è il valore STAMPATO in busta alla voce «terzo elemento»: che il conto
+// lo ritrovi come residuo è la verifica, non la definizione.
+eq('terzo elemento = mensile − tabellare − contingenza', TERZO, TERZO_BUSTA);
 
 // 3. La voce «Retribuzione» del cedolino, presa dalla TABELLA e non dalle ore.
 eq('tabella → busta: mensile × part-time', MENSILE_FT * PART_TIME, RETRIBUZIONE);
