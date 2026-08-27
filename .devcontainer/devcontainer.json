@@ -1,0 +1,79 @@
+// Ambiente di sviluppo remoto (GitHub Codespaces / Dev Containers).
+//
+// PERCHÉ ESISTE
+// Per poter lavorare al progetto — e far girare la CLI di Claude Code — da una
+// macchina qualsiasi, anche senza Node installato. Il Codespace parte già con
+// le dipendenze installate, il server di sviluppo pronto e la CLI a bordo.
+//
+// QUESTO FILE È PUBBLICO come il resto del repository: qui dentro non va
+// nessuna chiave. I valori sensibili passano dai Codespaces secrets, dichiarati
+// più sotto e scritti in `.env.local` dallo script di preparazione.
+{
+  "name": "Turni",
+
+  // Node 24, la stessa versione che usa il workflow di deploy
+  // (.github/workflows/deploy-test.yml). Allinearle evita che un `npm ci`
+  // funzioni qui e fallisca in CI, o viceversa.
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-24-bookworm",
+
+  "features": {
+    // `gh` serve per i push, le PR e per leggere le variabili del repo.
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+
+  // 5173 = server di sviluppo Vite (`npm run dev`)
+  // 8787 = proxy AI in locale (`npm run dev` dentro worker/)
+  "forwardPorts": [5173, 8787],
+  "portsAttributes": {
+    "5173": {
+      "label": "App (Vite)",
+      "onAutoForward": "openPreview"
+    },
+    "8787": {
+      "label": "Proxy AI (Wrangler)",
+      "onAutoForward": "silent"
+    }
+  },
+
+  // Dichiarati qui perché Codespaces li chieda alla creazione invece di farli
+  // scoprire a un `npm run dev` che si comporta in modo strano. Nessuno è
+  // obbligatorio: senza, l'app funziona e resta spento l'import da immagine.
+  "secrets": {
+    "VITE_AI_PROXY_URL": {
+      "description": "URL del proxy AI. Vuoto = il pulsante «Importa turni da immagine» resta nascosto. Vedi .env.esempio."
+    },
+    "VITE_TURNSTILE_SITEKEY": {
+      "description": "Sitekey Turnstile (pubblica). Vuota = verifica disattivata, che in sviluppo va bene."
+    },
+    "VITE_TELEMETRY_URL": {
+      "description": "Raccoglitore telemetria anonima. Lasciare vuoto in sviluppo."
+    },
+    "ANTHROPIC_API_KEY": {
+      "description": "Solo se si vuole usare Claude Code con una chiave API invece del login dal browser. Con un abbonamento Claude lasciarlo vuoto e fare `claude` → login."
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "files.eol": "\n"
+      }
+    }
+  },
+
+  // La macchina di default (2 core) basta: Vite parte in un paio di secondi e
+  // il progetto non ha una suite di test pesante.
+  "hostRequirements": {
+    "cpus": 2
+  },
+
+  "remoteUser": "node"
+}
