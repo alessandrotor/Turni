@@ -2,24 +2,39 @@
 # Preparazione del Codespace. Gira UNA volta, alla creazione del container
 # (postCreateCommand). Deve poter girare due volte senza fare danni: chi
 # ricostruisce il container non deve ritrovarsi un ambiente diverso.
-set -euo pipefail
+set -uo pipefail
 
 cd "$(dirname "$0")/.."
 
-echo "▸ Dipendenze dell'app"
-npm ci
+# NIENTE `set -e` in questo script, ed è una scelta.
+#
+# Con l'uscita al primo errore, un `npm ci` che fallisce — una dipendenza
+# irraggiungibile, un registry lento — si porta dietro tutto il resto: il
+# Codespace si apre senza la CLI, e `claude` risponde «command not found»
+# lasciando credere che manchi l'installazione invece di un passo precedente.
+# Ogni passo qui è indipendente dagli altri: quello che fallisce lo dice e non
+# blocca i successivi, e alla fine si stampa il riepilogo di cosa manca.
+problemi=()
+passo() {
+  local nome="$1"; shift
+  echo "▸ ${nome}"
+  if ! "$@"; then
+    echo "  ✗ ${nome}: fallito"
+    problemi+=("${nome}")
+  fi
+}
 
-echo "▸ Dipendenze del proxy AI (worker/)"
+# PRIMA la CLI, poi il resto: è la ragione per cui questo Codespace esiste, e
+# deve esserci anche se una dipendenza del progetto non si scarica.
+passo "Claude Code CLI" npm install -g @anthropic-ai/claude-code
+
+passo "Dipendenze dell'app" npm ci
+
 # Il worker ha un package.json suo: senza queste, `wrangler dev` non parte e
 # l'import da immagine non si può provare in locale.
 if [ -f worker/package.json ]; then
-  (cd worker && npm ci)
+  passo "Dipendenze del proxy AI (worker/)" bash -c 'cd worker && npm ci'
 fi
-
-echo "▸ Claude Code CLI"
-# Installazione globale nella home dell'utente `node`: non serve sudo e
-# sopravvive ai riavvii del Codespace.
-npm install -g @anthropic-ai/claude-code
 
 # ── .env.local ──────────────────────────────────────────────────────────────
 # Vite legge i valori da `.env.local`, che è gitignorato e quindi NON arriva
@@ -43,7 +58,24 @@ else
   echo "▸ .env.local già presente: lasciato com'è"
 fi
 
+# ── La CLI risponde davvero? ────────────────────────────────────────────────
+# Installata non basta: se il bin globale di npm non è nel PATH, `claude` dà
+# «command not found» e sembra che l'installazione non sia mai avvenuta. Meglio
+# dirlo qui, con il rimedio accanto, che lasciarlo scoprire al primo comando.
+if ! command -v claude >/dev/null 2>&1; then
+  bin_globale="$(npm prefix -g 2>/dev/null)/bin"
+  echo "  ✗ 'claude' non è nel PATH. Il bin globale di npm è: ${bin_globale}"
+  echo "    Rimedio:  export PATH=\"${bin_globale}:\$PATH\""
+  problemi+=("Claude Code CLI non raggiungibile nel PATH")
+fi
+
 # ── Promemoria, non automatismi ─────────────────────────────────────────────
+if [ ${#problemi[@]} -gt 0 ]; then
+  echo
+  echo "⚠ Passi non riusciti — l'ambiente parte lo stesso, ma questi vanno rifatti a mano:"
+  for p in "${problemi[@]}"; do echo "   · ${p}"; done
+fi
+
 cat <<'FINE'
 
 ─────────────────────────────────────────────────────────────────────
