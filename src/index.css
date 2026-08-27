@@ -64,9 +64,13 @@ input, select, textarea { font: inherit; }
   min-height: 100dvh;
 }
 
+/* NIENTE `overflow-y: auto` qui. C'era dal primo commit e non serviva a nulla —
+   la pagina scorre sulla finestra, questo contenitore non ha mai avuto una
+   barra sua (scrollHeight == clientHeight) — ma bastava a rendere `.main-content`
+   il contenitore di scorrimento di riferimento, e a far sparire con la pagina
+   ogni elemento in `position: sticky` (la barra del mese). */
 .main-content {
   flex: 1;
-  overflow-y: auto;
   padding-top: var(--nav-h);
   padding-bottom: calc(1rem + var(--safe-bottom));
 }
@@ -124,7 +128,16 @@ input, select, textarea { font: inherit; }
   gap: .75rem;
 }
 
+/* La barra del mese non scorre via: scendendo lungo il calendario si può
+   cambiare mese o vista sul posto, senza risalire in cima. Si ferma appena
+   sotto la navbar, che è fissa (--nav-h). Attaccata, senza stacco: un filo di
+   aria in mezzo lascerebbe intravedere i turni che scorrono dietro, e si
+   leggerebbe come un difetto.
+   z-index sotto la navbar (100) e sotto le modali (200), sopra la griglia. */
 .cal-header {
+  position: sticky;
+  top: var(--nav-h);
+  z-index: 30;
   display: flex;
   align-items: center;
   gap: .5rem;
