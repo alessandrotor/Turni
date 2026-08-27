@@ -14,7 +14,18 @@
   // Node 24, la stessa versione che usa il workflow di deploy
   // (.github/workflows/deploy-test.yml). Allinearle evita che un `npm ci`
   // funzioni qui e fallisca in CI, o viceversa.
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-24-bookworm",
+  //
+  // IL PREFISSO `5-` È LA VERSIONE DELL'IMMAGINE, NON DI NODE. Sono due numeri
+  // diversi nello stesso tag (`<immagine>-<node>-<distro>`), e la maggior parte
+  // degli esempi in rete mostra ancora `1-…`, che per Node 24 non esiste: il
+  // pull fallisce, Codespaces ripiega su un container di emergenza senza Node
+  // né setup, e l'errore che si vede è `claude: command not found` — che della
+  // causa vera non dice niente.
+  //
+  // Prima di cambiare questo tag, verificare che risponda:
+  //   curl -s -o /dev/null -w "%{http_code}\n" \
+  //     https://mcr.microsoft.com/v2/devcontainers/javascript-node/manifests/<tag>
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:5-24-bookworm",
 
   "features": {
     // `gh` serve per i push, le PR e per leggere le variabili del repo.
