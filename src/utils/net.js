@@ -151,11 +151,21 @@ export function calcContributi(gross, settings = {}, ebBase = 0) {
   }
 
   // Ente Bilaterale: base a sé, NON il lordo. È il minimo tabellare più la
-  // contingenza, riproporzionati al part-time — un numero che l'app non sa
-  // ricostruire dalla paga oraria (che può contenere superminimi), quindi si può
-  // leggere dalla busta e scriverlo in `ebtBase`. Senza, si ripiega sulla
-  // mensilità da contratto: sulla busta di luglio la differenza è 951,30 contro
-  // 948,05, cioè un centesimo sull'imponibile fiscale.
+  // contingenza, riproporzionati al part-time.
+  //
+  // Lo scarto con la mensilità da contratto ha un nome, ed è il TERZO ELEMENTO:
+  // fa parte della retribuzione — quindi della paga oraria, quindi dei 951,30 —
+  // ma non di questa base, che si ferma alle prime due voci (948,05). Sulla
+  // busta di luglio 2026 sono 5,41 € al mese a tempo pieno, cioè 3,25 al 60%
+  // (vedi scripts/check-tabellare-turismo.mjs).
+  //
+  // L'app ripiega sulla mensilità da contratto e quindi sovrastima la base di
+  // quei 3,25: sono 0,2% di 3,25, meno di un centesimo di trattenuta, e un
+  // centesimo sull'imponibile fiscale attraverso la quota ditta. Ricostruirla
+  // esatta vorrebbe dire chiedere il terzo elemento in Impostazioni: un campo in
+  // più per meno di un centesimo, non si fa. `ebtBase` resta l'appiglio per i
+  // riscontri, che il numero preciso lo leggono dal cedolino; in Impostazioni
+  // non c'è, di proposito.
   const eb = ccnl.enteBilaterale;
   const base = Math.max(0, Number(settings.ebtBase) || Number(ebBase) || 0);
   if (eb && base > 0) {
