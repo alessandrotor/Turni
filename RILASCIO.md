@@ -19,6 +19,12 @@ resta a metà solo perché manca il collaudo su un telefono vero. Quella che pu�
 ancora spostare il rilascio è la **4** (informativa), che aspetta il deploy
 manuale in produzione.
 
+C'è inoltre **una domanda che il rilascio non può chiudere**, perché la risposta
+arriva da fuori: quale dei due modi di contare le ore del mese corrisponde a
+quello che scrive la busta. Si scioglie con il cedolino di agosto, atteso
+**intorno al 10 settembre 2026**. Non blocca la pubblicazione — sta in fondo,
+dopo le sette domande, con il modo di rispondere.
+
 Questo file si cancella dopo la pubblicazione.
 
 ---
@@ -228,6 +234,76 @@ Questo file si cancella dopo la pubblicazione.
   > Nel frattempo il motore è stato toccato altre due volte (maggiorazione
   > notturna, e il 21 la previsione del reddito annuo), quindi questa verifica
   > conta più di quanto contasse quando è stata scritta.
+
+---
+
+## In attesa della busta di agosto — quale dei due conteggi è quello vero
+
+**Non è un'ottava domanda: è l'unica cosa in questo elenco che non dipende da
+noi.** Il rilascio non l'aspetta.
+
+Su un CCNL mensilizzato l'app può contare le ore del mese in due modi, e li
+espone entrambi in Impostazioni (`periodoConteggio`):
+
+- **mese di paga** (default) — settimane intere, dal primo lunedì del mese alla
+  domenica prima del primo lunedì del mese dopo;
+- **mese di calendario** — dal 1 all'ultimo giorno.
+
+**Cosa è già riscontrato e cosa no.** Le buste di giugno e luglio 2026 hanno
+stabilito che la *soglia* del lavoro supplementare si conta sul mese di paga:
+131,45 − 103,20 = 28,25 e 109,70 − 103,20 = 6,50, esatti entrambi
+(`scripts/check-mese-paga-2026.mjs`). Resta da confermare la cosa accanto, che
+non è la stessa: che anche il **totale ore stampato** in busta segua quel taglio,
+e quindi che il default dell'app mostri il numero che l'utente si aspetta di
+ritrovare sul cedolino.
+
+**Perché proprio agosto risponde.** È il mese in cui le due letture divergono di
+più, quindi la busta discrimina invece di lasciare il dubbio:
+
+| | periodo | ampiezza |
+|---|---|---|
+| mese di paga | 3 ago → **6 set** | 5 settimane |
+| mese di calendario | 1 ago → 31 ago | 31 giorni |
+
+Cinque settimane contro poco più di quattro: se i due numeri fossero vicini il
+confronto non direbbe nulla, qui invece separa. (Settembre, per dire, tornerebbe
+a 4 settimane e sarebbe una prova più debole.)
+
+<details><summary>come si verifica</summary>
+
+**Scrivi i due numeri PRIMA che arrivi la busta.** Apri agosto 2026 in
+Calendario, annota le ore totali con `periodoConteggio` su *mese di paga*, poi
+cambia in *mese di calendario* e annota di nuovo. Metti le due cifre qui sotto.
+
+È lo stesso principio della lista scritta prima al punto 6: a busta aperta si
+sceglie senza accorgersene la lettura che assomiglia di più al numero stampato,
+e la prova diventa una conferma di sé stessa.
+
+Poi confronta con le **ore** del cedolino, non con l'importo: gli importi
+contengono maggiorazioni e indennità che qui non c'entrano.
+
+Attenzione a un dettaglio che potrebbe già essere una risposta: il mese di paga
+di agosto **si chiude il 6 settembre**, e la busta viene emessa intorno al 10. Fa
+in tempo a contenerlo — ma se le ore stampate si fermassero al 31 agosto, quello
+stesso è il dato che decide.
+</details>
+
+**Cosa farne, in un verso e nell'altro.**
+
+- Se vince il **mese di paga**: la spunta si chiude, il default resta com'è, e la
+  busta di agosto diventa il terzo cedolino di riscontro — vale la pena scriverne
+  lo script (`scripts/check-busta-agosto-2026.mjs`, sul modello di quelli di
+  giugno e luglio). Con tre buste si potrebbe anche riprendere la questione
+  aperta sulla base del TFR, che con due sole non si poteva decidere.
+- Se vince il **mese di calendario**: cambia il default in `DEFAULT_SETTINGS`
+  (`src/App.jsx`) e aggiorna di conseguenza `docs/motore-di-calcolo.md` §16, dove
+  le due letture sono descritte come «due tagli diversi sugli stessi turni».
+  Nessuna formula del motore cambia: la soglia del supplementare resta sul mese
+  di paga, che è riscontrato a parte.
+
+> **Da compilare.** Ore di agosto 2026 nelle due modalità, annotate il ……… :
+> mese di paga ……… h · mese di calendario ……… h.
+> Busta ricevuta il ……… : ore stampate ……… h → vince ………
 
 ---
 
