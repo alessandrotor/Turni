@@ -4,7 +4,15 @@ Documento di riferimento per chi (persona o modello) deve **modificare, estender
 o riscrivere** il calcolo di ore, lordo e netto. Non è una guida all'uso
 dell'app: è la descrizione della macchina che sta sotto.
 
-Aggiornato al 27 agosto 2026, versione `0.6.0` del `package.json`.
+Aggiornato al 29 agosto 2026, versione `0.6.0` del `package.json`.
+
+> **Rapporto con `CLAUDE.md`.** Quello è l'orientamento rapido: i fatti
+> verificati sulle buste, in forma di elenco, con il riscontro accanto a
+> ciascuno. Questo descrive la **macchina**: come i fatti diventano un calcolo,
+> in che ordine, e cosa si rompe toccandoli. Dove i due si sovrappongono —
+> mese di paga, maggiorazioni, malattia non verificata — **`CLAUDE.md` è la
+> fonte**: è il file che si aggiorna scoprendo qualcosa di nuovo su una busta.
+> Se divergono, si allinea questo.
 
 ---
 
@@ -32,7 +40,7 @@ aritmetica: se un numero non torna, il bug è in `utils/`.
 |---|---|---|
 | `utils/dates.js` | date ISO, settimane lun–dom, **mese di paga**, parsing orari | 194 |
 | `utils/pay.js` | **cuore**: durata turni, soglie, maggiorazioni, lordo | 378 |
-| `utils/net.js` | **fisco**: contributi, IRPEF, detrazioni, TI, cuneo, TFR, proiezioni | 811 |
+| `utils/net.js` | **fisco**: contributi, IRPEF, detrazioni, TI, cuneo, TFR, proiezioni | 821 |
 | `utils/ccnl.js` | lettura dei preset contrattuali da `data/ccnl.json` | 109 |
 | `utils/assenze.js` | ferie, permessi, malattia, festività non lavorate | 146 |
 | `utils/notturno.js` | fascia notturna, minuti in fascia, cumulo | 196 |
@@ -521,6 +529,32 @@ Tre cose che non si indovinano e sono state lette dalle buste:
    **fringe benefit** che si somma all'imponibile fiscale, ed è **troncata** a
    due decimali: 948,05 × 0,20% = 1,8961 → 1,89.
 
+**Il terzo elemento, e perché la base dell'Ente Bilaterale non è la mensilità.**
+La paga oraria della busta di riferimento si compone così:
+
+```
+minimo tabellare   1.057,72
+contingenza          522,37
+terzo elemento         5,41   ← voce a sé, stampata in busta
+                   ─────────
+mensile full-time  1.585,50   ÷ 172 = 9,21802 €/h   × 60% = 951,30 €
+```
+
+Il **terzo elemento** è un importo fisso della contrattazione territoriale:
+entra nella retribuzione — quindi nella paga oraria, quindi nei 951,30 — ma
+**non** nella base dell'Ente Bilaterale, che si ferma alle prime due voci
+(948,05 = (1.057,72 + 522,37) × 60%). Da lì i **3,25 €** di scarto fra le due,
+rimasti a lungo annotati come inspiegati. Riscontro:
+`scripts/check-tabellare-turismo.mjs`.
+
+Senza `ebtBase`, il motore ripiega sulla mensilità da contratto e quindi
+**sovrastima la base di quei 3,25** — scelta consapevole: valgono lo 0,2% di
+3,25, cioè meno di un centesimo di trattenuta e un centesimo sull'imponibile
+attraverso la quota ditta. Ricostruirla esatta vorrebbe dire chiedere il terzo
+elemento in Impostazioni: un campo in più per meno di un centesimo, non si fa.
+`ebtBase` resta l'appiglio per i riscontri, che il numero preciso lo leggono dal
+cedolino; in Impostazioni non c'è, di proposito.
+
 **FIS e CIGS non sono parametri del CCNL** (`utils/contributi-legge.js`).
 L'aliquota dipende da **quanti dipendenti ha l'azienda** — un bar con quattro
 persone e una catena con duecento applicano lo stesso CCNL Turismo e pagano
@@ -650,7 +684,9 @@ Distinzione essenziale: chi modifica il motore deve sapere quali numeri sono
 - esclusione delle ore festive dal conteggio delle eccedenze;
 - rateo 6/12 della 14ª con assunzione 29/12/2025;
 - maggiorazioni Turismo su 17 cedolini: notturno 25%, domenicale 10%,
-  supplementare 30%, festivo 20% (scritto «120%» in busta).
+  supplementare 30%, festivo 20% (scritto «120%» in busta);
+- **composizione della paga oraria**: tabellare + contingenza + terzo elemento
+  ÷ 172, e il terzo elemento fuori dalla base dell'Ente Bilaterale (§11.1).
 
 **Non riscontrato — struttura da norma, valori da confermare**
 - **malattia**: carenza e percentuali (nessuna busta disponibile la contiene);
@@ -687,6 +723,7 @@ node scripts/check-festivita.mjs
 node scripts/check-busta-mensilita-aggiuntive.mjs
 node scripts/check-busta-maggiorazioni-reali.mjs
 node scripts/check-magg-busta.mjs
+node scripts/check-tabellare-turismo.mjs        # composizione della paga oraria
 node scripts/check-bonus.mjs
 node scripts/check-proiezione.mjs
 node scripts/check-correzione-orari.mjs
@@ -746,9 +783,19 @@ Non sono bug, e vanno capite prima di «correggerle»:
   mensilizzato, conta sul **mese di paga** (settimane intere); Statistiche
   raggruppa per **mese di calendario**, perché è la vista d'insieme dell'anno e
   chi la guarda ragiona in mesi solari. Due tagli diversi sugli stessi turni.
-  `settings.periodoConteggio` lascia scegliere per il Calendario: il mese di
-  paga fa quadrare i conti con la busta, il mese di calendario risponde a
-  «quanto ho lavorato a luglio». Sono due domande diverse ed entrambe legittime.
+  `settings.periodoConteggio` lascia scegliere per il Calendario — la scelta si
+  fa lì, dai due pulsanti in `CalendarView` — e quando il periodo contato non
+  coincide col mese visualizzato viene **dichiarato sopra i numeri**: il
+  calendario non si allunga per farci stare i giorni in più, perché così si
+  perde di vista che mese si sta guardando. Il mese di paga fa quadrare i conti
+  con la busta, il mese di calendario risponde a «quanto ho lavorato a luglio».
+  Sono due domande diverse ed entrambe legittime.
+
+  > **Quale dei due sia il numero che la busta stampa non è ancora confermato.**
+  > Riscontrata è la *soglia* del supplementare sul mese di paga, non il totale
+  > ore. Si scioglie con il cedolino di agosto 2026, ed è la questione aperta in
+  > fondo a `RILASCIO.md`: se vincesse il mese di calendario, cambia il default
+  > in `DEFAULT_SETTINGS` e questa sezione, non una formula del motore.
 - **Ore dell'app vs ore in busta.** La busta include ferie, permessi e festività
   non lavorate come ore retribuite. Se non sono state segnate nell'app, il
   totale dell'app resta sotto. È esattamente lo scarto per cui esistono
