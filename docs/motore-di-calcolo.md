@@ -689,7 +689,11 @@ Distinzione essenziale: chi modifica il motore deve sapere quali numeri sono
   ÷ 172, e il terzo elemento fuori dalla base dell'Ente Bilaterale (§11.1).
 
 **Non riscontrato — struttura da norma, valori da confermare**
-- **malattia**: carenza e percentuali (nessuna busta disponibile la contiene);
+- **malattia**: carenza e percentuali. Tre cedolini la contengono, ma nessuno
+  fa testo: i due del 2024 sono di un datore che **integrava** la malattia per
+  scelta aziendale, non per obbligo di CCNL, e quello di marzo 2026 la riporta
+  solo come storno delle ore. Una busta che documenta la generosità di
+  un'azienda non è una regola da mettere in un motore (vedi `CLAUDE.md`);
 - sconto di 75 € nella capienza del TI;
 - **fascia notturna del Turismo**: le buste non riportano le timbrature, e
   l'art. 13 prevede orari diversi per settore (24:00–06:00, 23:00–06:00,

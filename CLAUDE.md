@@ -78,7 +78,15 @@ mensile full-time  1.585,50   ÷ 172 = 9,21802 €/h   × 60% = 951,30 €
   una voce a sé; la **festività non lavorata** è un giustificativo a sé.
   → `check-assenze.mjs`, `check-festivita.mjs`
 - **Malattia**: la carenza si conta per EVENTO, non per anno. Percentuali e
-  giorni NON sono verificati su nessun cedolino.
+  giorni NON sono verificati su nessun cedolino, e **le buste che la contengono
+  non fanno testo**: `luglio-24` e `novembre-24` mostrano una scomposizione
+  completa e invitante («Carenza Malattia», «Malattia Inps 80», «Int. Car.
+  Malattia»), ma sono di un altro datore che sceglieva di **integrare** la
+  malattia. È una scelta aziendale, non la norma del CCNL — tararci sopra i
+  default significherebbe promettere a tutti quello che faceva un'azienda sola.
+  Marzo 2026 ha una malattia sul datore attuale, ma come semplice storno
+  («Assenza per malattia», −72,06): dice quanto viene tolto, non quanto l'INPS
+  o il contratto restituiscono.
 
 ## Convenzioni dell'interfaccia
 
