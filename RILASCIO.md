@@ -1,7 +1,13 @@
 # Cancello di rilascio — Turni 1.0
 
-**Sette domande. Se anche una sola risposta è «no» o «credo di sì», non si
+**Otto domande. Se anche una sola risposta è «no» o «credo di sì», non si
 pubblica: si sposta.**
+
+*(Erano sette fino al 31 agosto. L'ottava — «il lavoro dell'utente è davvero
+salvato?» — è entrata dopo la lettura del codice: era l'unica famiglia di guasti
+capace di far perdere tutto senza un segnale, e nessuna delle altre sette la
+sfiorava. Il resto di quella lettura sta in `ARRETRATI.md`, che non è un cancello
+e non blocca niente.)*
 
 Non sono un elenco di lavori fatti: sono cose che devono risultare **vere**
 lunedì mattina, e verificabili da qualcun altro. Per questo sotto ogni domanda
@@ -13,7 +19,8 @@ del server.
 **Legenda:** `[x]` chiusa e verificata · `[~]` il lavoro è fatto ma la prova va
 rifatta sul sito vero · `[ ]` da fare.
 
-**Stato al 23 agosto 2026 (domenica): 2 chiuse, 3 a metà, 2 da fare.**
+**Stato al 31 agosto 2026: 2 chiuse, 3 a metà, 3 da fare** (la 8 nasce oggi,
+aperta).
 La **5** (rete di sicurezza) è passata da «non cominciata» a fatta e provata:
 resta a metà solo perché manca il collaudo su un telefono vero. Quella che può
 ancora spostare il rilascio è la **4** (informativa), che aspetta il deploy
@@ -153,6 +160,23 @@ Questo file si cancella dopo la pubblicazione.
   sbagliata è sempre la copia che legge l'utente.
   </details>
 
+  > **Oggi dice ancora il falso, in un altro punto — 31/08/2026.**
+  > `docs/privacy.md:27-30` promette che «i tuoi turni spariscono e **non sono
+  > recuperabili da nessuna parte**. Non esiste una copia altrove». Ma
+  > `android/app/src/main/AndroidManifest.xml:5` lascia `allowBackup="true"`:
+  > con Auto Backup i dati dell'app — WebView storage compreso, dove stanno i
+  > turni — finiscono sul Google Drive dell'utente.
+  >
+  > Va chiuso scegliendo, non riscrivendo in fretta: `allowBackup="false"` rende
+  > vero ciò che è già scritto; tenerlo acceso è legittimo — è perfino una rete
+  > di sicurezza contro la perdita dei dati (vedi domanda 8) — ma allora il
+  > paragrafo va riscritto **e** dichiarato nel modulo Data Safety di Play.
+  > Serve anche `android:dataExtractionRules` (API 31+), altrimenti il default
+  > include tutto anche nel trasferimento fra dispositivi.
+  >
+  > Si verifica per davvero solo con `adb shell bmgr backupnow <package>`, non
+  > deducendolo. Dettaglio in `ARRETRATI.md` §B1.
+
 - [~] **5. Nessun punto dell'app lascia lo schermo bianco**, e la schermata di
       errore permette di salvare i propri dati.
 
@@ -205,7 +229,28 @@ Questo file si cancella dopo la pubblicazione.
   commit: su Cloudflare Pages parte del contenuto arriva dalle variabili al
   momento della build, quindi due deploy dello stesso commit possono contenere
   cose diverse. È già successo.
+
+  **E l'APK non è il sito.** Il sito prende le variabili dalla CI, l'AAB le
+  prende da `.env.local` sulla macchina di chi compila: è un'asimmetria che
+  nasconde i guasti fino al primo tester. Prima di ogni `npm run android:release`:
+
+  ```bash
+  grep -c VITE_TURNSTILE_SITEKEY .env.local   # deve dare 1
+  grep VITE_TELEMETRY_URL .env.local          # deve essere vuota per lo Store
+  npm run build && node scripts/check-dati-in-uscita.mjs
+  ```
+
+  Attenzione all'ultimo: senza `dist/` **non fallisce**, stampa una riga e passa
+  (`scripts/check-dati-in-uscita.mjs:110-112`). Va lanciato dopo la build, o non
+  ha controllato niente.
   </details>
+
+  > **Al 31/08/2026 quel controllo fallisce, in due direzioni opposte.**
+  > `.env.local` **non ha** `VITE_TURNSTILE_SITEKEY` e **ha**
+  > `VITE_TELEMETRY_URL` valorizzata: l'AAB che uscirebbe oggi ha l'import da
+  > foto **morto al 100%** (403 «ricarica la pagina», consiglio che non risolve
+  > nulla perché il difetto è nel pacchetto) **e** la telemetria accesa. Vedi
+  > `ARRETRATI.md` §B2.
 
 - [ ] **7. Gli script sulle buste reali passano sul codice che va online.**
       Il calcolo della paga è stato toccato questa settimana: questa è l'unica
@@ -234,6 +279,52 @@ Questo file si cancella dopo la pubblicazione.
   > Nel frattempo il motore è stato toccato altre due volte (maggiorazione
   > notturna, e il 21 la previsione del reddito annuo), quindi questa verifica
   > conta più di quanto contasse quando è stata scritta.
+
+- [ ] **8. Un turno inserito è davvero salvato, e il backup che l'app dice di
+      aver scaricato esiste davvero.** Non «lo mostra a schermo»: è sul disco, e
+      c'è ancora dopo un ricaricamento.
+
+  <details><summary>come si verifica</summary>
+
+  Le altre sette domande proteggono dati, sito e pacchetto. Nessuna guarda il
+  posto in cui l'app **è** l'archivio: non c'è server, non c'è account, e se il
+  localStorage rifiuta una scrittura nessuno se ne accorge — oggi `setValue`
+  aggiorna lo stato React comunque (`src/hooks/useLocalStorage.js:16-20`,
+  `catch { /* ignore quota errors */ }`). L'utente vede il turno nel calendario,
+  i totali si aggiornano, e al ricaricamento non c'è più.
+
+  **Prova 1 — la scrittura che fallisce.** Nella console del browser, *prima* di
+  inserire un turno:
+
+  ```js
+  Storage.prototype.setItem = function () { throw new DOMException('QuotaExceeded'); };
+  ```
+
+  Inserire un turno. Oggi: compare, e sparisce al ricaricamento, in silenzio.
+  Deve invece comparire un messaggio che dica che **non** è stato salvato.
+
+  **Prova 2 — il backup che non arriva.** Nel ramo browser `deliver()` fa
+  `a.click()` e finisce (`src/services/export.js:52-64`): `a.click()` non
+  restituisce nulla e non lancia, quindi se il download è bloccato — Safari iOS
+  in PWA, browser interno di Instagram o Facebook — la promessa si risolve **con
+  successo** e l'app annuncia «Backup scaricato: N turni al sicuro».
+
+  Provare il backup da un browser interno o da iOS in modalità PWA, e guardare
+  se il file esiste davvero. Se non c'è, l'app non deve dire che c'è.
+
+  Le due insieme sono il guasto peggiore possibile per quest'app: i turni non si
+  salvano **e** il backup che li avrebbe recuperati non è mai stato scritto.
+  Nessuna delle due lascia un segnale.
+
+  Nota per chi risponde: `ErrorBoundary.jsx:47` mostra proprio quel messaggio
+  rassicurante, e il salvagente del testo grezzo (`:54-61`) **non scatta**,
+  perché nessuna eccezione è stata lanciata.
+  </details>
+
+  > **Aperta dal 31/08/2026.** Vedi `ARRETRATI.md` §A1 e §A2 — dove ci sono
+  > anche i sei difetti minori della stessa famiglia (ripristino senza
+  > annullamento, backup che non valida il contenuto, correzione orari che si
+  > perde alla prima modifica).
 
 ---
 
