@@ -3,7 +3,6 @@ import { formatDate, formatDayShort, parseDate, minutesDiff, formatMinutes } fro
 import { proponiPeriodo, totalePeriodo } from '../utils/periodo-assenza';
 import useModalDismiss from '../hooks/useModalDismiss';
 import { TIPO, ETICHETTA, ICONA, tipoTurno, isAssenza, minutiGiornoAssenza } from '../utils/assenze';
-import { maggiorazioneDaChiedere } from '../utils/configurazione';
 
 const TIPI = [TIPO.LAVORO, TIPO.FERIE, TIPO.PERMESSO, TIPO.MALATTIA, TIPO.FESTIVITA];
 
@@ -68,7 +67,7 @@ function getInitialState(modal, settings) {
   };
 }
 
-export default function ShiftForm({ modal, settings = {}, turni = [], onSave, onDelete, onClose, onUpdateSettings }) {
+export default function ShiftForm({ modal, settings = {}, turni = [], onSave, onDelete, onClose }) {
   // Stato iniziale calcolato una volta sola e condiviso dai due useState:
   // ricostruirlo per il secondo era lavoro sprecato a ogni mount del modale.
   const initial = useRef(null);
@@ -137,36 +136,18 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
     setForm(f => ({ ...f, surchargePct: val }));
   };
 
-  // ── La maggiorazione chiesta sul turno che la attiva ──────────────────────
+  // NIENTE DOMANDE QUI DENTRO.
   //
-  // Non è un controllo nuovo: `maggiorazioneDaChiedere` usa le stesse funzioni
-  // con cui il motore decide di pagarla (isSunday, isHoliday,
-  // toccaFasciaNotturna). Una regola scritta a parte finirebbe per comparire
-  // quando il motore non è d'accordo, che è peggio del non chiedere.
+  // Fino al 31 agosto 2026 questo modulo, se il turno era di domenica o toccava
+  // la notte, apriva un riquadro che chiedeva la maggiorazione mentre si stava
+  // ancora compilando: campo percentuale, «Imposta», «Non ne ho». Non bloccava
+  // il salvataggio, ma stava in mezzo — e una domanda che compare mentre stai
+  // facendo un'altra cosa è attrito, anche quando la si può ignorare.
   //
-  // NON blocca il salvataggio: il turno si salva comunque, e l'avviso dice cosa
-  // succede se si rimanda. Chi risponde «non ne ho» chiude la domanda per
-  // sempre — la scelta sta nei settings, come tutto il resto.
-  const [pctMagg, setPctMagg] = useState('');
-  const maggMancante = useMemo(
-    () => (onUpdateSettings ? maggiorazioneDaChiedere(
-      { date: form.date, startTime: form.startTime, endTime: form.endTime, type: form.kind },
-      settings,
-    ) : null),
-    [onUpdateSettings, form.date, form.startTime, form.endTime, form.kind, settings],
-  );
-
-  const impostaMagg = () => {
-    const v = Number(String(pctMagg).replace(',', '.'));
-    if (!Number.isFinite(v) || v <= 0) return;
-    onUpdateSettings({ [maggMancante.chiave]: v });
-    setPctMagg('');
-  };
-
-  const nonNeHo = () => {
-    const gia = Array.isArray(settings.maggiorazioniNonDovute) ? settings.maggiorazioniNonDovute : [];
-    onUpdateSettings({ maggiorazioniNonDovute: [...gia, maggMancante.tipo] });
-  };
+  // Il modulo del turno serve a segnare il turno. La domanda arriva dopo, fuori
+  // di qui, in un avviso che non copre niente: `AvvisoMaggiorazione.jsx`, montato
+  // da App al salvataggio. La regola su QUANDO chiedere non è cambiata di una
+  // riga: è sempre `maggiorazioneDaChiedere` in utils/configurazione.js.
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -497,33 +478,6 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
               />
             </div>
           </details>
-
-          {maggMancante && (
-            <div className="magg-avviso">
-              <strong>{maggMancante.titolo}</strong>
-              <p>{maggMancante.costo}</p>
-              <div className="magg-avviso-riga">
-                <div className="input-with-symbol">
-                  <span className="input-symbol">%</span>
-                  <input
-                    className="form-input form-input--with-symbol"
-                    type="text"
-                    inputMode="decimal"
-                    value={pctMagg}
-                    onChange={(e) => setPctMagg(e.target.value)}
-                    placeholder={String(maggMancante.tipico)}
-                    aria-label="Percentuale di maggiorazione"
-                  />
-                </div>
-                <button type="button" className="btn btn-primary" onClick={impostaMagg}>
-                  Imposta
-                </button>
-              </div>
-              <button type="button" className="linklike" onClick={nonNeHo}>
-                Non ne ho — non chiedermelo più
-              </button>
-            </div>
-          )}
 
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>

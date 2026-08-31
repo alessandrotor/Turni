@@ -81,6 +81,50 @@ export function fasciaNotturnaRisolta(settings = {}) {
   return { inizio, fine, fonte, daCcnl: daCcnl || null };
 }
 
+/**
+ * La fascia da usare per CHIEDERE, che non è sempre quella con cui si PAGA.
+ *
+ * Il motore paga sulla fascia risolta: quella scritta dall'utente, o quella del
+ * contratto, o in mancanza di entrambe quella di legge. Ma «di legge» qui vuol
+ * dire «non lo sappiamo»: chi non ha ancora scelto il contratto non ci ha detto
+ * da che ora conta la notte, e il ripiego 22:00–06:00 è una supposizione, non
+ * un'informazione.
+ *
+ * Per l'AVVISO la supposizione non basta, e i due errori non si equivalgono:
+ *  · chiedere per un turno che poi notturno non era costa un tocco;
+ *  · non chiedere per un turno che lo era costa soldi, in silenzio, ogni mese.
+ * Quindi finché la fascia non è nota si guarda la più LARGA fra quelle che
+ * esistono davvero — 22:00 di legge, 23:00 e 23:30 nelle varianti dell'art. 13
+ * CCNL Turismo, 06:30 la fine più tarda — e l'avviso dice «potrebbe», perché
+ * quella è la verità.
+ *
+ * Appena il contratto c'è, si torna alla fascia vera: chi ha scelto il Turismo
+ * (23:00–06:00) non si sente chiedere niente per un turno 21:00–23:00, che
+ * notturno non è.
+ */
+export const FASCIA_NOTTURNA_POSSIBILE = { inizio: '22:00', fine: '06:30' };
+
+export function fasciaNotturnaPossibile(settings = {}) {
+  const risolta = fasciaNotturnaRisolta(settings);
+  // 'legge' = nessuno ce l'ha detto. Le altre due fonti sono dichiarazioni.
+  if (risolta.fonte !== 'legge') return { ...risolta, certa: true };
+  return { ...FASCIA_NOTTURNA_POSSIBILE, fonte: 'possibile', daCcnl: null, certa: false };
+}
+
+/**
+ * Questo turno tocca la fascia in cui la notte POTREBBE cadere.
+ *
+ * Stessa matematica di `toccaFasciaNotturna` — cambia solo la fascia, e solo
+ * quando non la si conosce.
+ */
+export function toccaFasciaNotturnaPossibile(shift, settings = {}) {
+  const f = fasciaNotturnaPossibile(settings);
+  if (f.certa) return toccaFasciaNotturna(shift, settings);
+  return minutiInFasciaNotturna(shift?.startTime, shift?.endTime, {
+    nightStart: f.inizio, nightEnd: f.fine,
+  }) > 0;
+}
+
 // Non cumulabile è la regola, non l'eccezione: Commercio e Vigilanza lo
 // scrivono a chiare lettere («le maggiorazioni non sono cumulabili fra loro, la
 // maggiore assorbe la minore»). Il default segue i contratti; 'somma' resta per

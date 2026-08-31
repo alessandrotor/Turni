@@ -2,9 +2,10 @@
 //
 // PERCHÉ UN MODULO A PARTE
 // La stessa risposta serve in quattro posti — il blocco al primo turno, l'avviso
-// del contratto sotto il totale, gli avvisi sulle maggiorazioni dentro il form
-// del turno, e il promemoria in Impostazioni. Quattro copie della stessa regola
-// divergono: basta aggiungere un campo e ricordarsene in tre punti su quattro.
+// del contratto sotto il totale, l'avviso che compare DOPO aver segnato un turno
+// di domenica o di notte, e il promemoria in Impostazioni. Quattro copie della
+// stessa regola divergono: basta aggiungere un campo e ricordarsene in tre punti
+// su quattro.
 //
 // Sta in `utils/` e non in un componente anche perché così si riscontra con Node
 // puro: `node scripts/check-primo-avvio.mjs`.
@@ -25,7 +26,7 @@
 
 import { isSunday } from './pay.js';
 import { isHoliday } from './holidays.js';
-import { toccaFasciaNotturna } from './notturno.js';
+import { toccaFasciaNotturnaPossibile, fasciaNotturnaPossibile } from './notturno.js';
 import { isAssenza } from './assenze.js';
 
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
@@ -76,29 +77,60 @@ export function contrattoMancante(settings = {}) {
 // per pagarle. Se un giorno cambia la regola del notturno, l'avviso la segue
 // senza che nessuno se ne ricordi — mentre una copia della condizione
 // resterebbe indietro e comparirebbe quando il motore non è d'accordo.
+//
+// L'unica differenza voluta è la fascia notturna quando NON la si conosce: lì
+// l'avviso guarda più largo del motore e lo dice («potrebbe»). Il perché sta in
+// `fasciaNotturnaPossibile`.
+//
+// E si chiede DOPO, mai durante. Il modulo del turno serve a segnare il turno:
+// mentre lo si compila non deve comparire altro. La domanda arriva quando il
+// turno è già salvato, in un avviso che non copre niente e si chiude — vedi
+// AvvisoMaggiorazione.jsx.
 const TIPI_MAGGIORAZIONE = [
   {
     tipo: 'domenica',
     chiave: 'sundaySurchargePct',
     attiva: (shift) => isSunday(shift.date),
-    titolo: 'È domenica: hai una maggiorazione?',
-    costo: 'Ora conto zero, quindi questo turno vale meno del vero.',
+    titolo: 'Hai segnato un turno di domenica',
+    domanda: 'Le domeniche ti sono pagate di più?',
+    costo: 'Finché non lo so conto zero, e questa domenica vale come un giorno qualsiasi.',
     tipico: 10,
   },
   {
     tipo: 'festivo',
     chiave: 'holidaySurchargePct',
     attiva: (shift, settings) => isHoliday(shift.date, settings),
-    titolo: 'È un giorno festivo: hai una maggiorazione?',
-    costo: 'Ora conto zero, quindi questo turno vale meno del vero.',
+    titolo: 'Hai segnato un turno in un giorno festivo',
+    domanda: 'I festivi lavorati ti sono pagati di più?',
+    costo: 'Finché non lo so conto zero, e questo festivo vale come un giorno qualsiasi.',
     tipico: 20,
   },
   {
+    // La NOTTE è l'unico caso in cui non basta guardare la data: dipende da una
+    // fascia oraria che il contratto decide, e che chi non ha ancora scelto il
+    // contratto non ci ha detto. Vedi `fasciaNotturnaPossibile`: finché non è
+    // nota si guarda la più larga fra quelle che esistono, e si dice
+    // «potrebbe». È l'unico punto in cui l'avviso è più largo del motore, ed è
+    // voluto: chiedere di troppo costa un tocco, non chiedere costa soldi.
     tipo: 'notte',
     chiave: 'nightSurchargePct',
-    attiva: (shift, settings) => toccaFasciaNotturna(shift, settings),
-    titolo: 'Questo turno tocca la fascia notturna',
-    costo: 'È la maggiorazione che pesa di più: senza, un mese come questo vale circa 38 € in meno.',
+    attiva: (shift, settings) => toccaFasciaNotturnaPossibile(shift, settings),
+    titolo: (settings) => (fasciaNotturnaPossibile(settings).certa
+      ? 'Hai segnato un turno in fascia notturna'
+      : 'Questo turno potrebbe essere notturno'),
+    domanda: 'Le ore di notte ti sono pagate di più?',
+    costo: (settings) => {
+      const f = fasciaNotturnaPossibile(settings);
+      return f.certa
+        ? `La notte del tuo contratto va dalle ${f.inizio} alle ${f.fine}. È la maggiorazione che pesa di più: circa 38 € al mese.`
+        : `Senza contratto non so da che ora conta la notte, quindi guardo la fascia più larga (${f.inizio}–${f.fine}). Se ce l'hai, è la maggiorazione che pesa di più: circa 38 € al mese.`;
+    },
+    // Quando la fascia non è dichiarata da nessuno, impostare la percentuale
+    // non basta a rendere il conto giusto: il motore userà 22:00–06:00, che è
+    // legge e non contratto. Va detto lì, una riga, non un altro passaggio.
+    dopo: (settings) => (fasciaNotturnaPossibile(settings).certa
+      ? null
+      : 'Conterò la notte dalle 22:00 alle 06:00 (la legge). Se il tuo contratto dice un altro orario, cambialo in Impostazioni.'),
     tipico: 25,
   },
 ];
@@ -132,7 +164,17 @@ export function maggiorazioneDaChiedere(shift, settings = {}) {
       // cadere il form: nel dubbio non si chiede niente.
       attiva = false;
     }
-    if (attiva) return { ...m };
+    if (attiva) {
+      // I testi possono dipendere dalle impostazioni (la fascia notturna nota o
+      // no): si risolvono qui, così chi disegna riceve stringhe e basta.
+      const risolvi = (v) => (typeof v === 'function' ? v(settings) : v);
+      return {
+        ...m,
+        titolo: risolvi(m.titolo),
+        costo: risolvi(m.costo),
+        dopo: risolvi(m.dopo) || null,
+      };
+    }
   }
   return null;
 }

@@ -33,7 +33,7 @@ const scriviFlag = (k, v) => {
 // compiti si chiude senza leggerlo.
 const DA_NOMINARE = 2;
 
-export default function SetupPrompt({ settings, onNavigate, onSistema, turniInseriti = 0 }) {
+export default function SetupPrompt({ settings, onNavigate, onSistema, turniInseriti = 0, sospeso = false }) {
   const [show, setShow] = useState(false);
   // Chiuso in QUESTA sessione: vale fino alla prossima apertura, qualunque cosa
   // succeda ai turni nel frattempo. Senza, tornerebbe a ogni turno aggiunto,
@@ -53,7 +53,14 @@ export default function SetupPrompt({ settings, onNavigate, onSistema, turniInse
     setShow(true);
   }, [settings, turniInseriti, mancanti.length]);
 
-  if (!show) return null;
+  // Sospeso, non smontato. Mentre la striscia in fondo fa la sua domanda —
+  // quella nata dal turno appena segnato, che è più precisa e più urgente di
+  // questo promemoria — il banner si toglie di mezzo: due avvisi insieme sono
+  // un muro, e un muro si chiude senza leggerlo. Smontarlo invece che
+  // nasconderlo farebbe perdere il «chiuso in questa sessione», e tornerebbe
+  // ogni volta che si segna un turno: l'assillo che questo file esiste per
+  // evitare.
+  if (!show || sospeso) return null;
 
   const dismiss = () => {
     chiusoOra.current = true;

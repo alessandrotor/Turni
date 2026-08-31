@@ -8,6 +8,44 @@ Branch di lavoro: `experimental`. La produzione è un deploy manuale e può esse
 molto indietro rispetto al repository — prima di dire «è online» va guardato il
 sito, non il codice.
 
+## La parola d'ordine: frictionless
+
+**Ogni cosa che l'app chiede all'utente deve guadagnarsi il diritto di
+interromperlo.** Nel dubbio non si chiede: si segnala dove non dà fastidio, e si
+lascia che sia lui a tornarci quando gli serve.
+
+Chi usa Turni sta facendo altro — è in pausa, sta timbrando, ha il telefono in
+una mano. Non è venuto a configurare un software: è venuto a segnare un turno.
+Una domanda in mezzo a quel gesto non viene letta, viene chiusa; e chi impara a
+chiudere gli avvisi chiude anche quelli che contavano.
+
+In pratica, e sono regole, non aspirazioni:
+
+- **All'apertura non si chiede niente.** Chi non ha ancora capito cosa fa l'app
+  risponde a caso.
+- **Si chiede DOPO l'azione, mai durante.** Il modulo del turno serve a segnare
+  il turno: mentre lo si compila non compare altro. La domanda nasce dal turno
+  già salvato — vedi `AvvisoMaggiorazione.jsx`.
+- **Un avviso alla volta.** Due impilati sono un muro. Quando la striscia in
+  fondo parla, il promemoria in alto tace (`SetupPrompt` accetta `sospeso`).
+- **Le risposte comuni costano un tocco.** «No» e «non adesso» non devono
+  richiedere di leggere, capire o digitare niente.
+- **Un «no» dura.** Una domanda già rifiutata che ritorna è peggio della domanda
+  (`maggiorazioniNonDovute`). Un «non adesso» dura almeno la sessione.
+- **Si blocca solo per ciò che non si recupera dopo.** Oggi sono due dati:
+  paga oraria e ore settimanali (`datiMinimiMancanti`). Tutto il resto è
+  retroattivo, quindi può aspettare.
+- **Niente contrassegni «l'ho già visto».** Le domande nascono dallo stato dei
+  dati, non da tracce lasciate addosso a chi usa l'app.
+- **Meglio chiedere di troppo che sbagliare in silenzio, ma solo dicendo la
+  verità sul perché.** Quando l'app non sa (la fascia notturna senza contratto)
+  guarda largo e scrive «potrebbe»: chiedere di più costa un tocco, non chiedere
+  costa soldi ogni mese.
+
+Il riscontro di queste regole è `scripts/check-primo-avvio.mjs`: non verifica che
+le funzioni rispondano, verifica che una configurazione completa non chieda
+niente e che un «no» non torni.
+
 ## Comandi
 
 ```sh
@@ -89,6 +127,8 @@ mensile full-time  1.585,50   ÷ 172 = 9,21802 €/h   × 60% = 951,30 €
   o il contratto restituiscono.
 
 ## Convenzioni dell'interfaccia
+
+Discendono tutte dalla parola d'ordine qui sopra.
 
 - Le giornate pagate ma non lavorate **non si chiamano «assenza»** a schermo:
   ferie, permesso, malattia, festività, ognuna col suo nome. Se da orario non era

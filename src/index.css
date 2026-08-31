@@ -2594,37 +2594,90 @@ input, select, textarea { font: inherit; }
 /* ── La maggiorazione, chiesta sul turno che la attiva ───────────────
    Dentro il form del turno, sopra i pulsanti: si vede prima di salvare, ma non
    impedisce di farlo. */
-.magg-avviso {
-  background: var(--c-warning-light);
-  border: 1px solid var(--c-warning);
-  border-radius: var(--radius);
-  padding: 12px;
-  margin-bottom: 12px;
+/* ── L'avviso sulle maggiorazioni ────────────────────────────────────
+   Prima era un riquadro DENTRO il modulo del turno (`.magg-avviso`, tolto):
+   compariva mentre si compilavano gli orari. Ora è una striscia in fondo allo
+   schermo che arriva a turno già salvato.
+
+   Fissa in basso e non in mezzo al contenuto: si vede senza cercarla, sta dove
+   arriva il pollice, e soprattutto non sposta niente di quello che c'è sopra —
+   un avviso che fa saltare la pagina mentre la si legge è peggio di uno che non
+   compare. Niente sfondo scuro dietro, niente fuoco rubato alla tastiera: non è
+   un modale e non deve sembrarlo.
+
+   z-index 150: sopra la navbar (100), perché è una risposta a un'azione appena
+   fatta; sotto i modali (200), che quando ci sono hanno la precedenza. */
+.avviso-magg {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 150;
+  width: min(100%, 700px);
+  margin: 0 auto;
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-bottom: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, .12);
+  padding: 1rem 1.1rem calc(1rem + var(--safe-bottom));
+  animation: avviso-magg-entra .18s ease-out;
 }
-.magg-avviso strong { display: block; font-size: .88rem; }
-.magg-avviso p {
-  margin: 6px 0 12px;
+
+@keyframes avviso-magg-entra {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+/* Chi ha chiesto meno movimento non lo riceve: la striscia compare e basta. */
+@media (prefers-reduced-motion: reduce) {
+  .avviso-magg { animation: none; }
+}
+
+.avviso-magg-titolo {
+  display: block;
+  font-size: .92rem;
+  padding-right: 2rem; /* spazio per la × */
+}
+
+.avviso-magg-testo {
+  margin: .35rem 0 .8rem;
   font-size: .82rem;
   color: var(--c-text-2);
   line-height: 1.55;
 }
-.magg-avviso-riga {
+
+.avviso-magg-nota {
+  margin: .6rem 0 0;
+  font-size: .72rem;
+  color: var(--c-muted);
+}
+
+.avviso-magg-azioni {
   display: flex;
-  gap: 8px;
+  gap: .5rem;
   align-items: stretch;
-  margin-bottom: 8px;
-  /* Su schermi molto stretti campo e pulsante vanno a capo invece di uscire
-     dallo schermo: un pulsante che si vede a metà non si preme. */
   flex-wrap: wrap;
 }
 /* `min-width: 0` non è una rifinitura: senza, un <input> dentro un flex NON
    scende sotto la propria larghezza intrinseca (~180px), e insieme al pulsante
-   `nowrap` la riga esce dal telefono. Firefox lo rispetta più rigidamente di
-   Chrome, ed è il motivo per cui il difetto si vedeva solo lì. */
-.magg-avviso-riga .input-with-symbol { flex: 1 1 130px; min-width: 0; }
-.magg-avviso-riga .input-with-symbol .form-input { width: 100%; min-width: 0; }
-.magg-avviso-riga .btn { min-height: 44px; flex: 0 1 auto; }
-.magg-avviso .linklike { font-size: .78rem; }
+   la riga esce dal telefono. Firefox lo rispetta più rigidamente di Chrome, ed
+   è il motivo per cui difetti così si vedono solo lì. */
+.avviso-magg-azioni .input-with-symbol { flex: 1 1 130px; min-width: 0; }
+.avviso-magg-azioni .input-with-symbol .form-input { width: 100%; min-width: 0; }
+.avviso-magg-azioni .btn { min-height: 44px; flex: 1 1 auto; }
+
+.avviso-magg-chiudi {
+  position: absolute;
+  top: .4rem;
+  right: .5rem;
+  width: 40px;
+  height: 40px;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--c-muted);
+  border-radius: var(--radius);
+}
+.avviso-magg-chiudi:hover { background: var(--c-bg); color: var(--c-text); }
 
 /* Voce evidenziata dalle frecce nella tendina del contratto: senza, muovere la
    selezione da tastiera non si vedrebbe. */

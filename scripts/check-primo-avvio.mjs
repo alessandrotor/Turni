@@ -25,6 +25,8 @@ import {
   datiMinimiMancanti, haDatiMinimi, contrattoMancante,
   maggiorazioneDaChiedere, consigliatiMancanti, statoConfigurazione,
 } from '../src/utils/configurazione.js';
+import { FASCIA_NOTTURNA_DEFAULT, FASCIA_NOTTURNA_POSSIBILE } from '../src/utils/notturno.js';
+import ccnl from '../src/data/ccnl.json' with { type: 'json' };
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {
@@ -153,6 +155,68 @@ esito(consigliatiMancanti({}).every((c) => typeof c.etichetta === 'string' && c.
 const primaDi = quanti({});
 const dopoUna = quanti({ sundaySurchargePct: 10 });
 esito(dopoUna === primaDi - 1, "sistemarne una la toglie dall'elenco", primaDi + ' → ' + dopoUna);
+
+// ── La notte, quando il contratto non l'ha detto ───────────────────────────
+//
+// È l'unica maggiorazione che non si legge dalla data: dipende da una fascia
+// oraria, e chi non ha ancora scelto il contratto non ce l'ha detta. La regola
+// (vedi `fasciaNotturnaPossibile`) è che finché non si sa si guarda la fascia
+// più larga fra quelle che esistono davvero, e si dice «potrebbe».
+//
+// I due errori non pesano uguale, ed è tutto qui: chiedere per un turno che
+// notturno non era costa un tocco; non chiedere per un turno che lo era costa
+// soldi ogni mese, in silenzio. Quindi si allarga — ma solo finché non si sa.
+console.log('\n  La notte senza contratto\n');
+
+const SENZA_CCNL = { hourlyRate: 9, expectedWeeklyHours: 24 };
+const CON_TURISMO = { ...SENZA_CCNL, ccnl: 'turismo' };
+const turno = (startTime, endTime, date = '2026-08-25') => ({ date, startTime, endTime });
+const chiedeNotte = (shift, settings) => {
+  const m = maggiorazioneDaChiedere(shift, settings);
+  return !!m && m.tipo === 'notte';
+};
+
+esito(chiedeNotte(turno('23:00', '06:30'), SENZA_CCNL),
+  '23:00–06:30 senza contratto: lo chiede', 'è il caso di partenza');
+esito(!chiedeNotte(turno('10:00', '18:00'), SENZA_CCNL),
+  'un turno di giorno non lo chiede mai', "chiedere a sproposito insegna a ignorare gli avvisi");
+esito(chiedeNotte(turno('05:30', '09:00'), SENZA_CCNL),
+  'anche il primo mattino dentro la fascia larga', 'la notte finisce al più tardi alle 06:30');
+
+// Appena il contratto c'è, si torna alla fascia VERA: il Turismo comincia alle
+// 23:00, quindi un turno che finisce alle 23:00 non è notturno e non si chiede.
+esito(!chiedeNotte(turno('19:00', '23:00'), CON_TURISMO),
+  'col Turismo un turno fino alle 23:00 non lo chiede', 'la fascia del contratto parte da lì');
+esito(chiedeNotte(turno('23:00', '06:30'), CON_TURISMO),
+  'col Turismo lo stesso turno notturno lo chiede');
+
+// La fascia «possibile» deve contenere tutte quelle che l'app conosce: se un
+// domani se ne aggiunge una che comincia prima delle 22:00, questo lo scopre.
+const inMinuti = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
+const note = [FASCIA_NOTTURNA_DEFAULT, ...ccnl.map((c) => c.fasciaNotturna).filter(Boolean)];
+const larga = FASCIA_NOTTURNA_POSSIBILE;
+esito(note.every((f) => inMinuti(f.inizio) >= inMinuti(larga.inizio)),
+  'la fascia larga comincia prima di ogni fascia nota', larga.inizio);
+esito(note.every((f) => inMinuti(f.fine) <= inMinuti(larga.fine)),
+  'e finisce dopo ogni fascia nota', larga.fine);
+
+// Il testo deve dire la verità sul proprio grado di certezza: «potrebbe» quando
+// non si sa, l'affermazione quando si sa. È la differenza fra un avviso che si
+// può valutare e uno che si subisce.
+const senza = maggiorazioneDaChiedere(turno('23:00', '06:30'), SENZA_CCNL);
+const con = maggiorazioneDaChiedere(turno('23:00', '06:30'), CON_TURISMO);
+esito(/potrebbe/i.test(senza.titolo), 'senza contratto il titolo dice «potrebbe»', senza.titolo);
+esito(!/potrebbe/i.test(con.titolo), 'col contratto lo afferma', con.titolo);
+esito(typeof senza.dopo === 'string' && senza.dopo.includes('22:00'),
+  'e avvisa con che fascia conterà', 'altrimenti la percentuale entra su una fascia supposta');
+esito(con.dopo === null, 'col contratto non c\'è niente da aggiungere');
+
+// Ogni avviso deve poter essere disegnato senza sapere com'è fatto dentro:
+// titolo, domanda e costo sono stringhe, sempre.
+for (const [nome, m] of [['senza contratto', senza], ['col contratto', con]]) {
+  esito(['titolo', 'domanda', 'costo'].every((k) => typeof m[k] === 'string' && m[k].length > 0),
+    `${nome}: i testi arrivano già risolti`, 'chi disegna non deve chiamare funzioni');
+}
 
 console.log(`\n${falliti === 0 ? '✓ le regole del primo avvio reggono' : falliti + ' controlli falliti'}\n`);
 process.exit(falliti > 0 ? 1 : 0);

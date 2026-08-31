@@ -16,7 +16,8 @@ import InstallPrompt from './components/InstallPrompt';
 import SetupPrompt from './components/SetupPrompt';
 import DatiMinimi from './components/DatiMinimi';
 import SistemaMancanti from './components/SistemaMancanti';
-import { haDatiMinimi } from './utils/configurazione';
+import AvvisoMaggiorazione from './components/AvvisoMaggiorazione';
+import { haDatiMinimi, maggiorazioneDaChiedere } from './utils/configurazione';
 
 const DEFAULT_SETTINGS = {
   hourlyRate: 0,
@@ -278,6 +279,28 @@ export default function App() {
   const [inAttesa, setInAttesa] = useState(null);
   const [sistemaAperto, setSistemaAperto] = useState(false);
 
+  // ── L'avviso sulle maggiorazioni, a turno già salvato ─────────────────────
+  //
+  // Prima la domanda stava dentro il modulo del turno, mentre lo si compilava.
+  // Ora nasce qui, DOPO il salvataggio, e vive in una striscia che non copre
+  // niente (AvvisoMaggiorazione.jsx). La regola su quando chiedere non è
+  // cambiata: è sempre `maggiorazioneDaChiedere`.
+  //
+  // `zittiti` è la memoria del «non adesso»: chiudere l'avviso lo spegne per il
+  // resto della sessione, per quel tipo. Non finisce nei settings e non finisce
+  // su disco — è uno stato di questa schermata, che sparisce riaprendo l'app.
+  // Il «no» invece è una risposta e va conservata: quella sì, nei settings.
+  const [avviso, setAvviso] = useState(null);
+  const zittiti = useRef(new Set());
+
+  const proponiMaggiorazione = useCallback((dati) => {
+    // Un periodo di ferie salva una lista: le assenze non attivano niente
+    // (`maggiorazioneDaChiedere` lo sa), quindi basta guardare il primo turno.
+    const turno = Array.isArray(dati) ? dati[0] : dati;
+    const m = maggiorazioneDaChiedere(turno, settings);
+    if (m && !zittiti.current.has(m.tipo)) setAvviso(m);
+  }, [settings]);
+
   const handleSaveShift = useCallback((dati, idsDaRimuovere = []) => {
     if (!haDatiMinimi(settings)) {
       setInAttesa({ dati, idsDaRimuovere, tipoModale: modal?.type });
@@ -286,16 +309,25 @@ export default function App() {
     }
     salvaDavvero(dati, idsDaRimuovere, modal?.type);
     setModal(null);
-  }, [modal, settings, salvaDavvero]);
+    proponiMaggiorazione(dati);
+  }, [modal, settings, salvaDavvero, proponiMaggiorazione]);
 
   // Dati minimi arrivati: si scrivono con updateSettings (una PATCH), mai con
   // setSettings — quello sostituisce l'intero oggetto e porterebbe via i campi
   // che questo modulo non conosce, com'è già successo a `periodoConteggio`.
   const completaDatiMinimi = useCallback((patch) => {
     updateSettings(patch);
-    if (inAttesa) salvaDavvero(inAttesa.dati, inAttesa.idsDaRimuovere, inAttesa.tipoModale);
+    if (inAttesa) {
+      salvaDavvero(inAttesa.dati, inAttesa.idsDaRimuovere, inAttesa.tipoModale);
+      // Anche il primo turno in assoluto può essere di domenica. Le
+      // impostazioni appena scritte non sono ancora in `settings` (la patch
+      // arriva al render dopo), quindi la domanda si valuta sull'unione.
+      const turno = Array.isArray(inAttesa.dati) ? inAttesa.dati[0] : inAttesa.dati;
+      const m = maggiorazioneDaChiedere(turno, { ...settings, ...patch });
+      if (m && !zittiti.current.has(m.tipo)) setAvviso(m);
+    }
     setInAttesa(null);
-  }, [updateSettings, inAttesa, salvaDavvero]);
+  }, [updateSettings, inAttesa, salvaDavvero, settings]);
 
   return (
     <div className="app">
@@ -321,6 +353,7 @@ export default function App() {
           onNavigate={setView}
           onSistema={() => setSistemaAperto(true)}
           turniInseriti={allShifts.length}
+          sospeso={!!avviso}
         />
         <InstallPrompt />
         {view === 'calendar' && (
@@ -400,9 +433,26 @@ export default function App() {
           settings={settings}
           turni={allShifts}
           onSave={handleSaveShift}
-          onUpdateSettings={updateSettings}
           onDelete={(id) => { deleteShift(id); setModal(null); }}
           onClose={() => setModal(null)}
+        />
+      )}
+
+      {/* Ultima nel documento e in fondo allo schermo: non copre l'app, non
+          ferma niente, e se la si ignora se ne va da sé alla prossima cosa. */}
+      {avviso && !modal && (
+        <AvvisoMaggiorazione
+          avviso={avviso}
+          onImposta={(chiave, valore) => updateSettings({ [chiave]: valore })}
+          onNonNeHo={() => {
+            const gia = Array.isArray(settings.maggiorazioniNonDovute) ? settings.maggiorazioniNonDovute : [];
+            updateSettings({ maggiorazioniNonDovute: [...gia, avviso.tipo] });
+            setAvviso(null);
+          }}
+          onChiudi={() => {
+            zittiti.current.add(avviso.tipo);
+            setAvviso(null);
+          }}
         />
       )}
     </div>
