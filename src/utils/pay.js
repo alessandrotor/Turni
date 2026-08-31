@@ -4,7 +4,7 @@ import { minutesDiff, parseDate, getWeekStart, formatDate, payrollMonthKey } fro
 import { isHoliday } from './holidays.js';
 import { isMensilizzato, monthlyContractHours, monthlyFullTimeHours } from './ccnl.js';
 import { isAssenza, tipoTurno, percentualeAssenza, giorniEventoMalattia, TIPO } from './assenze.js';
-import { minutiNotturni, pctNotturnoAggiuntiva } from './notturno.js';
+import { minutiNotturniPagati, pctNotturnoAggiuntiva } from './notturno.js';
 
 // Ferie, permessi e malattia non hanno orari: portano una durata già in minuti,
 // perché in busta valgono un numero fisso di ore e non un intervallo. Il
@@ -254,11 +254,9 @@ export function computePayByShift(allShifts, settings) {
       // Con la maggiorazione notturna a zero questo blocco vale zero e il
       // motore resta identico a prima — è ciò che gli script di riscontro
       // sulle buste reali continuano a dimostrare.
-      // La pausa si sottrae ai minuti pagati (calcShiftMinutes) ma non si sa in
-      // che punto del turno cade, quindi non la si può sottrarre alla sola
-      // fascia notturna. Il tetto evita l'unico esito palesemente sbagliato:
-      // più minuti notturni che minuti pagati.
-      const notteMin = assenza ? 0 : Math.min(minutiNotturni(s, settings), m);
+      // Il tetto sui minuti pagati vive in notturno.js, cosi' motore e
+      // interfaccia usano la stessa regola invece di due copie che divergono.
+      const notteMin = assenza ? 0 : minutiNotturniPagati(s, settings, m);
       const nightBase = notteMin * ratePerMin;
       const surchargeNight = nightBase
         * (pctNotturnoAggiuntiva(settings, parts.sunday + parts.holiday + parts.manual) / 100);
@@ -305,7 +303,7 @@ export function calcShiftPay(shift, settings) {
   const base = calcShiftMinutes(shift) * ratePerMin;
   // Il notturno sta fuori dalla percentuale del turno: vale sui soli minuti in
   // fascia (vedi computePayByShift, che e' la strada che l'app percorre davvero).
-  const notte = minutiNotturni(shift, settings) * ratePerMin
+  const notte = minutiNotturniPagati(shift, settings, calcShiftMinutes(shift)) * ratePerMin
     * (pctNotturnoAggiuntiva(settings, pctGiorno) / 100);
   return base * (1 + pctGiorno / 100) + notte;
 }

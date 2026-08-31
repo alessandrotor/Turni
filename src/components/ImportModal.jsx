@@ -25,7 +25,26 @@ function ShiftPreviewRow({ shift }) {
   );
 }
 
-export default function ImportModal({ shifts, onConfirm, onClose }) {
+// Confronto tollerante (accenti/maiuscole non contano) fra il nome richiesto
+// e la riga che il modello dice di aver trovato: non è una prova — il modello
+// può limitarsi a ripetere il nome richiesto anche quando non trova nessuno —
+// ma quando i due divergono davvero è un segnale che vale la pena mostrare a
+// chi sta rivedendo, invece di lasciarlo scritto solo nei dati grezzi.
+function normalizza(s) {
+  return String(s || '')
+    .normalize('NFD').replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .trim();
+}
+function sembraCorrispondere(riga, nome) {
+  const r = normalizza(riga);
+  const parole = normalizza(nome).split(/\s+/).filter(p => p.length >= 3);
+  if (!r || parole.length === 0) return true; // niente da confrontare: non segnalare
+  return parole.some(p => r.includes(p));
+}
+
+export default function ImportModal({ shifts, workerName, onConfirm, onClose }) {
   const ref = useRef(null);
   const dialogRef = useRef(null);
   useModalDismiss(dialogRef, onClose);
@@ -37,6 +56,11 @@ export default function ImportModal({ shifts, onConfirm, onClose }) {
     0,
   );
 
+  // La riga che il modello dice di aver abbinato: di norma è la stessa per
+  // tutti i turni di un singolo import (una sola persona per richiesta).
+  const rigaTrovata = shifts.find(s => s._riga)?._riga || '';
+  const rigaSospetta = rigaTrovata && !sembraCorrispondere(rigaTrovata, workerName);
+
   return (
     <div className="modal-overlay" onClick={e => e.target === ref.current && onClose()} ref={ref}>
       <div ref={dialogRef} className="modal" role="dialog" aria-modal="true" aria-label="Conferma importazione">
@@ -46,6 +70,12 @@ export default function ImportModal({ shifts, onConfirm, onClose }) {
         </div>
 
         <div className="import-body">
+          {rigaTrovata && (
+            <p className={rigaSospetta ? 'import-match import-match--warn' : 'import-match'}>
+              {rigaSospetta ? '⚠️ ' : ''}Turni trovati per: <strong>{rigaTrovata}</strong>
+              {rigaSospetta && workerName && <> (avevi chiesto: <strong>{workerName}</strong>)</>}
+            </p>
+          )}
           <p className="import-intro">
             Trovati <strong>{shifts.length} turni</strong> · totale{' '}
             <strong>{formatMinutes(totalMinutes)}</strong>. Controlla e conferma.

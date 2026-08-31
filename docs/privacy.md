@@ -1,81 +1,131 @@
 # Informativa sulla privacy — Turni
 
-**Ultimo aggiornamento:** 7 agosto 2026
+**Ultimo aggiornamento:** 21 agosto 2026
 
-Turni è un'app per tenere traccia dei propri turni di lavoro e stimare la
-retribuzione. Questa informativa spiega quali dati tratta e come.
+Turni serve a tenere traccia dei propri turni di lavoro e a stimare quanto si
+guadagna. Questa informativa dice quali dati escono dal tuo dispositivo, dove
+vanno e perché. È scritta per essere letta, non per essere firmata.
 
-## Dati che restano sul tuo telefono
+Vale sia per il sito (turni-9vr.pages.dev) sia per l'app Android.
 
-Tutto quello che inserisci — turni, orari, paga oraria, contratto, dati usati per
-la stima del netto — è salvato **solo nella memoria locale del tuo dispositivo**.
-Non esiste alcun account, non c'è nessun server che conserva i tuoi turni, e chi
-sviluppa l'app non può vederli.
+## In breve
 
-Se disinstalli l'app o cancelli i dati dalle impostazioni di Android, questi dati
-spariscono e non sono recuperabili.
+**I tuoi turni non stanno su nessun server.** Non c'è un account da creare, non
+c'è una sincronizzazione, e chi sviluppa l'app non può vedere i tuoi dati
+nemmeno volendo.
 
-## Import dei turni da immagine
+Escono dal dispositivo **solo** due cose, e solo se usi l'import da foto:
+la foto che scegli e il nome da cercarci dentro. Tutto il resto — turni,
+orari, paga, contratto, calcoli — resta dove l'hai scritto.
 
-Se usi la funzione **"Importa turni da immagine"**, la foto che scegli viene
-inviata a un servizio di riconoscimento automatico (Google Gemini) attraverso un
-server intermedio gestito da chi sviluppa l'app.
+## Dati che restano sul tuo dispositivo
 
-- L'immagine viene usata **solo** per estrarre date e orari, e restituirli all'app.
-- **Non viene conservata** né sul server intermedio né dallo sviluppatore.
-- Il trattamento da parte di Google segue le condizioni di Google:
+Turni, orari, paga oraria, dati del contratto e tutto ciò che serve alla stima
+del netto sono salvati **solo nella memoria locale del browser o dell'app**.
+
+Questo ha un rovescio che è giusto conoscere: se cancelli i dati del sito,
+disinstalli l'app, o svuoti la memoria del browser, **i tuoi turni spariscono e
+non sono recuperabili da nessuna parte**. Non esiste una copia altrove. Per
+questo c'è la funzione di backup in Impostazioni: il file che produce resta a
+te, non viene inviato da nessuna parte.
+
+## Import dei turni da foto
+
+È l'unica funzione che manda qualcosa fuori, ed è facoltativa. Se non la usi,
+nessuna immagine lascia mai il dispositivo.
+
+Quando la usi, partono:
+
+- **la foto che scegli tu**, volta per volta, dal selettore del sistema;
+- **il nome** che hai indicato, perché serve a trovare la tua riga nel foglio e
+  a non far leggere i turni di tutti gli altri;
+- **un identificativo di sessione**, generato quando apri la pagina e **mai
+  salvato**: cambia a ogni ricaricamento e serve solo a fermare chi tenta di
+  inviare centinaia di richieste di fila. Non collega fra loro i tuoi import.
+
+Il percorso è: dispositivo → un server intermedio gestito da chi sviluppa l'app
+(Cloudflare Workers) → **Google Gemini**, che legge l'immagine e restituisce
+date e orari. Il server intermedio non conserva né la foto né il nome.
+
+### Le cose scomode, dette
+
+- **La foto esce dall'Unione Europea.** Google tratta i dati anche su server
+  fuori dallo Spazio economico europeo.
+- **Finché il progetto Gemini resta sul piano gratuito, Google può usare i
+  contenuti inviati per migliorare i propri servizi, e revisori umani possono
+  vederli.** Sono le condizioni del piano gratuito:
   https://ai.google.dev/gemini-api/terms
+- **Se il foglio contiene i nomi dei tuoi colleghi, partono anche quelli** — e
+  loro non hanno scelto nulla. Puoi ritagliare la foto sulla tua riga prima di
+  caricarla: l'app lo dice anche a schermo, prima del primo invio.
 
-Se la foto del foglio turni contiene i nomi di altre persone, quei nomi vengono
-inviati insieme all'immagine. Usa la funzione con consapevolezza.
+Per questo la prima volta compare un avviso: perché la decisione la prenda tu,
+sapendo queste tre cose e non dopo.
 
-Se non usi questa funzione, nessuna immagine lascia mai il telefono.
+## Altri servizi coinvolti
 
-## Statistiche anonime d'uso
+| Chi | Perché | Cosa vede |
+|---|---|---|
+| **Cloudflare** (Pages) | ospita il sito | l'indirizzo IP, come qualunque sito |
+| **Cloudflare Turnstile** | verifica che dall'altra parte ci sia un browser vero, prima di spendere quota | segnali tecnici del browser, **nessun cookie di tracciamento** |
+| **Cloudflare Web Analytics** | conteggio delle visite | pagina visitata e dati aggregati, **senza cookie e senza profilazione** |
+| **Google Gemini** | legge la foto dei turni | vedi sopra |
 
-Quando importi da immagine, l'app può inviare una statistica tecnica che contiene
-**solo**:
+## Statistiche d'uso
 
-- il numero di token consumati dal riconoscimento;
-- la versione dell'app;
-- un identificativo casuale generato al primo avvio (non collegato a te, al tuo
-  telefono o al tuo account Google).
+**Sul sito non ne viene raccolta nessuna.** Non c'è un contatore di quante volte
+importi, né di quanto costa la funzione. Il codice per farlo esiste nel
+repository ma nella versione pubblicata non è attivo, e si può verificare:
 
-Non vengono inviati turni, immagini, importi, né alcun dato che ti identifichi.
-Serve unicamente a capire quanto costa la funzione durante la fase di test.
+```bash
+node scripts/check-dati-in-uscita.mjs
+```
 
-Puoi **disattivarla in qualsiasi momento** da Impostazioni → Import turni da
-foto → "Invia statistiche anonime d'uso dell'import".
+Nelle versioni di prova dell'app Android può essere attiva una statistica
+tecnica — numero di token consumati, versione dell'app, un identificativo
+casuale dell'installazione — con un interruttore per spegnerla in Impostazioni.
+Quell'interruttore compare **solo dove la statistica esiste davvero**.
 
-## Dati che NON vengono raccolti
+## Dati che non vengono raccolti
 
-L'app non raccoglie e non trasmette: nome, email, numero di telefono, rubrica,
-posizione, identificativi pubblicitari, cronologia di navigazione.
-Non ci sono inserzioni e non c'è profilazione.
+Nessun dato di contatto (email, telefono, rubrica), nessuna posizione, nessun
+identificatore pubblicitario, nessuna cronologia. Non ci sono inserzioni e non
+c'è profilazione.
+
+Il **nome** che indichi per l'import è l'unica eccezione, e viaggia solo con la
+foto, solo quando usi quella funzione: è spiegato sopra.
 
 ## Permessi
 
-L'app richiede il solo permesso **Internet**, necessario per la funzione di
-import da immagine. L'accesso a foto e file avviene tramite il selettore di
-sistema di Android, quindi solo sul file che scegli tu, volta per volta.
+L'app Android chiede il solo permesso **Internet**, necessario all'import da
+foto. L'accesso alle immagini passa dal selettore di sistema, quindi riguarda
+solo il file che scegli tu, una volta per volta: l'app non può sfogliare la tua
+galleria.
+
+## I tuoi diritti
+
+Poiché i dati restano sul tuo dispositivo, li controlli direttamente: puoi
+vederli, modificarli, esportarli in un file e cancellarli dalle Impostazioni,
+senza chiedere niente a nessuno.
+
+Per le foto già inviate a Google valgono le condizioni di Google, e sono
+irrecuperabili dalla nostra parte perché non le conserviamo.
 
 ## Minori
 
-L'app non è rivolta a minori di 13 anni e non raccoglie consapevolmente dati
-che li riguardano.
+L'app non è rivolta a minori di 13 anni e non raccoglie consapevolmente dati che
+li riguardano.
 
 ## Stime economiche
 
-Il calcolo del netto e delle voci in busta paga è una **stima indicativa** a
-scopo informativo. Non sostituisce la busta paga, il conguaglio fiscale, né la
-consulenza di un professionista.
+Il calcolo del netto e delle voci in busta paga è una **stima indicativa**. Non
+sostituisce la busta paga, il conguaglio fiscale, né un professionista.
 
 ## Contatti
 
-Per domande su questa informativa o per richieste relative ai tuoi dati:
-**g.asriel@gmail.com**
+Per domande su questa informativa o sui tuoi dati: **g.asriel@gmail.com**
 
 ## Modifiche
 
-Eventuali modifiche a questa informativa saranno pubblicate a questo stesso
-indirizzo, con la data di aggiornamento in cima.
+Le modifiche vengono pubblicate a questo stesso indirizzo, con la data di
+aggiornamento in cima.

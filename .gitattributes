@@ -1,0 +1,5 @@
+# Gli script di shell devono arrivare in Linux con fine riga LF.
+# Con CRLF, `bash setup.sh` fallisce su una riga che sembra corretta:
+#   /usr/bin/env: 'bash\r': No such file or directory
+# È il modo più facile di rompere la creazione di un Codespace da Windows.
+*.sh text eol=lf

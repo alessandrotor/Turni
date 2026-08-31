@@ -1,0 +1,89 @@
+# Header di sicurezza per Cloudflare Pages.
+#
+# Questo file vale per ENTRAMBI i siti — produzione e prova condividono lo
+# stesso `dist` — quindi ogni indirizzo che serve a uno dei due deve stare qui.
+# È il motivo per cui `connect-src` elenca due proxy AI e non uno.
+#
+# ATTENZIONE AL FORMATO: un valore non può andare a capo. La CSP sta su una riga
+# sola, per quanto lunga. Spezzarla non dà un errore: le righe successive
+# vengono lette come header nuovi e ignorate, e la policy resta monca senza che
+# nessuno se ne accorga.
+#
+# ── La CSP è in vigore, dopo un giro in sola segnalazione ─────────────────
+# È nata come `Content-Security-Policy-Report-Only`, che segnala senza bloccare:
+# l'unico modo di scoprire cosa si romperebbe SENZA romperlo. Una CSP sbagliata
+# non degrada — taglia netto una funzione, solo in rete e solo per chi la usa.
+#
+# Il giro del 19 agosto sul sito di prova, con l'evento `securitypolicyviolation`
+# in ascolto: caricamento pagina, calendario in entrambe le viste, statistiche,
+# impostazioni, export Excel, export PDF e un token Turnstile ottenuto per
+# intero. **Zero violazioni**, e le sole risorse esterne caricate sono
+# `static.cloudflareinsights.com` e `challenges.cloudflare.com`.
+#
+# Chi tocca questa policy rifaccia quel giro prima di pubblicare, tornando in
+# sola segnalazione se il cambiamento non è banale.
+#
+# ── Note sulle singole direttive ──────────────────────────────────────────
+# script-src / frame-src challenges.cloudflare.com: senza questi Turnstile non
+#   parte e l'import da foto muore. `connect-src` lo elenca come cintura oltre
+#   alle bretelle: la documentazione di Cloudflare chiede solo i primi due.
+#   NON serve 'unsafe-inline' in script-src — se qualcosa non va, la tentazione
+#   sarà aggiungerlo «per sicurezza»: non farlo, indebolisce proprio il punto
+#   che protegge di più.
+# style-src 'unsafe-inline': l'app usa attributi `style` inline. Toglierlo
+#   richiederebbe riscriverli, e non è il lavoro di questa settimana.
+# img-src data: blob:: l'immagine scelta viene ridimensionata su canvas prima
+#   di partire, e l'anteprima è un object URL.
+# worker-src blob:: il service worker e le librerie di export.
+# frame-ancestors 'none': nessuno può incorniciare l'app. `X-Frame-Options`
+#   qui sotto dice la stessa cosa ai browser che non leggono la CSP.
+
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; worker-src 'self' blob:; manifest-src 'self'; connect-src 'self' https://turni-ai-proxy.magnaopa.workers.dev https://turni-ai-proxy-test.magnaopa.workers.dev https://challenges.cloudflare.com https://cloudflareinsights.com https://static.cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin
+  ! Access-Control-Allow-Origin
+
+# ── Access-Control-Allow-Origin: perché si TOGLIE ─────────────────────────
+# Il punto esclamativo davanti al nome è la sintassi di Pages per staccare un
+# header. Serve perché quello non lo mettiamo noi: lo aggiunge Cloudflare Pages
+# di suo, con valore `*`, e sta identico anche sui siti senza questo file. È il
+# rilievo di bassa gravità dell'audit, quello che avevo dichiarato «si chiude
+# gratis» e che invece era rimasto lì.
+#
+# Non è una falla: dice solo che chiunque può leggere via fetch una pagina che
+# è comunque pubblica. Ma è una politica più larga del necessario, annunciata
+# senza motivo su un sito che dai Pages non espone alcuna API.
+#
+# ── Cross-Origin-Opener-Policy ────────────────────────────────────────────
+# Isola il contesto di navigazione da eventuali finestre che ci aprissero.
+# Sicuro qui: l'app non apre mai finestre esterne, e Turnstile usa un iframe,
+# che COOP non tocca.
+#
+# NON mettiamo `Cross-Origin-Embedder-Policy: require-corp`, che pure
+# securityheaders suggerisce: pretenderebbe che OGNI risorsa esterna dichiari
+# di poter essere incorporata, e l'iframe di Turnstile e il beacon di
+# Cloudflare quasi certamente non lo fanno. Guadagno teorico, rischio concreto
+# di spegnere l'import.
+#
+# ── Nota sulle Pages Functions ────────────────────────────────────────────
+# Questi header NON valgono per le risposte generate dalle Functions, quindi
+# `/robots.txt` (functions/robots.txt.js) non li riceve. È testo semplice senza
+# superficie d'attacco, quindi va bene — ma se un giorno una Function servisse
+# qualcosa di più, gli header andrebbero messi lì dentro.
+
+# La fotocamera è negata di proposito e non rompe l'import: l'input file usa
+# `accept="image/*"` senza `capture`, quindi apre il selettore di sistema — che
+# può a sua volta offrire la fotocamera, ma è il sistema a gestirla, non la
+# pagina.
+
+# Gli asset hanno l'impronta del contenuto nel nome, quindi non cambiano mai a
+# parità di nome e si possono dichiarare immutabili. Non è una rifinitura: oggi
+# Cloudflare li serve con `max-age=0, must-revalidate`, cioè una richiesta di
+# rete per ogni file a ogni visita.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

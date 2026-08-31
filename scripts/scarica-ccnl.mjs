@@ -36,7 +36,10 @@ const API_URL =
 
 // Campi che potresti aver riempito a mano (parametri di calcolo): se il file di
 // output esiste già, questi valori vengono PRESERVATI e non sovrascritti.
-const CAMPI_CURATI = ['verificato', 'monthlyHoursFactor', 'mensilizzato', 'contributiExtra', 'enteBilaterale', 'ammortizzatori'];
+// `note` e `fasciaNotturna` stanno in elenco per lo stesso motivo degli altri:
+// sono conoscenza ricavata dai cedolini, non dati del CNEL, e un aggiornamento
+// del catalogo non deve cancellarla in silenzio.
+const CAMPI_CURATI = ['verificato', 'monthlyHoursFactor', 'mensilizzato', 'contributiExtra', 'enteBilaterale', 'ammortizzatori', 'note', 'fasciaNotturna'];
 
 function firstDefined(...vals) {
   return vals.find(v => v !== undefined && v !== null && v !== '') ?? null;

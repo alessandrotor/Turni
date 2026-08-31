@@ -10,6 +10,8 @@
 // importare questo modulo con Node puro, senza passare dal bundler.
 import { getCcnl, monthlyContractHours } from './ccnl.js';
 import { contributiDiLegge } from './contributi-legge.js';
+import { calcTotalPay } from './pay.js';
+import { parseDate } from './dates.js';
 
 // Arrotondamenti della busta paga. Non sono un dettaglio estetico: il cedolino
 // chiude ogni voce a due decimali e le somme partono da quelle, quindi tenere
@@ -149,11 +151,21 @@ export function calcContributi(gross, settings = {}, ebBase = 0) {
   }
 
   // Ente Bilaterale: base a sé, NON il lordo. È il minimo tabellare più la
-  // contingenza, riproporzionati al part-time — un numero che l'app non sa
-  // ricostruire dalla paga oraria (che può contenere superminimi), quindi si può
-  // leggere dalla busta e scriverlo in `ebtBase`. Senza, si ripiega sulla
-  // mensilità da contratto: sulla busta di luglio la differenza è 951,30 contro
-  // 948,05, cioè un centesimo sull'imponibile fiscale.
+  // contingenza, riproporzionati al part-time.
+  //
+  // Lo scarto con la mensilità da contratto ha un nome, ed è il TERZO ELEMENTO:
+  // fa parte della retribuzione — quindi della paga oraria, quindi dei 951,30 —
+  // ma non di questa base, che si ferma alle prime due voci (948,05). Sulla
+  // busta di luglio 2026 sono 5,41 € al mese a tempo pieno, cioè 3,25 al 60%
+  // (vedi scripts/check-tabellare-turismo.mjs).
+  //
+  // L'app ripiega sulla mensilità da contratto e quindi sovrastima la base di
+  // quei 3,25: sono 0,2% di 3,25, meno di un centesimo di trattenuta, e un
+  // centesimo sull'imponibile fiscale attraverso la quota ditta. Ricostruirla
+  // esatta vorrebbe dire chiedere il terzo elemento in Impostazioni: un campo in
+  // più per meno di un centesimo, non si fa. `ebtBase` resta l'appiglio per i
+  // riscontri, che il numero preciso lo leggono dal cedolino; in Impostazioni
+  // non c'è, di proposito.
   const eb = ccnl.enteBilaterale;
   const base = Math.max(0, Number(settings.ebtBase) || Number(ebBase) || 0);
   if (eb && base > 0) {
@@ -346,6 +358,57 @@ export function extraMonthsAccrued(settings = {}, year = new Date().getFullYear(
 }
 
 /**
+ * Reddito annuo lordo MATURATO nell'anno indicato: turni dell'anno (più il
+ * montante fiscale già maturato prima di usare l'app, se impostato) più le
+ * mensilità aggiuntive già incassate finora. È lo stesso numero che alimenta
+ * sia il calendario (aliquota IRPEF, soglie del bonus) sia la pagina
+ * Statistiche: un'unica funzione evita che le due pagine mostrino cifre
+ * diverse per lo stesso anno.
+ *
+ * @param {number} year
+ * @param {Array} allShifts TUTTI i turni (non solo quelli dell'anno): serve
+ *   come contesto per gli straordinari, che si calcolano per settimana/mese di
+ *   paga e non vanno spezzati a cavallo di capodanno.
+ * @param {object} settings
+ * @param {object} [payByShift] mappa già calcolata da `computePayByShift`,
+ *   opzionale — evita di ricalcolarla se il chiamante la possiede già.
+ * @returns {{ total: number, extras: number }} extras = quota di mensilità
+ *   aggiuntive già incassate, inclusa in total.
+ */
+export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, payByShift = null) {
+  const y = year;
+  const yearShifts = (allShifts || []).filter(s => parseDate(s.date).getFullYear() === y);
+  // Confine automatico a granularità MESE: il montante rappresenta il reddito fino
+  // al mese in cui è stato impostato. I turni dei mesi ≤ mese di riferimento sono già
+  // inclusi nel montante e NON vanno ri-sommati (evita il doppio conteggio); si
+  // contano solo quelli dei mesi successivi.
+  const montante = Number(settings.priorTaxableIncome) || 0;
+  const cutoff = settings.priorIncomeDate || '';
+  const cutoffMonth = cutoff.slice(0, 7); // 'YYYY-MM'
+  const sameYear = cutoff && Number(cutoff.slice(0, 4)) === y;
+  const useCutoff = montante > 0 && sameYear;
+  const counted = useCutoff ? yearShifts.filter(s => s.date.slice(0, 7) > cutoffMonth) : yearShifts;
+  // Contesto straordinari = TUTTI i turni, non solo quelli dell'anno: le
+  // settimane lun-dom a cavallo di capodanno vanno raggruppate per intero,
+  // altrimenti lo stesso mese vale una cifra qui e un'altra nel calendario.
+  const pay = calcTotalPay(counted, settings, allShifts, payByShift);
+  const fromShifts = pay ? pay.total : 0;
+  // Mensilità aggiuntive già incassate, in base alla data ODIERNA (non al mese
+  // che si sta sfogliando): altrimenti aprire dicembre farebbe risultare la
+  // tredicesima già presa, cambiando reddito annuo, aliquota e soglie bonus.
+  // Contano per il RATEO maturato, non per una mensilità piena: chi è assunto
+  // da sei mesi prende mezza quattordicesima.
+  const now = new Date();
+  let extras = 0;
+  if (y <= now.getFullYear()) {
+    const monthIndex = y < now.getFullYear() ? 11 : now.getMonth();
+    extras = monthlyBaseGross(settings) * receivedExtraMonthsCount(settings, monthIndex, y);
+  }
+  const applyMontante = montante > 0 && (!cutoff || sameYear);
+  return { total: fromShifts + (applyMontante ? montante : 0) + extras, extras };
+}
+
+/**
  * Stima del reddito annuo lordo pieno a partire dal contratto:
  * (ore settimanali × paga oraria × 52) + tredicesima/quattordicesima.
  *
@@ -359,6 +422,180 @@ export function extraMonthsAccrued(settings = {}, year = new Date().getFullYear(
  */
 export function projectAnnualGross(settings = {}, year = new Date().getFullYear()) {
   return monthlyBaseGross(settings) * (12 + extraMonthsAccrued(settings, year));
+}
+
+/**
+ * Reddito annuo di RIFERIMENTO per l'aliquota IRPEF e le soglie del bonus:
+ * combina più fonti nell'ordine in cui un sostituto d'imposta le userebbe.
+ *  - un importo scritto a mano vince su tutto: è la valvola di sfogo per chi
+ *    sa che il resto dell'anno non somiglierà a quello appena passato;
+ *  - lavoro a chiamata: solo il maturato annualizzato (non c'è un contratto
+ *    da cui proiettare);
+ *  - modalità 'ytd': il maturato annualizzato, sempre — per chi preferisce
+ *    ragionare sul reddito effettivo finora ed è una scelta esplicita;
+ *  - altrimenti la PREVISIONE IN AVANTI: quello che si è già guadagnato più
+ *    quello che resta da contratto fino a dicembre. Vedi il commento nel corpo
+ *    della funzione: è ciò che rende «quanto posso ancora guadagnare» un numero
+ *    su cui si può decidere, invece di uno che si muove per conto suo.
+ * A questo si sommano voci fisse mensili e bonus dell'anno (possono far
+ * superare le soglie del trattamento integrativo).
+ *
+ * Un'unica funzione per Calendario e per la pagina Statistiche: duplicarla
+ * con una versione "semplificata" farebbe mostrare due numeri diversi sotto
+ * la stessa etichetta.
+ *
+ * @param {number} annualGross reddito maturato nell'anno (`computeAnnualGrossFromShifts`)
+ * @param {number} annualExtras quota di `annualGross` che è 13ª/14ª (una
+ *   tantum: non si annualizza, altrimenti si moltiplicherebbe)
+ * @param {object} settings
+ * @param {number} [year]
+ * @param {object} [opts]
+ * @param {boolean} [opts.enableNetCalc] gate del motore fiscale (beta): a
+ *   false i termini che dipendono dal contratto restano a zero — stesso
+ *   comportamento di un chiamante che tiene il motore spento.
+ * @param {number|null} [opts.viewedMonth] mese (0-11) fino a cui contare il
+ *   bonus "maturato finora" in modalità YTD — quello che si sta guardando in
+ *   Calendario, se noto. Senza un mese specifico (es. una vista sull'intero
+ *   anno) si usa lo stesso confine con cui si annualizza il maturato: oggi, o
+ *   dicembre per un anno passato.
+ * @returns {{ value: number, source: 'contratto'|'maturato'|'manuale' }}
+ */
+// «1 mese» / «5 mesi»: compare nelle note della spiegazione, e «1 mesi» in un
+// pannello che deve ispirare fiducia sui numeri stona più del dovuto.
+const fmtMesi = (n) => `${n} mes${n === 1 ? 'e' : 'i'}`;
+
+export function projectAnnualIncome(
+  annualGross, annualExtras, settings = {}, year = new Date().getFullYear(),
+  { enableNetCalc = true, viewedMonth = null } = {},
+) {
+  const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
+    .reduce((s, v) => s + (Number(v.amount) || 0), 0);
+  const fixedAnnual = fixedMonthlyTotal * 12;
+  const monthlyBonusAmount = Number(settings.monthlyBonusAmount) || 0;
+  const resolveBonusEntry = (v) => (typeof v === 'number' ? v : (v ? monthlyBonusAmount : 0));
+  const bonusMap = settings.monthlyBonus || {};
+
+  const now = new Date();
+  const monthsElapsed = year === now.getFullYear() ? now.getMonth() + 1 : 12;
+  const mm = String((viewedMonth != null ? viewedMonth : monthsElapsed - 1) + 1).padStart(2, '0');
+  const bonusYearAll = Object.entries(bonusMap)
+    .filter(([k]) => k.slice(0, 4) === String(year))
+    .reduce((s, [, v]) => s + resolveBonusEntry(v), 0);
+  const bonusYTD = Object.entries(bonusMap)
+    .filter(([k]) => k.slice(0, 4) === String(year) && k.slice(5, 7) <= mm)
+    .reduce((s, [, v]) => s + resolveBonusEntry(v), 0);
+
+  // 13ª/14ª sono una tantum: annualizzarle (×12/mesi trascorsi) le
+  // moltiplicherebbe: a luglio la 14ª di giugno varrebbe quasi due mensilità.
+  // Si annualizza solo la parte ricorrente e si riaggiungono per intero le
+  // mensilità aggiuntive previste nell'anno.
+  const recurring = Math.max(0, annualGross - annualExtras);
+  const extrasFullYear = enableNetCalc
+    ? monthlyBaseGross(settings) * extraMonthsAccrued(settings, year)
+    : 0;
+  const annualize = (v) => (monthsElapsed > 0 ? (v * 12) / monthsElapsed : v);
+  const extras = (v) => v + fixedAnnual + bonusYearAll;
+
+  // Le voci che compongono il totale, restituite insieme al totale stesso.
+  // Stanno qui e non nella UI di proposito: una spiegazione che ricalcola i
+  // numeri per conto proprio prima o poi smette di combaciare con la cifra che
+  // pretende di spiegare, ed è il difetto peggiore per un pannello che esiste
+  // apposta per farsi controllare.
+  const voci = [];
+  const aggiungi = (label, valore, nota = null) => {
+    if (Math.abs(valore) >= 0.005) voci.push({ label, valore, nota });
+  };
+  const conVociFisse = () => {
+    aggiungi('Voci fisse mensili × 12', fixedAnnual);
+    aggiungi('Bonus segnati nell\'anno', bonusYearAll);
+  };
+
+  if ((settings.tiProjectionMode || 'stimato') === 'ytd') {
+    const cumulativo = recurring + fixedMonthlyTotal * monthsElapsed + bonusYTD;
+    aggiungi('Maturato finora, annualizzato', annualize(cumulativo),
+      `${fmtMesi(monthsElapsed)} × 12 ⁄ ${monthsElapsed}`);
+    aggiungi('13ª/14ª previste nell\'anno', extrasFullYear);
+    return { value: annualize(cumulativo) + extrasFullYear, source: 'maturato', voci, mesiTrascorsi: monthsElapsed };
+  }
+
+  const manual = Number(settings.annualGrossManual) || 0;
+  if (manual > 0) {
+    aggiungi('Reddito annuo scritto a mano', manual);
+    conVociFisse();
+    return { value: extras(manual), source: 'manuale', voci, mesiTrascorsi: monthsElapsed };
+  }
+
+  if (settings.onCall) {
+    aggiungi('Maturato finora, annualizzato', annualize(recurring),
+      `${fmtMesi(monthsElapsed)} × 12 ⁄ ${monthsElapsed}`);
+    conVociFisse();
+    return { value: extras(annualize(recurring)), source: 'maturato', voci, mesiTrascorsi: monthsElapsed };
+  }
+
+  // ── Previsione IN AVANTI: maturato reale + quello che resta da contratto ──
+  //
+  // Non si annualizza il passato, si somma il futuro. La differenza non è
+  // estetica: decide se il riquadro del bonus serve a qualcosa.
+  //
+  // La domanda a cui questo numero deve rispondere è «accetto questo
+  // straordinario, o mi fa superare la soglia?». Con l'annualizzazione — il
+  // maturato moltiplicato per 12/mesi-trascorsi — un euro guadagnato ad agosto
+  // ne spostava uno e mezzo, a gennaio dodici. E il vecchio `Math.max` con la
+  // proiezione da contratto faceva da PAVIMENTO: finché il maturato
+  // annualizzato le stava sotto, aggiungere turni non muoveva il margine di un
+  // centesimo. Misurato il 21 agosto: i primi 200 € di straordinari lasciavano
+  // il margine fermo a 4.238 €, i successivi lo abbassavano di 300 € ogni 200.
+  // Un numero che non si muove e poi si muove troppo non è una risposta.
+  //
+  // Così invece ogni euro in più sposta la previsione di esattamente un euro.
+  //
+  // Il `Math.max` col contratto non serve più, e la ragione per cui c'era —
+  // «il contratto conosce solo le ore contrattuali e ignora supplementari e
+  // festivi» — è soddisfatta meglio da qui: quei supplementari sono già dentro
+  // il maturato, per intero e senza moltiplicatori. Chi non ha ancora
+  // lavorato nulla ottiene comunque 12 mensilità piene, perché il maturato è
+  // zero e il resto dell'anno vale l'anno intero.
+  const mensile = enableNetCalc ? monthlyBaseGross(settings) : 0;
+  const mesiRestanti = Math.max(0, 12 - monthsElapsed);
+  // Le mensilità aggiuntive già incassate stanno dentro `annualGross`: qui si
+  // aggiungono solo quelle che devono ancora arrivare, altrimenti la 14ª di
+  // giugno verrebbe contata due volte.
+  const extraResidue = enableNetCalc
+    ? mensile * Math.max(0, extraMonthsAccrued(settings, year) - receivedExtraMonthsCount(settings, monthsElapsed - 1, year))
+    : 0;
+  const value = annualGross + mesiRestanti * mensile + extraResidue;
+
+  // 13ª e 14ª come DUE righe distinte, ciascuna col proprio rateo. Una riga
+  // sola «13ª/14ª ancora da arrivare» non diceva quale delle due fosse, né che
+  // l'altra era già dentro il maturato, né perché il rateo non fosse intero —
+  // ed è la prima cosa che si chiede guardando quel numero.
+  const rateo = (kind) => (settings[kind === 'tredicesima' ? 'hasTredicesima' : 'hasQuattordicesima']
+    ? extraMonthAccrual(kind, year, settings) : 0);
+  const notaRateo = (frazione) => {
+    const dodicesimi = Math.round(frazione * 12);
+    return dodicesimi >= 12
+      ? 'rateo intero, 12/12'
+      : `${dodicesimi}/12 — il periodo di competenza comincia prima dell'assunzione`;
+  };
+
+  aggiungi('Maturato finora', annualGross,
+    'turni segnati, più il montante e le 13ª/14ª già incassate');
+  aggiungi(`I ${fmtMesi(mesiRestanti)} che restano`, mesiRestanti * mensile,
+    mesiRestanti > 0 ? `${mesiRestanti} × la mensilità da contratto` : null);
+
+  for (const kind of ['quattordicesima', 'tredicesima']) {
+    const frazione = rateo(kind);
+    if (frazione <= 0) continue;
+    // Già incassata = sta dentro «Maturato finora», non va riaggiunta qui.
+    if (monthsElapsed - 1 >= EXTRA_MONTHS[kind]) continue;
+    const nome = kind === 'tredicesima' ? 'Tredicesima' : 'Quattordicesima';
+    const mese = kind === 'tredicesima' ? 'dicembre' : 'giugno';
+    aggiungi(`${nome} di ${mese}`, mensile * frazione, notaRateo(frazione));
+  }
+
+  conVociFisse();
+
+  return { value: extras(value), source: 'previsione', voci, mesiTrascorsi: monthsElapsed, mesiRestanti };
 }
 
 /**

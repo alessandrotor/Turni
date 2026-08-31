@@ -13,15 +13,22 @@ export const TIPO = {
   FERIE: 'ferie',
   PERMESSO: 'permesso',
   MALATTIA: 'malattia',
+  // Festività non lavorata: una giornata che NON si lavora ma viene pagata.
+  // In busta compare come giustificativo a sé («GO Festivita'», verificato su
+  // un cedolino di agosto) e vale le ore di una giornata di contratto.
+  // Da non confondere con il festivo LAVORATO, che è un turno normale e prende
+  // la maggiorazione festiva: quello resta di tipo LAVORO.
+  FESTIVITA: 'festivita',
 };
 
-export const TIPI_ASSENZA = [TIPO.FERIE, TIPO.PERMESSO, TIPO.MALATTIA];
+export const TIPI_ASSENZA = [TIPO.FERIE, TIPO.PERMESSO, TIPO.MALATTIA, TIPO.FESTIVITA];
 
 export const ETICHETTA = {
   [TIPO.LAVORO]: 'Lavoro',
   [TIPO.FERIE]: 'Ferie',
   [TIPO.PERMESSO]: 'Permesso',
   [TIPO.MALATTIA]: 'Malattia',
+  [TIPO.FESTIVITA]: 'Festività',
 };
 
 export const ICONA = {
@@ -29,13 +36,18 @@ export const ICONA = {
   [TIPO.FERIE]: '🏖',
   [TIPO.PERMESSO]: '📄',
   [TIPO.MALATTIA]: '🌡',
+  [TIPO.FESTIVITA]: '🎊',
 };
 
 // I turni salvati prima di questa funzione non hanno `type`: sono lavoro.
 // Nessuna migrazione dei dati, il valore mancante ha già il significato giusto.
+// L'elenco arriva da TIPI_ASSENZA invece di essere riscritto qui: quando si è
+// aggiunta la festività, questa riga era l'unico punto in cui il tipo nuovo
+// sarebbe stato ignorato in silenzio — il turno sarebbe tornato «lavoro» e
+// avrebbe preso le maggiorazioni di un giorno lavorato.
 export function tipoTurno(shift) {
   const t = shift?.type;
-  return t === TIPO.FERIE || t === TIPO.PERMESSO || t === TIPO.MALATTIA ? t : TIPO.LAVORO;
+  return TIPI_ASSENZA.includes(t) ? t : TIPO.LAVORO;
 }
 
 export function isAssenza(shift) {

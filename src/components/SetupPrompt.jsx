@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { hasAnyRate } from '../utils/pay';
 
 // Banner "Imposta la paga oraria". Stesso pattern di InstallPrompt.jsx:
@@ -15,17 +15,30 @@ const scriviFlag = (k, v) => {
   try { localStorage.setItem(k, v); } catch { /* senza storage il banner ricomparirà: non è un errore da mostrare */ }
 };
 
-export default function SetupPrompt({ settings, onNavigate }) {
+export default function SetupPrompt({ settings, onNavigate, turniInseriti = 0 }) {
   const [show, setShow] = useState(false);
+  // Chiuso in QUESTA sessione: vale fino alla prossima apertura dell'app,
+  // qualunque cosa succeda ai turni nel frattempo. Senza, il banner
+  // ricomparirebbe a ogni turno aggiunto, che è un assillo e non un aiuto.
+  const chiusoOra = useRef(false);
 
   useEffect(() => {
-    if (hasAnyRate(settings) || leggiFlag(DISMISS_KEY) === '1') { setShow(false); return; }
+    // La paga c'è: non c'è più niente da chiedere.
+    if (hasAnyRate(settings) || chiusoOra.current) { setShow(false); return; }
+
+    // La chiusura salvata vale finché il calendario è vuoto. Appena c'è un
+    // turno il banner torna alla prossima apertura, perché è da quel momento
+    // che l'app mostra 0 € senza spiegare perché — ed è la storia di chi
+    // arriva da un link condiviso, apre per curiosità e chiude il banner.
+    if (leggiFlag(DISMISS_KEY) === '1' && turniInseriti === 0) { setShow(false); return; }
+
     setShow(true);
-  }, [settings]);
+  }, [settings, turniInseriti]);
 
   if (!show) return null;
 
   const dismiss = () => {
+    chiusoOra.current = true;
     scriviFlag(DISMISS_KEY, '1');
     setShow(false);
   };

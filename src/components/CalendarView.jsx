@@ -6,7 +6,11 @@ import {
 } from '../utils/dates';
 import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
+import { isMensilizzato } from '../utils/ccnl';
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
+import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
+import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
+import { minutiGiornoAssenza } from '../utils/assenze';
 import { EXTRA_MONTHS } from '../utils/net';
 import { ENABLE_DEBUG } from '../config/features';
 import useMonthlyNet from '../hooks/useMonthlyNet';
@@ -17,6 +21,10 @@ const fmtPct = (pct) => String(Number(pct.toFixed(3))).replace('.', ',');
 
 // Da dove arriva il reddito annuo di riferimento, per dirlo all'utente.
 const PROJECTION_LABEL = {
+  // 'previsione' è il caso normale: maturato finora + quello che resta da
+  // contratto. Gli altri tre restano perché rispondono a domande diverse e la
+  // funzione li tratta ancora a parte (vedi projectAnnualIncome in net.js).
+  previsione: 'da quanto hai segnato più i mesi che restano',
   contratto: 'da contratto',
   maturato: 'dal maturato annualizzato',
   manuale: 'inserita a mano',
@@ -24,6 +32,8 @@ const PROJECTION_LABEL = {
 import { exportShiftsExcel, exportShiftsPDF } from '../services/export';
 import { sendImportTelemetry } from '../services/telemetry';
 import ImportModal from './ImportModal';
+import TimelineView from './TimelineView';
+import { KEY_CAL_LAYOUT } from '../services/backup';
 
 const DAY_HEADERS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
@@ -37,6 +47,10 @@ function formatMinutesShort(mins) {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
+// Ore di una giornata, assenze comprese: è il totale che quel giorno vale in
+// busta, non le sole ore lavorate.
+const minutiDelGiorno = (turni) => turni.reduce((somma, s) => somma + calcShiftMinutes(s), 0);
+
 export default function CalendarView({
   currentMonth,
   onMonthChange,
@@ -49,13 +63,23 @@ export default function CalendarView({
   onAddShift,
   onEditShift,
   onImportShifts,
+  // Crea più giornate in una sola scrittura: serve alla proposta delle
+  // festività non lavorate qui sotto (la stessa usata per le assenze a periodo).
+  onAddShifts,
   settings,
   onUpdateSettings,
   allShifts,
   payByShift,
   annualGross,
+  // Reddito dell'anno PROIETTATO a dicembre: e' la grandezza su cui si
+  // misurano le soglie del bonus, che valgono sull'anno intero.
+  annualProjection = 0,
   annualExtras = 0,
   onNavigate,
+  // Giorno da mettere in evidenza arrivando da un'altra pagina (il
+  // calendarietto di Statistiche): la cella si illumina e ci si scorre sopra,
+  // altrimenti si atterra sul mese e tocca ricercare a mano il giorno tappato.
+  focusDate = null,
 }) {
   const [importParsed, setImportParsed] = useState(null);
   const [importLoading, setImportLoading] = useState(false);
@@ -76,8 +100,27 @@ export default function CalendarView({
   // in periodi di paga a settimane intere (quelli sono un dettaglio interno
   // del calcolo del netto, non come l'utente registra le cose giorno per giorno).
   const [exportPeriod, setExportPeriod] = useState('calendar');
+  // Avvertenza sull'invio della foto: mostrata una volta sola, ricordata nel
+  // browser. Vedi `accettatoInvioFoto` in services/gemini.js.
+  const [mostraAvvisoFoto, setMostraAvvisoFoto] = useState(false);
+  const [calLayout, setCalLayout] = useState(() => {
+    try { return localStorage.getItem(KEY_CAL_LAYOUT) || 'grid'; } catch { return 'grid'; }
+  });
+  const handleSetLayout = useCallback((mode) => {
+    setCalLayout(mode);
+    try { localStorage.setItem(KEY_CAL_LAYOUT, mode); } catch { /* storage non disponibile: la scelta vale per questa sessione */ }
+  }, []);
   const fileInputRef = useRef(null);
   const nameModalRef = useRef(null);
+  const focusCellRef = useRef(null);
+
+  // Porta sotto gli occhi il giorno arrivato da un'altra pagina. `block:
+  // 'center'` e non 'nearest': su un mese lungo la cella può essere appena
+  // fuori dallo schermo, e uno scroll minimo la lascerebbe sul bordo.
+  useEffect(() => {
+    if (!focusDate || !focusCellRef.current) return;
+    focusCellRef.current.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [focusDate]);
 
   const year = currentMonth.getFullYear();
   const month = currentMonth.getMonth();
@@ -111,6 +154,12 @@ export default function CalendarView({
   const payrollRange = payrollShifts && payrollShifts !== shifts
     ? formatPayrollRange(year, month)
     : null;
+  // Il toggle del periodo esiste solo dove i due periodi differiscono davvero.
+  // Si guarda il CONTRATTO e non `payrollRange`, che diventa null appena si
+  // sceglie il mese di calendario — e il comando sparirebbe subito dopo averlo
+  // usato, senza modo di tornare indietro.
+  const mensilizzato = !settings.onCall && isMensilizzato(settings);
+  const periodoPaga = settings.periodoConteggio !== 'calendario';
   const totalMins = useMemo(
     () => counted.reduce((sum, s) => sum + calcShiftMinutes(s), 0),
     [counted],
@@ -120,9 +169,15 @@ export default function CalendarView({
     [counted, settings, allShifts, payByShift],
   );
 
-  // Assenze del mese, contate dai turni e non da `pay`: senza una paga oraria
-  // impostata `calcTotalPay` restituisce null, ma le ore di ferie e malattia
-  // esistono lo stesso e vanno mostrate.
+  // Giornate pagate senza turno del mese, contate dai turni e non da `pay`:
+  // senza una paga oraria impostata `calcTotalPay` restituisce null, ma le ore
+  // di ferie, malattia e festività esistono lo stesso e vanno mostrate.
+  //
+  // A schermo non si chiamano mai «assenze»: una festività, o un giorno di
+  // ferie concordato, era previsto che non si lavorasse — chiamarlo assenza
+  // suona come un buco da giustificare e confonde. Ogni voce compare col
+  // proprio nome (ferie, permesso, malattia, festività), che è anche quello
+  // che si legge in busta.
   const assenze = useMemo(() => {
     const per = new Map();
     let minuti = 0;
@@ -131,14 +186,29 @@ export default function CalendarView({
       const t = tipoTurno(s);
       if (t === TIPO.LAVORO) continue;
       const m = calcShiftMinutes(s);
-      per.set(t, (per.get(t) || 0) + m);
+      const v = per.get(t) || { minuti: 0, giorni: 0 };
+      v.minuti += m;
+      v.giorni += 1;
+      per.set(t, v);
       minuti += m;
       giorni += 1;
     }
-    const dettaglio = [...per.entries()]
-      .map(([t, m]) => `${formatMinutesShort(m)} ${ETICHETTA[t].toLowerCase()}`)
+    const voci = [...per.entries()];
+    const dettaglio = voci
+      .map(([t, v]) => `${formatMinutesShort(v.minuti)} di ${ETICHETTA[t].toLowerCase()}`)
       .join(' · ');
-    return { minuti, giorni, dettaglio };
+    // «3 giorni di ferie · 1 di festività»: la parola «giorni» una volta sola
+    // — ripeterla a ogni voce fa filastrocca — ma il «di» resta su tutte,
+    // altrimenti si legge «7 ferie». Il singolare va scritto (1 giorno):
+    // con una voce sola è l'unico posto in cui si legge.
+    const dettaglioGiorni = voci
+      .map(([t, v], i) => {
+        const nome = ETICHETTA[t].toLowerCase();
+        const unita = i === 0 ? `${v.giorni === 1 ? 'giorno' : 'giorni'} ` : '';
+        return `${v.giorni} ${unita}di ${nome}`;
+      })
+      .join(' · ');
+    return { minuti, giorni, dettaglio, dettaglioGiorni };
   }, [counted]);
 
   // Competenze del mese nelle stesse voci del cedolino, così che le due colonne
@@ -198,8 +268,31 @@ export default function CalendarView({
     ].filter(v => v.value >= 0.005 || v.minutes > 0);
   }, [pay, settings, totalMins]);
 
-  // Bonus busta paga: quanto manca alla soglia (reddito annuo dai turni)
-  const bonus = useMemo(() => calcBonusMargin(annualGross, settings), [annualGross, settings]);
+  // Festività del mese senza alcun turno segnato. Una festività non lavorata
+  // viene pagata — in busta è un giustificativo a sé — ed è la cosa più facile
+  // da dimenticare: sono undici giorni sparsi nell'anno, e chi non lavora quel
+  // giorno non ha motivo di aprire l'app. Qui si PROPONE soltanto: chi è
+  // mensilizzato o non ne ha diritto non tocca niente.
+  const festivitaDaSegnare = useMemo(
+    () => festivitaSenzaTurno(year, month, allShifts || shifts, settings),
+    [year, month, allShifts, shifts, settings],
+  );
+  const oreFestivita = minutiGiornoAssenza(settings);
+
+  // Bonus busta paga: quanto manca alla soglia.
+  //
+  // Si misura sulla PROIEZIONE dell'anno, non sul maturato. Le soglie del
+  // trattamento integrativo valgono sul reddito dell'anno intero: calcolare il
+  // margine su quanto si e' incassato finora annuncia uno spazio che non
+  // esiste, perche' i mesi che restano arrivano comunque. Ad agosto, con
+  // 10.000 incassati e la soglia a 16.600, il vecchio conto diceva «puoi
+  // ancora guadagnare 6.600» mentre quattro stipendi se li mangiavano quasi
+  // tutti. E' anche cio' che faceva dire numeri diversi a questa pagina e a
+  // Statistiche, che la proiezione la usava gia'.
+  const bonus = useMemo(
+    () => calcBonusMargin(annualProjection || annualGross, settings),
+    [annualProjection, annualGross, settings],
+  );
   const fmt0 = (n) => formatCurrency(Math.round(n));
 
   // Montante + confine automatico (granularità MESE): composizione del reddito e avviso.
@@ -304,6 +397,10 @@ export default function CalendarView({
   // Avvio import dal pulsante: il nome è obbligatorio. Se manca, si chiede PRIMA
   // di aprire il selettore immagini (così non si carica nulla senza nome).
   function startImport() {
+    // La prima volta si dice dove va la foto, PRIMA di sceglierla: è l'unico
+    // momento in cui l'avvertenza può ancora cambiare la decisione. Dopo, il
+    // file è già scelto e il messaggio diventa un ostacolo da scacciare.
+    if (!accettatoInvioFoto()) { setMostraAvvisoFoto(true); return; }
     if (settings.workerName) { fileInputRef.current?.click(); return; }
     setNameInput('');
     setPickAfterName(true);
@@ -376,7 +473,7 @@ export default function CalendarView({
 
   return (
     <div className="calendar-view">
-      {/* Month navigation */}
+      {/* Month navigation & Layout toggle */}
       <div className="cal-header">
         <button
           className="week-nav-btn"
@@ -396,13 +493,37 @@ export default function CalendarView({
             </button>
           )}
         </div>
-        <button
-          className="week-nav-btn"
-          onClick={() => onMonthChange(addMonths(currentMonth, 1))}
-          aria-label="Mese successivo"
-        >
-          ›
-        </button>
+        <div className="cal-header-right">
+          <button
+            className="week-nav-btn"
+            onClick={() => onMonthChange(addMonths(currentMonth, 1))}
+            aria-label="Mese successivo"
+          >
+            ›
+          </button>
+          <div className="cal-mode-toggle" role="group" aria-label="Modalità di visualizzazione">
+            <button
+              type="button"
+              className={`cal-mode-btn ${calLayout === 'grid' ? 'active' : ''}`}
+              onClick={() => handleSetLayout('grid')}
+              title="Vista griglia mensile"
+              aria-label="Vista griglia mensile"
+              aria-pressed={calLayout === 'grid'}
+            >
+              ⊞
+            </button>
+            <button
+              type="button"
+              className={`cal-mode-btn ${calLayout === 'timeline' ? 'active' : ''}`}
+              onClick={() => handleSetLayout('timeline')}
+              title="Vista agenda"
+              aria-label="Vista agenda"
+              aria-pressed={calLayout === 'timeline'}
+            >
+              ≡
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Import bar */}
@@ -448,102 +569,185 @@ export default function CalendarView({
         </div>
       )}
 
-      {/* Calendar grid */}
-      <div className="cal-grid">
-        {DAY_HEADERS.map(d => (
-          <div key={d} className="cal-day-header">{d}</div>
-        ))}
+      {/* Main shifts view: Timeline or Grid */}
+      {calLayout === 'timeline' ? (
+        <TimelineView
+          daysInMonth={daysInMonth}
+          year={year}
+          month={month}
+          byDate={byDate}
+          onAddShift={onAddShift}
+          onEditShift={onEditShift}
+          settings={settings}
+          focusDate={focusDate}
+        />
+      ) : (
+        <div className="cal-grid">
+          {DAY_HEADERS.map(d => (
+            <div key={d} className="cal-day-header">{d}</div>
+          ))}
 
-        {cells.map((dayNum, i) => {
-          if (!dayNum) return <div key={`e${i}`} className="cal-cell cal-cell--empty" />;
+          {cells.map((dayNum, i) => {
+            if (!dayNum) return <div key={`e${i}`} className="cal-cell cal-cell--empty" />;
 
-          const date = new Date(year, month, dayNum);
-          const dateStr = formatDate(date);
-          const dayShifts = byDate[dateStr] || [];
-          const today = isToday(date);
-          const weekend = isWeekend(date);
+            const date = new Date(year, month, dayNum);
+            const dateStr = formatDate(date);
+            const dayShifts = byDate[dateStr] || [];
+            const today = isToday(date);
+            const weekend = isWeekend(date);
 
-          // La cella è un contenitore cliccabile, non un pulsante: annidare
-          // controlli dentro un role="button" è invalido e confonde gli screen
-          // reader. I comandi veri sono i <button> qui dentro.
-          return (
-            <div
-              key={dateStr}
-              className={[
-                'cal-cell',
-                today ? 'cal-cell--today' : '',
-                weekend ? 'cal-cell--weekend' : '',
-              ].join(' ')}
-              onClick={e => { if (e.target === e.currentTarget) onAddShift(dateStr); }}
-            >
-              <button
-                type="button"
-                className="cal-cell-add"
-                onClick={() => onAddShift(dateStr)}
-                aria-label={`Aggiungi turno il ${dayNum}/${month + 1}`}
+            // La cella è un contenitore cliccabile, non un pulsante: annidare
+            // controlli dentro un role="button" è invalido e confonde gli screen
+            // reader. I comandi veri sono i <button> qui dentro.
+            return (
+              <div
+                key={dateStr}
+                ref={dateStr === focusDate ? focusCellRef : null}
+                className={[
+                  'cal-cell',
+                  today ? 'cal-cell--today' : '',
+                  weekend ? 'cal-cell--weekend' : '',
+                  dateStr === focusDate ? 'cal-cell--focus' : '',
+                ].join(' ')}
+                onClick={e => { if (e.target === e.currentTarget) onAddShift(dateStr); }}
               >
-                <span className={`cal-day-num${today ? ' cal-day-num--today' : ''}`}>
-                  {dayNum}
-                </span>
-              </button>
-              <div className="cal-shifts">
-                {dayShifts.map(s => {
-                  const t = tipoTurno(s);
-                  // Un'assenza non ha un orario da mostrare: al suo posto va
-                  // l'icona del tipo, che è l'informazione vera di quel giorno.
-                  const assente = t !== TIPO.LAVORO;
-                  const ore = calcShiftMinutes(s) / 60;
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      className={`cal-shift-pill${assente ? ` cal-shift-pill--${t}` : ''}`}
-                      onClick={e => { e.stopPropagation(); onEditShift(s); }}
-                      title={assente
-                        ? `${ETICHETTA[t]} · ${ore} h${s.note ? ` | ${s.note}` : ''}`
-                        : `${s.startTime}–${s.endTime}${s.note ? ` | ${s.note}` : ''}`}
-                      aria-label={assente
-                        ? `Modifica ${ETICHETTA[t].toLowerCase()} del ${dayNum}/${month + 1}`
-                        : `Modifica turno ${s.startTime}–${s.endTime}`}
-                    >
-                      {assente ? ICONA[t] : s.startTime}
-                    </button>
-                  );
-                })}
+                <button
+                  type="button"
+                  className="cal-cell-add"
+                  onClick={() => onAddShift(dateStr)}
+                  aria-label={`Aggiungi turno il ${dayNum}/${month + 1}`}
+                >
+                  <span className={`cal-day-num${today ? ' cal-day-num--today' : ''}`}>
+                    {dayNum}
+                  </span>
+                </button>
+                <div className="cal-shifts">
+                  {dayShifts.map(s => {
+                    const t = tipoTurno(s);
+                    // Un'assenza non ha un orario da mostrare: al suo posto va
+                    // l'icona del tipo, che è l'informazione vera di quel giorno.
+                    const assente = t !== TIPO.LAVORO;
+                    const ore = calcShiftMinutes(s) / 60;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        className={`cal-shift-pill${assente ? ` cal-shift-pill--${t}` : ''}`}
+                        onClick={e => { e.stopPropagation(); onEditShift(s); }}
+                        title={assente
+                          ? `${ETICHETTA[t]} · ${ore} h${s.note ? ` | ${s.note}` : ''}`
+                          : `${s.startTime}–${s.endTime}${s.note ? ` | ${s.note}` : ''}`}
+                        aria-label={assente
+                          ? `Modifica ${ETICHETTA[t].toLowerCase()} del ${dayNum}/${month + 1}`
+                          : `Modifica turno ${s.startTime}–${s.endTime}`}
+                      >
+                        {assente ? ICONA[t] : s.startTime}
+                      </button>
+                    );
+                  })}
+                </div>
+                {/* Le pill dicono solo l'ora di INIZIO: senza il totale, per
+                    sapere quanto dura la giornata bisogna aprire i turni. Vale
+                    anche con un turno solo — la durata non è scritta da nessuna
+                    parte nella cella — e a maggior ragione con più turni, dove
+                    andrebbe pure sommata a mente. */}
+                {dayShifts.length > 0 && (
+                  <span
+                    className="cal-day-total"
+                    title={dayShifts.length > 1
+                      ? `${dayShifts.length} turni, ${formatMinutesShort(minutiDelGiorno(dayShifts))} in totale`
+                      : `${formatMinutesShort(minutiDelGiorno(dayShifts))} in questa giornata`}
+                  >
+                    {formatMinutesShort(minutiDelGiorno(dayShifts))}
+                  </span>
+                )}
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Monthly summary */}
       <div className="cal-summary">
+        {/* Il periodo si dichiara PRIMA dei numeri, non in mezzo a una riga.
+            Col mese di paga i conteggi arrivano oltre la fine del mese — agosto
+            2026 si conta fino al 6 settembre — e senza dirlo in cima si legge
+            «7 giorni di ferie» sotto un mese in cui se ne vede uno: gli altri
+            sei sono nella settimana a cavallo. Vale già per le ore e per la
+            retribuzione; le ferie, contandosi a giornate, lo rendono evidente.
+
+            Il toggle compare solo sui CCNL mensilizzati: altrove i due periodi
+            coincidono e sarebbe un comando che non cambia niente. NON cambia il
+            calcolo degli straordinari, che resta ancorato al periodo di paga —
+            le ore oltre soglia sono un fatto del contratto, non della finestra
+            che si sta guardando. */}
+        {mensilizzato && (
+          <div className="periodo-testata">
+            <span className="periodo-toggle">
+              <button
+                type="button"
+                className={`periodo-btn${periodoPaga ? ' active' : ''}`}
+                onClick={() => onUpdateSettings?.({ periodoConteggio: 'paga' })}
+                aria-pressed={periodoPaga}
+              >
+                Mese di paga
+              </button>
+              <button
+                type="button"
+                className={`periodo-btn${periodoPaga ? '' : ' active'}`}
+                onClick={() => onUpdateSettings?.({ periodoConteggio: 'calendario' })}
+                aria-pressed={!periodoPaga}
+              >
+                Mese di calendario
+              </button>
+            </span>
+            <em className="periodo-nota">
+              {periodoPaga
+                ? `Conteggi del periodo ${formatPayrollRange(year, month)}: settimane intere, come in busta`
+                : `Conteggi del mese: dal 1 al ${daysInMonth} ${formatMonthYear(currentMonth).split(' ')[0].toLowerCase()}`}
+            </em>
+          </div>
+        )}
         <div className="cal-summary-row">
           <div className="summary-item">
             <span className="summary-label">Turni</span>
             <span className="summary-value">{counted.length - assenze.giorni}</span>
             {assenze.giorni > 0 && (
               <span className="summary-sublabel">
-                + {assenze.giorni} giorn{assenze.giorni === 1 ? 'o' : 'i'} di assenza
+                + {assenze.dettaglioGiorni}
               </span>
             )}
           </div>
           <div className="summary-item">
             {/* «Ore lavorate» deve contare SOLO il lavoro: sommarci ferie e
-                malattia renderebbe falsa proprio l'etichetta. Le ore di
-                assenza contano eccome per la busta, e stanno nella riga
-                sotto — visibili, ma non spacciate per lavoro. */}
+                malattia renderebbe falsa proprio l'etichetta. Le ore pagate
+                senza turno contano eccome per la busta, e stanno nella riga
+                sotto — visibili, col loro nome, ma non spacciate per lavoro. */}
             <span className="summary-label">Ore lavorate</span>
             <span className="summary-value">{formatMinutesShort(totalMins - assenze.minuti)}</span>
             {assenze.minuti > 0 && (
               <span className="summary-sublabel">
-                + {formatMinutesShort(assenze.minuti)} di assenza ({assenze.dettaglio})
-                {' '}= {formatMinutesShort(totalMins)} contate in busta
+                + {assenze.dettaglio} = {formatMinutesShort(totalMins)} contate in busta
               </span>
             )}
-            {payrollRange && (
-              <span className="summary-sublabel">
-                mese di paga: settimane intere, {payrollRange}
+            {festivitaDaSegnare.length > 0 && oreFestivita > 0 && onAddShifts && (
+              <span className="summary-sublabel festivita-proposta">
+                {festivitaDaSegnare.length === 1 ? 'C’è ' : 'Ci sono '}
+                <strong>
+                  {festivitaDaSegnare.length}
+                  {festivitaDaSegnare.length === 1 ? ' giorno festivo' : ' giorni festivi'}
+                </strong>
+                {' '}senza turno ({festivitaDaSegnare.map(d => Number(d.slice(8))).join(', ')}
+                {' '}{formatMonthYear(currentMonth).split(' ')[0].toLowerCase()}).
+                {' '}Se ti vengono pagati, aggiungili —{' '}
+                {formatMinutesShort(oreFestivita)} ciascuno.
+                <button
+                  type="button"
+                  className="linklike festivita-proposta-btn"
+                  onClick={() => onAddShifts(giornateFestive(festivitaDaSegnare, oreFestivita))}
+                >
+                  Aggiungi
+                </button>
               </span>
             )}
           </div>
@@ -862,16 +1066,24 @@ export default function CalendarView({
             {showBonusDetail && (
               <>
                 <span className="bonus-strip-income">
-                  Reddito totale {currentMonth.getFullYear()}: <strong>{fmt0(bonus.income)}</strong>
+                  Reddito {currentMonth.getFullYear()} previsto a fine anno: <strong>{fmt0(bonus.income)}</strong>
                 </span>
 
-                {(montante > 0 || annualExtras > 0) && (
-                  <span className="bonus-strip-note">
-                    ={montante > 0 ? ` montante ${fmt0(montante)}${priorMonthLabel ? ` (fino a ${priorMonthLabel})` : ''} +` : ''}
-                    {' '}turni {fmt0(bonus.income - montante - annualExtras)}
-                    {annualExtras > 0 && ` + 13ª/14ª ${fmt0(annualExtras)}`}
-                  </span>
-                )}
+                {/* La scomposizione appartiene al MATURATO, non alla
+                    proiezione: sottrarre montante ed extra da un numero
+                    proiettato darebbe una voce «turni» che non corrisponde a
+                    nessun turno inserito. Il maturato si mostra accanto, così
+                    si vede da dove parte la previsione. */}
+                <span className="bonus-strip-note">
+                  Maturato finora <strong>{fmt0(annualGross)}</strong>
+                  {(montante > 0 || annualExtras > 0) && (
+                    <>
+                      {' ='}{montante > 0 ? ` montante ${fmt0(montante)}${priorMonthLabel ? ` (fino a ${priorMonthLabel})` : ''} +` : ''}
+                      {' '}turni {fmt0(annualGross - montante - annualExtras)}
+                      {annualExtras > 0 && ` + 13ª/14ª ${fmt0(annualExtras)}`}
+                    </>
+                  )}
+                </span>
                 {montanteMismatch && (
                   <span className="bonus-strip-note bonus-strip-note--warn">
                     ⚠️ Montante dichiarato {fmt0(montante)} diverso dai turni fino a {priorMonthLabel} ({fmt0(shiftsCovered)}). Normale se include altri redditi o paghe diverse.
@@ -885,7 +1097,7 @@ export default function CalendarView({
                     </span>
                     <span className="bonus-strip-value">{fmt0(bonus.marginToFull)}</span>
                     <span className="bonus-strip-note">
-                      prima di superare i {fmt0(bonus.thresholdFullGross)} lordi e uscire dal bonus pieno
+                      prima di superare i {fmt0(bonus.thresholdFullGross)} lordi previsti a fine anno e uscire dal bonus pieno
                       <span className="bonus-strip-hint"> (= 15.000 € imponibili, al netto dei contributi)</span>
                     </span>
                   </div>
@@ -922,9 +1134,56 @@ export default function CalendarView({
       {importParsed && (
         <ImportModal
           shifts={importParsed}
+          workerName={settings.workerName}
           onConfirm={handleImportConfirm}
           onClose={() => setImportParsed(null)}
         />
+      )}
+
+      {mostraAvvisoFoto && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setMostraAvvisoFoto(false)}>
+          <div className="modal" role="dialog" aria-modal="true" aria-label="Prima di inviare la foto">
+            <div className="modal-header">
+              <h2 className="modal-title">Prima di inviare la foto</h2>
+            </div>
+            <div className="modal-form">
+              <p className="form-hint">
+                Per leggere i turni, la foto viene inviata a un servizio di riconoscimento
+                di <strong>Google</strong>, passando da un server intermedio di chi sviluppa
+                l'app. Non viene conservata da nessuno dei due.
+              </p>
+              <p className="form-hint form-hint--warn">
+                ⚠️ Se il foglio contiene i <strong>nomi dei tuoi colleghi</strong>, partono
+                anche quelli — e loro non hanno scelto nulla. Puoi ritagliare la foto sulla
+                tua riga prima di caricarla.
+              </p>
+              <p className="form-hint">
+                Tutto il resto — turni, orari, paga — resta sul tuo telefono e non viene
+                inviato mai. Questo avviso compare una volta sola.
+              </p>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setMostraAvvisoFoto(false)}
+                >
+                  Annulla
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    accettaInvioFoto();
+                    setMostraAvvisoFoto(false);
+                    startImport();
+                  }}
+                >
+                  Ho capito, scegli la foto
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {(pendingImportFile || editingName) && (

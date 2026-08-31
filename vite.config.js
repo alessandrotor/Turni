@@ -19,6 +19,12 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallback: '/index.html',
+        // L'informativa è una pagina statica vera, non una rotta dell'app.
+        // Senza questa esclusione il ripiego la ingoia: dentro la PWA
+        // installata il link «Come vengono trattati i tuoi dati» aprirebbe il
+        // calendario, e l'informativa risulterebbe pubblicata pur non essendo
+        // raggiungibile. È il caso in cui un 200 mente.
+        navigateFallbackDenylist: [/^\/privacy/],
       },
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {

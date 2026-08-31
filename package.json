@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/genera-privacy.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "ccnl:aggiorna": "node scripts/scarica-ccnl.mjs src/data/ccnl.json",

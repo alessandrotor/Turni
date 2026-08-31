@@ -40,7 +40,9 @@ const BASE_SETTINGS = {
   // Base dell'Ente Bilaterale letta dalla busta: minimo tabellare 1.057,72 +
   // contingenza 522,37, riproporzionati al part-time 60% → 948,05. Non è
   // ricavabile dalla paga oraria, che contiene anche voci fuori da questa base
-  // (9,21802 × 103,20 = 951,30, cioè 3,25 in più).
+  // (9,21802 × 103,20 = 951,30, cioè 3,25 in più). Quei 3,25 sono il TERZO
+  // ELEMENTO al 60%: 5,41 € al mese, voce letta in busta accanto a tabellare e
+  // contingenza — vedi check-tabellare-turismo.mjs.
   ebtBase: round2((1057.72 + 522.37) * 0.60),
 };
 

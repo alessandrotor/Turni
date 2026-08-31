@@ -2,13 +2,15 @@ import { useState, useEffect, useRef } from 'react';
 import { formatCurrency, parseNum } from '../utils/pay';
 import { CCNL_LIST, getCcnl } from '../utils/ccnl';
 import { FASCE_DIPENDENTI, FASCIA_DEFAULT, contributiDiLegge } from '../utils/contributi-legge';
-import { isTelemetryEnabled, setTelemetryEnabled } from '../services/telemetry';
+import { isTelemetryEnabled, setTelemetryEnabled, telemetriaDisponibile } from '../services/telemetry';
 import { esportaBackup, importaBackup, contaTurniSalvati } from '../services/backup';
+import { ESITO } from '../services/export';
 import { elencoOrariDaCorreggere, applicaCorrezioneOrari } from '../services/correzioni';
 import { ENABLE_NET_CALC } from '../config/features';
 import { genId } from '../utils/id';
 import { minutiGiornoAssenza } from '../utils/assenze';
-import { FASCIA_NOTTURNA_DEFAULT, CUMULO_DEFAULT } from '../utils/notturno';
+import { fasciaNotturnaRisolta, CUMULO_DEFAULT } from '../utils/notturno';
+import { normalizzaMaggiorazione, messaggioMaggiorazione } from '../utils/maggiorazioni';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
 const toInput = (n) => {
@@ -33,8 +35,10 @@ export default function Settings({ settings, onSave }) {
     holidaySurchargePct: settings.holidaySurchargePct ?? 0,
     holidaySundayMode: settings.holidaySundayMode || 'max',
     nightSurchargePct: settings.nightSurchargePct ?? 0,
-    nightStart: settings.nightStart || FASCIA_NOTTURNA_DEFAULT.inizio,
-    nightEnd: settings.nightEnd || FASCIA_NOTTURNA_DEFAULT.fine,
+    // Non più il ripiego di legge: se l'utente non ha scelto, i campi partono
+    // dalla fascia del suo contratto (per il turismo le 23:00, non le 22:00).
+    nightStart: fasciaNotturnaRisolta(settings).inizio,
+    nightEnd: fasciaNotturnaRisolta(settings).fine,
     nightCumuloMode: settings.nightCumuloMode || CUMULO_DEFAULT,
     patronSaintDate: settings.patronSaintDate || '',
     priorTaxableIncome: toInput(settings.priorTaxableIncome),
@@ -89,6 +93,9 @@ export default function Settings({ settings, onSave }) {
   // su localStorage). `turniSalvati` è letto una volta all'apertura della pagina.
   const [backupBusy, setBackupBusy] = useState(false);
   const [backupMsg, setBackupMsg] = useState(null);
+  // Il backup in chiaro, mostrato SOLO quando la consegna non è verificabile:
+  // è la via di riserva, non un'opzione da tenere sempre a schermo.
+  const [backupTesto, setBackupTesto] = useState(null);
   const backupInputRef = useRef(null);
   const [turniSalvati] = useState(contaTurniSalvati);
   // Turni con l'orario a :50 da correggere: letti una volta sola all'apertura,
@@ -115,6 +122,24 @@ export default function Settings({ settings, onSave }) {
     setForm(f => ({ ...f, [field]: e.target.checked }));
     setSaved(false);
   };
+
+  // Le percentuali si normalizzano quando si LASCIA il campo, non mentre si
+  // scrive: chi digita «120» passa da «1», «12», «120», e convertire a metà
+  // strada sarebbe un campo che combatte con chi ci scrive dentro.
+  // La regola, e il perché sopra il 100% non è un indovinello, stanno in
+  // utils/maggiorazioni.js.
+  const [avvisiMagg, setAvvisiMagg] = useState({});
+  const controllaMagg = (field) => () => {
+    const esito = normalizzaMaggiorazione(form[field]);
+    if (esito.convertito) {
+      setForm(f => ({ ...f, [field]: esito.valore }));
+      setSaved(false);
+    }
+    setAvvisiMagg(a => ({ ...a, [field]: messaggioMaggiorazione(esito) }));
+  };
+  const avvisoMagg = (field) => (avvisiMagg[field]
+    ? <p className="form-hint form-hint--attenzione">⚠️ {avvisiMagg[field]}</p>
+    : null);
 
   const addPreviousRate = () => {
     setForm(f => ({ ...f, previousRates: [...f.previousRates, { id: genId(), until: '', rate: '' }] }));
@@ -173,16 +198,50 @@ export default function Settings({ settings, onSave }) {
     setSaved(false);
   };
 
+  // Le parole seguono quello che è successo DAVVERO, non l'assenza di errori.
+  // Prima si scriveva «Backup creato» in ogni caso, anche quando il browser
+  // aveva rifiutato il download in silenzio: chi lo leggeva restava senza copia
+  // e senza saperlo. Ora l'unico caso che promette qualcosa è quello in cui il
+  // file è stato scritto sotto i nostri occhi.
   async function handleEsportaBackup() {
     setBackupBusy(true);
     setBackupMsg(null);
+    setBackupTesto(null);
     try {
-      const { turni } = await esportaBackup();
-      setBackupMsg({ testo: `Backup creato: ${turni} turni salvati.` });
+      const { turni, esito, testo } = await esportaBackup();
+
+      if (esito === ESITO.SALVATO) {
+        setBackupMsg({ testo: `Backup salvato: ${turni} turni.` });
+      } else if (esito === ESITO.CONDIVISO) {
+        setBackupMsg({ testo: `Backup di ${turni} turni pronto. Controlla di averlo salvato dove volevi: finché resta solo fra i file temporanei, il telefono può cancellarlo.` });
+      } else if (esito === ESITO.ANNULLATO) {
+        setBackupMsg({ testo: 'Backup annullato: non è stato salvato nessun file.' });
+      } else {
+        // NON_VERIFICABILE: il download è partito, ma il browser non dice se è
+        // arrivato. Si chiede all'utente di guardare, e intanto gli si mette in
+        // mano la seconda via — che è l'unica cosa utile da fare qui.
+        setBackupMsg({
+          attenzione: true,
+          testo: `Backup di ${turni} turni avviato. Controlla che il file sia davvero fra i download: alcuni browser (Safari in modalità app, quelli dentro Instagram o Facebook) li bloccano senza dirlo. Se non lo trovi, copia il testo qui sotto e incollalo in una nota o in una mail.`,
+        });
+        setBackupTesto(testo);
+      }
     } catch (err) {
       setBackupMsg({ errore: true, testo: err.message || 'Impossibile creare il backup.' });
     } finally {
       setBackupBusy(false);
+    }
+  }
+
+  async function copiaBackup() {
+    try {
+      await navigator.clipboard.writeText(backupTesto);
+      setBackupMsg({ testo: 'Backup copiato: incollalo subito da qualche parte.' });
+    } catch {
+      // Gli appunti possono essere negati (permesso rifiutato, contesto non
+      // sicuro). Il riquadro di testo resta visibile e selezionabile a mano:
+      // è il motivo per cui non lo si nasconde dopo aver copiato.
+      setBackupMsg({ attenzione: true, testo: 'Non riesco a copiare da solo: seleziona il testo qui sotto e copialo a mano.' });
     }
   }
 
@@ -264,8 +323,8 @@ export default function Settings({ settings, onSave }) {
       holidaySurchargePct: parseNum(form.holidaySurchargePct),
       holidaySundayMode: form.holidaySundayMode,
       nightSurchargePct: parseNum(form.nightSurchargePct),
-      nightStart: form.nightStart || FASCIA_NOTTURNA_DEFAULT.inizio,
-      nightEnd: form.nightEnd || FASCIA_NOTTURNA_DEFAULT.fine,
+      nightStart: form.nightStart || '',
+      nightEnd: form.nightEnd || '',
       nightCumuloMode: form.nightCumuloMode,
       patronSaintDate: form.patronSaintDate,
       priorTaxableIncome: newMontante,
@@ -347,7 +406,7 @@ export default function Settings({ settings, onSave }) {
   // fisso al mese e il supplementare si conta su quello, non sulla settimana.
   const mensilizzato = !form.onCall && ccnlPreset.mensilizzato;
   const oreMensili = (weeklyHours * ccnlPreset.monthlyHoursFactor).toFixed(2).replace('.', ',');
-  // Ore di un giorno di assenza calcolate dal contratto, mostrate come
+  // Ore di una giornata non lavorata calcolate dal contratto, mostrate come
   // suggerimento accanto al campo che le può sovrascrivere.
   const oreAssenzaCalcolate = (
     minutiGiornoAssenza({
@@ -355,6 +414,13 @@ export default function Settings({ settings, onSave }) {
       workingDaysPerWeek: parseNum(form.workingDaysPerWeek),
     }) / 60
   ).toFixed(2).replace('.', ',');
+  // Fascia notturna del contratto scelto, e se quella impostata se ne discosta.
+  // Non si allinea da sola: chi ha copiato gli orari dal proprio cedolino ha
+  // ragione anche quando il contratto dice altro, e sovrascriverglieli in
+  // silenzio sarebbe il modo peggiore di «aiutarlo».
+  const fasciaCcnl = ccnlPreset.fasciaNotturna;
+  const fasciaDiversaDalCcnl = !!fasciaCcnl
+    && (form.nightStart !== fasciaCcnl.inizio || form.nightEnd !== fasciaCcnl.fine);
   const fullTimeWeeklyHours = parseNum(form.fullTimeWeeklyHours);
   const oreMensiliFullTime = (fullTimeWeeklyHours * ccnlPreset.monthlyHoursFactor).toFixed(2).replace('.', ',');
   // Soglia degli straordinari attiva solo se il full-time supera davvero le
@@ -575,8 +641,10 @@ export default function Settings({ settings, onSave }) {
                 placeholder="es. 30"
                 value={form.sundaySurchargePct || ''}
                 onChange={set('sundaySurchargePct')}
+                onBlur={controllaMagg('sundaySurchargePct')}
               />
             </div>
+            {avvisoMagg('sundaySurchargePct')}
           </div>
 
           <div className="form-group">
@@ -593,8 +661,10 @@ export default function Settings({ settings, onSave }) {
                 placeholder="es. 50"
                 value={form.holidaySurchargePct || ''}
                 onChange={set('holidaySurchargePct')}
+                onBlur={controllaMagg('holidaySurchargePct')}
               />
             </div>
+            {avvisoMagg('holidaySurchargePct')}
           </div>
 
           <div className="form-group">
@@ -626,8 +696,10 @@ export default function Settings({ settings, onSave }) {
                 placeholder="es. 20"
                 value={form.nightSurchargePct || ''}
                 onChange={set('nightSurchargePct')}
+                onBlur={controllaMagg('nightSurchargePct')}
               />
             </div>
+            {avvisoMagg('nightSurchargePct')}
             <p className="form-hint">
               Si applica <strong>alle sole ore che cadono nella fascia</strong>, non a tutto il
               turno: un 20:00–02:00 ha quattro ore notturne e due diurne. Lascia vuoto se il tuo
@@ -655,10 +727,33 @@ export default function Settings({ settings, onSave }) {
                     onChange={set('nightEnd')}
                   />
                 </div>
+                {fasciaCcnl && fasciaDiversaDalCcnl && (
+                  <p className="form-hint form-hint--warn">
+                    ⚠️ Il contratto <strong>{ccnlPreset.label}</strong> usa la fascia{' '}
+                    <strong>{fasciaCcnl.inizio}–{fasciaCcnl.fine}</strong>, diversa da quella
+                    qui sopra. Se l'hai copiata dal tuo cedolino tienila com'è — la busta
+                    batte il contratto. Altrimenti{' '}
+                    <button
+                      type="button"
+                      className="linklike"
+                      onClick={() => {
+                        setForm(f => ({ ...f, nightStart: fasciaCcnl.inizio, nightEnd: fasciaCcnl.fine }));
+                        setSaved(false);
+                      }}
+                    >
+                      usa quella del contratto
+                    </button>.
+                  </p>
+                )}
                 <p className="form-hint">
-                  22:00–06:00 su vigilanza, commercio e metalmeccanici. Nel <strong>turismo</strong>{' '}
-                  è 22:00–06:00 in generale, ma <strong>23:00–06:00</strong> per i lavoratori
-                  notturni di pubblici esercizi, ristorazione e alberghi.
+                  <strong>22:00–06:00</strong> è la fascia di legge, e vale per vigilanza,
+                  commercio e metalmeccanici.{' '}
+                  <strong>Nel turismo non è questa</strong>, e non lo è di sicuro: lì comincia
+                  più tardi e cambia da settore a settore — si trovano 23:00, 23:30 e 24:00 —
+                  e non coincide nemmeno fra i vari contratti firmati sotto quel nome. L'app
+                  parte dalle 23:00, che è il più prudente fra i valori plausibili.{' '}
+                  <strong>Copiala dal tuo cedolino</strong>: è l'unico posto dove il numero è
+                  quello vero.
                 </p>
               </div>
 
@@ -712,8 +807,10 @@ export default function Settings({ settings, onSave }) {
                 placeholder="es. 15"
                 value={form.overtimeSurchargePct || ''}
                 onChange={set('overtimeSurchargePct')}
+                onBlur={controllaMagg('overtimeSurchargePct')}
               />
             </div>
+            {avvisoMagg('overtimeSurchargePct')}
             <p className="form-hint">
               {form.onCall
                 ? `Applicata alle ore oltre le ${parseNum(form.dailyOvertimeThreshold) || 0}h giornaliere.`
@@ -741,8 +838,10 @@ export default function Settings({ settings, onSave }) {
                   placeholder="es. 30"
                   value={form.straordinarioSurchargePct}
                   onChange={set('straordinarioSurchargePct')}
+                onBlur={controllaMagg('straordinarioSurchargePct')}
                 />
               </div>
+            {avvisoMagg('straordinarioSurchargePct')}
               <p className="form-hint">
                 {haStraordinari
                   ? `Applicata alle ore oltre le ${mensilizzato ? `${oreMensiliFullTime}h del mese` : `${fullTimeWeeklyHours || 0}h settimanali`} full-time.`
@@ -757,9 +856,9 @@ export default function Settings({ settings, onSave }) {
         <details className="settings-section">
           <summary className="settings-section-title">🏖 Ferie, permessi e malattia</summary>
           <p className="settings-section-desc">
-            In busta un giorno di assenza vale un <strong>numero fisso di ore</strong>, non
-            l'orario che avresti fatto. Senza segnarle, le ore dell'app restano sotto quelle
-            del cedolino.
+            In busta una giornata di ferie, permesso, malattia o festività vale un
+            <strong> numero fisso di ore</strong>, non l'orario che avresti fatto. Senza
+            segnarle, le ore dell'app restano sotto quelle del cedolino.
           </p>
 
           <div className="form-row">
@@ -777,7 +876,7 @@ export default function Settings({ settings, onSave }) {
               />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="absence-hours-setting">Ore di un giorno di assenza</label>
+              <label className="form-label" htmlFor="absence-hours-setting">Ore di una giornata non lavorata</label>
               <input
                 id="absence-hours-setting"
                 type="number"
@@ -849,11 +948,16 @@ export default function Settings({ settings, onSave }) {
             </div>
           </div>
           <p className="form-hint form-hint--warn">
-            ⚠️ Questi valori <strong>non sono verificati su nessuna busta paga</strong>, a
-            differenza di contributi e aliquote fiscali: nessuno dei cedolini usati per tarare
-            l'app contiene malattia. La struttura è quella dello schema INPS (primi tre giorni
-            a parte), ma quanto paghi davvero dipende dal tuo CCNL. Controlla su una tua busta
-            con malattia e correggi qui.
+            ⚠️ Questi valori <strong>non sono verificati</strong>, a differenza di contributi e
+            aliquote fiscali. La struttura è quella dello schema INPS (primi giorni a parte), ma
+            quanto prendi davvero dipende dal contratto <em>e dall'azienda</em>.
+          </p>
+          <p className="form-hint">
+            I primi giorni sono proposti a <strong>0%</strong> perché molti contratti non li
+            pagano — ma <strong>certe aziende li pagano lo stesso</strong>, per scelta propria:
+            in due cedolini esaminati compare una voce «Carenza malattia» con un importo. Se hai
+            una busta con un periodo di malattia, guardala prima di lasciare zero: la differenza
+            su una settimana di malattia non è piccola.
           </p>
         </details>
 
@@ -1022,19 +1126,32 @@ export default function Settings({ settings, onSave }) {
             te lo chiede l'app al primo import da immagine (e potrai cambiarlo da lì).
           </p>
 
-          <label className="check-row">
-            <input
-              type="checkbox"
-              checked={form.telemetry}
-              onChange={(e) => { setTelemetryEnabled(e.target.checked); setForm(f => ({ ...f, telemetry: e.target.checked })); }}
-            />
-            <span>Invia statistiche anonime d'uso dell'import</span>
-          </label>
-          <p className="form-hint">
-            Solo il numero di token consumati e un identificativo casuale dell'installazione:
-            nessun turno, nessuna immagine, niente che ti identifichi. Serve a capire quanto
-            costa la funzione durante la beta.
-          </p>
+          {/* L'interruttore compare SOLO dove la telemetria esiste davvero (l'APK
+              di prova). Nel sito non c'è endpoint: mostrarlo lo stesso sarebbe un
+              comando che non governa niente e che lascia credere che qualcosa
+              parta. Vedi `telemetriaDisponibile` in services/telemetry.js. */}
+          {telemetriaDisponibile ? (
+            <>
+              <label className="check-row">
+                <input
+                  type="checkbox"
+                  checked={form.telemetry}
+                  onChange={(e) => { setTelemetryEnabled(e.target.checked); setForm(f => ({ ...f, telemetry: e.target.checked })); }}
+                />
+                <span>Invia statistiche anonime d'uso dell'import</span>
+              </label>
+              <p className="form-hint">
+                Solo il numero di token consumati e un identificativo casuale dell'installazione:
+                nessun turno, nessuna immagine, niente che ti identifichi. Serve a capire quanto
+                costa la funzione durante la beta.
+              </p>
+            </>
+          ) : (
+            <p className="form-hint">
+              Di questa app non viene raccolta nessuna statistica d'uso: né quante volte
+              importi, né quanto costa. Non c'è niente da spegnere.
+            </p>
+          )}
         </details>
 
         {/* Backup e ripristino: i dati vivono solo in localStorage */}
@@ -1084,7 +1201,31 @@ export default function Settings({ settings, onSave }) {
           />
 
           {backupMsg && (
-            <p className={backupMsg.errore ? 'ai-error' : 'form-hint'}>{backupMsg.testo}</p>
+            <p
+              className={backupMsg.errore ? 'ai-error' : (backupMsg.attenzione ? 'form-hint form-hint--warn' : 'form-hint')}
+              role="status"
+            >
+              {backupMsg.testo}
+            </p>
+          )}
+
+          {/* Seconda via, quando non sappiamo se il file è arrivato. Resta
+              visibile anche dopo aver copiato: se gli appunti non funzionano,
+              questo riquadro è tutto ciò che separa l'utente dalla perdita dei
+              dati, e nasconderlo per pulizia sarebbe la scelta sbagliata. */}
+          {backupTesto && (
+            <div className="backup-riserva">
+              <button type="button" className="btn-secondary" onClick={copiaBackup}>
+                📋 Copia il backup
+              </button>
+              <textarea
+                className="backup-riserva-testo"
+                readOnly
+                value={backupTesto}
+                aria-label="Backup in formato testo, da copiare a mano"
+                onFocus={(e) => e.target.select()}
+              />
+            </div>
           )}
         </details>
 
@@ -1530,6 +1671,15 @@ export default function Settings({ settings, onSave }) {
           <button type="submit" className="btn btn-primary btn--full">
             {saved ? '✓ Salvato!' : 'Salva impostazioni'}
           </button>
+          {/* Un'informativa che nessuno incontra non informa nessuno. Sta qui in
+              fondo alle impostazioni, che è dove la si cerca, e punta a una
+              pagina statica: resta leggibile anche se l'app è rotta.
+              `target="_blank"` per non far perdere le modifiche non salvate. */}
+          <p className="settings-privacy">
+            <a href="/privacy/" target="_blank" rel="noopener">
+              Come vengono trattati i tuoi dati
+            </a>
+          </p>
         </div>
       </form>
     </div>

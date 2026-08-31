@@ -4,9 +4,11 @@ import useLocalStorage from './hooks/useLocalStorage';
 import { getMonthStart, parseDate, payrollMonthKey } from './utils/dates';
 import { calcTotalPay, computePayByShift } from './utils/pay';
 import { isMensilizzato } from './utils/ccnl';
-import { monthlyBaseGross, receivedExtraMonthsCount } from './utils/net';
+import { computeAnnualGrossFromShifts, projectAnnualIncome } from './utils/net';
+import { ENABLE_NET_CALC, ENABLE_STATS } from './config/features';
 import { genId } from './utils/id';
 import CalendarView from './components/CalendarView';
+import StatsView from './components/StatsView';
 import Settings from './components/Settings';
 import ShiftForm from './components/ShiftForm';
 import NavBar from './components/NavBar';
@@ -26,8 +28,12 @@ const DEFAULT_SETTINGS = {
   // utils/notturno.js). 0 = spento, ed e' il default: chi non lo imposta ha il
   // motore identico a prima che esistesse.
   nightSurchargePct: 0,
-  nightStart: '22:00',
-  nightEnd: '06:00',
+  // Vuoto = la fascia la decide il CCNL (vedi `fasciaNotturnaRisolta`), e solo
+  // se il contratto non dice nulla si ripiega sulle 22:00–06:00 di legge.
+  // Scriverci '22:00' come faceva prima significava imporre a TUTTI la
+  // definizione di legge, che per il turismo è sbagliata.
+  nightStart: '',
+  nightEnd: '',
   nightCumuloMode: 'max',        // notturno vs domenica/festivo: 'max' | 'somma'
   patronSaintDate: '',           // santo patrono locale, formato 'MM-DD'
   priorTaxableIncome: 0,
@@ -69,14 +75,46 @@ const DEFAULT_SETTINGS = {
   malattiaCarenzaGiorni: 3,  // primi giorni di ogni evento pagati diversamente
   malattiaCarenzaPct: 0,     // % della paga in quei giorni
   malattiaPct: 100,          // % della paga dal giorno successivo
+  // Su quale periodo si contano ore e paga del mese: 'paga' = settimane intere
+  // come in busta (primo lunedì → domenica prima del primo lunedì dopo),
+  // 'calendario' = dal 1 all'ultimo del mese. Conta solo sui CCNL mensilizzati:
+  // altrove i due periodi coincidono già.
+  periodoConteggio: 'paga',
 };
 
 export default function App() {
-  const [shifts, setShifts] = useLocalStorage('turni_shifts', {});
-  const [storedSettings, setSettings] = useLocalStorage('turni_settings', DEFAULT_SETTINGS);
+  const [shifts, setShifts, erroreTurni] = useLocalStorage('turni_shifts', {});
+  const [storedSettings, setSettings, erroreImpostazioni] = useLocalStorage('turni_settings', DEFAULT_SETTINGS);
+  // Un solo avviso anche se falliscono entrambi: il guasto è lo stesso (lo
+  // storage non accetta scritture) e due banner identici uno sull'altro
+  // sembrerebbero due problemi diversi. Vincono i turni, che sono la cosa che
+  // l'utente ha inserito a mano.
+  const erroreSalvataggio = erroreTurni || erroreImpostazioni;
   const [view, setView] = useState('calendar');
   const [currentMonth, setCurrentMonth] = useState(() => getMonthStart(new Date()));
   const [modal, setModal] = useState(null); // null | {type:'add',date} | {type:'edit',shift}
+  // Giorno su cui atterrare arrivando dal calendarietto di Statistiche.
+  const [focusDate, setFocusDate] = useState(null);
+
+  // Sfogliare i mesi spegne l'evidenziazione: il giorno tappato non è più
+  // quello che si sta guardando, e una cella accesa in un altro mese sarebbe
+  // solo un residuo da capire.
+  const goToMonth = useCallback((m) => { setFocusDate(null); setCurrentMonth(m); }, []);
+
+  // L'evidenziazione è un segnaposto per ritrovare il giorno appena tappato,
+  // non uno stato di selezione: il primo tocco successivo la spegne, ovunque
+  // cada. Senza, restava accesa fino al ricaricamento della pagina.
+  // Il listener parte sul giro dopo (setTimeout 0), altrimenti intercetterebbe
+  // lo stesso clic che l'ha accesa e la spegnerebbe all'istante.
+  useEffect(() => {
+    if (!focusDate) return undefined;
+    const spegni = () => setFocusDate(null);
+    const id = setTimeout(() => document.addEventListener('click', spegni, { once: true }), 0);
+    return () => {
+      clearTimeout(id);
+      document.removeEventListener('click', spegni);
+    };
+  }, [focusDate]);
 
   // I settings salvati da una versione precedente non hanno i campi aggiunti
   // dopo: senza questo merge resterebbero `undefined` e alcune funzioni si
@@ -95,6 +133,23 @@ export default function App() {
   const addShift = useCallback((shiftData) => {
     const id = genId();
     setShifts(prev => ({ ...prev, [id]: { ...shiftData, id } }));
+  }, [setShifts]);
+
+  // Molte giornate in UNA scrittura sola, e nella stessa passata via i turni
+  // che quelle giornate coprono: non si puo' lavorare ed essere in ferie lo
+  // stesso giorno. Scriverle una per una farebbe altrettanti render e
+  // altrettanti salvataggi su localStorage.
+  const addShifts = useCallback((lista, idsDaRimuovere = []) => {
+    if (!lista?.length) return;
+    setShifts(prev => {
+      const next = { ...prev };
+      for (const id of idsDaRimuovere) delete next[id];
+      for (const dati of lista) {
+        const id = genId();
+        next[id] = { ...dati, id };
+      }
+      return next;
+    });
   }, [setShifts]);
 
   const updateShift = useCallback((shift) => {
@@ -140,8 +195,13 @@ export default function App() {
   // fine mese ma a fine settimana (vedi payrollMonthKey), quindi ore e
   // retribuzione del mese si contano su un insieme diverso da quello disegnato
   // sul calendario. Negli altri casi i due insiemi coincidono.
+  //
+  // `periodoConteggio` lascia scegliere: il mese di paga fa quadrare i conti
+  // con la busta, il mese di calendario risponde alla domanda «quanto ho
+  // lavorato a luglio». Sono due domande diverse ed entrambe legittime, e
+  // l'app non può decidere quale interessa oggi.
   const payrollShifts = useMemo(() => {
-    if (!isMensilizzato(settings)) return monthShifts;
+    if (!isMensilizzato(settings) || settings.periodoConteggio === 'calendario') return monthShifts;
     const key = `${currentMonth.getFullYear()}-${String(currentMonth.getMonth() + 1).padStart(2, '0')}`;
     return allShifts.filter(s => payrollMonthKey(s.date) === key);
   }, [allShifts, monthShifts, currentMonth, settings]);
@@ -153,42 +213,30 @@ export default function App() {
 
   const year = currentMonth.getFullYear();
 
-  // Reddito annuo lordo maturato dai turni dell'anno visualizzato,
-  // più il montante fiscale già maturato prima di usare l'app.
-  // Dipende dall'ANNO (non dal mese): navigare tra i mesi dello stesso anno non
-  // deve ricalcolare RAL e tasse.
-  const annualGross = useMemo(() => {
-    const y = year;
-    const yearShifts = allShifts.filter(s => parseDate(s.date).getFullYear() === y);
-    // Confine automatico a granularità MESE: il montante rappresenta il reddito fino
-    // al mese in cui è stato impostato. I turni dei mesi ≤ mese di riferimento sono già
-    // inclusi nel montante e NON vanno ri-sommati (evita il doppio conteggio); si
-    // contano solo quelli dei mesi successivi.
-    const montante = Number(settings.priorTaxableIncome) || 0;
-    const cutoff = settings.priorIncomeDate || '';
-    const cutoffMonth = cutoff.slice(0, 7); // 'YYYY-MM'
-    const sameYear = cutoff && Number(cutoff.slice(0, 4)) === y;
-    const useCutoff = montante > 0 && sameYear;
-    const counted = useCutoff ? yearShifts.filter(s => s.date.slice(0, 7) > cutoffMonth) : yearShifts;
-    // Contesto straordinari = TUTTI i turni, non solo quelli dell'anno: le
-    // settimane lun-dom a cavallo di capodanno vanno raggruppate per intero,
-    // altrimenti lo stesso mese vale una cifra qui e un'altra nel calendario.
-    const pay = calcTotalPay(counted, settings, allShifts, payByShift);
-    const fromShifts = pay ? pay.total : 0;
-    // Mensilità aggiuntive già incassate, in base alla data ODIERNA (non al mese
-    // che si sta sfogliando): altrimenti aprire dicembre farebbe risultare la
-    // tredicesima già presa, cambiando reddito annuo, aliquota e soglie bonus.
-    // Contano per il RATEO maturato, non per una mensilità piena: chi è assunto
-    // da sei mesi prende mezza quattordicesima.
-    const now = new Date();
-    let extras = 0;
-    if (y <= now.getFullYear()) {
-      const monthIndex = y < now.getFullYear() ? 11 : now.getMonth();
-      extras = monthlyBaseGross(settings) * receivedExtraMonthsCount(settings, monthIndex, y);
-    }
-    const applyMontante = montante > 0 && (!cutoff || sameYear);
-    return { total: fromShifts + (applyMontante ? montante : 0) + extras, extras };
-  }, [allShifts, settings, year, payByShift]);
+  // Reddito annuo lordo maturato dai turni dell'anno visualizzato, più il
+  // montante fiscale già maturato prima di usare l'app. Dipende dall'ANNO
+  // (non dal mese): navigare tra i mesi dello stesso anno non deve
+  // ricalcolare RAL e tasse. Stessa funzione usata dalla pagina Statistiche,
+  // per anni diversi: un'unica fonte evita che le due pagine mostrino cifre
+  // diverse per lo stesso anno (vedi `computeAnnualGrossFromShifts` in net.js).
+  const annualGross = useMemo(
+    () => computeAnnualGrossFromShifts(year, allShifts, settings, payByShift),
+    [allShifts, settings, year, payByShift],
+  );
+
+  // Reddito dell'anno PROIETTATO a dicembre, non quello incassato finora.
+  // Serve al riquadro del bonus: le soglie del trattamento integrativo valgono
+  // sull'anno intero, quindi «quanto posso ancora guadagnare» misurato sul
+  // maturato racconta un margine che non esiste — ad agosto direbbe che ci sono
+  // seimila euro di spazio mentre quattro mesi di stipendio se li mangiano
+  // comunque. È la stessa grandezza che usa la pagina Statistiche: passarla da
+  // qui è ciò che impedisce alle due schermate di dire numeri diversi.
+  const annualProjection = useMemo(
+    () => projectAnnualIncome(annualGross.total, annualGross.extras, settings, year, {
+      enableNetCalc: ENABLE_NET_CALC,
+    }),
+    [annualGross, settings, year],
+  );
 
   const importShifts = useCallback((parsedShifts) => {
     setShifts(prev => {
@@ -207,35 +255,75 @@ export default function App() {
     });
   }, [setShifts]);
 
-  const handleSaveShift = useCallback((shiftData) => {
-    if (modal?.type === 'add') addShift(shiftData);
-    else updateShift(shiftData);
+  // Il modale manda un turno solo (caso di sempre) oppure una LISTA piu' gli
+  // id da rimuovere, quando si segna un periodo di assenza.
+  const handleSaveShift = useCallback((dati, idsDaRimuovere = []) => {
+    if (Array.isArray(dati)) addShifts(dati, idsDaRimuovere);
+    else if (modal?.type === 'add') addShift(dati);
+    else updateShift(dati);
     setModal(null);
-  }, [modal, addShift, updateShift]);
+  }, [modal, addShift, addShifts, updateShift]);
 
   return (
     <div className="app">
       <NavBar view={view} onNavigate={setView} />
 
       <main className="main-content">
-        <SetupPrompt settings={settings} onNavigate={setView} />
+        {/* Il salvataggio non sta funzionando. Sta PRIMA di tutto il resto e non
+            si può chiudere: quello che si sta guardando è a schermo ma non su
+            disco, e nasconderlo riporterebbe l'app a mentire come faceva prima.
+            `role="alert"` perché venga annunciato anche da uno screen reader:
+            comparire in silenzio sarebbe la stessa cosa che non comparire. */}
+        {erroreSalvataggio && (
+          <div className="salvataggio-ko" role="alert">
+            <strong>⚠️ {erroreSalvataggio.testo}</strong>
+            <p>{erroreSalvataggio.rimedio}</p>
+            <button type="button" onClick={() => setView('settings')}>
+              Vai al backup
+            </button>
+          </div>
+        )}
+        <SetupPrompt settings={settings} onNavigate={setView} turniInseriti={allShifts.length} />
         <InstallPrompt />
         {view === 'calendar' && (
           <CalendarView
             currentMonth={currentMonth}
-            onMonthChange={setCurrentMonth}
+            onMonthChange={goToMonth}
+            focusDate={focusDate}
             shifts={monthShifts}
             payrollShifts={payrollShifts}
             onAddShift={(date) => setModal({ type: 'add', date })}
             onEditShift={(shift) => setModal({ type: 'edit', shift })}
             onImportShifts={importShifts}
+            onAddShifts={addShifts}
             settings={settings}
             onUpdateSettings={updateSettings}
             allShifts={allShifts}
             payByShift={payByShift}
             annualGross={annualGross.total}
+            annualProjection={annualProjection.value}
             annualExtras={annualGross.extras}
             onNavigate={setView}
+          />
+        )}
+
+        {ENABLE_STATS && view === 'stats' && (
+          <StatsView
+            allShifts={allShifts}
+            settings={settings}
+            payByShift={payByShift}
+            onNavigate={setView}
+            onOpenMonth={(y, m) => { setFocusDate(null); setCurrentMonth(new Date(y, m, 1)); setView('calendar'); }}
+            // Dal giorno del calendarietto si va al Calendario ESATTAMENTE su
+            // quel giorno: la cella si illumina e ci si scorre sopra. Atterrare
+            // sul mese e basta lasciava il lavoro a metà — toccava ricercare a
+            // mano il giorno appena tappato.
+            onOpenDay={(iso) => {
+              const d = parseDate(iso);
+              setCurrentMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+              setFocusDate(iso);
+              setView('calendar');
+            }}
           />
         )}
 
@@ -250,6 +338,7 @@ export default function App() {
         <ShiftForm
           modal={modal}
           settings={settings}
+          turni={allShifts}
           onSave={handleSaveShift}
           onDelete={(id) => { deleteShift(id); setModal(null); }}
           onClose={() => setModal(null)}
