@@ -85,8 +85,12 @@ export default function DatiMinimi({ settings, onSalva, onAnnulla }) {
 
           {chiedePaga && (
             <div className="form-group">
-              <label className="form-label" htmlFor="dm-paga">Quanto prendi all'ora?</label>
+              <label className="form-label" htmlFor="dm-paga">Quanto prendi all'ora? (€/ora)</label>
               <div className="input-with-symbol">
+                {/* Il simbolo va PRIMA e lungo un carattere: è posizionato in
+                    assoluto a sinistra, e l'input gli lascia 1,75rem di spazio.
+                    Metterlo dopo, o più lungo, lo fa finire sopra le cifre. */}
+                <span className="input-symbol">€</span>
                 <input
                   id="dm-paga"
                   className="form-input form-input--with-symbol"
@@ -97,7 +101,6 @@ export default function DatiMinimi({ settings, onSalva, onAnnulla }) {
                   placeholder="9,50"
                   autoFocus
                 />
-                <span className="input-symbol">€/ora</span>
               </div>
               <p className="form-hint">
                 La trovi in busta paga. Se non è precisa la cambi quando vuoi: i turni
@@ -121,19 +124,18 @@ export default function DatiMinimi({ settings, onSalva, onAnnulla }) {
               {!onCall && (
                 <>
                   <label className="form-label" htmlFor="dm-ore">Quante ore fai a settimana?</label>
-                  <div className="input-with-symbol">
-                    <input
-                      id="dm-ore"
-                      className="form-input form-input--with-symbol"
-                      type="text"
-                      inputMode="decimal"
-                      value={ore}
-                      onChange={(e) => { setOre(e.target.value); setErrore(null); }}
-                      placeholder="24"
-                      autoFocus={!chiedePaga}
-                    />
-                    <span className="input-symbol">ore</span>
-                  </div>
+                  {/* Niente simbolo: «ore» non entra nello spazio di un
+                      carattere, e l'etichetta lo dice già. */}
+                  <input
+                    id="dm-ore"
+                    className="form-input"
+                    type="text"
+                    inputMode="decimal"
+                    value={ore}
+                    onChange={(e) => { setOre(e.target.value); setErrore(null); }}
+                    placeholder="24"
+                    autoFocus={!chiedePaga}
+                  />
                   <p className="form-hint">
                     Quelle del contratto, non quelle che capita di fare. Servono per sapere
                     quando scattano le ore in più e quanto vale una giornata di ferie.

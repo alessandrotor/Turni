@@ -504,6 +504,7 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
               <p>{maggMancante.costo}</p>
               <div className="magg-avviso-riga">
                 <div className="input-with-symbol">
+                  <span className="input-symbol">%</span>
                   <input
                     className="form-input form-input--with-symbol"
                     type="text"
@@ -513,7 +514,6 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
                     placeholder={String(maggMancante.tipico)}
                     aria-label="Percentuale di maggiorazione"
                   />
-                  <span className="input-symbol">%</span>
                 </div>
                 <button type="button" className="btn btn-primary" onClick={impostaMagg}>
                   Imposta

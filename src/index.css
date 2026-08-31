@@ -2571,7 +2571,7 @@ input, select, textarea { font: inherit; }
   padding: 12px 14px;
   margin-top: 12px;
 }
-.contratto-avviso-testo { flex: 1 1 220px; }
+.contratto-avviso-testo { flex: 1 1 200px; min-width: 0; }
 .contratto-avviso strong {
   display: block;
   font-size: .9rem;
@@ -2607,9 +2607,17 @@ input, select, textarea { font: inherit; }
   gap: 8px;
   align-items: stretch;
   margin-bottom: 8px;
+  /* Su schermi molto stretti campo e pulsante vanno a capo invece di uscire
+     dallo schermo: un pulsante che si vede a metà non si preme. */
+  flex-wrap: wrap;
 }
-.magg-avviso-riga .input-with-symbol { flex: 1; }
-.magg-avviso-riga .btn { min-height: 44px; white-space: nowrap; }
+/* `min-width: 0` non è una rifinitura: senza, un <input> dentro un flex NON
+   scende sotto la propria larghezza intrinseca (~180px), e insieme al pulsante
+   `nowrap` la riga esce dal telefono. Firefox lo rispetta più rigidamente di
+   Chrome, ed è il motivo per cui il difetto si vedeva solo lì. */
+.magg-avviso-riga .input-with-symbol { flex: 1 1 130px; min-width: 0; }
+.magg-avviso-riga .input-with-symbol .form-input { width: 100%; min-width: 0; }
+.magg-avviso-riga .btn { min-height: 44px; flex: 0 1 auto; }
 .magg-avviso .linklike { font-size: .78rem; }
 
 /* Voce evidenziata dalle frecce nella tendina del contratto: senza, muovere la
@@ -2617,3 +2625,11 @@ input, select, textarea { font: inherit; }
 .combobox-option.is-evidenziata {
   background: var(--c-primary-light);
 }
+
+/* ── Rete di sicurezza sugli input dentro i flex ─────────────────────
+   Un <input> ha una larghezza intrinseca di circa 180px e, dentro un flex,
+   non scende sotto quella se non glielo si dice. È il modo più comune di far
+   uscire un campo dallo schermo su un telefono stretto, e non si vede finché
+   non si prova su un telefono stretto. */
+.form-group .input-with-symbol { min-width: 0; }
+.form-input { min-width: 0; max-width: 100%; }
