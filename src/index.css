@@ -2491,3 +2491,68 @@ input, select, textarea { font: inherit; }
   color: var(--c-muted);
   font-style: italic;
 }
+
+/* ── Il salvataggio non funziona ────────────────────────────────────
+   Non è un avviso fra gli altri: dice che quello che si vede a schermo NON è
+   sul disco. Per questo sta in cima al contenuto, non si chiude, e usa il
+   rosso del sistema invece dell'arancione degli avvisi — l'arancione qui
+   sarebbe una cortesia fuori luogo. */
+.salvataggio-ko {
+  background: var(--c-danger-light);
+  border: 1px solid var(--c-danger);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.salvataggio-ko strong {
+  display: block;
+  color: var(--c-danger);
+  font-size: .9rem;
+  line-height: 1.35;
+}
+.salvataggio-ko p {
+  margin: 6px 0 10px;
+  font-size: .82rem;
+  color: var(--c-text-2);
+  line-height: 1.4;
+}
+.salvataggio-ko button {
+  background: var(--c-danger);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  /* 44px di altezza minima: è un pulsante che si preme in un momento brutto,
+     su un telefono, e mancarlo peggiora le cose. */
+  min-height: 44px;
+  padding: 0 16px;
+  font: inherit;
+  font-size: .85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.salvataggio-ko button:hover { background: #b91c1c; }
+
+/* Consegna non verificabile: né successo né guasto. L'arancione degli avvisi,
+   non il rosso — chi legge deve controllare qualcosa, non spaventarsi. */
+.crash-esito--attenzione {
+  color: var(--c-warning);
+}
+
+/* Backup in chiaro, via di riserva quando il download non è verificabile. */
+.backup-riserva {
+  margin-top: 10px;
+}
+.backup-riserva-testo {
+  width: 100%;
+  min-height: 110px;
+  margin-top: 8px;
+  padding: 8px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .7rem;
+  line-height: 1.35;
+  color: var(--c-text-2);
+  background: var(--c-bg);
+  resize: vertical;
+}

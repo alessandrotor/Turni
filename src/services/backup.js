@@ -89,8 +89,15 @@ export async function esportaBackup() {
   const base64 = btoa(binario);
 
   const giorno = backup.esportatoIl.slice(0, 10);
-  await deliver(`Turni_backup_${giorno}.json`, base64, 'application/json');
-  return { turni: Object.keys(backup.turni).length };
+  const { esito } = await deliver(`Turni_backup_${giorno}.json`, base64, 'application/json');
+
+  // `esito` risale a chi chiama perché le parole da usare dipendono da lì: un
+  // backup «salvato» e uno «avviato ma non verificabile» non si annunciano allo
+  // stesso modo, ed è esattamente la distinzione che prima non esisteva.
+  // `testo` viaggia insieme così l'interfaccia può offrire la seconda via
+  // (copiarlo a mano) senza dover ricostruire il backup una seconda volta —
+  // che oltretutto, fra i due momenti, potrebbe non essere più identico.
+  return { turni: Object.keys(backup.turni).length, esito, testo };
 }
 
 // Controlla che il file sia davvero un backup di questa app prima di toccare

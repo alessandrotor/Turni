@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import { esportaBackup, costruisciBackup, contaTurniSalvati } from '../services/backup';
+import { ESITO } from '../services/export';
 
 // Rete di sicurezza attorno all'app.
 //
@@ -43,8 +44,29 @@ export default class ErrorBoundary extends Component {
   scarica = async () => {
     this.setState({ esito: { attesa: true } });
     try {
-      const { turni } = await esportaBackup();
-      this.setState({ esito: { testo: `Backup scaricato: ${turni} turni al sicuro.` } });
+      const { turni, esito, testo } = await esportaBackup();
+
+      // «Al sicuro» va detto solo quando lo sappiamo. Qui, più che altrove: chi
+      // legge questa schermata sta già guardando un'app rotta, e se prende per
+      // buona una rassicurazione falsa chiude tutto convinto di avere una
+      // copia. Con la consegna non verificabile si mostra subito il testo da
+      // copiare — la stessa via di riserva del caso peggiore, offerta prima che
+      // serva invece che dopo.
+      if (esito === ESITO.SALVATO) {
+        this.setState({ esito: { testo: `Backup salvato: ${turni} turni al sicuro.` } });
+      } else if (esito === ESITO.CONDIVISO) {
+        this.setState({ esito: { testo: `Backup di ${turni} turni pronto: controlla di averlo salvato dove volevi.` } });
+      } else if (esito === ESITO.ANNULLATO) {
+        this.setState({ esito: { attenzione: true, testo: 'Backup annullato: non è stato salvato niente. I tuoi dati sono ancora solo qui.' } });
+      } else {
+        this.setState({
+          esito: {
+            attenzione: true,
+            testo: `Backup di ${turni} turni avviato, ma il browser non conferma di averlo scaricato. Controlla fra i download; se non c'è, copia il testo qui sotto.`,
+          },
+          testoGrezzo: testo,
+        });
+      }
     } catch (err) {
       // Ultimo salvagente. `esportaBackup` passa da `deliver`, che su Android
       // carica i plugin Capacitor con import dinamici: in uno stato già rotto
@@ -113,7 +135,12 @@ export default class ErrorBoundary extends Component {
           </button>
 
           {esito?.testo && (
-            <p className={`crash-esito${esito.errore ? ' crash-esito--errore' : ''}`}>{esito.testo}</p>
+            <p
+              className={`crash-esito${esito.errore ? ' crash-esito--errore' : ''}${esito.attenzione ? ' crash-esito--attenzione' : ''}`}
+              role="status"
+            >
+              {esito.testo}
+            </p>
           )}
 
           {testoGrezzo && (

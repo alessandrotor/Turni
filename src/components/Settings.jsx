@@ -4,6 +4,7 @@ import { CCNL_LIST, getCcnl } from '../utils/ccnl';
 import { FASCE_DIPENDENTI, FASCIA_DEFAULT, contributiDiLegge } from '../utils/contributi-legge';
 import { isTelemetryEnabled, setTelemetryEnabled, telemetriaDisponibile } from '../services/telemetry';
 import { esportaBackup, importaBackup, contaTurniSalvati } from '../services/backup';
+import { ESITO } from '../services/export';
 import { elencoOrariDaCorreggere, applicaCorrezioneOrari } from '../services/correzioni';
 import { ENABLE_NET_CALC } from '../config/features';
 import { genId } from '../utils/id';
@@ -92,6 +93,9 @@ export default function Settings({ settings, onSave }) {
   // su localStorage). `turniSalvati` è letto una volta all'apertura della pagina.
   const [backupBusy, setBackupBusy] = useState(false);
   const [backupMsg, setBackupMsg] = useState(null);
+  // Il backup in chiaro, mostrato SOLO quando la consegna non è verificabile:
+  // è la via di riserva, non un'opzione da tenere sempre a schermo.
+  const [backupTesto, setBackupTesto] = useState(null);
   const backupInputRef = useRef(null);
   const [turniSalvati] = useState(contaTurniSalvati);
   // Turni con l'orario a :50 da correggere: letti una volta sola all'apertura,
@@ -194,16 +198,50 @@ export default function Settings({ settings, onSave }) {
     setSaved(false);
   };
 
+  // Le parole seguono quello che è successo DAVVERO, non l'assenza di errori.
+  // Prima si scriveva «Backup creato» in ogni caso, anche quando il browser
+  // aveva rifiutato il download in silenzio: chi lo leggeva restava senza copia
+  // e senza saperlo. Ora l'unico caso che promette qualcosa è quello in cui il
+  // file è stato scritto sotto i nostri occhi.
   async function handleEsportaBackup() {
     setBackupBusy(true);
     setBackupMsg(null);
+    setBackupTesto(null);
     try {
-      const { turni } = await esportaBackup();
-      setBackupMsg({ testo: `Backup creato: ${turni} turni salvati.` });
+      const { turni, esito, testo } = await esportaBackup();
+
+      if (esito === ESITO.SALVATO) {
+        setBackupMsg({ testo: `Backup salvato: ${turni} turni.` });
+      } else if (esito === ESITO.CONDIVISO) {
+        setBackupMsg({ testo: `Backup di ${turni} turni pronto. Controlla di averlo salvato dove volevi: finché resta solo fra i file temporanei, il telefono può cancellarlo.` });
+      } else if (esito === ESITO.ANNULLATO) {
+        setBackupMsg({ testo: 'Backup annullato: non è stato salvato nessun file.' });
+      } else {
+        // NON_VERIFICABILE: il download è partito, ma il browser non dice se è
+        // arrivato. Si chiede all'utente di guardare, e intanto gli si mette in
+        // mano la seconda via — che è l'unica cosa utile da fare qui.
+        setBackupMsg({
+          attenzione: true,
+          testo: `Backup di ${turni} turni avviato. Controlla che il file sia davvero fra i download: alcuni browser (Safari in modalità app, quelli dentro Instagram o Facebook) li bloccano senza dirlo. Se non lo trovi, copia il testo qui sotto e incollalo in una nota o in una mail.`,
+        });
+        setBackupTesto(testo);
+      }
     } catch (err) {
       setBackupMsg({ errore: true, testo: err.message || 'Impossibile creare il backup.' });
     } finally {
       setBackupBusy(false);
+    }
+  }
+
+  async function copiaBackup() {
+    try {
+      await navigator.clipboard.writeText(backupTesto);
+      setBackupMsg({ testo: 'Backup copiato: incollalo subito da qualche parte.' });
+    } catch {
+      // Gli appunti possono essere negati (permesso rifiutato, contesto non
+      // sicuro). Il riquadro di testo resta visibile e selezionabile a mano:
+      // è il motivo per cui non lo si nasconde dopo aver copiato.
+      setBackupMsg({ attenzione: true, testo: 'Non riesco a copiare da solo: seleziona il testo qui sotto e copialo a mano.' });
     }
   }
 
@@ -1163,7 +1201,31 @@ export default function Settings({ settings, onSave }) {
           />
 
           {backupMsg && (
-            <p className={backupMsg.errore ? 'ai-error' : 'form-hint'}>{backupMsg.testo}</p>
+            <p
+              className={backupMsg.errore ? 'ai-error' : (backupMsg.attenzione ? 'form-hint form-hint--warn' : 'form-hint')}
+              role="status"
+            >
+              {backupMsg.testo}
+            </p>
+          )}
+
+          {/* Seconda via, quando non sappiamo se il file è arrivato. Resta
+              visibile anche dopo aver copiato: se gli appunti non funzionano,
+              questo riquadro è tutto ciò che separa l'utente dalla perdita dei
+              dati, e nasconderlo per pulizia sarebbe la scelta sbagliata. */}
+          {backupTesto && (
+            <div className="backup-riserva">
+              <button type="button" className="btn-secondary" onClick={copiaBackup}>
+                📋 Copia il backup
+              </button>
+              <textarea
+                className="backup-riserva-testo"
+                readOnly
+                value={backupTesto}
+                aria-label="Backup in formato testo, da copiare a mano"
+                onFocus={(e) => e.target.select()}
+              />
+            </div>
           )}
         </details>
 

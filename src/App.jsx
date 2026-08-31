@@ -83,8 +83,13 @@ const DEFAULT_SETTINGS = {
 };
 
 export default function App() {
-  const [shifts, setShifts] = useLocalStorage('turni_shifts', {});
-  const [storedSettings, setSettings] = useLocalStorage('turni_settings', DEFAULT_SETTINGS);
+  const [shifts, setShifts, erroreTurni] = useLocalStorage('turni_shifts', {});
+  const [storedSettings, setSettings, erroreImpostazioni] = useLocalStorage('turni_settings', DEFAULT_SETTINGS);
+  // Un solo avviso anche se falliscono entrambi: il guasto è lo stesso (lo
+  // storage non accetta scritture) e due banner identici uno sull'altro
+  // sembrerebbero due problemi diversi. Vincono i turni, che sono la cosa che
+  // l'utente ha inserito a mano.
+  const erroreSalvataggio = erroreTurni || erroreImpostazioni;
   const [view, setView] = useState('calendar');
   const [currentMonth, setCurrentMonth] = useState(() => getMonthStart(new Date()));
   const [modal, setModal] = useState(null); // null | {type:'add',date} | {type:'edit',shift}
@@ -264,6 +269,20 @@ export default function App() {
       <NavBar view={view} onNavigate={setView} />
 
       <main className="main-content">
+        {/* Il salvataggio non sta funzionando. Sta PRIMA di tutto il resto e non
+            si può chiudere: quello che si sta guardando è a schermo ma non su
+            disco, e nasconderlo riporterebbe l'app a mentire come faceva prima.
+            `role="alert"` perché venga annunciato anche da uno screen reader:
+            comparire in silenzio sarebbe la stessa cosa che non comparire. */}
+        {erroreSalvataggio && (
+          <div className="salvataggio-ko" role="alert">
+            <strong>⚠️ {erroreSalvataggio.testo}</strong>
+            <p>{erroreSalvataggio.rimedio}</p>
+            <button type="button" onClick={() => setView('settings')}>
+              Vai al backup
+            </button>
+          </div>
+        )}
         <SetupPrompt settings={settings} onNavigate={setView} turniInseriti={allShifts.length} />
         <InstallPrompt />
         {view === 'calendar' && (
