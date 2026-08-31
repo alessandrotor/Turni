@@ -1,3 +1,5 @@
+import { ENABLE_STATS } from '../config/features';
+
 export default function NavBar({ view, onNavigate }) {
   return (
     <nav className="navbar">
@@ -13,13 +15,18 @@ export default function NavBar({ view, onNavigate }) {
           <span className="nav-icon">📅</span>
           <span>Calendario</span>
         </button>
-        <button
-          className={`nav-link ${view === 'stats' ? 'active' : ''}`}
-          onClick={() => onNavigate('stats')}
-        >
-          <span className="nav-icon">📊</span>
-          <span>Statistiche</span>
-        </button>
+        {/* Statistiche: pagina ancora da decidere, spenta di default.
+            Si toglie la VOCE, non solo la schermata: un pulsante che porta a
+            qualcosa che non c'è è peggio dell'assenza del pulsante. */}
+        {ENABLE_STATS && (
+          <button
+            className={`nav-link ${view === 'stats' ? 'active' : ''}`}
+            onClick={() => onNavigate('stats')}
+          >
+            <span className="nav-icon">📊</span>
+            <span>Statistiche</span>
+          </button>
+        )}
         <button
           className={`nav-link ${view === 'settings' ? 'active' : ''}`}
           onClick={() => onNavigate('settings')}

@@ -58,6 +58,11 @@ jobs:
         env:
           VITE_AI_PROXY_URL: ${{ vars.VITE_AI_PROXY_URL_TEST || vars.VITE_AI_PROXY_URL }}
           VITE_TURNSTILE_SITEKEY: ${{ vars.VITE_TURNSTILE_SITEKEY }}
+          # La pagina Statistiche è spenta di default (vedi src/config/features.js):
+          # il default vale per la PRODUZIONE, che si costruisce a mano e dove una
+          # variabile dimenticata non deve pubblicare una pagina non decisa. Qui
+          # invece si accende, perché i tester la devono vedere.
+          VITE_BETA_STATS: 'true'
 
       - name: Deploy su Pages (branch test)
         uses: cloudflare/wrangler-action@v3

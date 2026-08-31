@@ -5,7 +5,7 @@ import { getMonthStart, parseDate, payrollMonthKey } from './utils/dates';
 import { calcTotalPay, computePayByShift } from './utils/pay';
 import { isMensilizzato } from './utils/ccnl';
 import { computeAnnualGrossFromShifts, projectAnnualIncome } from './utils/net';
-import { ENABLE_NET_CALC } from './config/features';
+import { ENABLE_NET_CALC, ENABLE_STATS } from './config/features';
 import { genId } from './utils/id';
 import CalendarView from './components/CalendarView';
 import StatsView from './components/StatsView';
@@ -307,7 +307,7 @@ export default function App() {
           />
         )}
 
-        {view === 'stats' && (
+        {ENABLE_STATS && view === 'stats' && (
           <StatsView
             allShifts={allShifts}
             settings={settings}
