@@ -19,8 +19,14 @@ del server.
 **Legenda:** `[x]` chiusa e verificata · `[~]` il lavoro è fatto ma la prova va
 rifatta sul sito vero · `[ ]` da fare.
 
-**Stato al 31 agosto 2026: 2 chiuse, 3 a metà, 3 da fare** (la 8 nasce oggi,
-aperta).
+**Stato al 31 agosto 2026, dopo il deploy in produzione: 5 chiuse, 1 a metà,
+2 da fare.**
+Il sito è online con il lavoro di agosto — header, informativa vera, salvataggio
+che avverte quando fallisce — e questo ha chiuso la **3** e la **4**, verificate
+sul server e non sul repository. La **7** si è chiusa sul ramo che va davvero
+online. Restano la **6** (il giro su due computer e due telefoni) e la **8** (il
+salvataggio provato per davvero), più la **5** che aspetta un telefono vero.
+La pagina Statistiche NON è stata pubblicata: è spenta da `VITE_BETA_STATS`.
 La **5** (rete di sicurezza) è passata da «non cominciata» a fatta e provata:
 resta a metà solo perché manca il collaudo su un telefono vero. Quella che può
 ancora spostare il rilascio è la **4** (informativa), che aspetta il deploy
@@ -92,7 +98,7 @@ Questo file si cancella dopo la pubblicazione.
   > immagini per migliorare i propri servizi, e sono fogli turni con i nomi dei
   > colleghi. L'informativa deve dirlo.
 
-- [~] **3. Il sito manda gli header di sicurezza**, e girando per tutta l'app
+- [x] **3. Il sito manda gli header di sicurezza**, e girando per tutta l'app
       non compare nessun errore nella finestra degli errori.
 
   <details><summary>come si verifica</summary>
@@ -120,11 +126,22 @@ Questo file si cancella dopo la pubblicazione.
   > compreso un token Turnstile ottenuto per intero. La CSP è nata in sola
   > segnalazione ed è passata in vigore solo dopo quel giro.
   >
-  > **Non ancora in produzione**, dove il deploy è manuale: gli header partono
-  > col rilascio. La spunta si chiude **dopo** aver rifatto `curl -I` sul sito
-  > vero — non prima.
+  > **Chiusa il 31/08/2026, sul sito vero.** Dopo il deploy manuale in
+  > produzione, `curl -sI https://turni-9vr.pages.dev/` risponde con
+  > `content-security-policy`, `strict-transport-security` (max-age 31536000,
+  > includeSubDomains), `x-frame-options: DENY`, `x-content-type-options` e
+  > `referrer-policy`. Non dedotto dal repository: letto dal server.
+  >
+  > La SECONDA metà — il giro dei nove flussi con zero violazioni — resta quella
+  > del 19/08 sul sito di prova. La CSP servita è la stessa (viene dallo stesso
+  > `public/_headers`), quindi la spunta si chiude; ma se qualcuno rifà quel
+  > giro in produzione e trova una violazione, vince lui.
+  >
+  > **Da rifare dopo ogni deploy manuale**, come la 1 dopo ogni deploy del
+  > worker. E ricordare il corollario: `public/_headers` NON si applica dentro
+  > l'APK, dove non c'è un server Pages di mezzo (vedi ARRETRATI.md §E9).
 
-- [~] **4. L'informativa si apre da un indirizzo pubblico**, è collegata dentro
+- [x] **4. L'informativa si apre da un indirizzo pubblico**, è collegata dentro
       l'app, e dice il vero.
 
   <details><summary>come si verifica</summary>
@@ -160,7 +177,13 @@ Questo file si cancella dopo la pubblicazione.
   sbagliata è sempre la copia che legge l'utente.
   </details>
 
-  > **Oggi dice ancora il falso, in un altro punto — 31/08/2026.**
+  > **Pubblicata il 31/08/2026 e verificata nel CONTENUTO**, non nel codice
+  > HTTP: `curl -s https://turni-9vr.pages.dev/privacy/` contiene
+  > «identificativo di sessione» e il passaggio sull'uso dei contenuti da parte
+  > di Google sul piano gratuito. Resta da aprirla **dal telefono, partendo dal
+  > link dentro l'app**, e dalla PWA installata.
+  >
+  > **Ma dice ancora il falso in un altro punto — 31/08/2026.**
   > `docs/privacy.md:27-30` promette che «i tuoi turni spariscono e **non sono
   > recuperabili da nessuna parte**. Non esiste una copia altrove». Ma
   > `android/app/src/main/AndroidManifest.xml:5` lascia `allowBackup="true"`:
@@ -252,7 +275,7 @@ Questo file si cancella dopo la pubblicazione.
   > nulla perché il difetto è nel pacchetto) **e** la telemetria accesa. Vedi
   > `ARRETRATI.md` §B2.
 
-- [ ] **7. Gli script sulle buste reali passano sul codice che va online.**
+- [x] **7. Gli script sulle buste reali passano sul codice che va online.**
       Il calcolo della paga è stato toccato questa settimana: questa è l'unica
       prova che i numeri di chi usa già l'app non si sono mossi.
 
@@ -272,13 +295,16 @@ Questo file si cancella dopo la pubblicazione.
   Sul ramo che va online, non su quello di ieri.
   </details>
 
-  > **Verdi su `experimental` al 21/08/2026** — tredici script, compresi i
-  > quattro sulle buste reali. Ma «il ramo che va online» è `main` **dopo il
-  > merge di rilascio**, che non è ancora avvenuto: la spunta si chiude lì.
+  > **Chiusa il 31/08/2026 su `main`, dopo il merge di rilascio e prima del
+  > deploy**: 22 script, tutti verdi — non più tredici, perché nel frattempo
+  > sono arrivati i riscontri sulle buste 2026 (`check-buste-2026.mjs`, 60
+  > confronti a zero scarti su cinque cedolini), la tabella retributiva del
+  > turismo e la strada di consegna dei file.
   >
-  > Nel frattempo il motore è stato toccato altre due volte (maggiorazione
-  > notturna, e il 21 la previsione del reddito annuo), quindi questa verifica
-  > conta più di quanto contasse quando è stata scritta.
+  > **Da rifare a ogni merge di rilascio.** E vale ancora l'avvertenza di
+  > CLAUDE.md: `check-dati-in-uscita.mjs` esamina `dist/`, quindi va lanciato
+  > DOPO una build — senza, non fallisce ma non ha controllato niente
+  > (ARRETRATI.md §E8).
 
 - [ ] **8. Un turno inserito è davvero salvato, e il backup che l'app dice di
       aver scaricato esiste davvero.** Non «lo mostra a schermo»: è sul disco, e
