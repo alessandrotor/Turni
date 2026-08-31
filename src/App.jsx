@@ -14,6 +14,8 @@ import ShiftForm from './components/ShiftForm';
 import NavBar from './components/NavBar';
 import InstallPrompt from './components/InstallPrompt';
 import SetupPrompt from './components/SetupPrompt';
+import DatiMinimi from './components/DatiMinimi';
+import { haDatiMinimi } from './utils/configurazione';
 
 const DEFAULT_SETTINGS = {
   hourlyRate: 0,
@@ -35,6 +37,10 @@ const DEFAULT_SETTINGS = {
   nightStart: '',
   nightEnd: '',
   nightCumuloMode: 'max',        // notturno vs domenica/festivo: 'max' | 'somma'
+  // Maggiorazioni per cui l'utente ha risposto «non ne ho»: non gli vengono più
+  // chieste sul turno che le attiverebbe. È una sua scelta, non un contrassegno
+  // per riconoscerlo — sta qui come tutte le altre preferenze.
+  maggiorazioniNonDovute: [],
   patronSaintDate: '',           // santo patrono locale, formato 'MM-DD'
   priorTaxableIncome: 0,
   priorIncomeDate: '',       // data (ISO) in cui è stato impostato il montante (confine turni)
@@ -257,12 +263,37 @@ export default function App() {
 
   // Il modale manda un turno solo (caso di sempre) oppure una LISTA piu' gli
   // id da rimuovere, quando si segna un periodo di assenza.
-  const handleSaveShift = useCallback((dati, idsDaRimuovere = []) => {
+  const salvaDavvero = useCallback((dati, idsDaRimuovere = [], tipoModale) => {
     if (Array.isArray(dati)) addShifts(dati, idsDaRimuovere);
-    else if (modal?.type === 'add') addShift(dati);
+    else if (tipoModale === 'add') addShift(dati);
     else updateShift(dati);
+  }, [addShift, addShifts, updateShift]);
+
+  // Il primo turno non si salva senza paga e ore: sono gli unici due dati che
+  // non si possono rimandare senza conseguenze (vedi utils/configurazione.js).
+  // Il turno NON viene buttato — resta qui in attesa e si salva appena i dati
+  // arrivano, altrimenti chi ha appena compilato orari e pausa se li ritrova
+  // persi in cambio di una richiesta.
+  const [inAttesa, setInAttesa] = useState(null);
+
+  const handleSaveShift = useCallback((dati, idsDaRimuovere = []) => {
+    if (!haDatiMinimi(settings)) {
+      setInAttesa({ dati, idsDaRimuovere, tipoModale: modal?.type });
+      setModal(null);
+      return;
+    }
+    salvaDavvero(dati, idsDaRimuovere, modal?.type);
     setModal(null);
-  }, [modal, addShift, addShifts, updateShift]);
+  }, [modal, settings, salvaDavvero]);
+
+  // Dati minimi arrivati: si scrivono con updateSettings (una PATCH), mai con
+  // setSettings — quello sostituisce l'intero oggetto e porterebbe via i campi
+  // che questo modulo non conosce, com'è già successo a `periodoConteggio`.
+  const completaDatiMinimi = useCallback((patch) => {
+    updateSettings(patch);
+    if (inAttesa) salvaDavvero(inAttesa.dati, inAttesa.idsDaRimuovere, inAttesa.tipoModale);
+    setInAttesa(null);
+  }, [updateSettings, inAttesa, salvaDavvero]);
 
   return (
     <div className="app">
@@ -327,12 +358,25 @@ export default function App() {
           />
         )}
 
+        {/* `updateSettings` e non `setSettings`: la pagina Impostazioni
+            costruisce un oggetto con i propri campi, e sostituire l'intero
+            blocco portava via quelli che non conosce — `periodoConteggio`
+            tornava a «mese di paga» a ogni salvataggio, cancellando in silenzio
+            una scelta fatta dal calendario. */}
         {view === 'settings' && (
-          <Settings settings={settings} onSave={setSettings} />
+          <Settings settings={settings} onSave={updateSettings} />
         )}
 
         <footer className="app-footer">v{__APP_VERSION__}</footer>
       </main>
+
+      {inAttesa && (
+        <DatiMinimi
+          settings={settings}
+          onSalva={completaDatiMinimi}
+          onAnnulla={() => setInAttesa(null)}
+        />
+      )}
 
       {modal && (
         <ShiftForm
@@ -340,6 +384,7 @@ export default function App() {
           settings={settings}
           turni={allShifts}
           onSave={handleSaveShift}
+          onUpdateSettings={updateSettings}
           onDelete={(id) => { deleteShift(id); setModal(null); }}
           onClose={() => setModal(null)}
         />

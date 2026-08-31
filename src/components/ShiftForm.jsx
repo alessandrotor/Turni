@@ -3,6 +3,7 @@ import { formatDate, formatDayShort, parseDate, minutesDiff, formatMinutes } fro
 import { proponiPeriodo, totalePeriodo } from '../utils/periodo-assenza';
 import useModalDismiss from '../hooks/useModalDismiss';
 import { TIPO, ETICHETTA, ICONA, tipoTurno, isAssenza, minutiGiornoAssenza } from '../utils/assenze';
+import { maggiorazioneDaChiedere } from '../utils/configurazione';
 
 const TIPI = [TIPO.LAVORO, TIPO.FERIE, TIPO.PERMESSO, TIPO.MALATTIA, TIPO.FESTIVITA];
 
@@ -67,7 +68,7 @@ function getInitialState(modal, settings) {
   };
 }
 
-export default function ShiftForm({ modal, settings = {}, turni = [], onSave, onDelete, onClose }) {
+export default function ShiftForm({ modal, settings = {}, turni = [], onSave, onDelete, onClose, onUpdateSettings }) {
   // Stato iniziale calcolato una volta sola e condiviso dai due useState:
   // ricostruirlo per il secondo era lavoro sprecato a ogni mount del modale.
   const initial = useRef(null);
@@ -134,6 +135,37 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
   const handleSurchargePreset = (val) => {
     setCustomSurcharge(false);
     setForm(f => ({ ...f, surchargePct: val }));
+  };
+
+  // ── La maggiorazione chiesta sul turno che la attiva ──────────────────────
+  //
+  // Non è un controllo nuovo: `maggiorazioneDaChiedere` usa le stesse funzioni
+  // con cui il motore decide di pagarla (isSunday, isHoliday,
+  // toccaFasciaNotturna). Una regola scritta a parte finirebbe per comparire
+  // quando il motore non è d'accordo, che è peggio del non chiedere.
+  //
+  // NON blocca il salvataggio: il turno si salva comunque, e l'avviso dice cosa
+  // succede se si rimanda. Chi risponde «non ne ho» chiude la domanda per
+  // sempre — la scelta sta nei settings, come tutto il resto.
+  const [pctMagg, setPctMagg] = useState('');
+  const maggMancante = useMemo(
+    () => (onUpdateSettings ? maggiorazioneDaChiedere(
+      { date: form.date, startTime: form.startTime, endTime: form.endTime, type: form.kind },
+      settings,
+    ) : null),
+    [onUpdateSettings, form.date, form.startTime, form.endTime, form.kind, settings],
+  );
+
+  const impostaMagg = () => {
+    const v = Number(String(pctMagg).replace(',', '.'));
+    if (!Number.isFinite(v) || v <= 0) return;
+    onUpdateSettings({ [maggMancante.chiave]: v });
+    setPctMagg('');
+  };
+
+  const nonNeHo = () => {
+    const gia = Array.isArray(settings.maggiorazioniNonDovute) ? settings.maggiorazioniNonDovute : [];
+    onUpdateSettings({ maggiorazioniNonDovute: [...gia, maggMancante.tipo] });
   };
 
   const handleSubmit = (e) => {
@@ -465,6 +497,33 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
               />
             </div>
           </details>
+
+          {maggMancante && (
+            <div className="magg-avviso">
+              <strong>{maggMancante.titolo}</strong>
+              <p>{maggMancante.costo}</p>
+              <div className="magg-avviso-riga">
+                <div className="input-with-symbol">
+                  <input
+                    className="form-input form-input--with-symbol"
+                    type="text"
+                    inputMode="decimal"
+                    value={pctMagg}
+                    onChange={(e) => setPctMagg(e.target.value)}
+                    placeholder={String(maggMancante.tipico)}
+                    aria-label="Percentuale di maggiorazione"
+                  />
+                  <span className="input-symbol">%</span>
+                </div>
+                <button type="button" className="btn btn-primary" onClick={impostaMagg}>
+                  Imposta
+                </button>
+              </div>
+              <button type="button" className="linklike" onClick={nonNeHo}>
+                Non ne ho — non chiedermelo più
+              </button>
+            </div>
+          )}
 
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>

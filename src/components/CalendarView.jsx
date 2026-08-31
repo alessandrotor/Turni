@@ -9,6 +9,7 @@ import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { isMensilizzato } from '../utils/ccnl';
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
+import { contrattoMancante } from '../utils/configurazione';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../utils/assenze';
 import { EXTRA_MONTHS } from '../utils/net';
@@ -791,6 +792,27 @@ export default function CalendarView({
             </div>
           )}
         </div>
+
+        {/* Il contratto, chiesto dove c'è un importo da qualificare.
+            Non è una finestra: si legge, si sceglie o si lascia lì, e resta
+            finché il contratto manca. È l'unico parametro che sbaglia verso
+            l'ALTO — senza, il motore perde la mensilizzazione, il divisore
+            orario e i contributi minori — quindi la cifra sta nel messaggio:
+            «45 € in più del vero» si capisce, «configura il CCNL» no. */}
+        {pay !== null && contrattoMancante(settings) && (
+          <div className="contratto-avviso">
+            <div className="contratto-avviso-testo">
+              <strong>Sto contando con regole generiche</strong>
+              <p>
+                Il tuo contratto decide le ore del mese e i contributi. Senza, questo
+                totale è più alto del vero di circa 45 € al mese.
+              </p>
+            </div>
+            <button type="button" className="btn btn-primary" onClick={() => onNavigate?.('settings')}>
+              Scegli il contratto
+            </button>
+          </div>
+        )}
 
         {/* Esporta i turni del mese */}
         <div className="export-bar">
