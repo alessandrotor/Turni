@@ -1,9 +1,9 @@
-# Arretrati — quello che il cancello di rilascio non copre
+# Cose nuove — quello che il cancello di rilascio non copre
 
 **Stato al 31 agosto 2026.** Compagno di `RILASCIO.md`, non un suo doppione:
 quello si cancella dopo la pubblicazione, questo serve soprattutto dopo.
 
-`RILASCIO.md` fa sette domande sulla **pubblicazione** — proxy protetto, piano
+`RILASCIO.md` fa otto domande sulla **pubblicazione** — proxy protetto, piano
 Gemini, header, informativa, rete di sicurezza, deploy verificato, riscontri
 verdi. Qui c'è ciò che quelle sette non toccano: difetti del **prodotto**, del
 **calcolo** e della **conservazione dei dati**, trovati leggendo il codice e
@@ -407,7 +407,7 @@ principio che si indebolisce se ci si versa dentro quaranta voci di natura
 diversa — e si cancella dopo la pubblicazione, mentre questo serve soprattutto
 dopo.
 
-Proposta: un `ARRETRATI.md` accanto, che nasce da questo documento, con **tre**
+Proposta: un `COSE-NUOVE.md` accanto, che nasce da questo documento, con **tre**
 sole aggiunte a `RILASCIO.md`:
 
 1. punto **4** (informativa): la contraddizione `allowBackup` — quella domanda è

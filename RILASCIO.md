@@ -6,7 +6,7 @@ pubblica: si sposta.**
 *(Erano sette fino al 31 agosto. L'ottava — «il lavoro dell'utente è davvero
 salvato?» — è entrata dopo la lettura del codice: era l'unica famiglia di guasti
 capace di far perdere tutto senza un segnale, e nessuna delle altre sette la
-sfiorava. Il resto di quella lettura sta in `ARRETRATI.md`, che non è un cancello
+sfiorava. Il resto di quella lettura sta in `COSE-NUOVE.md`, che non è un cancello
 e non blocca niente.)*
 
 Non sono un elenco di lavori fatti: sono cose che devono risultare **vere**
@@ -139,7 +139,7 @@ Questo file si cancella dopo la pubblicazione.
   >
   > **Da rifare dopo ogni deploy manuale**, come la 1 dopo ogni deploy del
   > worker. E ricordare il corollario: `public/_headers` NON si applica dentro
-  > l'APK, dove non c'è un server Pages di mezzo (vedi ARRETRATI.md §E9).
+  > l'APK, dove non c'è un server Pages di mezzo (vedi COSE-NUOVE.md §E9).
 
 - [x] **4. L'informativa si apre da un indirizzo pubblico**, è collegata dentro
       l'app, e dice il vero.
@@ -198,7 +198,7 @@ Questo file si cancella dopo la pubblicazione.
   > include tutto anche nel trasferimento fra dispositivi.
   >
   > Si verifica per davvero solo con `adb shell bmgr backupnow <package>`, non
-  > deducendolo. Dettaglio in `ARRETRATI.md` §B1.
+  > deducendolo. Dettaglio in `COSE-NUOVE.md` §B1.
 
 - [~] **5. Nessun punto dell'app lascia lo schermo bianco**, e la schermata di
       errore permette di salvare i propri dati.
@@ -273,7 +273,7 @@ Questo file si cancella dopo la pubblicazione.
   > `VITE_TELEMETRY_URL` valorizzata: l'AAB che uscirebbe oggi ha l'import da
   > foto **morto al 100%** (403 «ricarica la pagina», consiglio che non risolve
   > nulla perché il difetto è nel pacchetto) **e** la telemetria accesa. Vedi
-  > `ARRETRATI.md` §B2.
+  > `COSE-NUOVE.md` §B2.
 
 - [x] **7. Gli script sulle buste reali passano sul codice che va online.**
       Il calcolo della paga è stato toccato questa settimana: questa è l'unica
@@ -304,7 +304,7 @@ Questo file si cancella dopo la pubblicazione.
   > **Da rifare a ogni merge di rilascio.** E vale ancora l'avvertenza di
   > CLAUDE.md: `check-dati-in-uscita.mjs` esamina `dist/`, quindi va lanciato
   > DOPO una build — senza, non fallisce ma non ha controllato niente
-  > (ARRETRATI.md §E8).
+  > (COSE-NUOVE.md §E8).
 
 - [ ] **8. Un turno inserito è davvero salvato, e il backup che l'app dice di
       aver scaricato esiste davvero.** Non «lo mostra a schermo»: è sul disco, e
@@ -347,7 +347,7 @@ Questo file si cancella dopo la pubblicazione.
   perché nessuna eccezione è stata lanciata.
   </details>
 
-  > **Aperta dal 31/08/2026.** Vedi `ARRETRATI.md` §A1 e §A2 — dove ci sono
+  > **Aperta dal 31/08/2026.** Vedi `COSE-NUOVE.md` §A1 e §A2 — dove ci sono
   > anche i sei difetti minori della stessa famiglia (ripristino senza
   > annullamento, backup che non valida il contenuto, correzione orari che si
   > perde alla prima modifica).
