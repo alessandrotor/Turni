@@ -5,9 +5,22 @@ import { readFileSync } from 'node:fs';
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url)));
 
+// Origine da cui il sito verrà servito. Finisce nei meta dell'anteprima del
+// link, che i crawler leggono senza eseguire JavaScript e senza risolvere
+// percorsi relativi: deve essere assoluta e deve essere QUELLA GIUSTA per
+// l'ambiente. Il default è la produzione; il sito di prova la sovrascrive dal
+// workflow (.github/workflows/deploy-test.yml).
+const SITE_URL = (process.env.VITE_SITE_URL || 'https://turni-9vr.pages.dev').replace(/\/$/, '');
+
 export default defineConfig({
   plugins: [
     react(),
+    {
+      // Sostituzione a build time, non a runtime: l'anteprima la legge un
+      // crawler, che il JavaScript non lo esegue.
+      name: 'origine-nei-meta',
+      transformIndexHtml: (html) => html.replaceAll('__SITE_URL__', SITE_URL),
+    },
     VitePWA({
       // La registrazione del service worker la facciamo a mano in src/main.jsx,
       // SOLO su web: nella WebView dell'APK Capacitor un SW servirebbe asset

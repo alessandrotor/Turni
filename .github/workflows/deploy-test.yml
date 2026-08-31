@@ -63,6 +63,10 @@ jobs:
           # variabile dimenticata non deve pubblicare una pagina non decisa. Qui
           # invece si accende, perché i tester la devono vedere.
           VITE_BETA_STATS: 'true'
+          # L'anteprima del link deve puntare a QUESTO sito, non alla
+          # produzione: altrimenti un link di prova condiviso in chat mostra
+          # (o non mostra) l'immagine di un altro ambiente.
+          VITE_SITE_URL: 'https://test.turni-9vr.pages.dev'
 
       - name: Deploy su Pages (branch test)
         uses: cloudflare/wrangler-action@v3

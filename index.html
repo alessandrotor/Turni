@@ -11,18 +11,33 @@
          condiviso in chat compare come una riga blu anonima, che è il modo più
          veloce per farlo scambiare per spam. `og:image` DEVE essere un URL
          assoluto: i crawler non risolvono i percorsi relativi. Questi tag
-         finiscono anche dentro l'APK, dove sono inerti. -->
+         finiscono anche dentro l'APK, dove sono inerti.
+
+         __SITE_URL__ lo sostituisce vite.config.js con l'origine da cui il sito
+         viene servito. Prima qui c'era scritto a mano l'indirizzo di
+         PRODUZIONE, e il sito di prova finiva per dichiarare un'immagine
+         ospitata altrove: dal 17 al 31 agosto quell'altrove rispondeva 404,
+         perché la produzione non era mai stata aggiornata, e ogni link del sito
+         di prova condiviso in chat usciva senza anteprima. Un indirizzo fisso
+         in un file che viene distribuito su più ambienti è sempre sbagliato in
+         tutti tranne uno. -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Turni" />
     <meta property="og:title" content="Turni — calendario e stipendio netto" />
     <meta property="og:description" content="Segna i turni, conta le ore e stima lo stipendio netto: maggiorazioni notturne, festive e domenicali comprese." />
-    <meta property="og:image" content="https://turni-9vr.pages.dev/og-image.png" />
+    <meta property="og:image" content="__SITE_URL__/og-image.png" />
+    <!-- `secure_url` e `type` non sono decorazioni: alcuni client li pretendono
+         espliciti invece di dedurli dall'URL, e quando mancano ripiegano
+         sull'anteprima piccola senza immagine. -->
+    <meta property="og:image:secure_url" content="__SITE_URL__/og-image.png" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1470" />
     <meta property="og:image:height" content="771" />
     <meta property="og:image:alt" content="Turni — calendario dei turni e stima dello stipendio netto" />
-    <meta property="og:url" content="https://turni-9vr.pages.dev" />
+    <meta property="og:url" content="__SITE_URL__" />
     <meta property="og:locale" content="it_IT" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="__SITE_URL__/og-image.png" />
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
