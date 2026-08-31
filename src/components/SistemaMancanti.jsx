@@ -16,19 +16,34 @@ export default function SistemaMancanti({ settings, onSalva, onChiudi, onVaiAImp
   const dialogRef = useRef(null);
   useModalDismiss(dialogRef, onChiudi);
 
-  const voci = consigliatiMancanti(settings);
-  const [valori, setValori] = useState({});
+  // Ogni voce può portarsi dietro un campo che si legge sulla stessa riga della
+  // busta: chiederne uno solo manderebbe a guardare due volte lo stesso foglio.
+  const campi = consigliatiMancanti(settings).flatMap((v) => [
+    { chiave: v.chiave, etichetta: v.etichettaCampo || v.etichetta, tipico: v.tipico, perche: v.perche },
+    ...(v.insieme || []).map((x) => ({ ...x, perche: null })),
+  ]);
+
+  // I campi che hanno già un valore partono da quello: sono da confermare, non
+  // da riscrivere a memoria.
+  const [valori, setValori] = useState(() => {
+    const iniziali = {};
+    for (const c of campi) {
+      const attuale = settings[c.chiave];
+      if (Number(attuale) > 0) iniziali[c.chiave] = String(attuale).replace('.', ',');
+    }
+    return iniziali;
+  });
 
   const scrivi = (chiave, v) => setValori((p) => ({ ...p, [chiave]: v }));
 
   const salva = (e) => {
     e.preventDefault();
     const patch = {};
-    for (const v of voci) {
-      const n = parseNum(valori[v.chiave]);
+    for (const c of campi) {
+      const n = parseNum(valori[c.chiave]);
       // Solo i campi compilati: lasciarne uno vuoto è una risposta legittima
       // («non ce l'ho»), e scriverci zero sarebbe la stessa cosa di prima.
-      if (n > 0) patch[v.chiave] = n;
+      if (n > 0) patch[c.chiave] = n;
     }
     onSalva(patch);
   };
@@ -46,22 +61,22 @@ export default function SistemaMancanti({ settings, onSalva, onChiudi, onVaiAImp
             Li trovi in busta paga. Quelli che non hai, lasciali vuoti.
           </p>
 
-          {voci.map((v) => (
-            <div className="form-group" key={v.chiave}>
-              <label className="form-label" htmlFor={`sm-${v.chiave}`}>{v.etichetta}</label>
+          {campi.map((c) => (
+            <div className="form-group" key={c.chiave}>
+              <label className="form-label" htmlFor={`sm-${c.chiave}`}>{c.etichetta}</label>
               <div className="input-with-symbol">
                 <span className="input-symbol">%</span>
                 <input
-                  id={`sm-${v.chiave}`}
+                  id={`sm-${c.chiave}`}
                   className="form-input form-input--with-symbol"
                   type="text"
                   inputMode="decimal"
-                  value={valori[v.chiave] ?? ''}
-                  onChange={(e) => scrivi(v.chiave, e.target.value)}
-                  placeholder={String(v.tipico ?? '')}
+                  value={valori[c.chiave] ?? ''}
+                  onChange={(e) => scrivi(c.chiave, e.target.value)}
+                  placeholder={String(c.tipico ?? '')}
                 />
               </div>
-              <p className="form-hint">{v.perche}</p>
+              {c.perche && <p className="form-hint">{c.perche}</p>}
             </div>
           ))}
 

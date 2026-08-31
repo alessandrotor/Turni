@@ -144,39 +144,47 @@ export function maggiorazioneDaChiedere(shift, settings = {}) {
 // più o di meno cambia cosa te ne fai del numero che vedi.
 const CONSIGLIATI = [
   {
-    chiave: 'sundaySurchargePct',
-    etichetta: 'Maggiorazione domenicale',
-    tipico: '10',
+    chiave: 'overtimeSurchargePct',
+    etichetta: 'Ore in più',
+    tipico: '30',
     direzione: 'meno',
-    perche: 'Senza, le domeniche valgono come un giorno qualsiasi: circa 12 € in meno al mese.',
+    // In busta hanno due nomi diversi a seconda di dove cadono, e l'utente li
+    // legge lì: dirglielo qui evita che cerchi una voce che non trova.
+    perche: 'Le ore oltre il tuo orario. In busta si chiamano «supplementari» finché stai sotto il full-time, «straordinari» oltre.',
   },
   {
     chiave: 'nightSurchargePct',
-    etichetta: 'Maggiorazione notturna',
+    etichetta: 'Lavoro notturno',
     tipico: '25',
     direzione: 'meno',
-    perche: 'È quella che pesa di più: circa 38 € in meno al mese per chi fa qualche notte.',
+    perche: 'È quella che pesa di più: circa 38 € al mese per chi fa qualche notte.',
+  },
+  {
+    chiave: 'sundaySurchargePct',
+    etichetta: 'Domeniche',
+    tipico: '10',
+    direzione: 'meno',
+    perche: 'Senza, una domenica vale come un giorno qualsiasi.',
   },
   {
     chiave: 'holidaySurchargePct',
-    etichetta: 'Maggiorazione festivi',
+    etichetta: 'Giorni festivi',
     tipico: '20',
     direzione: 'meno',
-    perche: 'I giorni festivi lavorati valgono come gli altri.',
-  },
-  {
-    chiave: 'overtimeSurchargePct',
-    etichetta: 'Maggiorazione supplementari',
-    tipico: '30',
-    direzione: 'meno',
-    perche: 'Le ore oltre il tuo orario vengono pagate come le altre.',
+    perche: 'Vale per i festivi lavorati, non per le domeniche.',
   },
   {
     chiave: 'addComunalePct',
-    etichetta: 'Addizionale comunale',
+    etichetta: 'Addizionali IRPEF',
     tipico: '0,8',
     direzione: 'piu',
-    perche: 'Senza, il netto stimato è più alto del vero: fino a circa 17 € al mese insieme alla regionale.',
+    perche: 'Dipendono da dove abiti e si trovano in busta. Senza, il netto risulta più alto del vero.',
+    // La regionale ha un valore di ripiego plausibile (1,23%, il minimo della
+    // forbice) quindi non risulta mai «mancante» — ma si legge sulla stessa
+    // riga della busta, e chiederne una sola manda l'utente a guardare due
+    // volte lo stesso foglio.
+    insieme: [{ chiave: 'addRegionalePct', etichetta: 'Addizionale regionale', tipico: '1,23' }],
+    etichettaCampo: 'Addizionale comunale',
   },
 ];
 
