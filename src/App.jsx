@@ -15,6 +15,7 @@ import NavBar from './components/NavBar';
 import InstallPrompt from './components/InstallPrompt';
 import SetupPrompt from './components/SetupPrompt';
 import DatiMinimi from './components/DatiMinimi';
+import SistemaMancanti from './components/SistemaMancanti';
 import { haDatiMinimi } from './utils/configurazione';
 
 const DEFAULT_SETTINGS = {
@@ -275,6 +276,7 @@ export default function App() {
   // arrivano, altrimenti chi ha appena compilato orari e pausa se li ritrova
   // persi in cambio di una richiesta.
   const [inAttesa, setInAttesa] = useState(null);
+  const [sistemaAperto, setSistemaAperto] = useState(false);
 
   const handleSaveShift = useCallback((dati, idsDaRimuovere = []) => {
     if (!haDatiMinimi(settings)) {
@@ -314,7 +316,12 @@ export default function App() {
             </button>
           </div>
         )}
-        <SetupPrompt settings={settings} onNavigate={setView} turniInseriti={allShifts.length} />
+        <SetupPrompt
+          settings={settings}
+          onNavigate={setView}
+          onSistema={() => setSistemaAperto(true)}
+          turniInseriti={allShifts.length}
+        />
         <InstallPrompt />
         {view === 'calendar' && (
           <CalendarView
@@ -369,6 +376,15 @@ export default function App() {
 
         <footer className="app-footer">v{__APP_VERSION__}</footer>
       </main>
+
+      {sistemaAperto && (
+        <SistemaMancanti
+          settings={settings}
+          onSalva={(patch) => { updateSettings(patch); setSistemaAperto(false); }}
+          onChiudi={() => setSistemaAperto(false)}
+          onVaiAImpostazioni={() => { setSistemaAperto(false); setView('settings'); }}
+        />
+      )}
 
       {inAttesa && (
         <DatiMinimi

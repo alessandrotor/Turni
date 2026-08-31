@@ -414,15 +414,15 @@ export default function Settings({ settings, onSave }) {
           <strong>Cosa manca per conti attendibili</strong>
           <ul>
             {statoConfig.minimiMancanti.includes('hourlyRate') && (
-              <li><b>Paga oraria</b> — senza, non c'è nessun importo da mostrare.</li>
+              <li><b>Paga oraria</b> — senza, non c'è nessun importo.</li>
             )}
             {statoConfig.minimiMancanti.includes('expectedWeeklyHours') && (
-              <li><b>Ore settimanali</b> — reggono le ore in più e quanto vale una giornata di ferie.</li>
+              <li><b>Ore settimanali</b> — reggono le ore in più e le giornate di ferie.</li>
             )}
             {statoConfig.contrattoMancante && (
               <li>
-                <b>Contratto</b> — decide le ore del mese e i contributi.
-                <em> Senza, i conti risultano più alti del vero di circa 45 € al mese.</em>
+                <b>Contratto</b> — decide ore del mese e contributi.
+                <em> Senza, conto ~45 € al mese in più del vero.</em>
               </li>
             )}
             {statoConfig.consigliatiMancanti.map((c) => (
@@ -432,9 +432,7 @@ export default function Settings({ settings, onSave }) {
             ))}
           </ul>
           <p className="cosa-manca-nota">
-            Si possono sistemare quando vuoi: i turni già segnati vengono ricalcolati
-            da soli. L'unica eccezione sono le ore settimanali, che decidono la durata
-            delle giornate di ferie nel momento in cui le segni.
+            Sistemale quando vuoi: i turni già segnati si ricalcolano da soli.
           </p>
         </div>
       )}
@@ -1255,10 +1253,6 @@ export default function Settings({ settings, onSave }) {
           </details>
         )}
 
-        {/* ══ AVANZATE — fisco e dettagli ═════════════════════════ */}
-        <details className="settings-advanced">
-          <summary className="settings-advanced-title">⚙️ Avanzate — fisco e dettagli</summary>
-
         {/* Tredicesima e quattordicesima */}
         <details className="settings-section">
           <summary className="settings-section-title">🎁 Tredicesima e quattordicesima</summary>
@@ -1318,6 +1312,11 @@ export default function Settings({ settings, onSave }) {
             </div>
           )}
         </details>
+
+        {/* ══ AVANZATE — fisco e dettagli ═════════════════════════ */}
+        <details className="settings-advanced">
+          <summary className="settings-advanced-title">⚙️ Avanzate — fisco e dettagli</summary>
+
 
         {/* TFR in busta */}
         <details className="settings-section">

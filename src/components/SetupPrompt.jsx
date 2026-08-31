@@ -33,7 +33,7 @@ const scriviFlag = (k, v) => {
 // compiti si chiude senza leggerlo.
 const DA_NOMINARE = 2;
 
-export default function SetupPrompt({ settings, onNavigate, turniInseriti = 0 }) {
+export default function SetupPrompt({ settings, onNavigate, onSistema, turniInseriti = 0 }) {
   const [show, setShow] = useState(false);
   // Chiuso in QUESTA sessione: vale fino alla prossima apertura, qualunque cosa
   // succeda ai turni nel frattempo. Senza, tornerebbe a ogni turno aggiunto,
@@ -61,8 +61,8 @@ export default function SetupPrompt({ settings, onNavigate, turniInseriti = 0 })
     setShow(false);
   };
 
-  const vaiAImpostazioni = () => {
-    onNavigate('settings');
+  const sistema = () => {
+    onSistema();
     setShow(false);
   };
 
@@ -74,10 +74,10 @@ export default function SetupPrompt({ settings, onNavigate, turniInseriti = 0 })
   const soloMeno = nominate.every((c) => c.direzione === 'meno');
   const soloPiu = nominate.every((c) => c.direzione === 'piu');
   const verso = soloMeno
-    ? 'Finché mancano, i conti risultano più bassi del vero.'
+    ? 'Senza, conto meno del vero.'
     : soloPiu
-      ? 'Finché mancano, il netto risulta più alto del vero.'
-      : 'Finché mancano, i conti non tornano con la busta.';
+      ? 'Senza, il netto risulta più alto del vero.'
+      : 'Senza, i conti non tornano con la busta.';
 
   return (
     <div className="install-banner">
@@ -92,7 +92,7 @@ export default function SetupPrompt({ settings, onNavigate, turniInseriti = 0 })
           {altre > 0 && ` e altre ${altre}`}. {verso}
         </span>
       </div>
-      <button className="btn btn-primary install-banner-btn" onClick={vaiAImpostazioni}>
+      <button className="btn btn-primary install-banner-btn" onClick={sistema}>
         Sistemale
       </button>
       <button className="install-banner-close" onClick={dismiss} aria-label="Chiudi">✕</button>
