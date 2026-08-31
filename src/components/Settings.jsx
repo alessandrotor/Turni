@@ -6,6 +6,7 @@ import { isTelemetryEnabled, setTelemetryEnabled, telemetriaDisponibile } from '
 import { esportaBackup, importaBackup, contaTurniSalvati } from '../services/backup';
 import { ESITO } from '../services/export';
 import CcnlPicker from './CcnlPicker';
+import { statoConfigurazione } from '../utils/configurazione';
 import { elencoOrariDaCorreggere, applicaCorrezioneOrari } from '../services/correzioni';
 import { ENABLE_NET_CALC } from '../config/features';
 import { genId } from '../utils/id';
@@ -366,6 +367,10 @@ export default function Settings({ settings, onSave }) {
   // 0,2666… non va mostrato per intero: due decimali bastano, e gli interi
   // restano interi (0,30 e non 0,3000).
   const fmtPct = (pct) => String(Number(Number(pct).toFixed(2))).replace('.', ',');
+  // Dai settings salvati, non dal form: un elenco che cambia mentre si digita
+  // è rumore, e per di più direbbe «sistemato» prima che lo sia davvero.
+  const statoConfig = statoConfigurazione(settings);
+
   const hourlyRate = parseNum(form.hourlyRate);
   const weeklyHours = parseNum(form.expectedWeeklyHours);
   const weeklyPay = hourlyRate * weeklyHours;
@@ -399,6 +404,40 @@ export default function Settings({ settings, onSave }) {
   return (
     <div className="settings-page">
       <h1 className="page-title">Impostazioni</h1>
+
+      {/* Quello che manca, generato dalla stessa funzione che governa gli
+          avvisi altrove (utils/configurazione.js). Un elenco scritto a mano qui
+          dentro invecchierebbe al primo campo aggiunto, e direbbe il falso
+          proprio nella pagina dove si va per sistemare le cose. */}
+      {statoConfig.quanteMancano > 0 && (
+        <div className="cosa-manca">
+          <strong>Cosa manca per conti attendibili</strong>
+          <ul>
+            {statoConfig.minimiMancanti.includes('hourlyRate') && (
+              <li><b>Paga oraria</b> — senza, non c'è nessun importo da mostrare.</li>
+            )}
+            {statoConfig.minimiMancanti.includes('expectedWeeklyHours') && (
+              <li><b>Ore settimanali</b> — reggono le ore in più e quanto vale una giornata di ferie.</li>
+            )}
+            {statoConfig.contrattoMancante && (
+              <li>
+                <b>Contratto</b> — decide le ore del mese e i contributi.
+                <em> Senza, i conti risultano più alti del vero di circa 45 € al mese.</em>
+              </li>
+            )}
+            {statoConfig.consigliatiMancanti.map((c) => (
+              <li key={c.chiave}>
+                <b>{c.etichetta}</b> — {c.perche}
+              </li>
+            ))}
+          </ul>
+          <p className="cosa-manca-nota">
+            Si possono sistemare quando vuoi: i turni già segnati vengono ricalcolati
+            da soli. L'unica eccezione sono le ore settimanali, che decidono la durata
+            delle giornate di ferie nel momento in cui le segni.
+          </p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="settings-form">
 

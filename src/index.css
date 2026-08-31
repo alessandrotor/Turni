@@ -2675,3 +2675,40 @@ input, select, textarea { font: inherit; }
   }
   .nav-icon { font-size: 1.15rem; }
 }
+
+/* ── «Cosa manca», in cima a Impostazioni ────────────────────────────
+   Non è un avviso: è un indice di quello che resta, nella pagina dove si va
+   apposta per sistemarlo. Per questo usa il blu dell'app e non l'ambra degli
+   avvisi — chi è qui sta già facendo la cosa giusta. */
+.cosa-manca {
+  background: var(--c-primary-light);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 1rem;
+}
+.cosa-manca strong {
+  display: block;
+  font-size: .92rem;
+  color: var(--c-primary-dark);
+  margin-bottom: 8px;
+}
+.cosa-manca ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cosa-manca li {
+  font-size: .84rem;
+  line-height: 1.45;
+  color: var(--c-text-2);
+}
+.cosa-manca li b { color: var(--c-text); font-weight: 600; }
+.cosa-manca li em { font-style: normal; color: var(--c-danger); }
+.cosa-manca-nota {
+  margin: 10px 0 0;
+  font-size: .78rem;
+  line-height: 1.45;
+  color: var(--c-text-2);
+}

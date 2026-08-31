@@ -122,5 +122,37 @@ esito(tutti.length > 0 && tutti.every((c) => c.direzione === 'meno' || c.direzio
 esito(tutti.every((c) => typeof c.perche === 'string' && c.perche.length > 20),
   'ogni voce spiega perché conviene sistemarla');
 
+
+// ── Il promemoria di quello che resta ─────────────────────────────────────
+//
+// Il banner è la parte più facile da sbagliare in modo invisibile: se compare
+// quando non deve, l'utente impara a chiuderlo senza leggerlo, e da lì in poi
+// chiuderà anche gli avvisi che contano.
+console.log('Promemoria dei consigliati');
+console.log('');
+
+const quanti = (s) => consigliatiMancanti(s).length;
+
+esito(quanti(COMPLETA) === 0, 'chi ha tutto non ha niente da sistemare');
+esito(quanti({}) > 0, 'app appena aperta: qualcosa manca sempre');
+
+// Il contratto NON entra fra i consigliati: ha già il suo avviso sotto il
+// totale del mese, e ripeterlo in due posti lo farebbe sembrare più urgente di
+// quanto la sua natura rimandabile giustifichi.
+esito(!consigliatiMancanti({}).some((c) => c.chiave === 'ccnl'),
+  "il contratto non è nell'elenco", 'ha già il suo avviso altrove');
+
+// Le voci nominate devono avere un nome leggibile: è quello che l'utente legge,
+// non la chiave.
+esito(consigliatiMancanti({}).every((c) => typeof c.etichetta === 'string' && c.etichetta.length > 3),
+  'ogni voce ha un nome da leggere, non una chiave');
+
+// Sistemarne una la toglie dall'elenco: senza, il promemoria direbbe lo stesso
+// numero dopo che l'utente ha lavorato, ed è il modo più rapido per farlo
+// smettere di crederci.
+const primaDi = quanti({});
+const dopoUna = quanti({ sundaySurchargePct: 10 });
+esito(dopoUna === primaDi - 1, "sistemarne una la toglie dall'elenco", primaDi + ' → ' + dopoUna);
+
 console.log(`\n${falliti === 0 ? '✓ le regole del primo avvio reggono' : falliti + ' controlli falliti'}\n`);
 process.exit(falliti > 0 ? 1 : 0);
