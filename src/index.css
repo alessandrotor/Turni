@@ -101,6 +101,11 @@ input, select, textarea { font: inherit; }
 .navbar-links {
   display: flex;
   gap: .25rem;
+  /* Senza questi la barra non cede: `min-width: 0` permette ai pulsanti di
+     restringersi sotto la larghezza del loro testo, che è il motivo per cui su
+     un telefono stretto «Impostazioni» finiva fuori dallo schermo. */
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .nav-link {
@@ -114,6 +119,7 @@ input, select, textarea { font: inherit; }
   color: var(--c-text-2);
   transition: background .15s, color .15s;
 }
+.nav-link { min-width: 0; flex-shrink: 1; }
 .nav-link:hover { background: var(--c-bg); color: var(--c-text); }
 .nav-link.active { background: var(--c-primary-light); color: var(--c-primary); }
 .nav-icon { font-size: 1rem; }
@@ -2633,3 +2639,39 @@ input, select, textarea { font: inherit; }
    non si prova su un telefono stretto. */
 .form-group .input-with-symbol { min-width: 0; }
 .form-input { min-width: 0; max-width: 100%; }
+
+/* ── La barra in alto su schermi stretti ─────────────────────────────
+   Il conto non tornava e basta: marchio (~83px) più tre voci (~118, ~118,
+   ~130) più i margini fanno ~481px, contro i 390 di un telefono comune. Chrome
+   comprimeva un po' i pulsanti e il difetto restava nascosto; Firefox rispetta
+   la larghezza del contenuto e lasciava «Impostazioni» fuori dallo schermo.
+
+   La prima soglia è 520px e non 430: senza il titolo servono ~358px, CON il
+   titolo ~481, quindi fra i 431 e i 480 la barra uscirebbe ancora. 520 è anche
+   il breakpoint che l'app usa già per i modali, così le soglie restano due e
+   non quattro.
+
+   Si cede in due tempi, togliendo prima ciò che serve meno: il nome dell'app,
+   che sta scritto anche nella scheda del browser e sull'icona. Le etichette dei
+   comandi vanno via per ultime, e solo VISIVAMENTE: restano nel documento, così
+   chi usa uno screen reader continua a sentire «Impostazioni» e non «pulsante». */
+@media (max-width: 520px) {
+  .navbar { padding: 0 .6rem; }
+  .navbar-title { display: none; }
+  .nav-link { padding: .4rem .5rem; font-size: .8rem; gap: .25rem; }
+}
+
+@media (max-width: 360px) {
+  .nav-link { padding: .4rem .55rem; }
+  /* Nascosta alla vista, non ai lettori di schermo. */
+  .nav-label {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+  .nav-icon { font-size: 1.15rem; }
+}

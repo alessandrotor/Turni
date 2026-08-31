@@ -13,7 +13,7 @@ export default function NavBar({ view, onNavigate }) {
           onClick={() => onNavigate('calendar')}
         >
           <span className="nav-icon">📅</span>
-          <span>Calendario</span>
+          <span className="nav-label">Calendario</span>
         </button>
         {/* Statistiche: pagina ancora da decidere, spenta di default.
             Si toglie la VOCE, non solo la schermata: un pulsante che porta a
@@ -24,7 +24,7 @@ export default function NavBar({ view, onNavigate }) {
             onClick={() => onNavigate('stats')}
           >
             <span className="nav-icon">📊</span>
-            <span>Statistiche</span>
+            <span className="nav-label">Statistiche</span>
           </button>
         )}
         <button
@@ -32,7 +32,7 @@ export default function NavBar({ view, onNavigate }) {
           onClick={() => onNavigate('settings')}
         >
           <span className="nav-icon">⚙️</span>
-          <span>Impostazioni</span>
+          <span className="nav-label">Impostazioni</span>
         </button>
       </div>
     </nav>
