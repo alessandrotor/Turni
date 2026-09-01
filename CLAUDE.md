@@ -44,6 +44,13 @@ In pratica, e sono regole, non aspirazioni:
   componenti in `utils/occupato.js`, riscontro `check-aggiornamento.mjs`.
   Attenzione al difetto silenzioso: una chiave di `occupato` che resta accesa
   blocca gli aggiornamenti per sempre senza che nessuno se ne accorga.
+  Perché tutto questo funzioni, il browser deve prima ACCORGERSI che `sw.js` è
+  cambiato: `public/_headers` gli dà `Cache-Control: no-cache` apposta, perché
+  su questo punto Chrome e altri browser si sono storicamente comportati in
+  modo diverso (osservato su Firefox il 1° settembre 2026: l'avviso non
+  compariva mai, nemmeno ricaricando a mano). Riscontro nello stesso
+  `check-aggiornamento.mjs`. Non è retroattivo: un profilo che ha già la copia
+  vecchia in cache va sbloccato una volta con un ricaricamento forzato.
 - **Niente contrassegni «l'ho già visto».** Le domande nascono dallo stato dei
   dati, non da tracce lasciate addosso a chi usa l'app.
 - **Meglio chiedere di troppo che sbagliare in silenzio, ma solo dicendo la

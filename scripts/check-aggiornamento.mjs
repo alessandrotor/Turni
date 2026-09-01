@@ -76,6 +76,35 @@ const servizio = readFileSync('src/services/aggiornamento.js', 'utf8');
 check(servizio.includes('onNeedRefresh'), "l'avviso è agganciato a onNeedRefresh",
   "senza, la versione nuova resterebbe in attesa senza che nessuno lo dica");
 
+// 5. `sw.js` deve arrivare sempre fresco: contiene l'elenco dei file precache
+//    CON I LORO HASH, ed è quello che il browser rilegge per accorgersi che è
+//    uscita una versione nuova. Senza un header esplicito il file eredita il
+//    default di Cloudflare — che DOVREBBE bastare, ma su questo esatto punto i
+//    browser si sono storicamente comportati in modo diverso: Chrome ha
+//    un'eccezione dedicata che scarta sempre la cache per lo script del
+//    service worker, e non tutti gli altri fanno lo stesso passando per la
+//    cache dell'edge. È la causa più comune, documentata ripetutamente, del
+//    sintomo «funziona ovunque tranne che in un browser, resta bloccato sulla
+//    versione vecchia» — osservato su Firefox il 1° settembre 2026, con
+//    l'avviso che non compariva mai nemmeno ricaricando a mano.
+//
+//    `dist/_headers` è la copia di `public/_headers` fatta da Vite al build
+//    (stesso meccanismo per cui `dist/sw.js` esiste): si guarda quella e non
+//    la sorgente, per lo stesso motivo per cui gli altri controlli guardano il
+//    pacchetto e non la configurazione.
+const HEADERS = 'dist/_headers';
+if (!existsSync(HEADERS)) {
+  check(false, `${HEADERS} non esiste`, 'lancia prima `npm run build`');
+} else {
+  const headers = readFileSync(HEADERS, 'utf8');
+  // Il blocco `/sw.js` seguito, entro poche righe, dalla direttiva giusta —
+  // non basta cercare la stringa `no-cache` da sola, potrebbe stare altrove.
+  const blocco = headers.split(/\n(?=\/)/).find((b) => b.trimStart().startsWith('/sw.js'));
+  const ok = !!blocco && /Cache-Control:\s*no-cache\b/.test(blocco);
+  check(ok, '/sw.js ha Cache-Control: no-cache in _headers',
+    ok ? '' : (blocco ? 'il blocco c\'è ma non dichiara no-cache' : 'nessun blocco per /sw.js'));
+}
+
 // ── QUANDO entra in servizio ───────────────────────────────────────────────
 //
 // Togliere il ricaricamento automatico ha risolto un fastidio e ne ha creato uno

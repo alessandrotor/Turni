@@ -87,3 +87,22 @@
 # rete per ogni file a ogni visita.
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
+
+# Lo script del service worker è il file da cui dipende l'intero
+# aggiornamento: contiene l'elenco dei file precache CON I LORO HASH, ed è
+# quello che il browser deve rileggere per accorgersi che è uscita una
+# versione nuova (vedi services/aggiornamento.js). `max-age=0, must-revalidate`
+# — il default di Cloudflare per tutto ciò che non è qui sotto — DOVREBBE
+# bastare, ma è esattamente il tipo di richiesta su cui i browser si sono
+# storicamente comportati in modo diverso: Chrome ha un'eccezione dedicata che
+# scarta sempre la cache per lo script del service worker, e non è garantito
+# che ogni altro browser, passando per la cache dell'edge Cloudflare, faccia
+# lo stesso. `no-cache` (non `no-store`) lo dice esplicito: il file resta
+# memorizzabile, ma va sempre RICONFERMATO con il server prima di essere
+# riusato — mai una copia vecchia spacciata per buona.
+#
+# Non è retroattivo: chi ha già in cache la copia vecchia da prima di questa
+# riga non la scarta da sola. Serve un ricaricamento forzato una volta, poi i
+# deploy successivi si comportano come dovrebbero da qui in avanti.
+/sw.js
+  Cache-Control: no-cache
