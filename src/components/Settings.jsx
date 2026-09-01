@@ -10,6 +10,7 @@ import { statoConfigurazione } from '../utils/configurazione';
 import { elencoOrariDaCorreggere, applicaCorrezioneOrari } from '../services/correzioni';
 import { ENABLE_NET_CALC } from '../config/features';
 import { genId } from '../utils/id';
+import useOccupato from '../hooks/useOccupato';
 import { minutiGiornoAssenza } from '../utils/assenze';
 import { fasciaNotturnaRisolta, CUMULO_DEFAULT } from '../utils/notturno';
 import { normalizzaMaggiorazione, messaggioMaggiorazione } from '../utils/maggiorazioni';
@@ -352,10 +353,22 @@ export default function Settings({ settings, onSave }) {
       malattiaCarenzaPct: parseNum(form.malattiaCarenzaPct),
       malattiaPct: parseNum(form.malattiaPct),
     });
+    ultimoSalvato.current = JSON.stringify(form);
     setSaved(true);
     clearTimeout(savedTimer.current);
     savedTimer.current = setTimeout(() => setSaved(false), 2000);
   };
+
+  // Modifiche non salvate: l'app non deve ricaricarsi da sola per un
+  // aggiornamento mentre qui dentro c'è roba scritta e non ancora confermata
+  // (vedi utils/occupato.js). Si confronta lo stato con l'ultimo salvato invece
+  // di alzare una bandierina in ognuno dei sedici punti che toccano il form:
+  // una bandierina dimenticata non si vede, e il prezzo sarebbe perdere quello
+  // che l'utente aveva scritto.
+  const ultimoSalvato = useRef(null);
+  const istantanea = JSON.stringify(form);
+  if (ultimoSalvato.current === null) ultimoSalvato.current = istantanea;
+  useOccupato('impostazioni', istantanea !== ultimoSalvato.current);
 
   const ccnlPreset = getCcnl(form.ccnl);
   // Le aliquote degli ammortizzatori non stanno nel CCNL: si ricavano dalla

@@ -18,7 +18,8 @@ import DatiMinimi from './components/DatiMinimi';
 import SistemaMancanti from './components/SistemaMancanti';
 import AvvisoMaggiorazione from './components/AvvisoMaggiorazione';
 import AvvisoAggiornamento from './components/AvvisoAggiornamento';
-import { iscrivitiAggiornamenti, applicaAggiornamento } from './services/aggiornamento';
+import { iscrivitiAggiornamenti, applicaAggiornamento, primaDiRicaricare } from './services/aggiornamento';
+import useOccupato from './hooks/useOccupato';
 import { haDatiMinimi, maggiorazioneDaChiedere } from './utils/configurazione';
 
 const DEFAULT_SETTINGS = {
@@ -92,6 +93,27 @@ const DEFAULT_SETTINGS = {
   periodoConteggio: 'paga',
 };
 
+// Schermata da riprendere dopo un aggiornamento applicato mentre l'app era in
+// secondo piano. La pagina si è ricaricata da sola: chi torna deve ritrovare
+// quello che aveva davanti, altrimenti l'aggiornamento «invisibile» si annuncia
+// da solo riportando tutti al calendario del mese corrente.
+//
+// In sessionStorage e non in localStorage: vale per QUESTA scheda e per questo
+// ricaricamento: riaprire l'app domani deve ripartire da oggi.
+//
+// Letta una volta sola, all'import del modulo, e subito cancellata: dentro un
+// inizializzatore di stato React la rileggerebbe due volte in StrictMode.
+const RIPRESA = (() => {
+  try {
+    const grezzo = sessionStorage.getItem('turni_ripresa');
+    if (!grezzo) return null;
+    sessionStorage.removeItem('turni_ripresa');
+    return JSON.parse(grezzo);
+  } catch {
+    return null;
+  }
+})();
+
 export default function App() {
   const [shifts, setShifts, erroreTurni] = useLocalStorage('turni_shifts', {});
   const [storedSettings, setSettings, erroreImpostazioni] = useLocalStorage('turni_settings', DEFAULT_SETTINGS);
@@ -100,8 +122,14 @@ export default function App() {
   // sembrerebbero due problemi diversi. Vincono i turni, che sono la cosa che
   // l'utente ha inserito a mano.
   const erroreSalvataggio = erroreTurni || erroreImpostazioni;
-  const [view, setView] = useState('calendar');
-  const [currentMonth, setCurrentMonth] = useState(() => getMonthStart(new Date()));
+  // `stats` passa dal flag anche in ripresa: la pagina può essere stata spenta
+  // nel frattempo, e una vista che non esiste più lascerebbe lo schermo vuoto.
+  const [view, setView] = useState(
+    RIPRESA?.view === 'stats' && !ENABLE_STATS ? 'calendar' : (RIPRESA?.view || 'calendar'),
+  );
+  const [currentMonth, setCurrentMonth] = useState(() => (
+    RIPRESA?.mese ? getMonthStart(new Date(RIPRESA.mese)) : getMonthStart(new Date())
+  ));
   const [modal, setModal] = useState(null); // null | {type:'add',date} | {type:'edit',shift}
   // Giorno su cui atterrare arrivando dal calendarietto di Statistiche.
   const [focusDate, setFocusDate] = useState(null);
@@ -301,6 +329,23 @@ export default function App() {
   // Vedi services/aggiornamento.js.
   const [aggiornamentoPronto, setAggiornamentoPronto] = useState(false);
   useEffect(() => iscrivitiAggiornamenti(setAggiornamentoPronto), []);
+
+  // Niente ricaricamenti mentre c'è del lavoro in sospeso, e qui il caso più
+  // grave non è il modulo a metà: è `inAttesa`, che tiene un turno GIÀ
+  // COMPILATO e non ancora salvato, fermo ad aspettare paga e ore.
+  useOccupato('modale', !!modal || !!inAttesa || sistemaAperto);
+
+  // Un istante prima che la pagina se ne vada per l'aggiornamento, si mette da
+  // parte cosa si stava guardando: al ritorno l'app riparte da lì e il
+  // ricaricamento non lascia traccia. Vedi RIPRESA in cima al file.
+  useEffect(() => primaDiRicaricare(() => {
+    try {
+      sessionStorage.setItem('turni_ripresa', JSON.stringify({
+        view,
+        mese: currentMonth.toISOString(),
+      }));
+    } catch { /* senza sessionStorage si riparte dal calendario: non è un guasto */ }
+  }), [view, currentMonth]);
 
   const proponiMaggiorazione = useCallback((dati) => {
     // Un periodo di ferie salva una lista: le assenze non attivano niente

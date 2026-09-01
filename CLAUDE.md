@@ -35,11 +35,15 @@ In pratica, e sono regole, non aspirazioni:
 - **Si blocca solo per ciò che non si recupera dopo.** Oggi sono due dati:
   paga oraria e ore settimanali (`datiMinimiMancanti`). Tutto il resto è
   retroattivo, quindi può aspettare.
-- **L'app non si aggiorna addosso a chi la sta usando.** La versione nuova si
-  scarica in silenzio e ASPETTA: entra quando lo dice l'utente o alla prossima
-  apertura (`registerType: 'prompt'`, `services/aggiornamento.js`,
-  riscontro `check-aggiornamento.mjs`). Il ricaricamento automatico buttava via
-  i moduli aperti a metà.
+- **L'app non si aggiorna addosso a chi la sta usando, ma si aggiorna.** La
+  versione nuova si scarica quando si torna sull'app e entra in servizio quando
+  la si mette via — in secondo piano da un minuto e senza niente in sospeso —
+  oppure quando lo dice l'utente col pulsante. Non è un compromesso fra i due
+  fastidi: è che esiste un momento in cui ricaricare non dà fastidio a nessuno.
+  Regola pura in `utils/aggiornamento.js`, «lavoro in sospeso» dichiarato dai
+  componenti in `utils/occupato.js`, riscontro `check-aggiornamento.mjs`.
+  Attenzione al difetto silenzioso: una chiave di `occupato` che resta accesa
+  blocca gli aggiornamenti per sempre senza che nessuno se ne accorga.
 - **Niente contrassegni «l'ho già visto».** Le domande nascono dallo stato dei
   dati, non da tracce lasciate addosso a chi usa l'app.
 - **Meglio chiedere di troppo che sbagliare in silenzio, ma solo dicendo la

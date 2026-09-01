@@ -34,6 +34,7 @@ import { exportShiftsExcel, exportShiftsPDF } from '../services/export';
 import { sendImportTelemetry } from '../services/telemetry';
 import ImportModal from './ImportModal';
 import TimelineView from './TimelineView';
+import useOccupato from '../hooks/useOccupato';
 import { KEY_CAL_LAYOUT } from '../services/backup';
 
 const DAY_HEADERS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
@@ -97,6 +98,12 @@ export default function CalendarView({
   const [importUsage, setImportUsage] = useState(null);
   const [exportBusy, setExportBusy] = useState(false);
   const [exportError, setExportError] = useState(null);
+
+  // Un import da foto in corso tiene occupata l'app: la richiesta al modello è
+  // già stata pagata, e i turni riconosciuti non sono ancora stati confermati.
+  // Un ricaricamento in quel momento butterebbe via tutti e due, quindi
+  // l'aggiornamento aspetta il momento dopo. Vedi utils/occupato.js.
+  useOccupato('import', importLoading || !!pendingImportFile || !!importParsed);
   // Default al mese di CALENDARIO: chi segna i turni pensa in mesi solari, non
   // in periodi di paga a settimane intere (quelli sono un dettaglio interno
   // del calcolo del netto, non come l'utente registra le cose giorno per giorno).
