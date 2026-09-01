@@ -1,5 +1,6 @@
 import { isIsoDate } from '../utils/dates';
 import { ottieniToken, turnstileAttivo } from './turnstile';
+import { ENABLE_DEBUG } from '../config/features';
 
 // Identificativo di SESSIONE: nasce al caricamento della pagina e non viene
 // salvato da nessuna parte. Serve al proxy per una cosa sola — fare da chiave
@@ -156,7 +157,11 @@ export async function parseShiftsFromImage(imageFile, workerName = '') {
 
   const raw = payload?.items;
   const usage = payload?.usage || {};
-  console.log('[gemini-usage]', JSON.stringify(usage));
+  // Stessi numeri del pannello «🐛 DEBUG token» in CalendarView, e stessa
+  // guardia: senza, ogni import da foto lasciava una riga in console anche in
+  // produzione. Il `console.warn` di Turnstile qui sopra resta invece sempre
+  // acceso di proposito — quello è un guasto, e serve a chi ripara.
+  if (ENABLE_DEBUG) console.log('[gemini-usage]', JSON.stringify(usage));
   if (!Array.isArray(raw) || raw.length === 0) throw new Error('Nessun turno trovato');
 
   // Mappa allo schema turni dell'app; conserva i campi di provenienza.

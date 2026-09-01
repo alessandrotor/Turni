@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import useLocalStorage from './hooks/useLocalStorage';
 import { getMonthStart, parseDate, payrollMonthKey } from './utils/dates';
-import { calcTotalPay, computePayByShift } from './utils/pay';
+import { computePayByShift } from './utils/pay';
 import { isMensilizzato } from './utils/ccnl';
 import { computeAnnualGrossFromShifts, projectAnnualIncome } from './utils/net';
 import { ENABLE_NET_CALC, ENABLE_STATS } from './config/features';

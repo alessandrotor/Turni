@@ -408,21 +408,6 @@ export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, pay
   return { total: fromShifts + (applyMontante ? montante : 0) + extras, extras };
 }
 
-/**
- * Stima del reddito annuo lordo pieno a partire dal contratto:
- * (ore settimanali × paga oraria × 52) + tredicesima/quattordicesima.
- *
- * Serve come riferimento per l'aliquota IRPEF effettiva: la tassazione è
- * progressiva e annuale, quindi va ancorata al reddito annuo pieno (incluse
- * le mensilità aggiuntive), non a quello maturato finora nell'anno.
- *
- * @param {object} settings hourlyRate, expectedWeeklyHours, has(Tre|Quattor)dicesima
- * @param {number} year anno di riferimento (per il rateo delle mensilità aggiuntive)
- * @returns {number} reddito annuo lordo stimato (0 se dati insufficienti)
- */
-export function projectAnnualGross(settings = {}, year = new Date().getFullYear()) {
-  return monthlyBaseGross(settings) * (12 + extraMonthsAccrued(settings, year));
-}
 
 /**
  * Reddito annuo di RIFERIMENTO per l'aliquota IRPEF e le soglie del bonus:

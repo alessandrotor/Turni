@@ -6,6 +6,26 @@ import { isMensilizzato, monthlyContractHours, monthlyFullTimeHours } from './cc
 import { isAssenza, tipoTurno, percentualeAssenza, giorniEventoMalattia, TIPO } from './assenze.js';
 import { minutiNotturniPagati, pctNotturnoAggiuntiva } from './notturno.js';
 
+// UNA SOLA STRADA PER LA PAGA, e non è una preferenza di stile.
+//
+// Il percorso vero è `computePayByShift` → `calcTotalPay`: è lì che stanno la
+// soglia mensile del supplementare (103,20 h sul MESE DI PAGA, non sul mese di
+// calendario), le maggiorazioni con il loro cumulo, le assenze che riempiono la
+// soglia senza generare straordinari. È l'unico percorso riscontrato sulle
+// buste reali — `check-busta-giugno-2026`, `check-busta-luglio-2026`,
+// `check-mese-paga-2026`.
+//
+// Fino al 1° settembre 2026 qui accanto ne vivevano altre quattro, esportate e
+// mai chiamate da nessuno: `calcPay(ore, paga)` che moltiplicava e basta,
+// `calcShiftPay` che calcolava un turno IGNORANDO la soglia mensile (e lo
+// ammetteva nel proprio commento), più `calcShiftHours` e `calcWeekTotals`,
+// resti di quando l'app ragionava a settimane. Non erano disordine: erano una
+// trappola. Nomi autorevoli, export pubblico, e un numero diverso da quello
+// riscontrato per chiunque le avesse chiamate credendole il motore.
+//
+// Chi aggiunge qui un secondo modo di calcolare la paga si porti il riscontro
+// sulla busta, oppure non lo aggiunga.
+
 // Ferie, permessi e malattia non hanno orari: portano una durata già in minuti,
 // perché in busta valgono un numero fisso di ore e non un intervallo. Il
 // controllo sta qui e non nei chiamanti così ore, totali e statistiche
@@ -16,22 +36,8 @@ export function calcShiftMinutes(shift) {
   return Math.max(0, total - (shift.breakMinutes || 0));
 }
 
-export function calcShiftHours(shift) {
-  return calcShiftMinutes(shift) / 60;
-}
 
-export function calcWeekTotals(shifts) {
-  const workedMinutes = shifts.reduce((sum, s) => sum + calcShiftMinutes(s), 0);
-  return {
-    workedMinutes,
-    workedHours: workedMinutes / 60,
-  };
-}
 
-export function calcPay(workedHours, hourlyRate) {
-  if (!hourlyRate || hourlyRate <= 0) return null;
-  return workedHours * hourlyRate;
-}
 
 // Parsing robusto di numeri all'italiana: accetta "7123,28", "17.213,28"
 // e anche "7123.28". La virgola, se presente, è il separatore decimale.
@@ -295,18 +301,6 @@ export function computePayByShift(allShifts, settings) {
   return result;
 }
 
-export function calcShiftPay(shift, settings) {
-  const rate = getRateForDate(shift.date, settings);
-  if (rate <= 0) return null;
-  const ratePerMin = rate / 60;
-  const pctGiorno = getShiftSurchargePct(shift, settings);
-  const base = calcShiftMinutes(shift) * ratePerMin;
-  // Il notturno sta fuori dalla percentuale del turno: vale sui soli minuti in
-  // fascia (vedi computePayByShift, che e' la strada che l'app percorre davvero).
-  const notte = minutiNotturniPagati(shift, settings, calcShiftMinutes(shift)) * ratePerMin
-    * (pctNotturnoAggiuntiva(settings, pctGiorno) / 100);
-  return base * (1 + pctGiorno / 100) + notte;
-}
 
 // Totale paga con dettaglio maggiorazioni. Ritorna null se nessuna paga
 // oraria è configurata. `allShifts` (default = shifts) fornisce il contesto
