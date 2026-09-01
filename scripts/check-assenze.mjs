@@ -4,12 +4,24 @@
 //
 // COSA È VERIFICATO SU BUSTA E COSA NO — la distinzione conta.
 //
-// Verificato (busta Turismo, luglio 2026):
-//  - un giorno di assenza vale un numero FISSO di ore, non l'orario che si
-//    sarebbe fatto: 24 h settimanali su sei giorni fanno 4 h al giorno;
-//  - ferie e permessi stanno DENTRO la retribuzione ordinaria, non come voce
-//    a parte: le ore «Retribuzione» sono 103,20 anche con ferie godute nel
-//    periodo, e il lordo del mese torna al centesimo senza righe aggiuntive.
+// Verificato (buste Turismo, giugno e luglio 2026):
+//  - la retribuzione del mese è FISSA: le ore «Retribuzione» sono 103,20 in
+//    entrambe, e il lordo torna al centesimo senza righe aggiuntive.
+//
+// ATTESO ma NON riscontrato — e fino al 1° settembre 2026 stava scritto qui
+// sopra come se lo fosse:
+//  - che ferie e permessi stiano DENTRO quelle 103,20 invece di aggiungersi.
+//    Segue dalla mensilizzazione ed è quello che il motore fa, ma la busta di
+//    luglio non lo dimostra: le ore «godute» che riporta sono un MONTANTE
+//    progressivo dell'anno (risalgono a marzo), non assenze cadute nel periodo
+//    6 lug → 2 ago. Un montante non dice QUANDO sono state consumate.
+//  - che un giorno di assenza valga un numero fisso di ore (24 h settimanali
+//    su sei giorni = 4 h al giorno). Stessa ragione: il 5,50 citato come prova
+//    non è nemmeno un multiplo di 4.
+//
+// La busta di AGOSTO 2026 è la prima che può rispondere, perché contiene ferie
+// cadute nel periodo (15 giorni dal 31 agosto). Si legge per differenza fra
+// montanti — vedi RILASCIO.md, sezione «Un secondo discriminante».
 //
 // NON verificato, perché nessuna busta disponibile contiene malattia:
 //  - quanto paga la carenza e quanto pagano i giorni successivi. La STRUTTURA

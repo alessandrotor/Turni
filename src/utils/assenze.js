@@ -1,8 +1,18 @@
 // Ferie, permessi e malattia: giorni che in busta paga contano ORE anche se
 // non si è lavorato. Senza di loro le ore dell'app restano sotto quelle del
-// cedolino, ed è esattamente lo scarto che si vede confrontando le due colonne
-// (la busta di luglio 2026 riporta 5,50 ore di ferie e 4,50 di permessi
-// «godute», che nell'app non esistevano come turni).
+// cedolino.
+//
+// ATTENZIONE A COSA SIGNIFICA «GODUTE» SUL CEDOLINO — qui c'era un errore.
+// Fino al 1° settembre 2026 queste righe citavano «5,50 ore di ferie e 4,50 di
+// permessi godute» sulla busta di luglio 2026 come se fossero assenze cadute in
+// QUEL periodo. Non lo sono: Zucchetti stampa le godute come MONTANTE
+// PROGRESSIVO dell'anno, e quelle ore risalgono a marzo. Il numero sul cedolino
+// non dice quando sono state consumate, quindi non dimostra niente sul periodo
+// — e infatti 5,50 non è nemmeno un multiplo delle 4 h di una giornata.
+//
+// Per sapere quante ferie cadono in un mese serve la DIFFERENZA fra il montante
+// di quel mese e quello del mese prima. Vedi RILASCIO.md, che usa proprio
+// questa differenza per la busta di agosto 2026.
 //
 // Estensioni esplicite sugli import: come negli altri moduli di `utils/`, così
 // il file resta importabile da Node puro per i riscontri in `scripts/`.
@@ -124,8 +134,15 @@ export const MALATTIA_DEFAULT = {
  * Percentuale della retribuzione oraria che spetta per un'assenza.
  *
  * Ferie e permessi valgono il 100%: in busta stanno dentro la retribuzione
- * ordinaria, non come voce a parte (verificato sulla busta di luglio 2026,
- * dove le ore «Retribuzione» sono 103,20 anche con ferie godute nel periodo).
+ * ordinaria, non come voce a parte.
+ *
+ * ATTESO, NON ANCORA RISCONTRATO. È il comportamento che segue dalla
+ * mensilizzazione — la retribuzione del mese è fissa (103,20 h), e le assenze
+ * retribuite riempiono quel monte invece di aggiungersi — ma nessuna busta
+ * disponibile lo mostra: quella di luglio 2026 era citata come prova e non lo
+ * era (le ore «godute» che riporta sono un montante che risale a marzo, vedi
+ * in cima al file). La busta di agosto 2026 è la prima occasione di vederlo
+ * davvero, perché contiene ferie cadute nel periodo.
  *
  * @param {object} shift
  * @param {object} settings

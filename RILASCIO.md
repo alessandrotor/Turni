@@ -405,6 +405,42 @@ in tempo a contenerlo — ma se le ore stampate si fermassero al 31 agosto, quel
 stesso è il dato che decide.
 </details>
 
+### Un secondo discriminante, arrivato per caso: le ferie a cavallo
+
+**Ferie di 15 giorni cominciate lunedì 31 agosto 2026.** È una fortuna per questa
+prova, perché il 31 agosto è il lunedì che apre l'ULTIMA settimana del mese di
+paga di agosto (3 ago → 6 set). Le due letture non divergono più di qualche ora
+discutibile: divergono di un numero intero che si conta con un dito.
+
+| lettura | giornate di ferie che finiscono nella busta di AGOSTO |
+|---|---|
+| mese di paga | **7** — 31 ago + 1, 2, 3, 4, 5, 6 set |
+| mese di calendario | **1** — solo il 31 ago |
+
+È un discriminante migliore del totale ore, perché non dipende da quanto sono
+completi i turni inseriti nell'app: sette contro uno non lascia spazio a
+interpretazioni.
+
+**COME SI LEGGE, altrimenti la prova non vale niente.** Zucchetti stampa le ferie
+godute come **montante progressivo dell'anno**, non come dato del mese: il numero
+sul cedolino di luglio comprende ore consumate a marzo. Quindi NON si guarda il
+numero stampato su agosto — si fa la **differenza fra il montante di agosto e
+quello di luglio**. Chi legge il valore assoluto e lo confronta con 7 non sta
+misurando niente.
+
+Vale anche al contrario, e va detto perché ci siamo già cascati: la busta di
+luglio **non dimostra nulla** sulle ferie. Riporta 5,50 h di ferie e 4,50 di
+permessi «godute», ma sono montanti che risalgono a marzo, non assenze cadute nel
+periodo 6 lug → 2 ago. Per un po' quelle cifre sono state citate nel codice come
+prova che «le ferie stanno dentro la Retribuzione, verificato nel periodo» —
+corretto il 1° settembre 2026 in `utils/assenze.js` e `check-assenze.mjs`. Il
+comportamento resta quello atteso per un mensilizzato, ma è un'attesa ragionata,
+non un riscontro: agosto è la prima occasione vera di verificarlo.
+
+> **Da compilare.** Montante ferie godute: luglio ……… · agosto ……… ·
+> differenza ……… (previsione scritta prima: **7 giornate**, cioè 28 h su un
+> part-time da 4 h/giorno).
+
 **Cosa farne, in un verso e nell'altro.**
 
 - Se vince il **mese di paga**: la spunta si chiude, il default resta com'è, e la
