@@ -1223,11 +1223,6 @@ input, select, textarea { font: inherit; }
   margin-top: .85rem;
 }
 
-.settings-section--future {
-  opacity: .7;
-  background: #fafafa;
-}
-
 .settings-section-title {
   font-size: 1rem;
   font-weight: 700;
