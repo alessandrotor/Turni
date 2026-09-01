@@ -2596,31 +2596,43 @@ input, select, textarea { font: inherit; }
    impedisce di farlo. */
 /* ── L'avviso sulle maggiorazioni ────────────────────────────────────
    Prima era un riquadro DENTRO il modulo del turno (`.magg-avviso`, tolto):
-   compariva mentre si compilavano gli orari. Ora è una striscia in fondo allo
-   schermo che arriva a turno già salvato.
+   compariva mentre si compilavano gli orari. Ora arriva a turno già salvato.
 
-   Fissa in basso e non in mezzo al contenuto: si vede senza cercarla, sta dove
-   arriva il pollice, e soprattutto non sposta niente di quello che c'è sopra —
-   un avviso che fa saltare la pagina mentre la si legge è peggio di uno che non
-   compare. Niente sfondo scuro dietro, niente fuoco rubato alla tastiera: non è
-   un modale e non deve sembrarlo.
+   PERCHÉ STACCATA DAL BORDO, E NON UNA BARRA IN FONDO
+   Il primo tentativo era incollato in basso, a tutta larghezza, bianco: cioè
+   con la forma esatta di una barra di sistema — e le barre di sistema l'occhio
+   le salta. Andava benissimo come «non blocca niente» e malissimo come «si
+   vede»: un avviso che non si legge è come non averlo scritto.
+   Adesso è una SCHEDA appoggiata sopra l'app: staccata di 12px su tutti i lati,
+   angoli tondi, ombra sotto. La stessa porzione di schermo, letta in modo
+   diverso — un oggetto che qualcuno ha messo lì, non il bordo del telefono.
 
-   z-index 150: sopra la navbar (100), perché è una risposta a un'azione appena
+   E TINTA, che è il pezzo che pesa di più: bianca su fondo #f1f5f9 spariva.
+   L'ambra è quella che l'app usa già per gli avvisi, non un colore nuovo.
+
+   Resta non bloccante: nessuno sfondo scuro dietro, nessun fuoco rubato alla
+   tastiera, nessun «annulla», e non copre nessuna riga del calendario. Se
+   diventa un modale, ha smesso di fare il suo mestiere.
+
+   Il margine di sicurezza in basso sta in `bottom` e non nel padding: così su
+   iPhone la scheda si SOLLEVA sopra la barra di sistema invece di gonfiarsi.
+
+   z-index 150: sopra la navbar (100), perché è la risposta a un'azione appena
    fatta; sotto i modali (200), che quando ci sono hanno la precedenza. */
 .avviso-magg {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + var(--safe-bottom));
   z-index: 150;
-  width: min(100%, 700px);
+  width: auto;
+  max-width: 676px; /* i 700 del contenuto meno i due margini */
   margin: 0 auto;
-  background: var(--c-card);
-  border: 1px solid var(--c-border);
-  border-bottom: none;
-  border-radius: var(--radius) var(--radius) 0 0;
-  box-shadow: 0 -6px 24px rgba(0, 0, 0, .12);
-  padding: 1rem 1.1rem calc(1rem + var(--safe-bottom));
+  background: var(--c-warning-light);
+  border: 1px solid var(--c-warning);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .20);
+  padding: 1.15rem;
   animation: avviso-magg-entra .18s ease-out;
 }
 
@@ -2628,20 +2640,20 @@ input, select, textarea { font: inherit; }
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
 }
-/* Chi ha chiesto meno movimento non lo riceve: la striscia compare e basta. */
+/* Chi ha chiesto meno movimento non lo riceve: la scheda compare e basta. */
 @media (prefers-reduced-motion: reduce) {
   .avviso-magg { animation: none; }
 }
 
 .avviso-magg-titolo {
   display: block;
-  font-size: .92rem;
-  padding-right: 2rem; /* spazio per la × */
+  font-size: 1.05rem;
+  padding-right: 2.2rem; /* spazio per la × */
 }
 
 .avviso-magg-testo {
-  margin: .35rem 0 .8rem;
-  font-size: .82rem;
+  margin: .45rem 0 .95rem;
+  font-size: .88rem;
   color: var(--c-text-2);
   line-height: 1.55;
 }
@@ -2664,7 +2676,7 @@ input, select, textarea { font: inherit; }
    è il motivo per cui difetti così si vedono solo lì. */
 .avviso-magg-azioni .input-with-symbol { flex: 1 1 130px; min-width: 0; }
 .avviso-magg-azioni .input-with-symbol .form-input { width: 100%; min-width: 0; }
-.avviso-magg-azioni .btn { min-height: 44px; flex: 1 1 auto; }
+.avviso-magg-azioni .btn { min-height: 48px; font-size: .95rem; flex: 1 1 auto; }
 
 .avviso-magg-chiudi {
   position: absolute;
