@@ -2691,6 +2691,65 @@ input, select, textarea { font: inherit; }
 }
 .avviso-magg-chiudi:hover { background: var(--c-bg); color: var(--c-text); }
 
+/* ── L'avviso della versione nuova ───────────────────────────────────
+   Stessa posizione della scheda delle maggiorazioni, ma volutamente più
+   sottotono: qui non c'è niente di storto da correggere — se lo si ignora,
+   la versione nuova entra comunque alla prossima apertura. Una riga sola,
+   tinta della scheda invece dell'ambra, e nessuna delle due risposte è quella
+   «giusta».
+
+   Non compaiono mai insieme: App dà la precedenza all'avviso nato dal turno
+   appena segnato, e questo aspetta. */
+.avviso-agg {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(12px + var(--safe-bottom));
+  z-index: 150;
+  width: auto;
+  max-width: 676px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: .7rem .7rem .7rem 1rem;
+  animation: avviso-magg-entra .18s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .avviso-agg { animation: none; }
+}
+
+/* `min-width: 0` sul testo e non sui comandi: se la riga si stringe deve
+   andare a capo la frase, non sparire il pulsante. */
+.avviso-agg-testo {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: .85rem;
+  color: var(--c-text);
+}
+
+.avviso-agg-azioni {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  flex: 0 0 auto;
+}
+.avviso-agg-azioni .btn { min-height: 40px; padding: .4rem .9rem; font-size: .85rem; }
+
+.avviso-agg-chiudi {
+  width: 40px;
+  height: 40px;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--c-muted);
+  border-radius: var(--radius);
+}
+.avviso-agg-chiudi:hover { background: var(--c-bg); color: var(--c-text); }
+
 /* Voce evidenziata dalle frecce nella tendina del contratto: senza, muovere la
    selezione da tastiera non si vedrebbe. */
 .combobox-option.is-evidenziata {

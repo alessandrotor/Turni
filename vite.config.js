@@ -26,7 +26,20 @@ export default defineConfig({
       // SOLO su web: nella WebView dell'APK Capacitor un SW servirebbe asset
       // vecchi dalla cache dopo un aggiornamento del pacchetto.
       injectRegister: null,
-      registerType: 'autoUpdate',
+      // 'prompt' e NON 'autoUpdate', ed è la differenza fra scaricare una
+      // versione nuova e IMPORLA.
+      //
+      // Con 'autoUpdate' il service worker nuovo chiama `skipWaiting()`, prende
+      // il posto del vecchio e il client ricarica la pagina da solo: succedeva
+      // qualche secondo dopo l'apertura — il tempo di scaricare i 2,3 MB di
+      // precache — cioè quasi sempre mentre si stava già facendo qualcosa. Un
+      // modulo turno aperto a metà spariva senza che nessuno l'avesse chiesto.
+      //
+      // Con 'prompt' la versione nuova si scarica lo stesso, in silenzio, ma
+      // resta in attesa: entra in servizio quando lo decide chi usa l'app (il
+      // pulsante «Aggiorna» dell'avviso) o alla prossima apertura. Nessuno
+      // perde quello che stava scrivendo. Vedi services/aggiornamento.js.
+      registerType: 'prompt',
       // Precache dei soli asset di build (same-origin). Le POST cross-origin al
       // proxy AI e alla telemetria non vengono intercettate.
       workbox: {

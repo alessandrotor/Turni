@@ -35,6 +35,11 @@ In pratica, e sono regole, non aspirazioni:
 - **Si blocca solo per ciò che non si recupera dopo.** Oggi sono due dati:
   paga oraria e ore settimanali (`datiMinimiMancanti`). Tutto il resto è
   retroattivo, quindi può aspettare.
+- **L'app non si aggiorna addosso a chi la sta usando.** La versione nuova si
+  scarica in silenzio e ASPETTA: entra quando lo dice l'utente o alla prossima
+  apertura (`registerType: 'prompt'`, `services/aggiornamento.js`,
+  riscontro `check-aggiornamento.mjs`). Il ricaricamento automatico buttava via
+  i moduli aperti a metà.
 - **Niente contrassegni «l'ho già visto».** Le domande nascono dallo stato dei
   dati, non da tracce lasciate addosso a chi usa l'app.
 - **Meglio chiedere di troppo che sbagliare in silenzio, ma solo dicendo la

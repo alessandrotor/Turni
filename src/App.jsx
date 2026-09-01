@@ -17,6 +17,8 @@ import SetupPrompt from './components/SetupPrompt';
 import DatiMinimi from './components/DatiMinimi';
 import SistemaMancanti from './components/SistemaMancanti';
 import AvvisoMaggiorazione from './components/AvvisoMaggiorazione';
+import AvvisoAggiornamento from './components/AvvisoAggiornamento';
+import { iscrivitiAggiornamenti, applicaAggiornamento } from './services/aggiornamento';
 import { haDatiMinimi, maggiorazioneDaChiedere } from './utils/configurazione';
 
 const DEFAULT_SETTINGS = {
@@ -293,6 +295,13 @@ export default function App() {
   const [avviso, setAvviso] = useState(null);
   const zittiti = useRef(new Set());
 
+  // Versione nuova scaricata e in attesa. Non ricarica niente da sola: il
+  // service worker aspetta, e qui si accende solo un avviso che si può anche
+  // chiudere — in quel caso la versione nuova parte alla prossima apertura.
+  // Vedi services/aggiornamento.js.
+  const [aggiornamentoPronto, setAggiornamentoPronto] = useState(false);
+  useEffect(() => iscrivitiAggiornamenti(setAggiornamentoPronto), []);
+
   const proponiMaggiorazione = useCallback((dati) => {
     // Un periodo di ferie salva una lista: le assenze non attivano niente
     // (`maggiorazioneDaChiedere` lo sa), quindi basta guardare il primo turno.
@@ -435,6 +444,17 @@ export default function App() {
           onSave={handleSaveShift}
           onDelete={(id) => { deleteShift(id); setModal(null); }}
           onClose={() => setModal(null)}
+        />
+      )}
+
+      {/* Un avviso alla volta, e la precedenza è di quello nato dal turno appena
+          segnato: parla di soldi contati male, ed è la risposta a una cosa che
+          l'utente ha appena fatto. L'aggiornamento non ha nessuna urgenza — se
+          lo si ignora entra da sé alla prossima apertura — quindi aspetta. */}
+      {aggiornamentoPronto && !avviso && !modal && (
+        <AvvisoAggiornamento
+          onAggiorna={applicaAggiornamento}
+          onChiudi={() => setAggiornamentoPronto(false)}
         />
       )}
 
