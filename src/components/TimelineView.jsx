@@ -147,7 +147,19 @@ export default function TimelineView({
                         <div className="timeline-card-header">
                           {isAssenza ? (
                             <div className="timeline-card-title">
-                              <span className="timeline-icon">{ICONA[tipo]}</span>
+                              {/* Nessuna classe sull'icona di proposito: non ne
+                                  ha mai avuta una nel CSS, e l'emoji sta bene
+                                  com'è — eredita il testo del titolo e la
+                                  spaziatura la dà il `gap` del contenitore.
+                                  C'era una classe che non corrispondeva a
+                                  nessuna regola — un aggancio che non
+                                  agganciava niente — tolta il 1° settembre
+                                  2026 senza cambiare un pixel. (Scritta senza
+                                  nominarla: un nome di classe citato in un
+                                  commento risulta «usato» a chi fa il conto
+                                  delle classi morte, ed è così che questa era
+                                  sopravvissuta.) */}
+                              <span>{ICONA[tipo]}</span>
                               <strong>{ETICHETTA[tipo]}</strong>
                             </div>
                           ) : (
