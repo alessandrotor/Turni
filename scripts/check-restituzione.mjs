@@ -24,7 +24,7 @@
 //    tutto insieme.
 
 import {
-  rischioRestituzione, giorniTrascorsi, SOGLIA_RATEIZZAZIONE, CAUSA,
+  rischioRestituzione, giorniTrascorsi, quotaPotenziale, SOGLIA_RATEIZZAZIONE, CAUSA,
 } from '../src/utils/restituzione.js';
 import { TAX_2026, taxableToGross } from '../src/utils/net.js';
 
@@ -185,6 +185,18 @@ verifica('appena sotto la soglia, si tiene tutto',
 verifica('appena sopra, torna indietro tutto',
   r({ proiezioneAnnua: sogliaLorda + 200 }).daRestituire, 1200,
   'la fascia di mezzo non ha capienza');
+
+// ── 7. L'anteprima, per chi si avvicina ma non ha ancora superato ─────────
+// Un avviso che parla solo a soglia già superata arriva quando i mesi passati
+// sono ormai persi. `quotaPotenziale` è l'ipotesi «se il datore ti stesse già
+// accreditando la quota piena» — usata SOLO quando si è vicini (capienza
+// garantita in quella fascia), mai come sostituto di `rischioRestituzione`.
+console.log('\nL\'anteprima prima di superare la soglia\n');
+
+verifica('a metà anno vale la stessa quota', quotaPotenziale(META), quota(181), 'stessa formula, uso diverso');
+verifica('a fine anno è il tetto', quotaPotenziale(FINE_ANNO), 1200, '');
+verifica('indipendente dal reddito', quotaPotenziale(META), quotaPotenziale(META),
+  'non prende un reddito in ingresso: è sempre la stessa ipotesi a parità di data');
 
 console.log(falliti === 0
   ? `\n${totale} controlli: il numero che spaventa è quello giusto.\n`

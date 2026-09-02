@@ -87,6 +87,23 @@ export function giorniTrascorsi(data) {
 }
 
 /**
+ * Quanto avresti già preso SE il datore ti stesse accreditando la quota piena
+ * fin qui — l'ipotesi che serve all'anteprima «sei vicino alla soglia, se la
+ * superi restituisci circa X». Un «e se», non un fatto: sotto soglia non dice
+ * che quei soldi sono già arrivati, dice quanto varrebbero se lo fossero.
+ *
+ * Volutamente SEPARATA da `rischioRestituzione`: quella funzione azzera erogato
+ * ogni volta che il reddito non supera la soglia, anche quando la ragione è
+ * l'incapienza a redditi bassissimi (dove il datore non avrebbe accreditato
+ * NULLA, non una quota poi da restituire). Chi chiama questa funzione la usa
+ * solo quando `bonus.nearThreshold` è vero, cioè a un soffio dai 15.000 — lì la
+ * capienza c'è sempre, quindi l'ipotesi è realistica.
+ */
+export function quotaPotenziale(oggi = new Date()) {
+  return trunc2((TAX_2026.TI_MASSIMO * giorniTrascorsi(oggi)) / 365);
+}
+
+/**
  * Il rischio di restituzione, in euro.
  *
  * @param {object} opts

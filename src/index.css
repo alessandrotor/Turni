@@ -1567,6 +1567,18 @@ input, select, textarea { font: inherit; }
   line-height: 1.25;
 }
 
+/* L'anteprima («sei vicino, se la superi restituisci X») parla PRIMA che ci
+   sia qualcosa da restituire davvero: ambra come un avviso da tenere
+   d'occhio, non rosso come un conto già aperto. Stesso riquadro, colore
+   diverso — la differenza deve leggersi a colpo d'occhio quanto il testo. */
+.bonus-rischio--anteprima {
+  background: var(--c-warning-light);
+  border-color: var(--c-warning);
+}
+.bonus-rischio--anteprima .bonus-rischio-titolo {
+  color: var(--c-warning);
+}
+
 /* La casella della rinuncia sta DENTRO il riquadro rosso, non in fondo alla
    pagina: è l'unica cosa che si può fare, e mandarla a cercare in Impostazioni
    equivale a non offrirla. */

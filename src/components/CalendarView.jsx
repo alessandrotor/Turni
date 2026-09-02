@@ -8,7 +8,7 @@ import { calcShiftMinutes, calcTotalPay, formatCurrency, lordoTurno } from '../u
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { isMensilizzato } from '../utils/ccnl';
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
-import { rischioRestituzione, CAUSA } from '../utils/restituzione';
+import { rischioRestituzione, quotaPotenziale, CAUSA } from '../utils/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
 import { contrattoMancante } from '../utils/configurazione';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
@@ -1140,24 +1140,46 @@ export default function CalendarView({
                 Il rimedio sta QUI e non solo in Impostazioni: mandare a cercare
                 un interruttore chi ha appena letto di dover restituire 640 €
                 significa che non lo troverà. */}
-            {rischio.daRestituire > 0 ? (
+            {/* Quattro stati, non due: RINUNCIATO ha bisogno di un modo di
+                tornare indietro (bug: la casella viveva solo dentro il
+                riquadro rosso, e spuntandola il riquadro spariva insieme a
+                lei — chi cambiava idea non trovava più nulla da spuntare, se
+                non tornando in Impostazioni). ANTEPRIMA esiste perché un
+                avviso che compare solo a soglia già superata arriva quando i
+                mesi passati sono ormai persi: qui parla PRIMA, mentre
+                superarla è ancora una scelta. */}
+            {rischio.causa === CAUSA.RINUNCIATO ? (
+              <span className="bonus-strip-note">
+                Non ti accreditano più il bonus: niente da restituire a dicembre.{' '}
+                <button
+                  type="button"
+                  className="linklike"
+                  onClick={() => onUpdateSettings({ noTrattamentoIntegrativo: false })}
+                >
+                  Annulla
+                </button>
+              </span>
+            ) : rischio.daRestituire > 0 ? (
               <div className="bonus-rischio">
                 <span className="bonus-rischio-titolo">
                   ⚠️ Di questo passo devi restituire ~{euroCella(rischio.daRestituire)}
                 </span>
-                <span className="bonus-strip-note">
-                  Se ogni mese te l'hanno accreditato, quest'anno hai preso circa{' '}
-                  <strong>{euroCella(rischio.erogato)}</strong> di trattamento integrativo.
-                  {rischio.causa === CAUSA.OLTRE_MAX
-                    ? ' Con questa proiezione superi i 28.000 € imponibili, e non te ne spetta niente.'
-                    : ' Con questa proiezione superi i 15.000 € imponibili: sopra quella soglia spetta solo se le tue detrazioni superano l\'imposta, e con le sole detrazioni da lavoro non succede.'}
-                  {' '}Al conguaglio di dicembre te li riprendono
-                  {rischio.rateizzabile ? ', a rate (sopra i 60 € il datore le spalma).' : ' in una volta sola.'}
+                {/* Il caveat più importante subito sotto il numero, non in
+                    fondo: chi ha avuto due datori quest'anno deve saperlo
+                    PRIMA di leggere il resto, perché il resto per lui è
+                    sbagliato per difetto. */}
+                <span className="bonus-strip-note bonus-strip-hint">
+                  Vale se hai un solo datore quest'anno. Con più di uno, aggiorna il reddito
+                  guadagnato in Impostazioni → Reddito e trattamento integrativo — altrimenti
+                  questo numero è più basso del vero.
                 </span>
                 <span className="bonus-strip-note">
-                  <strong>Cosa puoi fare:</strong> chiedere al datore per iscritto di sospendere
-                  l'erogazione — se a fine anno ti spetta, lo prendi tutto insieme al conguaglio.
-                  Poi spunta qui sotto, così i conti dell'app tornano.
+                  Hai preso circa <strong>{euroCella(rischio.erogato)}</strong> di bonus.
+                  {rischio.causa === CAUSA.OLTRE_MAX
+                    ? ' Superi i 28.000 € imponibili: non spetta niente.'
+                    : ' Superi i 15.000 € imponibili: senza altre detrazioni oltre quella da lavoro, non spetta niente.'}
+                  {' '}Al conguaglio di dicembre te li riprendono
+                  {rischio.rateizzabile ? ', a rate.' : ' in una volta sola.'}
                 </span>
                 <label className="check-row bonus-rischio-scelta">
                   <input
@@ -1165,29 +1187,32 @@ export default function CalendarView({
                     checked={!!settings.noTrattamentoIntegrativo}
                     onChange={(e) => onUpdateSettings({ noTrattamentoIntegrativo: e.target.checked })}
                   />
-                  <span>Non me lo accreditano ogni mese</span>
+                  <span>Chiedi al datore di sospenderlo, poi spunta qui</span>
                 </label>
-                {/* L'app vede UN datore. Chi ne ha avuti due ha un reddito più
-                    alto di quello che qui si conosce — ed è proprio il caso in
-                    cui la restituzione è quasi garantita. Dirlo accanto al
-                    numero, non in fondo alla pagina. */}
-                <span className="bonus-strip-note bonus-strip-hint">
-                  Stima su un solo datore di lavoro. Se quest'anno ne hai avuti due, il tuo
-                  reddito è più alto di questo e il rischio è maggiore.
+              </div>
+            ) : bonus.status === BONUS_STATUS.PIENO && bonus.nearThreshold ? (
+              <div className="bonus-rischio bonus-rischio--anteprima">
+                <span className="bonus-rischio-titolo">
+                  ⚠️ Vicino alla soglia — se la superi restituisci ~{euroCella(quotaPotenziale())}
                 </span>
+                <span className="bonus-strip-note">
+                  Puoi ancora guadagnare {euroCella(bonus.marginToFull)} prima dei 15.000 €
+                  imponibili. Vale per un solo datore di lavoro.
+                </span>
+                <label className="check-row bonus-rischio-scelta">
+                  <input
+                    type="checkbox"
+                    checked={!!settings.noTrattamentoIntegrativo}
+                    onChange={(e) => onUpdateSettings({ noTrattamentoIntegrativo: e.target.checked })}
+                  />
+                  <span>Chiedi al datore di sospenderlo, poi spunta qui</span>
+                </label>
               </div>
             ) : (
               <span className={`bonus-strip-note ${bonus.status === BONUS_STATUS.OLTRE ? 'bonus-strip-note--warn' : ''}`}>
-                {settings.noTrattamentoIntegrativo
-                  ? 'Non te lo accreditano ogni mese: niente da restituire a dicembre.'
-                  : (
-                    <>
-                      {bonus.status === BONUS_STATUS.PIENO && !bonus.nearThreshold && 'Bonus pieno: reddito entro le soglie.'}
-                      {bonus.status === BONUS_STATUS.PIENO && bonus.nearThreshold && '⚠️ Vicino alla soglia del bonus pieno.'}
-                      {bonus.status === BONUS_STATUS.PARZIALE && 'Bonus ridotto: reddito oltre i 15.000 € imponibili.'}
-                      {bonus.status === BONUS_STATUS.OLTRE && '🚨 Reddito oltre i 28.000 € imponibili: il bonus non spetta.'}
-                    </>
-                  )}
+                {bonus.status === BONUS_STATUS.PIENO && 'Bonus pieno: reddito entro le soglie.'}
+                {bonus.status === BONUS_STATUS.PARZIALE && 'Bonus ridotto: reddito oltre i 15.000 € imponibili.'}
+                {bonus.status === BONUS_STATUS.OLTRE && '🚨 Reddito oltre i 28.000 € imponibili: il bonus non spetta.'}
               </span>
             )}
 
@@ -1227,11 +1252,12 @@ export default function CalendarView({
                     «puoi ancora guadagnare 429 €» sotto. Chi legge non sa a
                     quale credere, e la seconda è quella che tranquillizza —
                     cioè quella sbagliata. */}
+                {/* L'esclamativo sta già nel riquadro sopra quando nearThreshold
+                    è vero: ripeterlo qui impilerebbe due avvisi per lo stesso
+                    fatto. Qui resta solo il dettaglio in lordo. */}
                 {rischio.daRestituire === 0 && bonus.status === BONUS_STATUS.PIENO && (
-                  <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
-                    <span className="bonus-strip-label">
-                      {bonus.nearThreshold ? '⚠️ Sei vicino alla soglia' : 'Puoi ancora guadagnare'}
-                    </span>
+                  <div className="bonus-strip-body">
+                    <span className="bonus-strip-label">Puoi ancora guadagnare</span>
                     <span className="bonus-strip-value">{fmt0(bonus.marginToFull)}</span>
                     <span className="bonus-strip-note">
                       prima di superare i {fmt0(bonus.thresholdFullGross)} lordi previsti a fine anno e uscire dal bonus pieno
