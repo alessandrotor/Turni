@@ -73,6 +73,12 @@ const DEFAULT_SETTINGS = {
   // Voci fisse mensili (indennità, superminimo...) e bonus per singolo mese
   fixedMonthlyItems: [],   // [{ id, label, amount }] ricorrenti ogni mese
   fixedMonthlyDeductions: [], // [{ id, label, amount }] trattenute fisse ogni mese
+  // Quanto vale ogni singolo turno, in griglia e in agenda. SPENTO di default:
+  // chi non lo accende trova il calendario identico a prima, e il totale del
+  // mese lo ha comunque nella barra in alto. Una sola chiave per tutte e due le
+  // viste — sono due modi di guardare lo stesso mese, non due funzioni, e due
+  // interruttori per la stessa intenzione sarebbero attrito.
+  mostraEuroPerTurno: false,
   monthlyBonusAmount: 0,   // importo fisso del bonus (es. bonus presenza), se lo si prende
   monthlyBonus: {},        // { 'YYYY-MM': true } mesi in cui il bonus fisso è stato preso
                            // (valori numerici legacy: importo di quel mese, preservato com'era)

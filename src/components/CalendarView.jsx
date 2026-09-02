@@ -4,10 +4,11 @@ import {
   formatDate, formatMonthYear, isToday, isWeekend,
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth, formatPayrollRange,
 } from '../utils/dates';
-import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
+import { calcShiftMinutes, calcTotalPay, formatCurrency, lordoTurno } from '../utils/pay';
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { isMensilizzato } from '../utils/ccnl';
 import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
+import { rischioRestituzione, CAUSA } from '../utils/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
 import { contrattoMancante } from '../utils/configurazione';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
@@ -301,7 +302,46 @@ export default function CalendarView({
     () => calcBonusMargin(annualProjection || annualGross, settings),
     [annualProjection, annualGross, settings],
   );
+
+  // Quanto rischia di dover RIDARE INDIETRO. E' la domanda che la gente si fa
+  // davvero, e fino a settembre 2026 l'app non la sfiorava: sapeva dire se il
+  // bonus spetta adesso, mai quanto costa scoprire a dicembre che non spettava.
+  // Vedi utils/restituzione.js per il modello e per cosa l'app NON puo' sapere.
+  const rischio = useMemo(
+    () => rischioRestituzione({ settings, proiezioneAnnua: annualProjection || annualGross }),
+    [settings, annualProjection, annualGross],
+  );
   const fmt0 = (n) => formatCurrency(Math.round(n));
+
+  // Gli euro sul singolo turno sono un'OPZIONE, spenta di default: chi non
+  // l'accende trova la griglia e l'agenda identiche a prima. Il totale del mese
+  // ce l'ha comunque, nella barra in alto.
+  const mostraEuro = !!settings.mostraEuroPerTurno;
+
+  // Nella cella l'importo va SENZA decimali: `formatCurrency` scrive «55,00 €»
+  // e in uno spazio da tre cifre quei due zeri sono rumore che allontana le
+  // cifre che contano. La cifra esatta resta nel `title` e nell'agenda — è la
+  // stessa distinzione che l'app fa già fra la griglia (colpo d'occhio) e
+  // l'agenda (dettaglio).
+  const euroCella = (n) => `${Math.round(n).toLocaleString('it-IT')} €`;
+
+  // Quanto vale una giornata. `null` — non zero — quando la paga oraria manca o
+  // non copre quei turni: uno «0 €» in cella sembrerebbe un turno non pagato,
+  // che è una cosa diversa e falsa. `lordoTurno` sta in pay.js apposta, così
+  // questa somma e il totale del riepilogo escono dalla stessa riga di codice
+  // (riscontro: scripts/check-lordo-turno.mjs).
+  const euroDelGiorno = useCallback((turni) => {
+    if (!payByShift) return null;
+    let somma = 0;
+    let noti = 0;
+    for (const s of turni) {
+      const voce = payByShift[s.id];
+      if (!voce || voce.missingRate) continue;
+      somma += lordoTurno(voce);
+      noti += 1;
+    }
+    return noti > 0 ? somma : null;
+  }, [payByShift]);
 
   // Montante + confine automatico (granularità MESE): composizione del reddito e avviso.
   const montante = Number(settings.priorTaxableIncome) || 0;
@@ -374,7 +414,10 @@ export default function CalendarView({
   // o oltre soglia), altrimenti resta ridotta a una riga per chi vuole solo
   // controllare. Si risincronizza cambiando mese, non a ogni ricalcolo, così
   // un'apertura manuale non viene richiusa da un turno appena inserito.
-  const bonusRelevant = bonus.nearThreshold
+  // Con una restituzione in ballo il blocco si apre da solo: e' l'unico caso in
+  // cui c'e' una cifra da vedere e qualcosa da fare, e lasciarla dietro
+  // «Dettagli ▼» equivarrebbe a non dirla.
+  const bonusRelevant = rischio.daRestituire > 0 || bonus.nearThreshold
     || bonus.status === BONUS_STATUS.PARZIALE || bonus.status === BONUS_STATUS.OLTRE;
   const [showBonusDetail, setShowBonusDetail] = useState(bonusRelevant);
   useEffect(() => {
@@ -532,6 +575,23 @@ export default function CalendarView({
             </button>
           </div>
         </div>
+
+        {/* IL NUMERO PER CUI SI APRE L'APP, dove lo si vede sempre.
+            «Retribuzione stimata» esisteva già, ma sotto l'intera griglia: non
+            era mai sullo schermo insieme al calendario, e in vista agenda
+            finiva sotto trenta schede. Qui sta nella barra agganciata, quindi
+            segue lo scorrimento e c'è mentre si segna un turno.
+            Sotto resta il riepilogo completo, con le voci di busta: questa è la
+            risposta, quello è il perché. */}
+        {pay !== null && (
+          <div className="cal-header-soldi">
+            <span className="cal-header-soldi-val" title={`${formatCurrency(pay.total)} lordi in ${formatMonthYear(currentMonth)}`}>
+              {euroCella(pay.total)}
+            </span>
+            <span className="cal-header-soldi-ore">{formatMinutesShort(totalMins)}</span>
+            <span className="cal-header-soldi-eti">lordo stimato</span>
+          </div>
+        )}
       </div>
 
       {/* Import bar */}
@@ -588,6 +648,11 @@ export default function CalendarView({
           onEditShift={onEditShift}
           settings={settings}
           focusDate={focusDate}
+          // L'agenda non riceveva `payByShift`: sapeva le ore e non gli euro,
+          // ed era l'unica vista dell'app a non avere in mano il numero che
+          // l'utente cerca.
+          payByShift={payByShift}
+          mostraEuro={mostraEuro}
         />
       ) : (
         <div className="cal-grid">
@@ -667,6 +732,20 @@ export default function CalendarView({
                       : `${formatMinutesShort(minutiDelGiorno(dayShifts))} in questa giornata`}
                   >
                     {formatMinutesShort(minutiDelGiorno(dayShifts))}
+                  </span>
+                )}
+                {/* Quanto vale la giornata, se l'utente ha chiesto di vederlo.
+                    Arrotondato all'euro: nella cella servono tre cifre che si
+                    leggano di sfuggita, non il centesimo — quello sta
+                    nell'agenda e nel riepilogo. Niente «0 €» quando manca la
+                    paga oraria: uno zero sembrerebbe un turno non pagato invece
+                    che un dato che non c'è. */}
+                {mostraEuro && euroDelGiorno(dayShifts) !== null && (
+                  <span
+                    className="cal-day-euro"
+                    title={`${formatCurrency(euroDelGiorno(dayShifts))} lordi in questa giornata`}
+                  >
+                    {euroCella(euroDelGiorno(dayShifts))}
                   </span>
                 )}
               </div>
@@ -821,38 +900,6 @@ export default function CalendarView({
           </div>
         )}
 
-        {/* Esporta i turni del mese */}
-        <div className="export-bar">
-          <span className="export-label">Esporta il mese:</span>
-          {payrollRange && (
-            <select
-              className="export-period-select"
-              value={exportPeriod}
-              onChange={e => setExportPeriod(e.target.value)}
-              aria-label="Periodo da esportare"
-            >
-              <option value="calendar">Mese di calendario</option>
-              <option value="payroll">Mese di paga ({payrollRange})</option>
-            </select>
-          )}
-          <button
-            type="button"
-            className="btn-export"
-            disabled={(exportPeriod === 'payroll' ? counted : shifts).length === 0 || exportBusy}
-            onClick={() => handleExport('xlsx')}
-          >
-            📊 Excel
-          </button>
-          <button
-            type="button"
-            className="btn-export"
-            disabled={(exportPeriod === 'payroll' ? counted : shifts).length === 0 || exportBusy}
-            onClick={() => handleExport('pdf')}
-          >
-            📄 PDF
-          </button>
-        </div>
-        {exportError && <p className="import-error">{exportError}</p>}
 
         {/* Netto stimato del mese — beta (gated dal feature flag) */}
         {showNetPanel && (
@@ -1085,12 +1132,64 @@ export default function CalendarView({
               </button>
             </div>
 
-            <span className={`bonus-strip-note ${bonus.status === BONUS_STATUS.OLTRE ? 'bonus-strip-note--warn' : ''}`}>
-              {bonus.status === BONUS_STATUS.PIENO && !bonus.nearThreshold && 'Bonus pieno: reddito entro le soglie.'}
-              {bonus.status === BONUS_STATUS.PIENO && bonus.nearThreshold && '⚠️ Vicino alla soglia del bonus pieno.'}
-              {bonus.status === BONUS_STATUS.PARZIALE && 'Bonus ridotto: reddito oltre i 15.000 € imponibili.'}
-              {bonus.status === BONUS_STATUS.OLTRE && '🚨 Reddito oltre i 28.000 € imponibili: il bonus non spetta.'}
-            </span>
+            {/* LA CIFRA PRIMA DELLO STATO. «Bonus ridotto: reddito oltre i
+                15.000 € imponibili» descriveva una condizione; quello che costa
+                soldi è che quei mesi già incassati tornano indietro tutti
+                insieme a dicembre. Il numero viene prima, la spiegazione dopo.
+
+                Il rimedio sta QUI e non solo in Impostazioni: mandare a cercare
+                un interruttore chi ha appena letto di dover restituire 640 €
+                significa che non lo troverà. */}
+            {rischio.daRestituire > 0 ? (
+              <div className="bonus-rischio">
+                <span className="bonus-rischio-titolo">
+                  ⚠️ Di questo passo devi restituire ~{euroCella(rischio.daRestituire)}
+                </span>
+                <span className="bonus-strip-note">
+                  Se ogni mese te l'hanno accreditato, quest'anno hai preso circa{' '}
+                  <strong>{euroCella(rischio.erogato)}</strong> di trattamento integrativo.
+                  {rischio.causa === CAUSA.OLTRE_MAX
+                    ? ' Con questa proiezione superi i 28.000 € imponibili, e non te ne spetta niente.'
+                    : ' Con questa proiezione superi i 15.000 € imponibili: sopra quella soglia spetta solo se le tue detrazioni superano l\'imposta, e con le sole detrazioni da lavoro non succede.'}
+                  {' '}Al conguaglio di dicembre te li riprendono
+                  {rischio.rateizzabile ? ', a rate (sopra i 60 € il datore le spalma).' : ' in una volta sola.'}
+                </span>
+                <span className="bonus-strip-note">
+                  <strong>Cosa puoi fare:</strong> chiedere al datore per iscritto di sospendere
+                  l'erogazione — se a fine anno ti spetta, lo prendi tutto insieme al conguaglio.
+                  Poi spunta qui sotto, così i conti dell'app tornano.
+                </span>
+                <label className="check-row bonus-rischio-scelta">
+                  <input
+                    type="checkbox"
+                    checked={!!settings.noTrattamentoIntegrativo}
+                    onChange={(e) => onUpdateSettings({ noTrattamentoIntegrativo: e.target.checked })}
+                  />
+                  <span>Non me lo accreditano ogni mese</span>
+                </label>
+                {/* L'app vede UN datore. Chi ne ha avuti due ha un reddito più
+                    alto di quello che qui si conosce — ed è proprio il caso in
+                    cui la restituzione è quasi garantita. Dirlo accanto al
+                    numero, non in fondo alla pagina. */}
+                <span className="bonus-strip-note bonus-strip-hint">
+                  Stima su un solo datore di lavoro. Se quest'anno ne hai avuti due, il tuo
+                  reddito è più alto di questo e il rischio è maggiore.
+                </span>
+              </div>
+            ) : (
+              <span className={`bonus-strip-note ${bonus.status === BONUS_STATUS.OLTRE ? 'bonus-strip-note--warn' : ''}`}>
+                {settings.noTrattamentoIntegrativo
+                  ? 'Non te lo accreditano ogni mese: niente da restituire a dicembre.'
+                  : (
+                    <>
+                      {bonus.status === BONUS_STATUS.PIENO && !bonus.nearThreshold && 'Bonus pieno: reddito entro le soglie.'}
+                      {bonus.status === BONUS_STATUS.PIENO && bonus.nearThreshold && '⚠️ Vicino alla soglia del bonus pieno.'}
+                      {bonus.status === BONUS_STATUS.PARZIALE && 'Bonus ridotto: reddito oltre i 15.000 € imponibili.'}
+                      {bonus.status === BONUS_STATUS.OLTRE && '🚨 Reddito oltre i 28.000 € imponibili: il bonus non spetta.'}
+                    </>
+                  )}
+              </span>
+            )}
 
             {showBonusDetail && (
               <>
@@ -1119,7 +1218,16 @@ export default function CalendarView({
                   </span>
                 )}
 
-                {bonus.status === BONUS_STATUS.PIENO && (
+                {/* «PUOI ANCORA GUADAGNARE X» sparisce quando c'è una
+                    restituzione in ballo, e non è una pulizia estetica: quel
+                    riquadro misura quanto manca ai 28.000, cioè alla soglia in
+                    cui il bonus si perde DEL TUTTO. Ma se si è già oltre i
+                    15.000 il bonus è perso comunque, e le due strisce si
+                    contraddicevano a vista: «devi restituire 805 €» sopra e
+                    «puoi ancora guadagnare 429 €» sotto. Chi legge non sa a
+                    quale credere, e la seconda è quella che tranquillizza —
+                    cioè quella sbagliata. */}
+                {rischio.daRestituire === 0 && bonus.status === BONUS_STATUS.PIENO && (
                   <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
                     <span className="bonus-strip-label">
                       {bonus.nearThreshold ? '⚠️ Sei vicino alla soglia' : 'Puoi ancora guadagnare'}
@@ -1132,7 +1240,7 @@ export default function CalendarView({
                   </div>
                 )}
 
-                {bonus.status === BONUS_STATUS.PARZIALE && (
+                {rischio.daRestituire === 0 && bonus.status === BONUS_STATUS.PARZIALE && (
                   <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
                     <span className="bonus-strip-label">Puoi ancora guadagnare</span>
                     <span className="bonus-strip-value">{fmt0(bonus.marginToMax)}</span>
@@ -1154,6 +1262,45 @@ export default function CalendarView({
             )}
           </div>
         )}
+
+        {/* ESPORTA IN FONDO, e non è una rifinitura: stava incastrato FRA il
+            lordo e il netto, cioè in mezzo a un ragionamento sui soldi che
+            andava letto di fila — lordo, netto, bonus. Due pulsanti di
+            esportazione nel mezzo spezzavano la lettura proprio dove serviva
+            continuità. Esportare è quello che si fa DOPO aver guardato i conti,
+            quindi sta dopo. */}
+        {/* Esporta i turni del mese */}
+        <div className="export-bar">
+          <span className="export-label">Esporta il mese:</span>
+          {payrollRange && (
+            <select
+              className="export-period-select"
+              value={exportPeriod}
+              onChange={e => setExportPeriod(e.target.value)}
+              aria-label="Periodo da esportare"
+            >
+              <option value="calendar">Mese di calendario</option>
+              <option value="payroll">Mese di paga ({payrollRange})</option>
+            </select>
+          )}
+          <button
+            type="button"
+            className="btn-export"
+            disabled={(exportPeriod === 'payroll' ? counted : shifts).length === 0 || exportBusy}
+            onClick={() => handleExport('xlsx')}
+          >
+            📊 Excel
+          </button>
+          <button
+            type="button"
+            className="btn-export"
+            disabled={(exportPeriod === 'payroll' ? counted : shifts).length === 0 || exportBusy}
+            onClick={() => handleExport('pdf')}
+          >
+            📄 PDF
+          </button>
+        </div>
+        {exportError && <p className="import-error">{exportError}</p>}
 
         {/* Il riepilogo AI del mese è stato rimosso insieme a services/ai.js:
             teneva due chiavi API in chiaro nel sorgente. Per riproporlo, la

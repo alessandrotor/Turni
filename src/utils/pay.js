@@ -309,6 +309,26 @@ export function computePayByShift(allShifts, settings) {
 // Passarla evita di ricostruirla a ogni chiamata (è O(N) su TUTTA la storia dei
 // turni): con più viste che chiamano questa funzione, ricalcolarla ogni volta
 // rallenta l'app man mano che i turni crescono.
+/**
+ * Il lordo di UN turno: base + tutte le maggiorazioni.
+ *
+ * Sembra una somma da scrivere sul posto, e invece deve stare qui. Il totale
+ * del mese (`calcTotalPay`) accumula esattamente questi due addendi: se la
+ * cella del calendario ne facesse una sua, prima o poi i due numeri
+ * divergerebbero di qualche centesimo e nessuno saprebbe quale credere. Una
+ * somma sola, in un posto solo — è la regola dichiarata in testa a questo file.
+ *
+ * `scripts/check-lordo-turno.mjs` verifica che la somma dei lordi dei turni di
+ * un mese sia identica al totale di quel mese.
+ *
+ * @param {object} voce una voce di `computePayByShift`
+ * @returns {number} euro lordi del turno
+ */
+export function lordoTurno(voce) {
+  if (!voce) return 0;
+  return (Number(voce.base) || 0) + (Number(voce.surcharge) || 0);
+}
+
 export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = null) {
   if (!hasAnyRate(settings)) return null;
   const map = byShift || computePayByShift(allShifts, settings);

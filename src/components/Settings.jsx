@@ -75,6 +75,7 @@ export default function Settings({ settings, onSave }) {
       label: v.label ?? '',
       amount: toInput(v.amount),
     })),
+    mostraEuroPerTurno: !!settings.mostraEuroPerTurno,
     monthlyBonusAmount: toInput(settings.monthlyBonusAmount),
     addRegionalePct: toInput(settings.addRegionalePct),
     addComunalePct: toInput(settings.addComunalePct),
@@ -339,6 +340,7 @@ export default function Settings({ settings, onSave }) {
       previousRates,
       fixedMonthlyItems,
       fixedMonthlyDeductions,
+      mostraEuroPerTurno: !!form.mostraEuroPerTurno,
       monthlyBonusAmount: parseNum(form.monthlyBonusAmount),
       monthlyBonus: settings.monthlyBonus || {}, // gestito dal calendario, va preservato
       addRegionalePct: parseNum(form.addRegionalePct),
@@ -509,6 +511,25 @@ export default function Settings({ settings, onSave }) {
               </p>
             </div>
           )}
+
+          {/* Sta qui, sotto la paga oraria, e non in una sezione «aspetto»: è
+              da questo numero che dipendono gli importi che si accendono, e chi
+              ha appena scritto la paga oraria è esattamente chi vuole vedere
+              quanto vale un turno. */}
+          <label className="check-row">
+            <input
+              type="checkbox"
+              checked={form.mostraEuroPerTurno}
+              onChange={setCheck('mostraEuroPerTurno')}
+            />
+            <span>Mostra quanto vale ogni turno sul calendario</span>
+          </label>
+          <p className="form-hint">
+            Sulla griglia compare l'importo di ogni giornata, nell'agenda quello di ogni turno
+            con la sua scomposizione (base, notturno, domenicale, supplementare). Il totale del
+            mese resta comunque in cima al calendario. Sono importi <strong>lordi</strong>:
+            quello che finisce in busta prima delle trattenute.
+          </p>
         </details>
 
         {/* Ore previste / lavoro a chiamata */}
@@ -1451,14 +1472,29 @@ export default function Settings({ settings, onSave }) {
               </p>
             </div>
 
+            {/* Era «Forza esclusione TI (override, va a conguaglio)»: quattro
+                parole di gergo delle paghe per l'unica azione dell'app che
+                evita davvero di doversi ritrovare un conto a dicembre. Chi non
+                fa questo mestiere non poteva sapere che era quella. Adesso dice
+                cosa fa e cosa costa, come tutto il resto. */}
             <label className="check-row">
               <input
                 type="checkbox"
                 checked={form.noTrattamentoIntegrativo}
                 onChange={setCheck('noTrattamentoIntegrativo')}
               />
-              <span>Forza esclusione TI (override, va a conguaglio)</span>
+              <span>Non farmi accreditare il bonus ogni mese</span>
             </label>
+            <p className="form-hint">
+              Prendi ~100 € in meno al mese, ma non rischi di doverli restituire a dicembre.
+              Se a fine anno ti spetta davvero, lo ricevi tutto insieme al conguaglio.
+              Conviene a chi ha <strong>più datori nello stesso anno</strong>, contratti a
+              termine o un reddito che cambia molto: sono i casi in cui il datore lo accredita
+              credendo di essere l'unico, e poi torna indietro.
+              <br />
+              Va chiesto <strong>anche al datore</strong>, per iscritto: questa casella dice
+              all'app di non contarlo, non ferma la busta paga.
+            </p>
           </details>
         )}
 

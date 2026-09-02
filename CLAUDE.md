@@ -91,6 +91,48 @@ for f in scripts/check-*.mjs; do node "$f" >/dev/null || echo "FAIL $f"; done
 `VITE_AI_PROXY_URL=https://turni-ai-proxy-test.magnaopa.workers.dev`, altrimenti
 fallisce senza che ci sia niente di rotto. È l'unico falso allarme noto.
 
+## A cosa serve l'app, secondo chi la usa
+
+Da un'analisi empirica su una manciata di persone, le due domande che contano
+davvero sono **quanto guadagno con questi turni** e **come evito di dover
+restituire il trattamento integrativo**. Non il calendario: quello è il mezzo.
+
+Il motore le sapeva già rispondere entrambe; nessuna delle due arrivava a
+schermo. `computePayByShift` produce venti campi in euro per ogni turno e per un
+anno non se n'è visto nemmeno uno — il primo euro compariva nel totale del mese,
+sotto tutta la griglia. E `tiDecision` sapeva dire se il bonus spetta ADESSO, mai
+quanto costa scoprire a dicembre che non spettava.
+
+- **Il totale del mese sta nella barra flottante**, sempre, perché è la risposta
+  alla prima domanda. Gli euro sul singolo turno sono un'opzione
+  (`mostraEuroPerTurno`), spenta di default: chi non l'accende trova il
+  calendario di prima.
+- **Il lordo di un turno si chiede a `lordoTurno`** (`utils/pay.js`), mai
+  sommando a mano `base + surcharge` dentro un componente. Il riscontro
+  (`check-lordo-turno.mjs`) verifica che la somma dei turni faccia esattamente
+  il totale del mese: se la cella e il riepilogo dicessero cifre diverse,
+  nessuna delle due sarebbe più credibile.
+- **Il rischio di restituzione è una CIFRA, non uno stato**
+  (`utils/restituzione.js`). «Bonus ridotto: reddito oltre i 15.000» descriveva
+  una condizione; «di questo passo devi restituire ~805 €» dice cosa costa.
+- **Il rimedio sta accanto al numero.** L'unica azione che evita il conguaglio —
+  chiedere al datore di non erogarlo — viveva in Impostazioni come «Forza
+  esclusione TI (override, va a conguaglio)», in gergo delle paghe. Ora si legge,
+  e la casella è dentro il riquadro rosso: mandare a cercare un interruttore chi
+  ha appena letto di dover restituire dei soldi significa che non lo troverà.
+
+Tre cose che il modello NON sa, e che vanno scritte accanto alla cifra e non in
+un disclaimer generico: quanto è stato accreditato davvero (lo dice il cedolino,
+non l'app); che **l'app vede un solo datore**, quindi per chi ne ha due la stima
+è per difetto proprio nel caso più a rischio; e che nella fascia 15.000–28.000 si
+conosce la sola detrazione da lavoro, con cui la capienza non c'è mai — quindi il
+modello dice «non spetta» a chiunque superi i 15.000.
+
+Attenzione al difetto che è già capitato: **il TI può essere zero per due motivi
+opposti** — reddito troppo alto (rischio vero) o troppo basso, sotto la no tax
+area (nessuna imposta da compensare, e il datore non l'ha mai accreditato).
+Confonderli faceva dire «devi restituire 805 €» a chi guadagna 2.150 € l'anno.
+
 ## La regola che conta più di tutte
 
 **Nessun numero di dominio entra nel motore senza un riscontro.** Ogni fatto

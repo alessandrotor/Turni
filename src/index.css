@@ -151,6 +151,43 @@ input, select, textarea { font: inherit; }
   border-radius: var(--radius);
   padding: .75rem 1rem;
   box-shadow: var(--shadow);
+  /* Il totale del mese va a capo su una riga sua: mese e frecce restano dove
+     sono sempre stati, e il numero non li stringe su schermi piccoli. */
+  flex-wrap: wrap;
+}
+
+/* Quanto ho fatto questo mese, agganciato in alto insieme al mese.
+   Prima stava sotto tutta la griglia — cioè fuori schermo — e in vista agenda
+   sotto trenta schede: si poteva usare l'app per mezz'ora senza incontrarlo. */
+.cal-header-soldi {
+  flex: 1 0 100%;
+  display: flex;
+  align-items: baseline;
+  gap: .5rem;
+  margin-top: .35rem;
+  padding-top: .35rem;
+  border-top: 1px solid var(--c-border);
+}
+
+.cal-header-soldi-val {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--c-success);
+  letter-spacing: -.02em;
+  line-height: 1.1;
+}
+
+.cal-header-soldi-ore {
+  font-size: .8rem;
+  color: var(--c-text-2);
+}
+
+/* «lordo stimato» a destra: è la parola che impedisce di scambiare questo
+   numero per il netto che arriva sul conto. Piccola ma sempre presente. */
+.cal-header-soldi-eti {
+  margin-left: auto;
+  font-size: .72rem;
+  color: var(--c-text-2);
 }
 
 .cal-header-center {
@@ -394,6 +431,30 @@ input, select, textarea { font: inherit; }
   font-size: .8rem;
   font-weight: 500;
   color: var(--c-text-2);
+}
+
+/* Nell'agenda c'è spazio per la cifra esatta: due decimali, cioè quella che si
+   ritrova in busta, non l'arrotondamento della griglia. `margin-left: auto` la
+   spinge contro la matita, così resta allineata anche quando gli orari sono più
+   corti (una mezza giornata) o più lunghi (un turno a cavallo di mezzanotte). */
+.timeline-euro {
+  margin-left: auto;
+  margin-right: .4rem;
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--c-success);
+  white-space: nowrap;
+}
+
+/* Da cosa è fatto l'importo. È la riga che spiega perché una domenica vale più
+   di ieri, e per questo sta sotto i badge e non accanto alla cifra: chi vuole
+   solo il numero l'ha già letto e può saltarla. */
+.timeline-scomposizione {
+  flex: 1 0 100%;
+  margin-top: .1rem;
+  font-size: .72rem;
+  color: var(--c-text-2);
+  line-height: 1.35;
 }
 
 .timeline-card-edit-btn {
@@ -1482,6 +1543,39 @@ input, select, textarea { font: inherit; }
   color: var(--c-warning);
 }
 
+/* ── Il rischio di restituzione ──────────────────────────────────
+   Il riquadro che dice la cifra invece dello stato. Fondo rosso chiaro come
+   `--danger`, perché qui non si sta descrivendo una condizione: si sta dicendo
+   che dei soldi già incassati tornano indietro. È l'unico posto dell'app in cui
+   un numero è una brutta notizia, e va distinto dal giallo del «sei vicino alla
+   soglia», che invece è ancora rimediabile senza costi. */
+.bonus-rischio {
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+  margin-top: .5rem;
+  padding: .85rem;
+  background: var(--c-danger-light);
+  border: 1px solid var(--c-danger);
+  border-radius: var(--radius);
+}
+
+.bonus-rischio-titolo {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--c-danger);
+  line-height: 1.25;
+}
+
+/* La casella della rinuncia sta DENTRO il riquadro rosso, non in fondo alla
+   pagina: è l'unica cosa che si può fare, e mandarla a cercare in Impostazioni
+   equivale a non offrirla. */
+.bonus-rischio-scelta {
+  margin-top: .1rem;
+  font-size: .85rem;
+  font-weight: 600;
+}
+
 /* Precisazione sulla base di calcolo della soglia (lordo vs imponibile) */
 .bonus-strip-hint {
   display: block;
@@ -2353,6 +2447,19 @@ input, select, textarea { font: inherit; }
   color: var(--c-text-2);
   white-space: nowrap;
   letter-spacing: -.01em;
+}
+
+/* Quanto vale la giornata, nella cella. Verde come «Retribuzione stimata» —
+   è lo stesso numero, a un'altra granularità — e più marcato delle ore, che
+   restano il contesto. Spento di default: `settings.mostraEuroPerTurno`. */
+.cal-day-euro {
+  align-self: flex-end;
+  margin-top: 1px;
+  font-size: .68rem;
+  font-weight: 800;
+  color: var(--c-success);
+  white-space: nowrap;
+  letter-spacing: -.02em;
 }
 
 .timeline-day-total {
