@@ -23,6 +23,7 @@ import {
   decidiAggiornamento, ATTESA_SECONDO_PIANO, INTERVALLO_CONTROLLO,
 } from '../src/utils/aggiornamento.js';
 import { segnaOccupato, eOccupato, chiOccupa } from '../src/utils/occupato.js';
+import { DURATA_ANNULLA } from '../src/utils/avvisi.js';
 
 const SW = 'dist/sw.js';
 const CONFIG = 'vite.config.js';
@@ -169,6 +170,24 @@ segnaOccupato('import', false);
 check(!eOccupato(), 'liberati tutti: si torna liberi');
 segnaOccupato('modale', false); // spegnere due volte non deve rompere niente
 check(!eOccupato(), 'spegnere una chiave già spenta non lascia strascichi');
+
+// La finestra per annullare una cancellazione è lavoro in sospeso a tutti gli
+// effetti: se la pagina si ricarica dentro quegli otto secondi, il turno
+// cancellato non torna più. È l'unica chiave del registro con una SCADENZA, e
+// vale la pena dire qui che quella scadenza esiste ed è breve: una chiave
+// legata a uno stato che non finisce mai è il modo in cui questo registro si
+// rompe in silenzio.
+check(DURATA_ANNULLA > 0 && DURATA_ANNULLA < INTERVALLO_CONTROLLO,
+  'la finestra dell\'annulla dura meno di un giro di controllo',
+  `${DURATA_ANNULLA} ms contro ${INTERVALLO_CONTROLLO}: al massimo rimanda un controllo, non lo spegne`);
+segnaOccupato('annulla', true);
+check(decidiAggiornamento({
+  pronto: true, occupato: eOccupato(), visibile: false, msNascosta: 5 * M, msDallUltimoControllo: 0,
+}).azione !== 'applica', 'con l\'annulla in ballo non si ricarica', chiOccupa().join(', '));
+segnaOccupato('annulla', false);
+check(decidiAggiornamento({
+  pronto: true, occupato: eOccupato(), visibile: false, msNascosta: 5 * M, msDallUltimoControllo: 0,
+}).azione === 'applica', 'scaduta la finestra, l\'aggiornamento riparte');
 
 console.log(falliti === 0
   ? '\nLa versione nuova aspetta il suo turno.\n'

@@ -197,6 +197,30 @@ check(perse.length === 0 && inviate.size >= 10,
   'ogni campo inviato dalla telemetria ha la sua colonna nel Foglio',
   perse.length ? `si perderebbe: ${perse.join(', ')}` : `${inviate.size} campi su ${colonne.size} colonne`);
 
+// ── 9. La scorciatoia dell'icona: manifest ↔ App ───────────────────────────
+// «Segna il turno di oggi» vive in due file che non si parlano: l'indirizzo sta
+// nel manifest (`vite.config.js`), chi lo legge sta in `src/App.jsx`.
+// Rinominare il parametro da una parte sola non dà nessun errore — la
+// scorciatoia aprirebbe il calendario nudo, e chi la usa penserebbe di aver
+// sbagliato a premere.
+//
+// Si guarda il SORGENTE e non `dist/`, così questo controllo continua a girare
+// senza pretendere una build: è un compromesso, e il prezzo è non accorgersi di
+// un manifest che il plugin non ha generato. Lo copre `check-anteprima-link`,
+// che il pacchetto lo guarda davvero.
+const vite = readFileSync('vite.config.js', 'utf8');
+const app = readFileSync('src/App.jsx', 'utf8');
+const scorciatoie = [...vite.matchAll(/url:\s*'\/\?([a-zA-Z0-9_]+)=([a-zA-Z0-9_]+)'/g)]
+  .map((m) => ({ chiave: m[1], valore: m[2] }));
+const orfane = scorciatoie.filter((s) => !(
+  app.includes(`get('${s.chiave}')`) && app.includes(`'${s.valore}'`)
+));
+check(scorciatoie.length > 0 && orfane.length === 0,
+  'ogni scorciatoia del manifest ha chi la legge in App',
+  orfane.length
+    ? orfane.map((s) => `?${s.chiave}=${s.valore} non letto`).join(' · ')
+    : scorciatoie.map((s) => `?${s.chiave}=${s.valore}`).join(', '));
+
 console.log(falliti === 0
   ? '\nI file che nessuno guarda mai sono a posto.\n'
   : `\n${falliti} problema/i.\n`);

@@ -2689,6 +2689,16 @@ input, select, textarea { font: inherit; }
 }
 .avviso-agg-chiudi:hover { background: var(--c-bg); color: var(--c-text); }
 
+/* La striscia dell'annulla è la stessa scheda dell'aggiornamento — stessa
+   posizione, stessa forma, stesso comportamento — quindi eredita `.avviso-agg`
+   invece di ridichiararne le venti proprietà: una sola definizione visiva da
+   mantenere. Cambia solo il filetto rosso a sinistra, ed è l'unica cosa che
+   deve cambiare: dice «qualcosa è appena sparito» a chi la vede con la coda
+   dell'occhio, senza gridare come l'ambra delle maggiorazioni, che invece
+   parla di soldi contati male tutti i mesi. Qui in ballo c'è un turno solo, e
+   per pochi secondi. */
+.avviso-annulla { border-left: 3px solid var(--c-danger); }
+
 /* Voce evidenziata dalle frecce nella tendina del contratto: senza, muovere la
    selezione da tastiera non si vedrebbe. */
 .combobox-option.is-evidenziata {

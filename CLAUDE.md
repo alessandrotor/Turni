@@ -57,10 +57,27 @@ In pratica, e sono regole, non aspirazioni:
   verità sul perché.** Quando l'app non sa (la fascia notturna senza contratto)
   guarda largo e scrive «potrebbe»: chiedere di più costa un tocco, non chiedere
   costa soldi ogni mese.
+- **Non chiedere non basta: il GESTO va contato.** Per un anno tutte le regole
+  qui sopra hanno riguardato le domande, e nessuna il gesto che l'app esiste per
+  fare. Segnare un turno costava dieci interazioni, e otto erano lì per
+  correggere `08:00–16:00` scritti a mano nel modulo. Ora gli orari li propone
+  lo storico (`utils/orari-proposti.js`) e il turno tipico costa due tocchi.
+  La regola generale: **quello che l'app può dedurre dai dati già inseriti non
+  si fa digitare.** Ma non si inventa nemmeno — la proposta è una coppia che
+  nello storico esiste davvero, mai una media, e il riscontro lo verifica.
+- **Per ciò che si recupera, l'annulla dopo; la conferma prima mai.** Una
+  domanda «sei sicuro?» costa un tocco a tutti per un errore che fa uno, e
+  insegna a chiudere gli avvisi a riflesso. Cancellare un turno agisce subito e
+  apre una finestra per tornare indietro (`utils/avvisi.js`, `DURATA_ANNULLA`).
+  Quella finestra è lavoro in sospeso: tiene la sua chiave in `occupato`.
 
 Il riscontro di queste regole è `scripts/check-primo-avvio.mjs`: non verifica che
 le funzioni rispondano, verifica che una configurazione completa non chieda
-niente e che un «no» non torni.
+niente e che un «no» non torni. Accanto, `check-orari-proposti.mjs` (l'app non
+inventa un orario) e `check-avvisi.mjs`, che sull'ordine delle strisce controlla
+la cosa che nessun occhio umano controlla: che ogni avviso abbia almeno una
+schermata in cui compare, cioè che il prossimo aggiunto in cima non ne seppellisca
+un altro per sempre.
 
 ## Comandi
 

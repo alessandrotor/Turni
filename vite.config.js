@@ -69,6 +69,26 @@ export default defineConfig({
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
           { src: 'maskable-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
+        // Tenendo premuta l'icona dell'app si arriva dritti al modulo del turno
+        // di oggi, saltando apertura e calendario. Il parametro lo legge
+        // `src/App.jsx`, ed è un contratto fra due file che si può rompere
+        // rinominandolo da una parte sola — senza accorgersene, perché la
+        // scorciatoia aprirebbe semplicemente il calendario nudo. Lo riscontra
+        // `scripts/check-configurazione.mjs`.
+        //
+        // Apre il modulo, NON salva niente: un turno scritto senza che nessuno
+        // lo veda è un dato che tocca i soldi senza uno sguardo.
+        //
+        // Vale per la PWA installata dal web. L'APK Capacitor non legge il
+        // manifest: lì servirebbe `res/xml/shortcuts.xml`, che non c'è.
+        shortcuts: [
+          {
+            name: 'Segna il turno di oggi',
+            short_name: 'Turno di oggi',
+            url: '/?nuovo=oggi',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' }],
+          },
+        ],
       },
     }),
   ],

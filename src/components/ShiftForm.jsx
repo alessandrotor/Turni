@@ -3,6 +3,8 @@ import { formatDate, formatDayShort, parseDate, minutesDiff, formatMinutes } fro
 import { proponiPeriodo, totalePeriodo } from '../utils/periodo-assenza';
 import useModalDismiss from '../hooks/useModalDismiss';
 import { TIPO, ETICHETTA, ICONA, tipoTurno, isAssenza, minutiGiornoAssenza } from '../utils/assenze';
+import { proponiOrari, sagomeFrequenti, ORARI_DEFAULT, MAX_SAGOME } from '../utils/orari-proposti';
+import { parseNum } from '../utils/pay';
 
 const TIPI = [TIPO.LAVORO, TIPO.FERIE, TIPO.PERMESSO, TIPO.MALATTIA, TIPO.FESTIVITA];
 
@@ -30,15 +32,18 @@ function oreArrotondate(ore) {
   return Number(ore.toFixed(2));
 }
 
-function getInitialState(modal, settings) {
+function getInitialState(modal, settings, turni) {
   const oreAssenza = oreArrotondate(minutiGiornoAssenza(settings) / 60);
   if (modal.type === 'edit') {
     const s = modal.shift;
     return {
       kind: tipoTurno(s),
       date: s.date,
-      startTime: s.startTime ?? '08:00',
-      endTime: s.endTime ?? '16:00',
+      // Un turno salvato porta i propri orari e NON riceve la proposta: sarebbe
+      // una modifica che nessuno ha chiesto, su un dato già scelto. Il ripiego
+      // serve solo a chi converte un'assenza in lavoro, che orari non ne ha.
+      startTime: s.startTime ?? ORARI_DEFAULT.startTime,
+      endTime: s.endTime ?? ORARI_DEFAULT.endTime,
       breakMinutes: s.breakMinutes ?? 0,
       surchargePct: s.surchargePct ?? 0,
       // Un'assenza salvata porta la propria durata; un turno di lavoro no, e
@@ -52,12 +57,23 @@ function getInitialState(modal, settings) {
       note: s.note ?? '',
     };
   }
+  // Gli orari NON sono più un numero scritto qui: vengono dai turni già
+  // segnati (vedi utils/orari-proposti.js). Chi non ha storico riceve
+  // 08:00–16:00 come sempre, quindi il primo turno in assoluto non cambia.
+  //
+  // La proposta si calcola UNA VOLTA, all'apertura, e di proposito non segue il
+  // campo Data: riscrivere gli orari sotto le dita di chi sta già digitando
+  // cancellerebbe quello che ha appena messo. È la stessa ragione per cui
+  // `apriAvanzate` qui sotto è calcolato una volta sola.
+  const data = modal.date ?? formatDate(new Date());
+  const proposta = proponiOrari(turni, data);
   return {
     kind: TIPO.LAVORO,
-    date: modal.date ?? formatDate(new Date()),
-    startTime: '08:00',
-    endTime: '16:00',
-    breakMinutes: 0,
+    date: data,
+    startTime: proposta.startTime,
+    endTime: proposta.endTime,
+    breakMinutes: proposta.breakMinutes,
+    fonteOrari: proposta.fonte,
     surchargePct: 0,
     absenceHours: String(oreAssenza),
     // Estremo finale del periodo. Vuoto = una giornata sola, cioè il
@@ -71,13 +87,22 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
   // Stato iniziale calcolato una volta sola e condiviso dai due useState:
   // ricostruirlo per il secondo era lavoro sprecato a ogni mount del modale.
   const initial = useRef(null);
-  if (initial.current === null) initial.current = getInitialState(modal, settings);
+  if (initial.current === null) initial.current = getInitialState(modal, settings, turni);
 
   const [form, setForm] = useState(initial.current);
   const [customBreak, setCustomBreak] = useState(false);
   const [customSurcharge, setCustomSurcharge] = useState(
     () => !SURCHARGE_PRESETS.some(p => p.value === Number(initial.current.surchargePct)),
   );
+
+  // Le scorciatoie per chi ruota su più turni. La proposta ne indovina una
+  // sola: queste sono le altre, un tocco l'una. Congelate come lo stato
+  // iniziale — un elenco che si riordina mentre lo si guarda farebbe toccare
+  // il pulsante sbagliato.
+  const sagome = useRef(null);
+  if (sagome.current === null) {
+    sagome.current = sagomeFrequenti(turni, initial.current.date).slice(0, MAX_SAGOME);
+  }
 
   const dialogRef = useRef(null);
   useModalDismiss(dialogRef, onClose);
@@ -182,7 +207,10 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
       ? {
           ...base,
           type: form.kind,
-          durationMinutes: Math.max(0, Math.round((Number(form.absenceHours) || 0) * 60)),
+          // `parseNum` e non `Number`: su parecchie tastiere italiane in questo
+          // campo finisce «4,5», e `Number('4,5')` fa NaN — che con `|| 0`
+          // diventa una giornata di ferie da ZERO ore, salvata in silenzio.
+          durationMinutes: Math.max(0, Math.round(parseNum(form.absenceHours) * 60)),
         }
       : {
           ...base,
@@ -291,7 +319,7 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
                             aria-label={`Ore del ${d.getDate()}`}
                             disabled={!r.selezionato}
                             value={oreArrotondate(r.minuti / 60)}
-                            onChange={(e) => cambiaRiga(r.data, { minuti: Math.round((Number(e.target.value) || 0) * 60) })}
+                            onChange={(e) => cambiaRiga(r.data, { minuti: Math.round(parseNum(e.target.value) * 60) })}
                           />
                           <span className="periodo-giorno-nota">
                             {r.turnoEsistente
@@ -343,6 +371,39 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
             )
           ) : (
           <>
+          {/* Le sagome ricorrenti, un tocco l'una. Compaiono SOLO se ce n'è più
+              d'una: con un orario solo la proposta l'ha già scritto nei campi e
+              un pulsante che non cambia niente è ingombro. Chi non ha storico
+              non vede questa riga e trova il modulo di sempre.
+
+              Riusa `break-presets` come già fanno Giornata e Maggiorazione qui
+              dentro: nessuna regola CSS nuova. */}
+          {sagome.current.length > 1 && (
+            <div className="form-group">
+              <label className="form-label">I tuoi turni soliti</label>
+              <div className="break-presets">
+                {sagome.current.map((s) => {
+                  const scelta = form.startTime === s.startTime && form.endTime === s.endTime;
+                  return (
+                    <button
+                      key={`${s.startTime}|${s.endTime}`}
+                      type="button"
+                      className={`break-preset-btn ${scelta ? 'active' : ''}`}
+                      onClick={() => setForm(f => ({
+                        ...f,
+                        startTime: s.startTime,
+                        endTime: s.endTime,
+                        breakMinutes: s.breakMinutes,
+                      }))}
+                    >
+                      {s.startTime}–{s.endTime}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="form-row">
             <div className="form-group">
               <label className="form-label" htmlFor="shift-start">Inizio</label>
@@ -367,6 +428,18 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
               />
             </div>
           </div>
+
+          {/* Da dove vengono gli orari già scritti. Non è una domanda e non ha
+              pulsanti: dice soltanto che quel numero non se l'è inventato
+              l'app, così chi lo trova diverso da prima sa perché. Sparisce da
+              sé appena si tocca un campo — a quel punto gli orari sono di chi
+              li ha scritti, e continuare a dire «come i tuoi soliti» sarebbe
+              falso. */}
+          {form.fonteOrari === 'storico'
+            && form.startTime === initial.current.startTime
+            && form.endTime === initial.current.endTime && (
+            <p className="form-hint">Come i tuoi turni più frequenti. Cambiali se questo è diverso.</p>
+          )}
 
           {/* Preview ore lavorate */}
           <div className="worked-preview">
