@@ -59,13 +59,15 @@
 // LA PROIEZIONE ANNUA NON È STAMPATA — MA LA BUSTA LA RIVELA
 // L'IRPEF del mese dipende dal reddito annuo che il consulente sta stimando, che
 // in busta non compare. Compare però la DETRAZIONE, che di quel reddito è una
-// funzione invertibile: da 247,89 € su 30 giorni si risale a ≈ 15.918 € di
-// imponibile annuo. E il conto si chiude da sé, perché quella cifra cade nella
-// fascia 15.000–20.000 del cuneo, ed è esattamente il 4,8% che la busta stampa
-// invece del 5,3% degli altri mesi. Due voci indipendenti che concordano non
-// sono una coincidenza: sono la conferma che la lettura è giusta.
+// funzione invertibile: dalla detrazione del mese si risale all'imponibile
+// annuo stimato. E il conto si chiude da sé, perché quella cifra cade nella
+// fascia 15.000–20.000 del cuneo, ed è esattamente l'aliquota che la busta
+// stampa quel mese invece di quella degli altri mesi. Due voci indipendenti
+// che concordano non sono una coincidenza: sono la conferma che la lettura è
+// giusta.
 //
-// Il consulente ha aggiornato la stima ad aprile (da sotto i 15.000 a ~15.900) e
+// Il consulente ha aggiornato la stima ad aprile (da sotto i 15.000 a poco
+// sopra) e
 // di nuovo a giugno: qui si legge mese per mese invece di fissarla, altrimenti
 // il riscontro proverebbe solo che sappiamo indovinare un numero.
 
@@ -206,8 +208,8 @@ for (const b of buste) {
   // SCARTO NOTO, quando c'è la mensilità aggiuntiva: la SOMMA dei due imponibili
   // è giusta, la RIPARTIZIONE fra loro balla di 13 centesimi. Il motore divide
   // con l'aliquota deducibile effettiva (contributi ÷ lordo = 9,7567%), il
-  // gestionale con qualcosa che vale 9,787% — 3 millesimi di scostamento, che su
-  // 475,65 € di 14ª fanno 0,14. Non si sa da dove venga quel terzo decimale, e
+  // gestionale con qualcosa che vale 9,787% — 3 millesimi di scostamento, che
+  // sulla 14ª fanno pochi centesimi. Non si sa da dove venga quel terzo decimale, e
   // una busta sola non basta a inventarsi una regola: si dichiara e si aspetta la
   // prossima 13ª. Il netto del mese NON ne risente, ed è la ragione per cui la
   // tolleranza qui è larga e altrove no.

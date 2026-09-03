@@ -6,8 +6,9 @@
 // di una busta, che sono la ragione per cui quella regola esiste.
 //
 // I dati vengono da un cedolino CCNL turismo, pubblici esercizi, part-time 60%
-// livello 6S, gennaio 2025, paga base 8,44942 €/h. Nel repository non entra
-// nessuna busta: solo le cifre necessarie, senza dati personali.
+// (livello e mese diversi da quello di riferimento in CLAUDE.md). Nel
+// repository non entra nessuna busta, e le cifre vivono come costanti nel
+// codice qui sotto, non ripetute in questo commento.
 //
 // Il caso che conta: la voce «Magg. fest. 120%» significa che ogni ora di quel
 // giorno vale il 120% del normale, cioe' +20%. Chi copia 120 nel campo dell'app

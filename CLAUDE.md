@@ -150,39 +150,37 @@ Busta di riferimento: LUL Zucchetti, CCNL Turismo, **livello 5, part-time 60%**,
 giugno e luglio 2026. Nel repository entrano solo cifre — mai nome, codice
 fiscale, indirizzo, IBAN o datore.
 
+**Le cifre esatte vivono nel codice dei riscontri (`scripts/check-*.mjs`), non
+qui.** Questo file spiega il RAGIONAMENTO — perché un dato è fatto così, cosa
+dimostra, dove si rompe — non ripete gli importi: sono usati, non pubblicati.
+Per i numeri, apri lo script citato.
+
 ### Da dove viene la paga oraria — confermato sul cedolino
 
-```
-minimo tabellare   1.057,72
-contingenza          522,37
-terzo elemento         5,41   ← voce a sé, stampata in busta
-                   ─────────
-mensile full-time  1.585,50   ÷ 172 = 9,21802 €/h   × 60% = 951,30 €
-```
+La paga oraria non è il solo minimo tabellare: ci entra anche il **terzo
+elemento**, un importo fisso mensile della contrattazione territoriale. Il
+divisore orario del Turismo è lo stesso `monthlyHoursFactor: 4.3` di
+`src/data/ccnl.json` scritto in un altro modo (40 h × 4,3).
 
-- Il divisore **172** è lo stesso `monthlyHoursFactor: 4.3` di
-  `src/data/ccnl.json` scritto in un altro modo (40 h × 4,3). Le ore mensili del
-  contratto, 103,20, sono 172 × 60%.
-- Il **terzo elemento** è un importo fisso mensile della contrattazione
-  territoriale: entra nella retribuzione e quindi nella paga oraria, ma **non**
-  nella base dell'Ente Bilaterale (948,05 = (tabellare + contingenza) × 60%). Da
-  lì i 3,25 € di scarto con la retribuzione, che per mesi sono rimasti annotati
-  come inspiegati. Sul datore 2024-2025 nemmeno la maggiorazione domenicale lo
-  comprendeva (rapporto 0,99547).
+Il terzo elemento entra nella retribuzione e quindi nella paga oraria, ma
+**non** nella base dell'Ente Bilaterale — da lì nasce uno scarto fra i due
+totali che per mesi era rimasto annotato come inspiegato. Sul datore 2024-2025
+nemmeno la maggiorazione domenicale lo comprendeva.
+
 - Riscontro: `scripts/check-tabellare-turismo.mjs`.
 
 ### Gli altri, con il loro riscontro
 
 - **Mese di paga**: nei contratti mensilizzati la busta taglia a settimane
   intere, e la settimana a cavallo appartiene al mese del **lunedì**. La soglia
-  del supplementare è **mensile** (103,20 h), non settimanale.
+  del supplementare è **mensile**, non settimanale.
   → `check-mese-paga-2026.mjs`
 - **Ore oltre soglia**: la busta scrive l'ora INTERA al 130%, non il solo +30%.
   → `check-busta-luglio-2026.mjs`
-- **Maggiorazioni Turismo** (17 cedolini 2024-2025): notturno 25%, domenicale
-  10%, supplementare 30%, festivo 20%. Attenzione a come il cedolino le SCRIVE:
-  domenicale e notturno riportano la sola maggiorazione, il festivo il totale
-  (120% = +20%). → `check-busta-maggiorazioni-reali.mjs`
+- **Maggiorazioni Turismo** (17 cedolini 2024-2025): notturno, domenicale,
+  supplementare, festivo. Attenzione a come il cedolino le SCRIVE: domenicale e
+  notturno riportano la sola maggiorazione, il festivo il totale.
+  → `check-busta-maggiorazioni-reali.mjs`
 - **Fascia notturna**: le buste non riportano le timbrature, quindi non è
   ricavabile da lì. L'art. 13 CCNL prevede orari diversi per settore (24:00-06:00
   ordinario, 23:00-06:00 pubblici esercizi, 23:30-06:30 alberghiero); l'app usa
@@ -192,14 +190,12 @@ mensile full-time  1.585,50   ÷ 172 = 9,21802 €/h   × 60% = 951,30 €
   → `check-assenze.mjs`, `check-festivita.mjs`
 - **Malattia**: la carenza si conta per EVENTO, non per anno. Percentuali e
   giorni NON sono verificati su nessun cedolino, e **le buste che la contengono
-  non fanno testo**: `luglio-24` e `novembre-24` mostrano una scomposizione
-  completa e invitante («Carenza Malattia», «Malattia Inps 80», «Int. Car.
-  Malattia»), ma sono di un altro datore che sceglieva di **integrare** la
-  malattia. È una scelta aziendale, non la norma del CCNL — tararci sopra i
-  default significherebbe promettere a tutti quello che faceva un'azienda sola.
-  Marzo 2026 ha una malattia sul datore attuale, ma come semplice storno
-  («Assenza per malattia», −72,06): dice quanto viene tolto, non quanto l'INPS
-  o il contratto restituiscono.
+  non fanno testo**: due mesi mostrano una scomposizione completa e invitante,
+  ma sono di un altro datore che sceglieva di **integrare** la malattia. È una
+  scelta aziendale, non la norma del CCNL — tararci sopra i default
+  significherebbe promettere a tutti quello che faceva un'azienda sola. Un mese
+  sul datore attuale ha una malattia come semplice storno: dice quanto viene
+  tolto, non quanto l'INPS o il contratto restituiscono.
 
 ## Convenzioni dell'interfaccia
 

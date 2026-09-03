@@ -3,8 +3,9 @@
 //   node scripts/check-busta-giugno-2026.mjs
 //
 // Busta di riferimento: LUL Zucchetti, giugno 2026, CCNL Turismo, livello 5,
-// part-time 60%, assunzione 29/12/2025. Non è un test unitario di comodo: i
-// valori attesi sono le cifre stampate sul cedolino.
+// part-time 60%. Non è un test unitario di comodo: i valori attesi sono le
+// cifre stampate sul cedolino — vivono come costanti qui sotto, non ripetute
+// in questo commento.
 //
 // ATTENZIONE alla lettura del caso A. Il reddito annuo di riferimento è un
 // INPUT dello scenario, non un risultato del motore: il consulente lavora su
@@ -29,8 +30,9 @@ const BASE_SETTINGS = {
   addComunalePct: 0,
 };
 
-// Lordo di giugno: 951,30 retribuzione + 338,53 supplementare 30% + 475,65 14ª
-// + 25,35 magg. festivo + 120,00 TOP STORE + 10,00 flessibilità + 126,75 festivo.
+// Lordo di giugno: somma delle voci del cedolino (retribuzione, supplementare,
+// 14ª, maggiorazioni, indennità) — costante qui sotto, non elencata voce per
+// voce in questo commento.
 const LORDO_GIUGNO = 2047.58;
 const QUATTORDICESIMA = 475.65;
 const GIORNI = 30;
@@ -49,12 +51,10 @@ function check(label, actual, expected, tol) {
 
 // ---------------------------------------------------------------- caso A
 // Proiezione annua implicita nella busta. Non è un tondo scelto a mano: è il
-// reddito che riproduce la detrazione di 239,19 € stampata sul cedolino,
-// invertendo la formula dell'art. 13 TUIR —
-//   detrazione annua = 239,19 × 365/30 = 2.910,14
-//   2.910,14 = 1.910 + 1.190 × (28.000 − R)/13.000  →  R = 17.074 di imponibile
-//   → 18.895 € di lordo.
-// Cade nella fascia 15.000–20.000, il che quadra con il cuneo liquidato al 4,8%.
+// reddito che riproduce la detrazione stampata sul cedolino, invertendo la
+// formula dell'art. 13 TUIR (dettaglio del calcolo non ripetuto qui, il
+// risultato è la costante usata sotto). Cade nella fascia 15.000–20.000, il
+// che quadra con il cuneo liquidato in busta a quella fascia.
 // Resta una PREVISIONE del consulente: se il secondo semestre porta meno ore,
 // l'anno chiude più in basso e il conguaglio di dicembre rimette tutto a posto.
 console.log('\nCaso A — proiezione 18.895 € lordi (fascia 15.000–20.000)\n');
