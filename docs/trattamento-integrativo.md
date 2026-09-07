@@ -6,15 +6,19 @@ busta paga: quanto spetta, a chi, quando si perde, e cosa succede a dicembre.
 Serve a due cose: rispondere alla domanda «l'app sta dicendo il vero?» senza
 riaprire il codice, e rendere visibile **dove l'app sa e dove tira a indovinare**.
 
-> **Come è stato verificato questo documento.** I riferimenti normativi qui
-> sotto (legge, articolo, comma) sono puntuali e verificabili su Normattiva —
-> i link ci sono. Il testo *letterale* delle norme **non** è stato scaricato
-> dalle fonti ufficiali: in questo ambiente di sviluppo il proxy di rete blocca
-> `normattiva.it`, `gazzettaufficiale.it`, `def.finanze.it`,
-> `agenziaentrate.gov.it` e `inps.it`. Il contenuto è stato ricostruito da
-> fonti secondarie qualificate (circolari commentate, studi professionali,
-> riviste fiscali), elencate in fondo. **Prima di considerare un numero
-> definitivo, apri il link a Normattiva e leggi il comma.**
+> **Come è stato verificato questo documento.** L'**art. 1 del D.L. 3/2020**
+> (il cuore della norma, §2–3 qui sotto) è riportato **testualmente**, versione
+> vigente dal 01/01/2025 — testo incollato dall'utente da Normattiva, non
+> scaricato da questa sessione. È la fonte più forte che il documento ha: se un
+> punto del codice lo contraddice, è il codice a essere rivisto.
+>
+> Il resto — L. 234/2021, D.Lgs. 216/2023, L. 207/2024 commi 4-9, TUIR — **non**
+> è stato letto in versione integrale: in questo ambiente di sviluppo il proxy
+> di rete blocca `normattiva.it`, `gazzettaufficiale.it`, `def.finanze.it`,
+> `agenziaentrate.gov.it` e `inps.it`, quindi quei riferimenti vengono da fonti
+> secondarie qualificate (circolari commentate, studi professionali), elencate
+> in fondo. **Prima di considerare un numero di quella parte definitivo, apri
+> il link a Normattiva e leggi il comma.**
 
 ---
 
@@ -45,12 +49,44 @@ Le soglie sono sul **reddito complessivo ai fini IRPEF** (l'imponibile fiscale),
 la si perde: fra lordo e imponibile ci sono i contributi previdenziali a carico
 del lavoratore, che si deducono.
 
+Testo vigente, art. 1 comma 1, D.L. 3/2020 (in vigore dal 01/01/2025, come
+modificato da L. 207/2024 art. 1 c. 3):
+
+> «Nelle more di una revisione degli strumenti di sostegno al reddito, qualora
+> l'imposta lorda determinata sui redditi di cui agli articoli 49, con
+> esclusione di quelli indicati nel comma 2, lettera a), e 50, comma 1, lettere
+> a), b), c), c-bis), d), h-bis) e l), del testo unico delle imposte sui
+> redditi [...] sia di importo superiore a quello della detrazione spettante
+> ai sensi dell'articolo 13, comma 1 [...], diminuita dell'importo di 75 euro
+> rapportato al periodo di lavoro nell'anno, è riconosciuta una somma a titolo
+> di trattamento integrativo, che non concorre alla formazione del reddito, di
+> importo [...] pari a 1.200 euro a decorrere dall'anno 2021, se il reddito
+> complessivo non è superiore a 15.000 euro. Il trattamento integrativo è
+> riconosciuto anche se il reddito complessivo è superiore a 15.000 euro ma non
+> a 28.000 euro, a condizione che la somma delle detrazioni di cui agli
+> articoli 12 e 13, comma 1 [...], delle detrazioni di cui all'articolo 15,
+> comma 1, lettere a) e b), e comma 1-ter, dello stesso testo unico,
+> limitatamente agli oneri sostenuti in dipendenza di prestiti o mutui
+> contratti fino al 31 dicembre 2021, e delle rate relative alle detrazioni di
+> cui agli articoli 15, comma 1, lettera c), e 16-bis del citato testo unico
+> nonché di quelle relative alle detrazioni previste da altre disposizioni
+> normative, per spese sostenute fino al 31 dicembre 2021, sia di ammontare
+> superiore all'imposta lorda. [...] il trattamento integrativo è riconosciuto
+> per un ammontare, comunque non superiore a 1.200 euro, determinato in misura
+> pari alla differenza tra la somma delle detrazioni ivi elencate e l'imposta
+> lorda.»
+
+Il testo completo, coi rimandi puntuali, è in appendice (§10).
+
 ### Fino a 15.000 € di reddito complessivo
 
 Spettano **1.200 € l'anno**, a condizione che l'**imposta lorda** determinata
-sui redditi da lavoro dipendente sia **superiore alla detrazione da lavoro
-dipendente** (art. 13 c. 1 TUIR) **diminuita di 75 €**, ragguagliati al periodo
-di lavoro nell'anno.
+sui redditi da lavoro dipendente **e su alcuni redditi assimilati** (la norma
+richiama gli artt. 49 e 50 c. 1 TUIR, con alcune esclusioni specifiche) sia
+**superiore alla detrazione da lavoro dipendente** (art. 13 c. 1 TUIR)
+**diminuita di 75 €**. Nota di dettaglio: è il **75 €**, non l'intera
+detrazione, a essere «rapportato al periodo di lavoro nell'anno» — su un anno
+intero di lavoro resta 75 € pieni.
 
 Con la detrazione a 1.955 €, il confronto è quindi contro **1.880 €**.
 
@@ -66,17 +102,22 @@ Spetta **solo se** la somma delle detrazioni elencate dalla norma è
 **superiore** all'imposta lorda; in quel caso il TI vale la **differenza** fra
 quella somma e l'imposta lorda, con il **tetto di 1.200 €**.
 
-Le detrazioni che entrano nella somma (L. 234/2021 art. 1 c. 3):
+Le detrazioni che entrano nella somma, per come le elenca il testo:
 
-- familiari a carico — art. 12 TUIR;
-- lavoro dipendente — art. 13 c. 1 TUIR;
-- interessi su mutui agrari e per l'abitazione principale — art. 15 c. 1
-  lett. a) e b), **limitatamente ai contratti stipulati fino al 31 dicembre 2021**;
-- erogazioni liberali in denaro in favore delle società sportive
-  dilettantistiche — art. 15 c. 1-ter;
-- rate di detrazione per **spese sanitarie**, **recupero edilizio** e
-  **riqualificazione energetica**, **limitatamente alle spese sostenute fino al
-  31 dicembre 2021**.
+- detrazione per **familiari a carico** — art. 12 TUIR;
+- detrazione per **lavoro dipendente** — art. 13 c. 1 TUIR;
+- detrazione per **interessi su prestiti o mutui** — art. 15 c. 1 lett. a) e
+  b) e comma 1-ter TUIR, **limitatamente a prestiti/mutui contratti fino al 31
+  dicembre 2021**;
+- le **rate** di detrazioni per **spese sanitarie** (art. 15 c. 1 lett. c)
+  TUIR) e per **recupero del patrimonio edilizio** (art. 16-bis TUIR), più le
+  rate di detrazioni previste da **altre norme** (tipicamente la
+  riqualificazione energetica) — tutte **limitate a spese sostenute fino al 31
+  dicembre 2021**.
+
+(Corretto rispetto a una versione precedente di questo documento, che elencava
+qui — per errore, da una fonte secondaria poco precisa — le erogazioni liberali
+alle società sportive dilettantistiche: non sono nel testo dell'art. 1.)
 
 ### Oltre 28.000 €
 
@@ -86,9 +127,14 @@ Le detrazioni che entrano nella somma (L. 234/2021 art. 1 c. 3):
 
 ## 3. Come arriva in busta
 
+Comma 2: «Il trattamento integrativo [...] è rapportato al periodo di lavoro».
+Comma 3: «I sostituti d'imposta [...] riconoscono in via automatica il
+trattamento integrativo [...] ripartendolo fra le retribuzioni erogate [...] e
+verificano in sede di conguaglio la spettanza dello stesso». Comma 4: i
+sostituti compensano il credito con l'art. 17, D.Lgs. 241/1997.
+
 - Il **sostituto d'imposta lo riconosce in via automatica**, ripartendolo sulle
-  retribuzioni erogate nell'anno (D.L. 3/2020 art. 1 c. 3). Non si chiede, non
-  si domanda: arriva.
+  retribuzioni erogate nell'anno. Non si chiede, non si domanda: arriva.
 - L'importo è **rapportato al periodo di lavoro nell'anno**: in pratica
   `1.200 / 365 × giorni`. Nei mesi di 31 giorni fa una cifra, in quelli di 30 un'altra.
 - Il datore **compensa** il credito con il meccanismo dell'art. 17 del
@@ -174,12 +220,19 @@ disclaimer generico:
    modello dice «non spetta» a chiunque superi i 15.000 €**. Chi ha figli a
    carico o un mutuo del 2021 può avere diritto a una quota che l'app non vede.
 
-Inoltre, due semplificazioni del motore:
+Inoltre, tre semplificazioni del motore, ora che si può confrontare col testo:
 
 - il test di capienza della norma confronta l'imposta lorda **determinata sui
-  redditi di lavoro dipendente**; l'app usa l'imposta lorda sull'intero
-  imponibile. Per chi ha solo redditi da lavoro dipendente le due cose
-  coincidono — per gli altri no;
+  redditi di cui agli artt. 49 e 50 c. 1 TUIR** (lavoro dipendente e alcuni
+  redditi assimilati, con esclusioni specifiche); l'app usa l'imposta lorda
+  sull'intero imponibile. Per chi ha solo redditi da lavoro dipendente le due
+  cose coincidono — per gli altri no;
+- la norma diminuisce la detrazione di **75 € rapportati al periodo di lavoro
+  nell'anno**: chi lavora l'anno intero ha lo sconto pieno, chi è stato assunto
+  a metà anno ne avrebbe uno minore. Il codice (`TI_CAPIENZA_SCONTO`) usa
+  sempre 75 € pieni — semplificazione dichiarata nel commento sopra
+  `trattamentoIntegrativo()` in `net.js`, corretta solo per chi lavora tutto
+  l'anno;
 - il ragguaglio è fatto sui **giorni di calendario** del mese, non sui giorni di
   detrazione spettanti come li conta il software paghe (assenze non retribuite
   incluse). Sui mesi pieni combacia.
@@ -222,8 +275,10 @@ corretta per nessun esonero.
 
 ## 9. Cosa resta non verificato
 
-- Il **testo letterale** delle norme (vedi il riquadro in cima): i riferimenti
-  sono puntuali, le citazioni sono ricostruite da fonti secondarie.
+- Il **testo letterale** di L. 234/2021, D.Lgs. 216/2023, L. 207/2024
+  commi 4-9 e delle norme TUIR richiamate (vedi il riquadro in cima): solo
+  l'art. 1 del D.L. 3/2020 è citato da un testo diretto (§10) — il resto viene
+  da fonti secondarie.
 - Il comportamento del sostituto nella **fascia 15.000–28.000** non è mai stato
   osservato su una busta di riferimento: nei cedolini disponibili il reddito sta
   sotto la prima soglia.
@@ -232,9 +287,74 @@ corretta per nessun esonero.
 
 ---
 
+## 10. Appendice: testo integrale dell'art. 1, D.L. 3/2020
+
+In vigore dal 01/01/2025, come modificato dalla L. 30/12/2024 n. 207, art. 1
+comma 3. Incollato dall'utente da Normattiva il 07/09/2026 — non passato da
+questa sessione (il proxy blocca il dominio, vedi riquadro in cima).
+
+> **Art. 1 — Trattamento integrativo dei redditi di lavoro dipendente e assimilati**
+>
+> 1. Nelle more di una revisione degli strumenti di sostegno al reddito,
+> qualora l'imposta lorda determinata sui redditi di cui agli articoli 49, con
+> esclusione di quelli indicati nel comma 2, lettera a), e 50, comma 1, lettere
+> a), b), c), c-bis), d), h-bis) e l), del testo unico delle imposte sui
+> redditi, di cui al decreto del Presidente della Repubblica 22 dicembre 1986,
+> n. 917, sia di importo superiore a quello della detrazione spettante ai
+> sensi dell'articolo 13, comma 1, del citato testo unico, diminuita
+> dell'importo di 75 euro rapportato al periodo di lavoro nell'anno, è
+> riconosciuta una somma a titolo di trattamento integrativo, che non concorre
+> alla formazione del reddito, di importo pari a 600 euro per l'anno 2020 e a
+> 1.200 euro a decorrere dall'anno 2021, se il reddito complessivo non è
+> superiore a 15.000 euro. Il trattamento integrativo è riconosciuto anche se
+> il reddito complessivo è superiore a 15.000 euro ma non a 28.000 euro, a
+> condizione che la somma delle detrazioni di cui agli articoli 12 e 13, comma
+> 1, del testo unico delle imposte sui redditi, di cui al decreto del
+> Presidente della Repubblica 22 dicembre 1986, n. 917, delle detrazioni di cui
+> all'articolo 15, comma 1, lettere a) e b), e comma 1-ter, dello stesso testo
+> unico, limitatamente agli oneri sostenuti in dipendenza di prestiti o mutui
+> contratti fino al 31 dicembre 2021, e delle rate relative alle detrazioni di
+> cui agli articoli 15, comma 1, lettera c), e 16-bis del citato testo unico
+> nonché di quelle relative alle detrazioni previste da altre disposizioni
+> normative, per spese sostenute fino al 31 dicembre 2021, sia di ammontare
+> superiore all'imposta lorda. Nel caso in cui ricorrano le condizioni previste
+> dal secondo periodo, il trattamento integrativo è riconosciuto per un
+> ammontare, comunque non superiore a 1.200 euro, determinato in misura pari
+> alla differenza tra la somma delle detrazioni ivi elencate e l'imposta lorda.
+>
+> 2. Il trattamento integrativo di cui al comma 1 è rapportato al periodo di
+> lavoro e spetta per le prestazioni rese dal 1° luglio 2020.
+>
+> 3. I sostituti d'imposta di cui agli articoli 23 e 29 del decreto del
+> Presidente della Repubblica 29 settembre 1973, n. 600, riconoscono in via
+> automatica il trattamento integrativo di cui al comma 1 ripartendolo fra le
+> retribuzioni erogate a decorrere dal 1° luglio 2020 e verificano in sede di
+> conguaglio la spettanza dello stesso. Qualora in tale sede il trattamento
+> integrativo di cui al comma 1 si riveli non spettante, i medesimi sostituti
+> d'imposta provvedono al recupero del relativo importo. Nel caso in cui il
+> predetto importo superi 60 euro, il recupero dello stesso è effettuato in
+> otto rate di pari ammontare a partire dalla retribuzione che sconta gli
+> effetti del conguaglio.
+>
+> 4. I sostituti d'imposta compensano il credito maturato per effetto
+> dell'erogazione del trattamento integrativo di cui al comma 1, mediante
+> l'istituto della compensazione di cui all'articolo 17 del decreto legislativo
+> 9 luglio 1997, n. 241.
+>
+> *(Nota: si veda inoltre quanto disposto dall'art. 1, commi da 4 a 9, della
+> L. 30 dicembre 2024, n. 207 — somma integrativa e ulteriore detrazione, §8.)*
+
+---
+
 ## Fonti consultate
 
-Fonti ufficiali (**non raggiungibili da questo ambiente**, da aprire a mano):
+Fonte diretta:
+
+- **Art. 1, D.L. 3/2020** (testo integrale, §10) — versione vigente dal
+  01/01/2025, fornita dall'utente da Normattiva.
+
+Fonti ufficiali (**non raggiungibili da questo ambiente**, da aprire a mano per
+tutto il resto):
 
 - [Normattiva](https://www.normattiva.it) — testi vigenti delle norme citate
 - [Gazzetta Ufficiale](https://www.gazzettaufficiale.it)
@@ -242,7 +362,8 @@ Fonti ufficiali (**non raggiungibili da questo ambiente**, da aprire a mano):
   dipendente, L. 207/2024) e Circolare **n. 29/E del 14 dicembre 2020**
   (trattamento integrativo, conguaglio)
 
-Fonti secondarie effettivamente consultate per ricostruire il contenuto:
+Fonti secondarie effettivamente consultate per ricostruire il resto del
+contenuto:
 
 - [Assolombarda — conversione in legge del D.L. 3/2020](https://www.assolombarda.it/servizi/fisco/informazioni/conversione-in-legge-del-decreto-legge-5-febbraio-2020-n-3-recante-misure-urgenti-per-la-riduzione-della-pressione-fiscale-sul-lavoro-dipendente)
 - [Studio Dalmaschio — trattamento integrativo (comma 3)](https://www.studiodalmaschio.it/2025/01/trattamento-integrativo-comma-3/)
