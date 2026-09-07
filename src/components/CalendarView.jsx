@@ -911,6 +911,23 @@ export default function CalendarView({
               </span>
             </div>
 
+            {monthlyBonusAmount > 0 && (
+              <div className="month-bonus-row">
+                <label className="check-row" htmlFor="month-bonus">
+                  <input
+                    id="month-bonus"
+                    type="checkbox"
+                    checked={bonusTakenThisMonth}
+                    onChange={handleMonthBonusToggle}
+                  />
+                  <span>
+                    Ho preso il bonus di {formatMonthYear(currentMonth)}
+                    {' '}<strong>(+{fmt0(monthlyBonusAmount)})</strong>
+                  </span>
+                </label>
+              </div>
+            )}
+
             <div className="net-strip-body">
               <span className="bonus-strip-label">Netto stimato del mese</span>
               <span className="net-strip-value">{fmt0(monthNet)}</span>
@@ -937,23 +954,6 @@ export default function CalendarView({
               ⚠️ Funzione beta: i calcoli possono contenere errori. Fai sempre controllare
               questi dati a un professionista prima di usarli.
             </p>
-
-            {monthlyBonusAmount > 0 && (
-              <div className="month-bonus-row">
-                <label className="check-row" htmlFor="month-bonus">
-                  <input
-                    id="month-bonus"
-                    type="checkbox"
-                    checked={bonusTakenThisMonth}
-                    onChange={handleMonthBonusToggle}
-                  />
-                  <span>
-                    Ho preso il bonus di {formatMonthYear(currentMonth)}
-                    {' '}<strong>(+{fmt0(monthlyBonusAmount)})</strong>
-                  </span>
-                </label>
-              </div>
-            )}
 
             <button
               type="button"
