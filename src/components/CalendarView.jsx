@@ -929,7 +929,6 @@ export default function CalendarView({
             )}
 
             <div className="net-strip-body">
-              <span className="bonus-strip-label">Netto stimato del mese</span>
               <span className="net-strip-value">{fmt0(monthNet)}</span>
               <span className="bonus-strip-note">
                 trattenute {fmt0(monthTrattenute)} ({effectiveRatePct.toFixed(1)}% del lordo)
