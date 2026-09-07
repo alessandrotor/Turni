@@ -905,9 +905,9 @@ export default function CalendarView({
         {showNetPanel && (
           <div className="net-strip">
             <div className="bonus-strip-head">
-              <span className="bonus-strip-title">🧪 Netto stimato del mese <span className="beta-tag">beta</span></span>
               <span className="bonus-strip-income">
                 Lordo del mese: <strong>{fmt0(monthGross)}</strong>
+                <span className="beta-tag">beta</span>
               </span>
             </div>
 
