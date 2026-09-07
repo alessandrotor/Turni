@@ -1,0 +1,255 @@
+# Il trattamento integrativo (ex «bonus Renzi»)
+
+Base normativa di riferimento per tutto quello che Turni dice sul bonus in
+busta paga: quanto spetta, a chi, quando si perde, e cosa succede a dicembre.
+
+Serve a due cose: rispondere alla domanda «l'app sta dicendo il vero?» senza
+riaprire il codice, e rendere visibile **dove l'app sa e dove tira a indovinare**.
+
+> **Come è stato verificato questo documento.** I riferimenti normativi qui
+> sotto (legge, articolo, comma) sono puntuali e verificabili su Normattiva —
+> i link ci sono. Il testo *letterale* delle norme **non** è stato scaricato
+> dalle fonti ufficiali: in questo ambiente di sviluppo il proxy di rete blocca
+> `normattiva.it`, `gazzettaufficiale.it`, `def.finanze.it`,
+> `agenziaentrate.gov.it` e `inps.it`. Il contenuto è stato ricostruito da
+> fonti secondarie qualificate (circolari commentate, studi professionali,
+> riviste fiscali), elencate in fondo. **Prima di considerare un numero
+> definitivo, apri il link a Normattiva e leggi il comma.**
+
+---
+
+## 1. La catena normativa
+
+| Norma | Cosa fa |
+|---|---|
+| **D.L. 5 febbraio 2020, n. 3, art. 1** — conv. con mod. dalla **L. 2 aprile 2020, n. 21** | Istituisce il trattamento integrativo. 600 € per il 2020, **1.200 €/anno dal 2021**. Erogazione automatica dal sostituto d'imposta, verifica a conguaglio, recupero rateizzato. |
+| **L. 30 dicembre 2021, n. 234 (bilancio 2022), art. 1, comma 3** | Dal 2022 abbassa da 28.000 a **15.000 €** la soglia del diritto pieno e introduce, nella fascia **15.000–28.000 €**, la condizione della **capienza** (somma di certe detrazioni > imposta lorda). |
+| **D.Lgs. 30 dicembre 2023, n. 216** | Accorpa i primi due scaglioni IRPEF e alza a **1.955 €** la detrazione da lavoro dipendente fino a 15.000 € (art. 13 c. 1 TUIR); introduce il correttivo che neutralizza l'effetto dell'accorpamento sul TI. |
+| **L. 30 dicembre 2024, n. 207 (bilancio 2025), art. 1, commi 2–9** | Rende strutturali i tre scaglioni e la detrazione da 1.955 €. **Abolisce l'esonero contributivo IVS** e lo sostituisce con due misure *fiscali* e **distinte dal TI**: la **somma integrativa** (commi 4–5, redditi ≤ 20.000 €) e l'**ulteriore detrazione** (commi 6–9, redditi 20.000–40.000 €). |
+| **L. 199/2025 (bilancio 2026), art. 1, comma 3** | Dal 1° gennaio 2026 porta l'aliquota del secondo scaglione dal 35% al **33%** (art. 11 c. 1 TUIR). Le soglie del TI **non** cambiano. |
+| **TUIR — D.P.R. 22 dicembre 1986, n. 917**, artt. 11, 12, 13, 15 | Aliquote, detrazioni per familiari a carico, detrazione da lavoro dipendente, detrazioni per oneri. |
+
+Link diretti (Normattiva, versione vigente):
+
+- D.L. 3/2020 → `https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legge:2020-02-05;3`
+- L. 234/2021 → `https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2021-12-30;234`
+- L. 207/2024 → `https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:legge:2024-12-30;207`
+- TUIR → `https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.del.presidente.della.repubblica:1986-12-22;917`
+
+---
+
+## 2. Quanto spetta: le tre fasce
+
+Le soglie sono sul **reddito complessivo ai fini IRPEF** (l'imponibile fiscale),
+**non** sul lordo di busta. È la distinzione che fa sbagliare tutti i conti se
+la si perde: fra lordo e imponibile ci sono i contributi previdenziali a carico
+del lavoratore, che si deducono.
+
+### Fino a 15.000 € di reddito complessivo
+
+Spettano **1.200 € l'anno**, a condizione che l'**imposta lorda** determinata
+sui redditi da lavoro dipendente sia **superiore alla detrazione da lavoro
+dipendente** (art. 13 c. 1 TUIR) **diminuita di 75 €**, ragguagliati al periodo
+di lavoro nell'anno.
+
+Con la detrazione a 1.955 €, il confronto è quindi contro **1.880 €**.
+
+Questo è il punto che l'app chiama «capienza», ed è il motivo per cui il TI può
+risultare **zero anche a reddito bassissimo**: chi guadagna troppo poco non ha
+imposta lorda sufficiente, quindi non c'è niente da compensare — e il datore
+non gliel'ha mai accreditato. È il caso opposto al reddito troppo alto, e
+confonderli è il difetto più grave che l'app possa avere qui (vedi §6).
+
+### Da 15.000 a 28.000 €
+
+Spetta **solo se** la somma delle detrazioni elencate dalla norma è
+**superiore** all'imposta lorda; in quel caso il TI vale la **differenza** fra
+quella somma e l'imposta lorda, con il **tetto di 1.200 €**.
+
+Le detrazioni che entrano nella somma (L. 234/2021 art. 1 c. 3):
+
+- familiari a carico — art. 12 TUIR;
+- lavoro dipendente — art. 13 c. 1 TUIR;
+- interessi su mutui agrari e per l'abitazione principale — art. 15 c. 1
+  lett. a) e b), **limitatamente ai contratti stipulati fino al 31 dicembre 2021**;
+- erogazioni liberali in denaro in favore delle società sportive
+  dilettantistiche — art. 15 c. 1-ter;
+- rate di detrazione per **spese sanitarie**, **recupero edilizio** e
+  **riqualificazione energetica**, **limitatamente alle spese sostenute fino al
+  31 dicembre 2021**.
+
+### Oltre 28.000 €
+
+**Non spetta.** Nessuna condizione, nessuna capienza: il diritto si azzera.
+
+---
+
+## 3. Come arriva in busta
+
+- Il **sostituto d'imposta lo riconosce in via automatica**, ripartendolo sulle
+  retribuzioni erogate nell'anno (D.L. 3/2020 art. 1 c. 3). Non si chiede, non
+  si domanda: arriva.
+- L'importo è **rapportato al periodo di lavoro nell'anno**: in pratica
+  `1.200 / 365 × giorni`. Nei mesi di 31 giorni fa una cifra, in quelli di 30 un'altra.
+- Il datore **compensa** il credito con il meccanismo dell'art. 17 del
+  D.Lgs. 241/1997.
+
+---
+
+## 4. Il conguaglio, e come si finisce a restituirlo
+
+Qui sta il rischio che l'app esiste per segnalare.
+
+Il sostituto **verifica la spettanza in sede di conguaglio** (di norma a
+dicembre, o alla cessazione del rapporto). Se il TI erogato durante l'anno
+risulta **non spettante**, lo **recupera**:
+
+- se l'importo da recuperare **supera 60 €**, il recupero avviene in **otto rate
+  di pari ammontare**, a partire dalla retribuzione che sconta gli effetti del
+  conguaglio;
+- se è **fino a 60 €**, in **una volta sola**;
+- in caso di **cessazione del rapporto**, in **unica soluzione a prescindere
+  dall'importo**, se non ci sono altre retribuzioni su cui rateizzare.
+
+Se il recupero non passa dal datore (per esempio perché il rapporto è finito, o
+perché il reddito complessivo emerge solo sommando più datori), il conto si
+chiude in **dichiarazione dei redditi**, nel quadro del 730 dedicato al
+trattamento integrativo.
+
+**Perché capita.** Ogni datore proietta il reddito annuo *per conto proprio* e
+paga il TI credendo di essere l'unico. Chi ha due rapporti nello stesso anno —
+tempo determinato, stagionali, intermittenti: esattamente chi usa Turni — si
+ritrova due sostituti che erogano ciascuno la sua quota, e un reddito
+complessivo che supera la soglia.
+
+## 5. Come si evita: la rinuncia
+
+Il riconoscimento è automatico **salvo comunicazione contraria del lavoratore**.
+Si può chiedere al datore, per iscritto, di **non erogarlo** in busta: se a fine
+anno spetta davvero, arriva tutto insieme al conguaglio o si recupera in
+dichiarazione.
+
+È l'unica azione che elimina il rischio di restituzione, e in Turni è la casella
+che sta dentro il riquadro dell'avviso (campo `noTrattamentoIntegrativo`).
+
+---
+
+## 6. Cosa fa Turni, riga per riga
+
+| Nel codice | Cosa implementa |
+|---|---|
+| `TAX_2026.TI_SOGLIA_PIENO` = 15000 | soglia del diritto pieno, L. 234/2021 |
+| `TAX_2026.TI_SOGLIA_MAX` = 28000 | soglia oltre cui non spetta |
+| `TAX_2026.TI_MASSIMO` = 1200 | importo annuo, D.L. 3/2020 art. 1 c. 1 |
+| `TAX_2026.TI_CAPIENZA_SCONTO` = 75 | la riduzione di 75 € nel test di capienza |
+| `TAX_2026.DETR_LAV_FISSA` = 1955 | detrazione art. 13 c. 1 TUIR fino a 15.000 € |
+| `trattamentoIntegrativo()` in `utils/net.js` | le tre fasce e i due test (capienza sotto i 15.000, differenza detrazioni−imposta sopra) |
+| `tiDecision()` in `utils/net.js` | la decisione «spetta adesso?», come la prende un software paghe sulla proiezione annua |
+| `calcNetMonthly()` in `utils/net.js` | il ragguaglio ai giorni del mese (`÷365`) |
+| `utils/restituzione.js` | quanto è stato incassato, quanto spetta davvero, differenza da restituire, soglia dei 60 € per la rateizzazione |
+| `quotaPotenziale()` in `utils/restituzione.js` | quanto si rischia di restituire **prima** di superare la soglia (l'avviso in anticipo) |
+| `utils/bonus.js` | le stesse soglie convertite in **lordo**, perché è la cifra che l'utente somma dai turni |
+| `settings.noTrattamentoIntegrativo` | la rinuncia di §5 |
+
+Riscontri: `scripts/check-bonus.mjs` (soglie e margini),
+`scripts/check-restituzione.mjs` (quanto torna indietro, soglia dei 60 €,
+anteprima), `scripts/check-buste-2026.mjs` e `check-busta-giugno-2026.mjs` /
+`check-busta-luglio-2026.mjs` (il TI come lo stampa il cedolino reale).
+
+---
+
+## 7. Dove l'app non sa, e deve dirlo
+
+Tre limiti reali, che vanno scritti **accanto alla cifra** e non in un
+disclaimer generico:
+
+1. **Quanto è stato accreditato davvero lo dice il cedolino, non l'app.**
+   Turni stima; la busta certifica.
+2. **L'app vede un solo datore.** Per chi ne ha due la stima è **per difetto** —
+   cioè sbaglia di più proprio nel caso più a rischio (§4).
+3. **Nella fascia 15.000–28.000 l'app conosce solo la detrazione da lavoro
+   dipendente.** Le altre voci della somma di §2 (familiari a carico, mutui
+   ante-2022, rate di spese sanitarie ed edilizie ante-2022) non le ha. Con la
+   sola detrazione da lavoro la capienza non si verifica mai, quindi **il
+   modello dice «non spetta» a chiunque superi i 15.000 €**. Chi ha figli a
+   carico o un mutuo del 2021 può avere diritto a una quota che l'app non vede.
+
+Inoltre, due semplificazioni del motore:
+
+- il test di capienza della norma confronta l'imposta lorda **determinata sui
+  redditi di lavoro dipendente**; l'app usa l'imposta lorda sull'intero
+  imponibile. Per chi ha solo redditi da lavoro dipendente le due cose
+  coincidono — per gli altri no;
+- il ragguaglio è fatto sui **giorni di calendario** del mese, non sui giorni di
+  detrazione spettanti come li conta il software paghe (assenze non retribuite
+  incluse). Sui mesi pieni combacia.
+
+### Il difetto già capitato, da non reintrodurre
+
+**Il TI può essere zero per due motivi opposti**: reddito troppo *alto*
+(rischio vero di restituzione) o reddito troppo *basso*, sotto la no tax area,
+dove manca la capienza e il datore non l'ha mai accreditato. Confonderli faceva
+dire «devi restituire ~800 €» a chi guadagna duemila euro l'anno. Per questo
+`quotaPotenziale()` è tenuta **separata** dal calcolo del rischio.
+
+---
+
+## 8. Da non confondere: TI ≠ somma integrativa ≠ ulteriore detrazione
+
+Dal 2025 in busta convivono tre cose diverse, e chiamarle tutte «bonus» è il
+modo più rapido per sbagliare i conti:
+
+| | Norma | Chi | Quanto |
+|---|---|---|---|
+| **Trattamento integrativo** | D.L. 3/2020 art. 1 | ≤ 15.000 € con capienza; 15.000–28.000 € con detrazioni eccedenti | fino a 1.200 €/anno |
+| **Somma integrativa** | L. 207/2024 art. 1 c. 4–5 | reddito complessivo ≤ 20.000 € | % sul reddito da lavoro: 7,1% fino a 8.500 €, 5,3% fino a 15.000 €, 4,8% fino a 20.000 € |
+| **Ulteriore detrazione** | L. 207/2024 art. 1 c. 6–9 | 20.000–40.000 € | 1.000 € fino a 32.000 €, poi a scalare fino ad azzerarsi a 40.000 € |
+
+Nel codice: il TI è `trattamentoIntegrativo()`, le altre due sono
+`bonusCuneo()` / `cuneoPercent()` e `detrazioneCuneo()`.
+
+**Nota sull'esonero contributivo.** Fino al 2024 esisteva un esonero della
+quota IVS a carico del lavoratore (6%/7%), che *riduceva i contributi* e quindi
+alzava l'imponibile fiscale. Dal 1° gennaio 2025 **non esiste più**: la
+L. 207/2024 lo ha sostituito con le due misure fiscali qui sopra, che **non
+toccano l'aliquota contributiva**. L'aliquota IVS del lavoratore resta quella
+piena (9,19% per la generalità dei dipendenti del settore privato), e questo è
+**confermato empiricamente dai cedolini** usati come riferimento nel progetto.
+Conseguenza pratica: la conversione lordo↔imponibile che fa `net.js` non va
+corretta per nessun esonero.
+
+---
+
+## 9. Cosa resta non verificato
+
+- Il **testo letterale** delle norme (vedi il riquadro in cima): i riferimenti
+  sono puntuali, le citazioni sono ricostruite da fonti secondarie.
+- Il comportamento del sostituto nella **fascia 15.000–28.000** non è mai stato
+  osservato su una busta di riferimento: nei cedolini disponibili il reddito sta
+  sotto la prima soglia.
+- La regola di **ragguaglio ai giorni di detrazione** (non ai giorni di
+  calendario) non è stata riscontrata su un cedolino con assenze non retribuite.
+
+---
+
+## Fonti consultate
+
+Fonti ufficiali (**non raggiungibili da questo ambiente**, da aprire a mano):
+
+- [Normattiva](https://www.normattiva.it) — testi vigenti delle norme citate
+- [Gazzetta Ufficiale](https://www.gazzettaufficiale.it)
+- Agenzia delle Entrate — Circolare **n. 4/E del 16 maggio 2025** (lavoro
+  dipendente, L. 207/2024) e Circolare **n. 29/E del 14 dicembre 2020**
+  (trattamento integrativo, conguaglio)
+
+Fonti secondarie effettivamente consultate per ricostruire il contenuto:
+
+- [Assolombarda — conversione in legge del D.L. 3/2020](https://www.assolombarda.it/servizi/fisco/informazioni/conversione-in-legge-del-decreto-legge-5-febbraio-2020-n-3-recante-misure-urgenti-per-la-riduzione-della-pressione-fiscale-sul-lavoro-dipendente)
+- [Studio Dalmaschio — trattamento integrativo (comma 3)](https://www.studiodalmaschio.it/2025/01/trattamento-integrativo-comma-3/)
+- [Studio Dalmaschio — somma integrativa e ulteriore detrazione (commi 4-9)](https://www.studiodalmaschio.it/2025/01/dnuova-somma-integrativa-e-ulteriore-detrazione-lavoro-dipendente-comma-4-9/)
+- [MySolution — trattamento integrativo, chiarimenti](https://www.mysolution.it/fisco/approfondimenti/commenti/20232/06/la-detrazione-fiscale-del-trattamento-integrativo-del-lavoratore-i-chiarimenti-delle-entrate-gavioli/)
+- [Fiscal Focus — verifica e recupero a dicembre](https://www.fiscal-focus.it/lavoro/info-lavoro/focus-lavoro/trattamento-integrativo-irpef-verifica-e-recupero-a-dicembre,3,180094)
+- [Fiscomania — rinuncia al trattamento integrativo](https://fiscomania.com/trattamento-integrativo-come-rinunciarvi-o-restituirlo/)
+- [Fiscomania — aliquote IRPEF 2026](https://fiscomania.com/aliquote-irpef/)
+- [Fiscomania — detrazioni per redditi da lavoro dipendente](https://fiscomania.com/detrazioni-per-redditi-da-lavoro-dipendente/)
+- [Hunext — trattamento integrativo, somma integrativa e ulteriore detrazione dal 2025](https://kb.hunext.com/knowledge-base/trattamento-integrativo-e-ulteriore-detrazione-2/)
