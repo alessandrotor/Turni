@@ -921,7 +921,7 @@ export default function CalendarView({
                     onChange={handleMonthBonusToggle}
                   />
                   <span>
-                    Ho preso il bonus di {formatMonthYear(currentMonth)}
+                    Prenderò il bonus di {formatMonthYear(currentMonth)}
                     {' '}<strong>(+{fmt0(monthlyBonusAmount)})</strong>
                   </span>
                 </label>
@@ -1192,12 +1192,23 @@ export default function CalendarView({
               </div>
             ) : bonus.status === BONUS_STATUS.PIENO && bonus.nearThreshold ? (
               <div className="bonus-rischio bonus-rischio--anteprima">
+                {/* Ridotto all'osso di proposito: chi legge è in pausa, non a
+                    scuola di fisco. La cosa che decide cosa fare è QUANTO
+                    MANCA, quindi sta nel titolo; il costo di superarla è la
+                    riga sotto. «Vicino alla soglia», «15.000 € imponibili» e
+                    «Vale per un solo datore di lavoro» dicevano il vero
+                    spendendo tre righe per un numero: la soglia in euro
+                    imponibili non è un'informazione su cui si agisce, il
+                    margine sì. Il caveat del datore unico resta, in una riga
+                    corta: è l'unico caso in cui il numero è sbagliato. */}
                 <span className="bonus-rischio-titolo">
-                  ⚠️ Vicino alla soglia — se la superi restituisci ~{euroCella(quotaPotenziale())}
+                  ⚠️ Ancora {euroCella(bonus.marginToFull)} e perdi il bonus
                 </span>
                 <span className="bonus-strip-note">
-                  Puoi ancora guadagnare {euroCella(bonus.marginToFull)} prima dei 15.000 €
-                  imponibili. Vale per un solo datore di lavoro.
+                  Se li superi, a dicembre ne restituisci ~{euroCella(quotaPotenziale())}.
+                </span>
+                <span className="bonus-strip-note bonus-strip-hint">
+                  Vale se hai un solo datore quest'anno.
                 </span>
                 <label className="check-row bonus-rischio-scelta">
                   <input
