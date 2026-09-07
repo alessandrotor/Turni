@@ -27,7 +27,8 @@ riaprire il codice, e rendere visibile **dove l'app sa e dove tira a indovinare*
 | Norma | Cosa fa |
 |---|---|
 | **D.L. 5 febbraio 2020, n. 3, art. 1** — conv. con mod. dalla **L. 2 aprile 2020, n. 21** | Istituisce il trattamento integrativo. 600 € per il 2020, **1.200 €/anno dal 2021**. Erogazione automatica dal sostituto d'imposta, verifica a conguaglio, recupero rateizzato. |
-| **L. 30 dicembre 2021, n. 234 (bilancio 2022), art. 1, comma 3** | Dal 2022 abbassa da 28.000 a **15.000 €** la soglia del diritto pieno e introduce, nella fascia **15.000–28.000 €**, la condizione della **capienza** (somma di certe detrazioni > imposta lorda). |
+| **D.L. 3/2020, art. 2** — *abrogato dal 01/01/2022* | Storico, non più in vigore: un'**«ulteriore detrazione»** distinta dal TI, per redditi 28.000–40.000 € (480 €/anno nel 2020, 960 € dal 2021, a scalare). Vedi §11 — citato qui solo perché il nome si ripete identico nella misura 2025 che non c'entra nulla (§8). |
+| **L. 30 dicembre 2021, n. 234 (bilancio 2022), art. 1, commi 3–4** | Dal 2022 abbassa da 28.000 a **15.000 €** la soglia del diritto pieno del TI e introduce, nella fascia **15.000–28.000 €**, la condizione della **capienza** (somma di certe detrazioni > imposta lorda). **Lo stesso art. 1 abroga l'art. 2 del D.L. 3/2020** qui sopra: la vecchia detrazione 28.000–40.000 sparisce, il TI riassorbe (parzialmente) quella fascia di reddito. |
 | **D.Lgs. 30 dicembre 2023, n. 216** | Accorpa i primi due scaglioni IRPEF e alza a **1.955 €** la detrazione da lavoro dipendente fino a 15.000 € (art. 13 c. 1 TUIR); introduce il correttivo che neutralizza l'effetto dell'accorpamento sul TI. |
 | **L. 30 dicembre 2024, n. 207 (bilancio 2025), art. 1, commi 2–9** | Rende strutturali i tre scaglioni e la detrazione da 1.955 €. **Abolisce l'esonero contributivo IVS** e lo sostituisce con due misure *fiscali* e **distinte dal TI**: la **somma integrativa** (commi 4–5, redditi ≤ 20.000 €) e l'**ulteriore detrazione** (commi 6–9, redditi 20.000–40.000 €). |
 | **L. 199/2025 (bilancio 2026), art. 1, comma 3** | Dal 1° gennaio 2026 porta l'aliquota del secondo scaglione dal 35% al **33%** (art. 11 c. 1 TUIR). Le soglie del TI **non** cambiano. |
@@ -261,6 +262,17 @@ modo più rapido per sbagliare i conti:
 Nel codice: il TI è `trattamentoIntegrativo()`, le altre due sono
 `bonusCuneo()` / `cuneoPercent()` e `detrazioneCuneo()`.
 
+**Attenzione a una quarta cosa, che oggi NON esiste più ma si trova ancora in
+giro cercando «ulteriore detrazione»: quella del D.L. 3/2020, art. 2** (testo
+in §11). Stessa fascia di reddito nel taglio alto (finiva a 40.000 come quella
+di oggi), **importi completamente diversi** (960 € nel 2021, non 1.000 €;
+soglia bassa a 28.000, non 20.000) e **abrogata dal 1° gennaio 2022** — quindi
+irrilevante per il 2026, ma è esattamente il tipo di norma che una ricerca
+superficiale confonde con quella vigente perché il nome coincide parola per
+parola. Il codice di Turni **non** implementa questa versione abrogata: le
+costanti `CUNEO_DETR_*` in `net.js` (soglie 20.000/32.000/40.000, importo
+1.000 €) corrispondono solo alla misura 2025 di L. 207/2024.
+
 **Nota sull'esonero contributivo.** Fino al 2024 esisteva un esonero della
 quota IVS a carico del lavoratore (6%/7%), che *riduceva i contributi* e quindi
 alzava l'imponibile fiscale. Dal 1° gennaio 2025 **non esiste più**: la
@@ -346,12 +358,64 @@ questa sessione (il proxy blocca il dominio, vedi riquadro in cima).
 
 ---
 
+## 11. Appendice: testo integrale dell'art. 2, D.L. 3/2020 (STORICO — abrogato)
+
+**Non in vigore.** In vigore dal 02/03/2021 al 01/01/2022, poi soppresso dalla
+L. 30/12/2021 n. 234, art. 1. Riportato qui **solo** per la disambiguazione di
+§8: non descrive nulla di applicabile nel 2026, e il codice di Turni non lo
+implementa. Incollato dall'utente da Normattiva il 07/09/2026.
+
+> **Art. 2 — Ulteriore detrazione fiscale per redditi di lavoro dipendente e
+> assimilati**
+>
+> 1. In vista di una revisione strutturale del sistema delle detrazioni
+> fiscali, ai titolari dei redditi di cui agli articoli 49, con esclusione di
+> quelli indicati nel comma 2, lettera a), e 50, comma 1, lettere a), b), c),
+> c-bis), d), h-bis) e l), del testo unico delle imposte sui redditi [...]
+> spetta, per le prestazioni rese dal 1° luglio 2020 al 31 dicembre 2020, una
+> ulteriore detrazione dall'imposta lorda, rapportata al periodo di lavoro, di
+> importo pari a: a) 480 euro, aumentata del prodotto tra 120 euro e l'importo
+> corrispondente al rapporto tra 35.000 euro, diminuito del reddito
+> complessivo, e 7.000 euro, se l'ammontare del reddito complessivo è
+> superiore a 28.000 euro ma non a 35.000 euro; b) 480 euro, se il reddito
+> complessivo è superiore a 35.000 euro ma non a 40.000 euro; la detrazione
+> spetta per la parte corrispondente al rapporto tra l'importo di 40.000 euro,
+> diminuito del reddito complessivo, e l'importo di 5.000 euro.
+>
+> 2. [...] l'ulteriore detrazione di cui al comma 1 spetta, per le prestazioni
+> rese dal 1° gennaio 2021, nei seguenti importi: a) 960 euro, aumentata del
+> prodotto tra 240 euro e l'importo corrispondente al rapporto tra 35.000 euro,
+> diminuito del reddito complessivo, e 7.000 euro, se l'ammontare del reddito
+> complessivo è superiore a 28.000 euro ma non a 35.000 euro; b) 960 euro, se
+> il reddito complessivo è superiore a 35.000 euro ma non a 40.000 euro; la
+> detrazione spetta per la parte corrispondente al rapporto tra l'importo di
+> 40.000 euro, diminuito del reddito complessivo, e l'importo di 5.000 euro.
+>
+> 3. I sostituti d'imposta [...] riconoscono l'ulteriore detrazione di cui ai
+> commi 1 e 2 ripartendola fra le retribuzioni erogate a decorrere dal 1°
+> luglio 2020 e verificano in sede di conguaglio la spettanza della stessa.
+> Qualora in tale sede l'ulteriore detrazione [...] si riveli non spettante, i
+> medesimi sostituti d'imposta provvedono al recupero del relativo importo. Nel
+> caso in cui il predetto importo superi 60 euro, il recupero [...] è
+> effettuato in **dieci rate** di pari ammontare a partire dalla retribuzione
+> che sconta gli effetti del conguaglio.
+
+Da notare, per chi confrontasse questo testo con quello del TI (§10): stessa
+soglia dei 60 € per far scattare la rateizzazione, ma qui **dieci rate**, non
+otto — un'altra piccola differenza che si perde facilmente se si mescolano le
+due norme.
+
+---
+
 ## Fonti consultate
 
 Fonte diretta:
 
 - **Art. 1, D.L. 3/2020** (testo integrale, §10) — versione vigente dal
   01/01/2025, fornita dall'utente da Normattiva.
+- **Art. 2, D.L. 3/2020** (testo integrale, §11) — **storico, abrogato dal
+  01/01/2022**, fornito dall'utente da Normattiva. Riportato solo per
+  disambiguazione (§8): non descrive nulla di vigente.
 
 Fonti ufficiali (**non raggiungibili da questo ambiente**, da aprire a mano per
 tutto il resto):
