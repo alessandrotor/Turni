@@ -237,13 +237,25 @@ function bonusCuneo(redditoComplessivo, redditoLavoro) {
 // NON riscontrato su busta: nelle buste disponibili la capienza c'è comunque, con
 // o senza lo sconto. Viene dalla norma, non dai dati — se un cedolino dovesse
 // dire il contrario, è il cedolino a vincere.
-function trattamentoIntegrativo(reddito, irpef, detLavoro, detrTotali) {
+// Nella fascia 15.000–28.000 la somma delle detrazioni che fa da metro è
+// ELENCATA DALLA NORMA, e l'elenco è chiuso: artt. 12 e 13 c. 1 TUIR, art. 15
+// c. 1 lett. a) e b) e c. 1-ter per mutui contratti entro il 2021, rate di
+// art. 15 c. 1 lett. c) e 16-bis e di altre norme per spese sostenute entro il
+// 2021 (testo in docs/trattamento-integrativo.md §10).
+// L'ulteriore detrazione della L. 207/2024 NON è in quell'elenco — è del 2025,
+// non è del TUIR e non è una detrazione per spese — quindi qui NON entra,
+// anche se entra (giustamente) nel calcolo dell'IRPEF netta.
+// Con i parametri 2026 la differenza non si vede: in tutta la fascia l'imposta
+// lorda supera la detrazione da lavoro di più di quanto il cuneo possa
+// aggiungere. Si tiene lo stesso, perché è la norma, e perché un domani in cui
+// le due cose si avvicinano arriva senza avvisare.
+function trattamentoIntegrativo(reddito, irpef, detLavoro) {
   const T = TAX_2026;
   if (reddito > T.TI_SOGLIA_MAX) return 0;
   if (reddito <= T.TI_SOGLIA_PIENO) {
     return irpef > detLavoro - T.TI_CAPIENZA_SCONTO ? T.TI_MASSIMO : 0;
   }
-  const diff = detrTotali - irpef;
+  const diff = detLavoro - irpef;
   return Math.min(T.TI_MASSIMO, Math.max(0, diff));
 }
 
@@ -266,6 +278,33 @@ export function deductibleContribRate(settings = {}) {
 // di queste due funzioni per confrontare mele con mele.
 export function grossToTaxable(gross, settings = {}) {
   return Math.max(0, Number(gross) || 0) * (1 - deductibleContribRate(settings));
+}
+
+/**
+ * Reddito complessivo ai fini IRPEF — la grandezza su cui la legge misura le
+ * soglie del trattamento integrativo (15.000 / 28.000). Al lordo si tolgono i
+ * soli contributi DEDUCIBILI e si aggiunge il fringe benefit (quota Ente
+ * Bilaterale a carico ditta), tassato pur non essendo trattenuto.
+ *
+ * Sta qui, esportata, per una ragione precisa: è l'UNICA definizione, e la
+ * usano sia il pannello del netto sia la striscia del bonus. Finché la
+ * striscia se la calcolava per conto suo con `grossToTaxable` — una
+ * moltiplicazione pulita, senza l'arrotondamento dei contributi né il fringe —
+ * le due schermate si contraddicevano in una fascia di circa un euro di lordo:
+ * una diceva «soglia superata» mentre l'altra erogava ancora il bonus pieno.
+ * Riscontro in `scripts/check-bonus.mjs`.
+ *
+ * `grossToTaxable` resta, ma per quello che sa fare: una conversione
+ * approssimata e invertibile, buona per TRADURRE una soglia in lordo e dire
+ * «quanto manca», non per decidere da che parte della soglia si sta.
+ *
+ * @param {object} [contributi] i contributi già calcolati, per non rifare il
+ *   lavoro quando chi chiama li ha già.
+ */
+export function redditoComplessivo(gross, settings = {}, contributi = null) {
+  const g = Math.max(0, Number(gross) || 0);
+  const cont = contributi || calcContributi(g, settings, monthlyBaseGross(settings) * 12);
+  return g - cont.deducibili + cont.fringeImponibile;
 }
 
 export function taxableToGross(taxable, settings = {}) {
@@ -603,10 +642,7 @@ export function calcNetAnnual(grossAnnual, settings = {}) {
 
   const cont = calcContributi(gross, settings, monthlyBaseGross(settings) * 12);
   const contributi = cont.totale;
-  // Reddito complessivo ≈ imponibile: al lordo si tolgono i soli contributi
-  // deducibili e si aggiunge l'eventuale fringe benefit (quota Ente Bilaterale
-  // a carico ditta), che è tassato pur non essendo trattenuto.
-  const imponibile = gross - cont.deducibili + cont.fringeImponibile;
+  const imponibile = redditoComplessivo(gross, settings, cont);
 
   const lorda = irpefLorda(imponibile);
   const detLav = detrazioneLavoro(imponibile);
@@ -625,7 +661,7 @@ export function calcNetAnnual(grossAnnual, settings = {}) {
   const addRegionale = addDovute ? imponibile * aliqReg : 0;
   const addComunale = addDovute ? imponibile * aliqCom : 0;
 
-  const ti = trattamentoIntegrativo(imponibile, lorda, detLav, detrTotali);
+  const ti = trattamentoIntegrativo(imponibile, lorda, detLav);
   const cuneo = bonusCuneo(imponibile, imponibile);
 
   const net = gross - contributi - irpefNetta - addRegionale - addComunale + ti + cuneo;

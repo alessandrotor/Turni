@@ -195,7 +195,8 @@ che sta dentro il riquadro dell'avviso (campo `noTrattamentoIntegrativo`).
 | `calcNetMonthly()` in `utils/net.js` | il ragguaglio ai giorni del mese (`÷365`) |
 | `utils/restituzione.js` | quanto è stato incassato, quanto spetta davvero, differenza da restituire, soglia dei 60 € per la rateizzazione |
 | `quotaPotenziale()` in `utils/restituzione.js` | quanto si rischia di restituire **prima** di superare la soglia (l'avviso in anticipo) |
-| `utils/bonus.js` | le stesse soglie convertite in **lordo**, perché è la cifra che l'utente somma dai turni |
+| `redditoComplessivo()` in `utils/net.js` | il reddito su cui si misurano le soglie, **in un solo posto**: lo usano sia il pannello del netto sia la striscia del bonus, così non possono contraddirsi |
+| `utils/bonus.js` | lo stato (pieno / ridotto / niente) deciso sull'imponibile come nel testo, e le soglie convertite in **lordo** per dire quanto manca — perché il lordo è la cifra che l'utente somma dai turni |
 | `settings.noTrattamentoIntegrativo` | la rinuncia di §5 |
 
 Riscontri: `scripts/check-bonus.mjs` (soglie e margini),
@@ -220,6 +221,10 @@ disclaimer generico:
    sola detrazione da lavoro la capienza non si verifica mai, quindi **il
    modello dice «non spetta» a chiunque superi i 15.000 €**. Chi ha figli a
    carico o un mutuo del 2021 può avere diritto a una quota che l'app non vede.
+   *(Fino al 07/09/2026 il codice ci sommava anche l'ulteriore detrazione della
+   L. 207/2024, che nell'elenco della norma non c'è: corretto. Con i parametri
+   2026 il risultato non cambiava — l'imposta lorda sta comunque sopra — ma la
+   somma ora contiene solo ciò che la norma elenca.)*
 
 Inoltre, tre semplificazioni del motore, ora che si può confrontare col testo:
 
