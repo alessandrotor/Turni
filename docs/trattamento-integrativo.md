@@ -202,7 +202,10 @@ che sta dentro il riquadro dell'avviso (campo `noTrattamentoIntegrativo`).
 Riscontri: `scripts/check-bonus.mjs` (soglie e margini),
 `scripts/check-restituzione.mjs` (quanto torna indietro, soglia dei 60 €,
 anteprima), `scripts/check-buste-2026.mjs` e `check-busta-giugno-2026.mjs` /
-`check-busta-luglio-2026.mjs` (il TI come lo stampa il cedolino reale).
+`check-busta-luglio-2026.mjs` (il TI come lo stampa il cedolino reale), e
+**`check-busta-agosto-2026.mjs`** — il caso in cui il datore NON lo eroga
+(§7-bis), che è anche la prova che il motore riproduce la busta al centesimo
+quando gli si dà la proiezione giusta.
 
 ---
 
@@ -250,6 +253,48 @@ Inoltre, tre semplificazioni del motore, ora che si può confrontare col testo:
 dove manca la capienza e il datore non l'ha mai accreditato. Confonderli faceva
 dire «devi restituire ~800 €» a chi guadagna duemila euro l'anno. Per questo
 `quotaPotenziale()` è tenuta **separata** dal calcolo del rischio.
+
+---
+
+## 7-bis. Osservato su una busta: il datore non lo eroga, l'app dice di sì
+
+Il caso più istruttivo finora, perché mostra dove sta davvero il punto debole
+del modello. Riscontro: `scripts/check-busta-agosto-2026.mjs`.
+
+Su una busta reale (Turismo, part-time 60%, agosto 2026) **il trattamento
+integrativo non compare**, mentre l'app lo dava per incassato al massimo
+mensile. Non è una dimenticanza del datore: è una scelta, e la busta la
+dichiara in **due punti indipendenti**, nessuno dei quali è il TI stesso.
+
+1. **La percentuale della somma integrativa** (L. 207/2024, §8). È a scaglioni
+   sul reddito da lavoro annuo, e in busta è quella della fascia
+   **15.000–20.000**, non quella della fascia sotto i 15.000.
+2. **La detrazione da lavoro dipendente.** L'art. 13 c. 1 TUIR ha un **salto**
+   alla soglia dei 15.000: sotto vale un importo fisso, appena sopra riparte da
+   un valore più alto e poi scende. La detrazione stampata sta oltre il salto —
+   ed è il motivo per cui la ritenuta IRPEF del mese è di pochi euro invece che
+   di un centinaio.
+
+Due indizi da parti diverse del cedolino che portano allo stesso reddito: il
+datore proietta **poco sopra i 15.000** di reddito complessivo, quindi il TI non
+spetta e non lo accredita.
+
+**Il motore, in tutto questo, ha ragione.** Dato il lordo del mese riproduce la
+busta al centesimo — contributi, imponibile fiscale, IRPEF lorda — e dandogli la
+proiezione del datore riproduce anche detrazioni, ritenuta, somma integrativa e
+l'assenza del TI. **A sbagliare è un solo ingresso: la proiezione annua**, che
+l'app stima da sé e tiene parecchio più bassa del vero.
+
+Da qui due regole pratiche:
+
+- **La percentuale della somma integrativa in busta dice in che fascia ti
+  colloca il datore**, ed è il modo più rapido per accorgersi che l'app sta
+  ragionando su un reddito diverso. Vale la pena leggerla prima di credere a
+  qualunque cifra sul bonus.
+- **Se la proiezione è bassa, l'errore è doppio e va in due direzioni
+  opposte**: l'app promette un TI che non arriverà, e allo stesso tempo un
+  avviso di restituzione tarato su un'erogazione che non esiste dice di
+  restituire soldi che nessuno ha mai accreditato.
 
 ---
 

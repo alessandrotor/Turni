@@ -139,11 +139,16 @@ function minutesInBand(before, after, lo, hi) {
 //  - contratto (default): oltre le ore da contratto nella settimana (lun-dom);
 //  - contratto MENSILIZZATO (es. Turismo): la busta non ragiona a settimana ma a
 //    mese — retribuisce un numero fisso di ore (24 × 4,3 = 103,20) e paga come
-//    supplementari le ore eccedenti nel MESE DI PAGA, che è fatto di settimane
-//    intere (vedi payrollMonthKey). Riscontrato sulle buste di giugno e luglio
-//    2026: 131,45 − 103,20 = 28,25 e 109,70 − 103,20 = 6,50, entrambi esatti.
-//    Con la soglia settimanale i conti non tornerebbero: quattro settimane da 24
-//    ore fanno 96 ore ordinarie, non 103,20.
+//    supplementari quelle eccedenti. Che la soglia sia MENSILE è riscontrato su
+//    tre buste: la differenza fra ore attribuite e monte ore fa esattamente il
+//    supplementare stampato. Con la soglia settimanale i conti non tornerebbero:
+//    quattro settimane da 24 ore fanno 96 ore ordinarie, non 103,20.
+//    QUALE mese, invece, non è deciso: il mese di paga a settimane intere
+//    (`payrollMonthKey`) spiega bene giugno, il mese di calendario spiega bene
+//    agosto, e lo scarto residuo è dello stesso ordine delle ore che nell'app
+//    non risultano segnate. Finché il dubbio resta, decide `periodoConteggio` —
+//    vedi `scripts/check-busta-agosto-2026.mjs`, che registra la misura senza
+//    scegliere.
 //  - a chiamata (onCall): oltre la soglia giornaliera (dailyOvertimeThreshold).
 //    Ha la precedenza: chi lavora a chiamata non ha un orario mensilizzato da
 //    rispettare, né una soglia full-time (vedi sopra).
@@ -171,12 +176,21 @@ export function computePayByShift(allShifts, settings) {
   // turni in una volta: un giorno isolato non sa di che evento fa parte.
   const eventoMalattia = giorniEventoMalattia(allShifts);
 
-  // Raggruppa per giorno (a chiamata), per mese di paga (mensilizzato) o per
-  // settimana (contratto).
+  // Raggruppa per giorno (a chiamata), per mese (mensilizzato) o per settimana
+  // (contratto).
+  //
+  // Sul mensilizzato il raggruppamento SEGUE `periodoConteggio`, cioè la stessa
+  // scelta che decide quali turni si vedono a schermo. Finché non lo faceva,
+  // chi sceglieva «mese di calendario» otteneva un ibrido: i turni dell'1-31
+  // ma con le quote di supplementare calcolate su gruppi a settimane intere,
+  // che sconfinano nel mese dopo. La ripartizione fra ore ordinarie e
+  // supplementari che ne usciva non era né quella di una regola né quella
+  // dell'altra, e non corrispondeva a nessuna busta.
+  const perCalendario = settings?.periodoConteggio === 'calendario';
   const groups = new Map();
   for (const s of allShifts) {
     const key = onCall ? s.date
-      : mensile ? payrollMonthKey(s.date)
+      : mensile ? (perCalendario ? s.date.slice(0, 7) : payrollMonthKey(s.date))
         : formatDate(getWeekStart(parseDate(s.date)));
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(s);

@@ -25,7 +25,7 @@
 //     di luglio: il contrario di quel che è stampato.
 
 import { payrollMonthKey, payrollMonthRange, formatDate, parseDate, getWeekStart } from '../src/utils/dates.js';
-import { calcTotalPay, calcShiftMinutes } from '../src/utils/pay.js';
+import { calcTotalPay, calcShiftMinutes, computePayByShift } from '../src/utils/pay.js';
 
 const RATE = 9.21802;
 
@@ -180,6 +180,41 @@ console.log('\nContratti NON mensilizzati: regola settimanale invariata\n');
   const attesoGiornaliero = TURNI_LUGLIO
     .reduce((s, t) => s + Math.max(0, calcShiftMinutes(t) - 6 * 60), 0) / 60;
   eq('a chiamata: soglia giornaliera, non mensile', payChiamata.overtimeMinutes / 60, attesoGiornaliero, 0.01);
+}
+
+// ── Il periodo scelto governa ANCHE la soglia, non solo la vista ───────────
+// Il difetto che questo blocco impedisce di tornare: `computePayByShift`
+// raggruppava sempre a settimane intere, anche per chi aveva scelto il mese di
+// calendario. Il risultato era un ibrido — turni di un periodo, soglia di un
+// altro — con una ripartizione fra ordinarie e supplementari che non
+// corrispondeva a nessuna delle due regole, e quindi a nessuna busta.
+console.log('\nIl periodo scelto governa la soglia, non solo quali turni si vedono\n');
+{
+  // Il caso che distingue le due regole è un turno A CAVALLO del confine.
+  // Il mese di paga di luglio 2026 arriva al 2 agosto: un turno del 1° agosto
+  // appartiene a luglio per una regola e ad agosto per l'altra. Qui luglio è
+  // già oltre il monte ore, agosto è vuoto — quindi quel turno è supplementare
+  // in un caso e ordinario nell'altro.
+  const luglioPieno = generaTurni('2026-07-06', 110 * 60, 'x');   // oltre le 103,20 h
+  const aCavallo = {
+    id: 'cavallo', date: '2026-08-01', startTime: '09:00', endTime: '15:00', breakMinutes: 0,
+  };
+  const serie = [...luglioPieno, aCavallo];
+
+  const suCavallo = (modo) => {
+    const map = computePayByShift(serie, { ...SETTINGS, periodoConteggio: modo });
+    return (map.cavallo?.overtimeMinutes || 0) / 60;
+  };
+
+  const aPaga = suCavallo('paga');
+  const aCalendario = suCavallo('calendario');
+
+  check('mese di paga: il turno del 1 agosto cade nel gruppo di LUGLIO',
+        aPaga > 0, `${aPaga.toFixed(2)} h supplementari, perche luglio ha gia superato il monte ore`);
+  check('calendario: lo stesso turno apre AGOSTO, quindi e ordinario',
+        aCalendario === 0, `${aCalendario.toFixed(2)} h supplementari`);
+  check('  e le due modalita non danno lo stesso risultato',
+        Math.abs(aPaga - aCalendario) > 0.01, '');
 }
 
 console.log(fail === 0 ? '\n✓ mese di paga e supplementari coerenti con le buste\n' : `\n✗ ${fail} riscontri falliti\n`);
