@@ -87,9 +87,11 @@ npm run build
 for f in scripts/check-*.mjs; do node "$f" >/dev/null || echo "FAIL $f"; done
 ```
 
-`check-dati-in-uscita.mjs` ispeziona `dist/`: vuole una build fatta con
-`VITE_AI_PROXY_URL=https://turni-ai-proxy-test.magnaopa.workers.dev`, altrimenti
-fallisce senza che ci sia niente di rotto. È l'unico falso allarme noto.
+`check-dati-in-uscita.mjs` ispeziona `dist/`, e su una build locale fallisce
+senza che ci sia niente di rotto: `.env.local` imposta `VITE_TELEMETRY_URL`,
+quindi in `dist/` finisce `script.google.com`. La CI non la imposta
+(`deploy-test.yml`). Vuole anche il proxy AI nel bundle. È l'unico falso
+allarme noto.
 
 ## A cosa serve l'app, secondo chi la usa
 

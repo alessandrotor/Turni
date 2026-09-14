@@ -603,6 +603,10 @@ export default function App() {
 
       {modal && (
         <ShiftForm
+          // ShiftForm fissa lo stato iniziale al montaggio (`initial`): se un
+          // domani si passasse da un turno a un altro senza chiudere, senza
+          // key resterebbero i dati del primo.
+          key={modal.type === 'edit' ? modal.shift.id : modal.date}
           modal={modal}
           settings={settings}
           turni={allShifts}
