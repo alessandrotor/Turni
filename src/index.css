@@ -1649,6 +1649,17 @@ input, select, textarea { font: inherit; }
    equivale a non offrirla. */
 /* Larga quanto il testo e staccata dalla nota: a tutta larghezza, 10 px sotto
    «perché?», sul telefono il tocco finiva sulla casella e il riquadro spariva. */
+/* Nel popup dei conti la spiegazione È il contenuto: non una nota a margine
+   piccola e in corsivo come negli altri moduli. */
+.conti-bonus .form-hint {
+  font-size: .92rem;
+  font-style: normal;
+  line-height: 1.45;
+}
+.conti-bonus .form-hint:not(.form-hint--warn) {
+  color: var(--c-text);
+}
+
 .bonus-rischio-scelta {
   align-self: flex-start;
   margin-top: .6rem;

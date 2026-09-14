@@ -14,7 +14,7 @@ import { contrattoMancante } from '../utils/configurazione';
 import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../utils/assenze';
-import { EXTRA_MONTHS } from '../utils/net';
+import { EXTRA_MONTHS, TAX_2026 } from '../utils/net';
 import { ENABLE_DEBUG } from '../config/features';
 import useMonthlyNet from '../hooks/useMonthlyNet';
 
@@ -113,6 +113,7 @@ export default function CalendarView({
   // Avvertenza sull'invio della foto: mostrata una volta sola, ricordata nel
   // browser. Vedi `accettatoInvioFoto` in services/gemini.js.
   const [mostraAvvisoFoto, setMostraAvvisoFoto] = useState(false);
+  const [contiBonusAperti, setContiBonusAperti] = useState(false);
   const [calLayout, setCalLayout] = useState(() => {
     try { return localStorage.getItem(KEY_CAL_LAYOUT) || 'grid'; } catch { return 'grid'; }
   });
@@ -328,20 +329,14 @@ export default function CalendarView({
   );
   const mancaOre = useMemo(() => margineInOre(mancaPareggio, settings), [mancaPareggio, settings]);
 
-  // UNA spiegazione sola, in hover, riusata dai tre casi. Prima lo stesso
-  // concetto era sparso in tre note diverse, ognuna un po' diversa dalle altre:
-  // ripetuto tre volte e mai per intero.
+  // UNA spiegazione sola, riusata dai tre casi. Non più un tooltip: i conti
+  // non ci stavano, e il punto da far capire — il bonus in busta è un
+  // anticipo, non soldi già tuoi — ha bisogno dei conti per essere creduto.
+  // Il popup lo apre chi tocca «perché?»: non interrompe nessuno.
   const spiegazione = (
-    <span className="tooltip-wrap">
-      <button type="button" className="linklike" aria-describedby="bonus-soglia-tip">
-        perché?
-      </button>
-      <span className="tooltip-bubble" role="tooltip" id="bonus-soglia-tip">
-        Oltre i 15.000 € il bonus sparisce, ma sale la detrazione e lo
-        compensa quasi tutto. Con {costo.larghezzaBuca || 200} € in più torni
-        in pari. Vale con un solo datore.
-      </span>
-    </span>
+    <button type="button" className="linklike" onClick={() => setContiBonusAperti(true)}>
+      perché?
+    </button>
   );
   const fmt0 = (n) => formatCurrency(Math.round(n));
 
@@ -1199,19 +1194,21 @@ export default function CalendarView({
                 </button>
               </span>
             ) : posizione === POSIZIONE.OLTRE ? (
-              <div className="bonus-rischio bonus-rischio--ok">
+              // Il rischio vero qui non è perdere soldi, è averli già spesi:
+              // chi non sa del conguaglio tratta il bonus in busta come
+              // stipendio. Per questo il titolo dice cosa FARE, non uno stato.
+              <div className={`bonus-rischio ${rischio.daRestituire > 0 ? 'bonus-rischio--anteprima' : 'bonus-rischio--ok'}`}>
                 <span className="bonus-rischio-titolo">
-                  ✓ Sei oltre la soglia, ma non ci perdi più niente
+                  {rischio.daRestituire > 0 ? '⚠️ Non spendere il bonus in busta' : '✓ Oltre la soglia, niente da restituire'}
                 </span>
                 {rischio.daRestituire > 0 && (
                   <>
                     <div className="bonus-cifre">
-                      <span>A dicembre ti riprendono</span>
+                      <span>Lo restituisci a dicembre{rischio.rateizzabile ? ' (a rate)' : ''}</span>
                       <strong>{euroCella(rischio.daRestituire)}</strong>
                     </div>
                     <span className="bonus-strip-note">
-                      {rischio.rateizzabile ? 'A rate' : 'In una volta sola'}, non è una perdita.
-                      {' '}{spiegazione}
+                      Non ci perdi: paghi meno tasse. {spiegazione}
                     </span>
                     <label className="check-row bonus-rischio-scelta">
                       <input
@@ -1226,11 +1223,13 @@ export default function CalendarView({
               </div>
             ) : posizione === POSIZIONE.DENTRO ? (
               <div className="bonus-rischio">
-                <span className="bonus-rischio-titolo">⚠️ Sei appena sopra la soglia</span>
-                <div className="bonus-cifre">
-                  <span>Ci stai perdendo</span>
-                  <strong>{euroCella(costo.perditaMax)}</strong>
-                </div>
+                <span className="bonus-rischio-titolo">⚠️ Non spendere il bonus in busta</span>
+                {rischio.daRestituire > 0 && (
+                  <div className="bonus-cifre">
+                    <span>Lo restituisci a dicembre</span>
+                    <strong>{euroCella(rischio.daRestituire)}</strong>
+                  </div>
+                )}
                 <div className="bonus-cifre">
                   <span>Torni in pari con altri</span>
                   {/* Le ore accanto agli euro che traducono: su una riga a sé
@@ -1239,7 +1238,9 @@ export default function CalendarView({
                     {euroCella(mancaPareggio)}{mancaOre !== null && ` (~${mancaOre} h)`}
                   </strong>
                 </div>
-                <span className="bonus-strip-note">{spiegazione}</span>
+                <span className="bonus-strip-note">
+                  Sull'anno ci perdi {euroCella(costo.perditaMax)}. {spiegazione}
+                </span>
                 {rischio.daRestituire > 0 && (
                   <label className="check-row bonus-rischio-scelta">
                     <input
@@ -1262,14 +1263,12 @@ export default function CalendarView({
                   {bonus.oreResidue !== null && <> (~{bonus.oreResidue} h)</>} e superi la soglia
                 </span>
                 <div className="bonus-cifre">
-                  <span>Ti tolgono a dicembre</span>
+                  <span>Restituiresti a dicembre</span>
                   <strong>{euroCella(quotaPotenziale())}</strong>
                 </div>
-                <div className="bonus-cifre">
-                  <span>Alla fine ci perdi</span>
-                  <strong>{euroCella(costo.perditaMax)}</strong>
-                </div>
-                <span className="bonus-strip-note">{spiegazione}</span>
+                <span className="bonus-strip-note">
+                  Il bonus in busta è un anticipo. {spiegazione}
+                </span>
                 <label className="check-row bonus-rischio-scelta">
                   <input
                     type="checkbox"
@@ -1365,6 +1364,56 @@ export default function CalendarView({
           onConfirm={handleImportConfirm}
           onClose={() => setImportParsed(null)}
         />
+      )}
+
+      {/* I CONTI DELLA SOGLIA, per chi tocca «perché?». Il pericolo da
+          togliere è uno solo: considerare i ~100 € al mese già spesi.
+          «Meno tasse e altre voci» non si scompone in detrazione (+1.145) e
+          indennità 207/2024 (−~70): a schermo basta la somma, che esce dal
+          motore (`costoSoglia`) e non da costanti scritte qui. */}
+      {contiBonusAperti && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setContiBonusAperti(false)}>
+          <div className="modal" role="dialog" aria-modal="true" aria-label="Come funziona il bonus">
+            <div className="modal-header">
+              <h2 className="modal-title">Come funziona il bonus</h2>
+            </div>
+            <div className="modal-form conti-bonus">
+              <p className="form-hint">
+                Ogni mese in busta ricevi circa 100 € di bonus. È un <strong>anticipo</strong>:
+                il datore te lo dà contando che a fine anno resterai sotto i 15.000 €.
+              </p>
+              <p className="form-hint">
+                Se li superi, a dicembre lo <strong>restituisci tutto</strong>: finora
+                sono {euroCella(rischio.erogato || quotaPotenziale())}. Non spenderlo.
+              </p>
+              <div className="bonus-cifre">
+                <span>Bonus restituito</span>
+                <strong>−{euroCella(TAX_2026.TI_MASSIMO)}</strong>
+              </div>
+              <div className="bonus-cifre">
+                <span>Meno tasse e altre voci</span>
+                <strong>+{euroCella(TAX_2026.TI_MASSIMO - costo.perditaMax)}</strong>
+              </div>
+              <div className="bonus-cifre">
+                <span><strong>Sull'anno ci perdi</strong></span>
+                <strong>−{euroCella(costo.perditaMax)}</strong>
+              </div>
+              {costo.larghezzaBuca > 0 && (
+                <p className="form-hint">
+                  Con {euroCella(costo.larghezzaBuca)} di lordo in più torni a guadagnare come prima.
+                </p>
+              )}
+              <p className="form-hint form-hint--warn">
+                Conto fatto con un solo datore: se quest'anno ne hai due, rischi di più.
+              </p>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-primary" onClick={() => setContiBonusAperti(false)}>
+                  Ho capito
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {mostraAvvisoFoto && (
