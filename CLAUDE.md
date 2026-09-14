@@ -171,10 +171,23 @@ nemmeno la maggiorazione domenicale lo comprendeva.
 
 ### Gli altri, con il loro riscontro
 
-- **Mese di paga**: nei contratti mensilizzati la busta taglia a settimane
-  intere, e la settimana a cavallo appartiene al mese del **lunedì**. La soglia
-  del supplementare è **mensile**, non settimanale.
+- **La finestra del mese è il CALENDARIO**, dal 1 all'ultimo giorno — non le
+  settimane intere. Lo ha deciso la busta di **agosto 2026**, su un
+  discriminante scritto prima che arrivasse: quindici giorni di ferie iniziati
+  lunedì 31 agosto valgono 7 giornate nel mese di paga e 1 sola nel calendario,
+  e la busta ne paga **una** (`Ferie godute 4,00 ORE`). Conferma il totale:
+  120,75 h col calendario contro le 120,70 stampate, 138,75 col mese di paga.
+  → `check-busta-agosto-2026.mjs`
+- **La soglia del supplementare resta MENSILE** (103,20 h = 24 × 4,3), non
+  settimanale: questo lo avevano stabilito giugno e luglio, e non cambia.
   → `check-mese-paga-2026.mjs`
+- **Le assenze riempiono il monte ore**, anche quando cadono in coda al mese:
+  in busta `4,00 ferie + 99,20 retribuzione = 103,20`, e il lavoro eccedente è
+  tutto supplementare. Contarle in ordine cronologico faceva perdere ore già
+  maturate a chi andava in ferie a fine mese. → `check-assenze.mjs`
+- **La busta arrotonda l'eccedenza al quarto d'ora**: il monte ore 103,20 non è
+  un multiplo di 15 minuti (è 103h12min), quindi l'eccedenza vera di agosto era
+  17,55 h e il cedolino stampa 17,50.
 - **Ore oltre soglia**: la busta scrive l'ora INTERA al 130%, non il solo +30%.
   → `check-busta-luglio-2026.mjs`
 - **Maggiorazioni Turismo** (17 cedolini 2024-2025): notturno, domenicale,

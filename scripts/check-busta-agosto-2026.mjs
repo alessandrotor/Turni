@@ -165,43 +165,80 @@ vero('  la detrazione stampata e quella della fascia superiore',
   BUSTA.detrazioni * 365 / BUSTA.giorniDetrazione > 1955,
   'sotto i 15.000 sarebbe l importo fisso, piu basso');
 
-// ── 4. Le ore: il confronto fra le due regole, senza sceglierne una ────────
-// Misurate sui turni veri di un backup reale (non incluso nel repository).
-// Il mese di paga a settimane intere è la regola implementata oggi; il mese di
-// calendario è l'alternativa. Su questa busta il calendario sta molto più
-// vicino, ma su giugno succede il contrario, e lo scarto di giugno è dello
-// stesso ordine delle ore che nell'app non risultano segnate. Finché il rumore
-// è grande quanto la differenza, la regola non si può decidere: qui si
-// registra la misura, non la conclusione.
-console.log('\nOre attribuite al mese — le due regole a confronto\n');
+// ── 4. Le ore: la regola del periodo, decisa ───────────────────────────────
+//
+// Questa sezione registrava la misura senza concludere, e con ragione: i turni
+// di giugno e luglio non erano abbastanza affidabili perché il rumore era
+// grande quanto la differenza fra le due regole.
+//
+// Agosto lo è. L'utente conferma che è il mese meglio tenuto, e soprattutto
+// porta un discriminante che era stato SCRITTO PRIMA che la busta arrivasse
+// (RILASCIO.md): quindici giorni di ferie cominciati lunedì 31 agosto cadono in
+// modo diverso nelle due finestre — 7 giornate nel mese di paga, 1 sola nel
+// mese di calendario. Non è una misura da interpretare: è un conto di giornate.
+console.log("");
+console.log("Ore attribuite al mese — la regola del periodo");
+console.log("");
 
+// Misurate sui turni veri di tests/Turni_backup_2026-08-24.json (fuori dal
+// repository: contiene mesi di orari personali).
 const ORE = {
-  busta: MONTE_ORE + BUSTA.oreSupplementari,
-  calendario: 126.00,     // 1-31 agosto, ferie e festivita comprese
-  mesePaga: 144.00,       // 3 agosto - 6 settembre
+  busta: MONTE_ORE + BUSTA.oreSupplementari,   // 120,70
+  calendario: 120.75,     // 1-31 agosto, ferie e festività comprese
+  mesePaga: 138.75,       // 3 agosto - 6 settembre
 };
 
-vero('il mese di calendario sta piu vicino alla busta',
-  Math.abs(ORE.calendario - ORE.busta) < Math.abs(ORE.mesePaga - ORE.busta),
-  `scarti: calendario ${(ORE.calendario - ORE.busta).toFixed(2)} h · mese di paga +${(ORE.mesePaga - ORE.busta).toFixed(2)} h`);
+// IL DISCRIMINANTE, in giornate di ferie.
+const FERIE_CALENDARIO = 4.00;   // solo il 31 agosto
+const FERIE_MESE_PAGA = 28.00;   // 31 agosto + 1-6 settembre, 7 giornate
+eq('ferie in busta: una giornata, non sette',
+  BUSTA.oreFerie, FERIE_CALENDARIO, 0.01, 'mese di calendario');
+vero('  il mese di paga ne avrebbe pagate sette',
+  Math.abs(BUSTA.oreFerie - FERIE_MESE_PAGA) > 20,
+  `busta ${BUSTA.oreFerie} h · mese di paga ${FERIE_MESE_PAGA} h`);
 
-// La festivita del 15 agosto: l'app la conta nel monte ore, la busta non ha
-// alcuna voce di festivita. Sono le 4 ore che portano lo scarto da 1,30 a 5,30.
-const ORE_FESTIVITA = 4.00;
-vero('  senza la festivita lo scarto scende sotto le due ore',
-  Math.abs(ORE.calendario - ORE_FESTIVITA - ORE.busta) < 2,
-  `${(ORE.calendario - ORE_FESTIVITA - ORE.busta).toFixed(2)} h`);
+// E il totale conferma, dalla stessa busta e per una via indipendente.
+eq('totale ore col mese di calendario', ORE.calendario, ORE.busta, 0.06, 'tre minuti');
+vero('  col mese di paga lo scarto è di diciotto ore',
+  ORE.mesePaga - ORE.busta > 15,
+  `+${(ORE.mesePaga - ORE.busta).toFixed(2)} h`);
 
-// La soglia del supplementare è il monte ore mensile, e su questo le due
-// regole concordano: cambia solo QUALI ore ci finiscono dentro.
+// I TRE MINUTI non vengono dai turni, che sono a blocchi di un quarto d'ora:
+// vengono dal monte ore contrattuale, che non lo è. 24 × 4,3 = 103,20 h, cioè
+// 103h12min, quindi l'eccedenza cade a 17,55 e la busta la stampa a 17,50
+// arrotondando al quarto d'ora — come fa con 28,25 a giugno e 6,50 a luglio.
+const ECCEDENZA_VERA = ORE.calendario - MONTE_ORE;
+eq('eccedenza prima dell arrotondamento', ECCEDENZA_VERA, 17.55, 0.01, '17h33min');
+vero('  la busta arrotonda al quarto d ora',
+  Math.abs(ECCEDENZA_VERA - BUSTA.oreSupplementari) <= 0.05
+  && (BUSTA.oreSupplementari * 4) % 1 === 0,
+  `${BUSTA.oreSupplementari} h stampate, multiplo di 0,25`);
+
+// LE ASSENZE RIEMPIONO IL MONTE ORE, e questa busta è la prova.
+// Le 4 ore di ferie cadono il 31, cioè a soglia già superata. Il motore le
+// cumulava in ordine cronologico e le trovava oltre soglia: le scartava dai
+// supplementari — giusto — ma così non riempivano più il monte ore, e
+// altrettante ore di lavoro restavano ordinarie. Uscivano 13,55 h contro le
+// 17,50 stampate. Ora le assenze vengono contate per prime dentro il gruppo.
 eq('la parte fissa e il monte ore del part-time',
-  MONTE_ORE, 103.20, 0.01, 'ferie comprese');
-eq('  e il supplementare e cio che eccede', ORE.busta - MONTE_ORE, BUSTA.oreSupplementari, 0.01, '');
+  MONTE_ORE, 103.20, 0.01, 'ferie comprese, non oltre');
+eq('  4,00 ferie + 99,20 retribuzione', BUSTA.oreFerie + BUSTA.oreRetribuzione, 103.20, 0.01, '');
+eq('  e supplementare e tutto cio che eccede',
+  ORE.busta - MONTE_ORE, BUSTA.oreSupplementari, 0.01, '');
+
+// FERRAGOSTO: il 15 agosto è sabato e non è stato lavorato. In busta non esiste
+// una voce di festività — per un mensilizzato è già dentro la retribuzione, che
+// è fissa — e infatti il conto torna solo contandola nel monte ore, come fa
+// l'app: 112,75 di lavoro + 4,00 di festività = 116,75 = 99,20 + 17,55.
+const LAVORO = 112.75, FESTIVITA = 4.00;
+eq('ferragosto dentro la retribuzione ordinaria',
+  LAVORO + FESTIVITA, BUSTA.oreRetribuzione + ECCEDENZA_VERA, 0.01,
+  'nessuna voce separata in busta');
 
 // Il domenicale resta inspiegato: la busta lo paga su meno di un terzo delle
 // ore di domenica che risultano dai turni. Nessuna combinazione delle domeniche
-// del mese dà quel numero, quindi il criterio del datore non è "tutte le ore
-// di domenica" e da una busta sola non si ricava.
+// del mese dà quel numero (6,00 · 10,25 · 6,00), quindi il criterio del datore
+// non è "tutte le ore di domenica" e da una busta sola non si ricava.
 const ORE_DOMENICA_DAI_TURNI = 22.25;
 vero('domenicale: la busta ne paga meno dei turni segnati',
   BUSTA.oreDomenicali < ORE_DOMENICA_DAI_TURNI,

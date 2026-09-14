@@ -360,7 +360,8 @@ Questo file si cancella dopo la pubblicazione.
 noi.** Il rilascio non l'aspetta.
 
 Su un CCNL mensilizzato l'app può contare le ore del mese in due modi, e li
-espone entrambi in Impostazioni (`periodoConteggio`):
+espone entrambi dal **Calendario** (`periodoConteggio`, i due pulsanti in
+`CalendarView.jsx`; in Impostazioni non ci sono):
 
 - **mese di paga** (default) — settimane intere, dal primo lunedì del mese alla
   domenica prima del primo lunedì del mese dopo;
@@ -437,9 +438,14 @@ corretto il 1° settembre 2026 in `utils/assenze.js` e `check-assenze.mjs`. Il
 comportamento resta quello atteso per un mensilizzato, ma è un'attesa ragionata,
 non un riscontro: agosto è la prima occasione vera di verificarlo.
 
-> **Da compilare.** Montante ferie godute: luglio ……… · agosto ……… ·
-> differenza ……… (previsione scritta prima: **7 giornate**, cioè 28 h su un
-> part-time da 4 h/giorno).
+> **Compilato il 13/09/2026 — la previsione era sbagliata, ed è il punto.**
+> La busta di agosto non stampa un montante da confrontare: porta una voce di
+> competenza, `Ferie godute 4,00 ORE → 36,87 €`, cioè **una giornata**. Il
+> montante sta nel prospetto ratei in fondo (9,50 h godute nell'anno) e non
+> serve a questo confronto.
+>
+> Previsione scritta prima: 7 giornate (28 h) se valeva il mese di paga.
+> Trovato: **1 giornata (4,00 h)** → vince il **mese di calendario**.
 
 **Cosa farne, in un verso e nell'altro.**
 
@@ -454,9 +460,24 @@ non un riscontro: agosto è la prima occasione vera di verificarlo.
   Nessuna formula del motore cambia: la soglia del supplementare resta sul mese
   di paga, che è riscontrato a parte.
 
-> **Da compilare.** Ore di agosto 2026 nelle due modalità, annotate il ……… :
-> mese di paga ……… h · mese di calendario ……… h.
-> Busta ricevuta il ……… : ore stampate ……… h → vince ………
+> **Compilato il 13/09/2026.** Ore di agosto 2026 sui turni veri
+> (`tests/Turni_backup_2026-08-24.json`): mese di paga **138,75 h** · mese di
+> calendario **120,75 h**. Busta: **120,70 h** → vince il **mese di
+> calendario**, con tre minuti di scarto contro diciotto ore.
+>
+> I tre minuti non vengono dai turni, che sono a blocchi di un quarto d'ora:
+> il monte ore contrattuale è 103,20 h, cioè 103h12min, quindi l'eccedenza vera
+> è 17,55 h e la busta la stampa 17,50 arrotondando al quarto d'ora — come fa
+> con 28,25 a giugno e 6,50 a luglio.
+>
+> **Fatto:** default portato a `'calendario'` in `DEFAULT_SETTINGS`, e corretto
+> un difetto che il confronto ha scoperto — le assenze in coda al mese non
+> riempivano il monte ore, e chi andava in ferie a fine mese perdeva ore
+> supplementari già maturate (13,55 h invece di 17,50).
+>
+> **Resta aperto** il criterio del domenicale: la busta ne paga 7,75 h contro
+> le 22,25 che risultano dai turni, e nessuna combinazione delle domeniche del
+> mese dà quel numero. Serve un'altra busta.
 
 ---
 

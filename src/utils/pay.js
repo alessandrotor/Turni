@@ -198,7 +198,33 @@ export function computePayByShift(allShifts, settings) {
 
   const result = {};
   for (const groupShifts of groups.values()) {
-    groupShifts.sort((a, b) => (a.date + (a.startTime || '')).localeCompare(b.date + (b.startTime || '')));
+    // LE ASSENZE PRIMA, poi il lavoro in ordine cronologico.
+    //
+    // Non è un vezzo: decide quante ore risultano supplementari, e lo si vede
+    // sulla busta di agosto 2026. Quel mese ha quindici giorni di ferie che
+    // cominciano il 31, cioè DOPO che la soglia mensile è già stata superata.
+    //
+    // In ordine puramente cronologico il motore incontrava quelle 4 ore a
+    // soglia piena: le scartava dai supplementari — giustamente, un'assenza non
+    // si paga in più — ma così non riempivano più la soglia, e altrettante ore
+    // di lavoro restavano ordinarie. Risultato: 13,55 ore supplementari contro
+    // le 17,50 stampate, esattamente 4 ore di meno.
+    //
+    // La busta fa l'opposto, e lo dichiara nella propria aritmetica:
+    //   4,00 ferie + 99,20 retribuzione = 103,20 (il monte ore fisso)
+    //   + 17,50 supplementare
+    // Le ferie stanno DENTRO le ore fisse, non oltre.
+    //
+    // Vale in generale, non solo per agosto: chi va in ferie a fine mese si
+    // vedeva sottrarre ore supplementari già maturate, e l'effetto cresceva con
+    // la durata dell'assenza. Fra assenze, e fra turni di lavoro, l'ordine
+    // resta quello cronologico — cambia solo quale dei due gruppi viene prima.
+    groupShifts.sort((a, b) => {
+      const pesoA = isAssenza(a) ? 0 : 1;
+      const pesoB = isAssenza(b) ? 0 : 1;
+      if (pesoA !== pesoB) return pesoA - pesoB;
+      return (a.date + (a.startTime || '')).localeCompare(b.date + (b.startTime || ''));
+    });
     let cumMin = 0;
     for (const s of groupShifts) {
       const m = calcShiftMinutes(s);

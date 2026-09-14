@@ -764,10 +764,16 @@ export default function CalendarView({
             retribuzione; le ferie, contandosi a giornate, lo rendono evidente.
 
             Il toggle compare solo sui CCNL mensilizzati: altrove i due periodi
-            coincidono e sarebbe un comando che non cambia niente. NON cambia il
-            calcolo degli straordinari, che resta ancorato al periodo di paga —
-            le ore oltre soglia sono un fatto del contratto, non della finestra
-            che si sta guardando. */}
+            coincidono e sarebbe un comando che non cambia niente.
+
+            CAMBIA anche il calcolo delle ore in più, non solo cosa si vede: la
+            soglia è mensile, quindi spostare la finestra sposta quali ore ci
+            finiscono dentro. Qui c'era scritto il contrario fino al 13
+            settembre 2026, ed era già falso da quando `computePayByShift` ha
+            imparato a raggruppare per mese di calendario.
+
+            Il default è «calendario» perché lo ha deciso la busta di agosto
+            2026: vedi DEFAULT_SETTINGS in App.jsx. */}
         {mensilizzato && (
           <div className="periodo-testata">
             <span className="periodo-toggle">

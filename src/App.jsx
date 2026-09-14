@@ -94,11 +94,25 @@ const DEFAULT_SETTINGS = {
   malattiaCarenzaGiorni: 3,  // primi giorni di ogni evento pagati diversamente
   malattiaCarenzaPct: 0,     // % della paga in quei giorni
   malattiaPct: 100,          // % della paga dal giorno successivo
-  // Su quale periodo si contano ore e paga del mese: 'paga' = settimane intere
-  // come in busta (primo lunedì → domenica prima del primo lunedì dopo),
-  // 'calendario' = dal 1 all'ultimo del mese. Conta solo sui CCNL mensilizzati:
-  // altrove i due periodi coincidono già.
-  periodoConteggio: 'paga',
+  // Su quale periodo si contano ore e paga del mese: 'calendario' = dal 1
+  // all'ultimo del mese, 'paga' = settimane intere (primo lunedì → domenica
+  // prima del primo lunedì dopo). Conta solo sui CCNL mensilizzati: altrove i
+  // due periodi coincidono già.
+  //
+  // IL DEFAULT ERA 'paga', e la busta di agosto 2026 lo ha smentito.
+  //
+  // Che la SOGLIA del supplementare fosse mensile lo avevano stabilito giugno e
+  // luglio; quale finestra di giorni la busta consideri era rimasto aperto, ed
+  // era la questione in fondo a RILASCIO.md. Il discriminante era stato scritto
+  // PRIMA che la busta arrivasse: quindici giorni di ferie cominciati lunedì
+  // 31 agosto cadono in modo diverso nelle due finestre — 7 giornate nel mese
+  // di paga, 1 sola nel calendario. La busta stampa «Ferie godute 4,00 ORE»,
+  // cioè una giornata.
+  //
+  // Confermano le stesse due letture sul totale: 120,75 ore col calendario
+  // contro le 120,70 stampate, 138,75 col mese di paga.
+  // Riscontro: scripts/check-busta-agosto-2026.mjs.
+  periodoConteggio: 'calendario',
 };
 
 // Schermata da riprendere dopo un aggiornamento applicato mentre l'app era in
