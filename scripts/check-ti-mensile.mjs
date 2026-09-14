@@ -29,7 +29,7 @@
 // software paghe. `tiModo: 'sempre'` esiste per chi si trovasse davanti a un
 // datore che decide altrimenti.
 
-import { tiSpettaQuestoMese, modoTrattamentoIntegrativo, riferimentoAnnuoDelMese, calcNetMonthly } from '../src/utils/net.js';
+import { tiSpettaQuestoMese, modoTrattamentoIntegrativo, riferimentoAnnuoDelMese, calcNetMonthly, monthlyBaseGross } from '../src/utils/net.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {
@@ -91,15 +91,23 @@ esito(modoTrattamentoIntegrativo({ noTrattamentoIntegrativo: true, tiModo: 'semp
 // sbagliata della regola — quella che azzera il TI di agosto e intanto peggiora
 // il netto di 79 €, perché continua a detrarre con la fascia bassa.
 //
-// Tolleranze: il centesimo sul TI, che è una moltiplicazione secca; un euro
-// sulla detrazione e dieci centesimi sull'indennità, dove il cedolino parte da
-// un imponibile suo che l'app ricostruisce.
+// Tolleranze strette apposta: il centesimo sul TI e sull'indennità, che con la
+// paga oraria a posto tornano esatti. Larghe non verificherebbero niente — è
+// con dieci centesimi di tolleranza che era passata inosservata una base Ente
+// Bilaterale mai calcolata.
+// Resta un euro scarso sulla detrazione del solo agosto, spiegato sotto.
 console.log('');
 console.log('Le voci del mese, col riferimento del datore');
 console.log('');
 
+// La configurazione REALE, paga oraria compresa. Serve: da lì il motore ricava
+// da solo la base dell'Ente Bilaterale (monthlyBaseGross → 951,30 contro i
+// 948,05 del cedolino, un centesimo di contributo), e senza quella la trattenuta
+// manca e ogni riga a valle slitta. Un riscontro che salta la paga oraria non
+// verifica l'app che l'utente usa: ne verifica una versione più povera.
 const SET_BUSTA = {
-  ccnl: 'turismo', expectedWeeklyHours: 24, aziendaDipendenti: 'oltre15',
+  ccnl: 'turismo', expectedWeeklyHours: 24, hourlyRate: 9.21802,
+  aziendaDipendenti: 'oltre15',
   addizionaliAltrove: true, addRegionalePct: 0, addComunalePct: 0,
 };
 const CEDOLINI_2026 = [
@@ -112,11 +120,11 @@ const CEDOLINI_2026 = [
 for (const c of CEDOLINI_2026) {
   const n = calcNetMonthly(c.lordo, riferimentoAnnuoDelMese(c.lordo, SET_BUSTA), SET_BUSTA, c.giorni, 0);
   const vicino = (a, b, t) => Math.abs(a - b) <= t;
-  esito(vicino(n.detrazioni, c.detrazioni, 1.1), `${c.mese}: detrazione`,
+  esito(vicino(n.detrazioni, c.detrazioni, 0.9), `${c.mese}: detrazione`,
     `${n.detrazioni.toFixed(2)} contro ${c.detrazioni.toFixed(2)}`);
   esito(vicino(n.trattamentoIntegrativo, c.ti, 0.01), `${c.mese}: trattamento integrativo`,
     `${n.trattamentoIntegrativo.toFixed(2)} contro ${c.ti.toFixed(2)}`);
-  esito(vicino(n.bonusCuneo, c.indennita, 0.12), `${c.mese}: indennità L.207/2024`,
+  esito(vicino(n.bonusCuneo, c.indennita, 0.02), `${c.mese}: indennità L.207/2024`,
     `${n.bonusCuneo.toFixed(2)} contro ${c.indennita.toFixed(2)}`);
 }
 
@@ -126,36 +134,37 @@ for (const c of CEDOLINI_2026) {
 // chi apre il pannello confronta le RIGHE con la propria busta. Qui si
 // confrontano tutte.
 //
-// Serve `ebtBase`, la base dell'Ente Bilaterale (948,05), che non coincide col
-// lordo perche' il terzo elemento non ci entra - vedi check-tabellare-turismo.
-// Senza, mancano 1,89 EUR di contributo e ogni riga successiva slitta.
+// La base dell'Ente Bilaterale NON si passa a mano: il motore la ricava dalla
+// paga oraria, ed e' quello il comportamento da verificare. Forzarla al valore
+// del cedolino faceva sembrare piu' preciso un riscontro che in realta' era
+// meno fedele - l'app vera sbaglia MENO di quella versione.
 console.log('');
 console.log('Agosto 2026, riga per riga');
 console.log('');
 
-const AGO = { ...SET_BUSTA, ebtBase: 948.05 };
-const a = calcNetMonthly(1298.15, riferimentoAnnuoDelMese(1298.15, AGO), AGO, 31, 0);
+const a = calcNetMonthly(1298.15, riferimentoAnnuoDelMese(1298.15, SET_BUSTA), SET_BUSTA, 31, 0);
 const riga = (avuto, atteso, etichetta, tol) => esito(
   Math.abs(avuto - atteso) <= tol, etichetta,
   avuto.toFixed(2) + ' contro ' + atteso.toFixed(2),
 );
 
 riga(a.contributi, 128.52, 'contributi (IVS+FIS+CIGS+EBT)', 0.05);
-riga(a.imponibile, 1173.41, 'imponibile IRPEF', 0.05);
+riga(monthlyBaseGross(SET_BUSTA), 948.05, 'base Ente Bilaterale, dedotta', 3.5);
+riga(a.imponibile, 1173.41, 'imponibile IRPEF', 0.01);
 riga(a.irpefLorda, 269.88, 'IRPEF lorda', 0.05);
-riga(a.irpefNetta, 8.38, 'ritenute IRPEF', 1.05);
+riga(a.irpefNetta, 8.38, 'ritenute IRPEF', 0.9);
 riga(a.bonusCuneo, 56.32, 'indennita L.207/2024', 0.05);
-riga(a.net, 1217.56, 'NETTO DEL MESE', 1.05);
+riga(a.net, 1217.56, 'NETTO DEL MESE', 0.9);
 
 // L'EURO DI DETRAZIONE, unico scarto rimasto: 262,50 contro 261,50.
 // Invertendo l'art. 13 TUIR, la detrazione stampata corrisponde a un reddito di
-// riferimento di circa 15.225 EUR, mentre qui se ne usa uno di circa 15.096 - i
+// riferimento di circa 15.227 EUR, mentre qui se ne usa uno di circa 15.125 - i
 // 15.000 della soglia piu' un margine minimo per cadere nella fascia superiore.
 // Il margine esatto che azzererebbe lo scarto esiste, ma sarebbe tarato su
 // QUESTA busta: una costante scelta per far quadrare un solo cedolino non e' una
 // regola, e' un numero travestito. Si tiene il margine minimo e si registra
 // l'euro, finche' un secondo mese sopra soglia non dice da dove viene davvero.
-riga(a.detrazioni, 261.50, 'detrazioni (scarto noto: 1 EUR)', 1.05);
+riga(a.detrazioni, 261.50, 'detrazioni (scarto noto: 0,83)', 0.9);
 
 
 console.log(`\n${falliti === 0 ? '✓ la regola del TI mensile regge' : falliti + ' controlli falliti'}\n`);

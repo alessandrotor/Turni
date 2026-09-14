@@ -480,14 +480,18 @@ non un riscontro: agosto è la prima occasione vera di verificarlo.
 > mese dà quel numero. Serve un'altra busta.
 >
 > **La scomposizione di agosto torna**, voce per voce e non solo nel totale:
-> IRPEF lorda 269,88 esatta, indennità 56,32 esatta, contributi a 2 centesimi,
-> imponibile a 1. Serve però la base dell'Ente Bilaterale (948,05, che non è il
-> lordo): senza, mancano 1,89 € di contributo e ogni riga a valle slitta.
-> Resta **1,00 € tondo sulla detrazione**, 262,50 contro 261,50. La detrazione
-> stampata corrisponde a un reddito di riferimento di circa 15.225 €, l'app ne
-> usa circa 15.096. Il margine che azzera lo scarto si può ricavare, ma sarebbe
-> tarato su questa sola busta — si registra e si aspetta un secondo mese sopra
-> soglia.
+> imponibile IRPEF 1.173,41 esatto, IRPEF lorda 269,88 esatta, indennità 56,32
+> esatta, contributi a 2 centesimi. Anche le indennità di febbraio, maggio e
+> luglio tornano al centesimo.
+> Serve però che la **paga oraria** sia configurata: da lì il motore ricava la
+> base dell'Ente Bilaterale (951,30 contro i 948,05 del cedolino, un centesimo
+> di contributo). Senza, la trattenuta manca e ogni riga a valle slitta — ed è
+> l'errore in cui ero caduto io scrivendo il primo riscontro.
+> Resta **0,83 € sulla detrazione**, 262,33 contro 261,50, e si ritrova identico
+> su ritenute e netto: è un solo scarto, non tre. La detrazione stampata
+> corrisponde a un reddito di riferimento di circa 15.227 €, l'app ne usa circa
+> 15.125. Il margine che lo azzera si ricava, ma sarebbe tarato su questa sola
+> busta — si registra e si aspetta un secondo mese sopra soglia.
 
 ---
 
