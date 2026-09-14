@@ -166,6 +166,24 @@ export function calcContributi(gross, settings = {}, ebBase = 0) {
   // più per meno di un centesimo, non si fa. `ebtBase` resta l'appiglio per i
   // riscontri, che il numero preciso lo leggono dal cedolino; in Impostazioni
   // non c'è, di proposito.
+  //
+  // DA DOVE VIENE QUEL CENTESIMO, perché non è una stima a occhio.
+  // La base certificata è `(minimo tabellare + contingenza) × part-time`, cioè
+  // la retribuzione SENZA il terzo elemento — riscontrata sul cedolino in
+  // check-tabellare-turismo.mjs, che verifica anche l'identità inversa
+  // (`retribuzione − base = terzo elemento riproporzionato`).
+  // Qui si usa `monthlyBaseGross`, che il terzo elemento ce l'ha dentro perché
+  // deriva dalla paga oraria: 951,30 invece di 948,05, +0,34%. Allo 0,20% del
+  // contributo fanno 1,90 contro 1,89.
+  //
+  // Il valore certificato quindi ESISTE, ma non è riportabile qui: il terzo
+  // elemento è contrattazione territoriale di secondo livello, cambia per
+  // provincia e per accordo, e in `ccnl.json` — che è nazionale — non ci può
+  // stare come costante valida per tutti. L'unico modo di averlo esatto sarebbe
+  // chiederlo, e un campo in più per un centesimo al mese è esattamente lo
+  // scambio che la regola di CLAUDE.md vieta.
+  // Se un giorno le tabelle territoriali entrassero nel progetto, questo è il
+  // punto da cambiare: due righe, e la base diventa esatta.
   const eb = ccnl.enteBilaterale;
   const base = Math.max(0, Number(settings.ebtBase) || Number(ebBase) || 0);
   if (eb && base > 0) {
