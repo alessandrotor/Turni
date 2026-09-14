@@ -115,6 +115,14 @@ quanto costa scoprire a dicembre che non spettava.
 - **Il rischio di restituzione è una CIFRA, non uno stato**
   (`utils/restituzione.js`). «Bonus ridotto: reddito oltre i 15.000» descriveva
   una condizione; «di questo passo devi restituire ~805 €» dice cosa costa.
+  **Ma quella cifra è cassa, non perdita**, e per un anno l'app le ha confuse.
+  Superare i 15.000 costa **~129 € l'anno**, non 1.200: la detrazione da lavoro
+  salta da 1.955 a 3.100 (art. 13 TUIR) nello stesso momento in cui il bonus
+  sparisce, e compensa il 95%. Quel che resta scoperto è il cuneo, non il bonus.
+  La buca è larga ~200 € di lordo: oltre, guadagnare di più conviene come prima.
+  Da qui i tre casi dell'avviso — sotto, dentro la buca, oltre — invece di un
+  allarme unico che gridava anche a chi non stava più perdendo niente.
+  → `check-costo-soglia.mjs`, `costoSoglia()`
 - **Il rimedio sta accanto al numero.** L'unica azione che evita il conguaglio —
   chiedere al datore di non erogarlo — viveva in Impostazioni come «Forza
   esclusione TI (override, va a conguaglio)», in gergo delle paghe. Ora si legge,

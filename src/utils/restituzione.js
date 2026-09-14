@@ -36,9 +36,16 @@
 //     con i dati che ci sono — ma è una stima al rialzo del rischio, e chi ha
 //     altre detrazioni può stare meglio di così. Va detto accanto alla cifra.
 //
-// In pratica, ed è la risposta alla domanda che la gente si fa davvero:
-// **oltre i 15.000 € di reddito complessivo il trattamento integrativo si perde,
-// e quello già preso torna indietro.**
+// In pratica: **oltre i 15.000 € di reddito complessivo il trattamento
+// integrativo si perde, e quello già preso torna indietro.**
+//
+// Vero alla lettera, e per un anno è stata la conclusione di questo modulo — ma
+// come risposta alla domanda che la gente si fa davvero («ci perdo?») è
+// fuorviante, perché descrive un movimento di cassa e lo lascia scambiare per
+// una perdita. Il conto vero è più sotto, in `costoSoglia`: la detrazione da
+// lavoro sale di 1.145 € nello stesso momento in cui il bonus sparisce, e di
+// 1.200 € «persi» ne restano 129. Chi legge questo file si fermi lì prima di
+// scrivere altri avvisi.
 //
 // IL RIMEDIO, che è la ragione per cui questo modulo serve a qualcosa:
 // si può chiedere al datore di NON erogarlo, e prenderlo semmai a conguaglio se
@@ -47,7 +54,7 @@
 //
 // Modulo puro, senza React e senza browser: `node scripts/check-restituzione.mjs`.
 
-import { TAX_2026, tiDecision } from './net.js';
+import { TAX_2026, tiDecision, calcNetAnnual, redditoComplessivo } from './net.js';
 
 /**
  * Soglia di legge per la rateizzazione: sopra i 60 € il datore non trattiene
@@ -172,4 +179,128 @@ export function rischioRestituzione({ settings = {}, proiezioneAnnua = 0, oggi =
     // Promemoria per l'interfaccia: con più datori la stima è per DIFETTO.
     unSoloDatore: true,
   };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QUANTO COSTA DAVVERO SUPERARE LA SOGLIA
+//
+// Tutto quello che sta sopra risponde a «quanto ti riprendono», che è un fatto
+// di cassa. Non risponde alla domanda che uno si fa davvero prima di accettare
+// un turno in più: **ci perdo?**
+//
+// La risposta è no, quasi. Sopra i 15.000 il trattamento integrativo sparisce
+// (−1.200), ma la detrazione da lavoro salta da 1.955 a 3.100 (+1.145): è uno
+// scalino scritto nell'art. 13 TUIR apposta per non punire chi supera la soglia,
+// e compensa il 95% della perdita. Quello che resta scoperto non è il bonus:
+// è l'indennità L. 207/2024, che attraversando la fascia scende di ~70 €.
+//
+// Il conto, sul motore (vedi check-costo-soglia.mjs):
+//
+//   lordo    imponibile  detr.lav.     TI   cuneo    netto
+//   16.596       15.000      1.955  1.200     790   15.454   ← ultimo sotto
+//   16.597       15.001      3.100      0     720   15.325   ← il fondo
+//   16.795       15.180      3.085      0     727   15.454   ← di nuovo in pari
+//
+// Centoventinove euro l'anno nel punto peggiore, e una buca larga duecento euro
+// di lordo. Non milleduecento. La differenza conta perché l'avviso di prima
+// gridava «restituisci 805 €» anche a chi la soglia l'aveva superata da un pezzo
+// e non ci stava più perdendo niente.
+//
+// I 129 € sono una COSTANTE STRUTTURALE: dipendono dalle sole aliquote statali,
+// non dai contributi, quindi vengono identici su CCNL e orari diversi. Cambia
+// solo la larghezza della buca. Il riscontro lo verifica su tre profili, perché
+// è l'affermazione forte di tutto questo modulo.
+
+/**
+ * La forma della buca attorno ai 15.000 €, calcolata sul motore.
+ *
+ * Niente costanti: `perditaMax` esce da due chiamate a `calcNetAnnual` e il
+ * resto da ricerche binarie, una trentina di valutazioni in tutto. La scansione
+ * euro per euro serviva per capire, non per girare dentro un componente.
+ *
+ * @returns {{tetto, nettoTetto, perditaMax, pareggio, larghezzaBuca}}
+ *   `tetto` è l'ultimo lordo che resta sotto soglia; `pareggio` il primo oltre
+ *   il quale si sta di nuovo bene come prima.
+ */
+export function costoSoglia(settings = {}) {
+  const netto = (g) => calcNetAnnual(g, settings).net;
+
+  // IL TETTO SI CERCA SULL'IMPONIBILE, mai convertendo la soglia in lordo.
+  // `taxableToGross(15000)` e `redditoComplessivo` arrotondano in punti diversi
+  // — lo dice già bonus.js — e durante l'analisi il primo dava 16.622, che è
+  // GIÀ sopra soglia (imponibile 15.023). Il calcolo della perdita partiva
+  // dall'altro lato dello scalino e restituiva zero: nessun errore a schermo,
+  // solo un avviso che taceva.
+  let lo = 0;
+  let hi = 60000;
+  while (lo < hi) {
+    const mid = Math.ceil((lo + hi) / 2);
+    if (redditoComplessivo(mid, settings) <= TAX_2026.TI_SOGLIA_PIENO) lo = mid;
+    else hi = mid - 1;
+  }
+  const tetto = lo;
+  const nettoTetto = netto(tetto);
+
+  // Lo scalino è tutto fra il tetto e l'euro successivo: due valutazioni bastano.
+  const perditaMax = Math.max(0, nettoTetto - netto(tetto + 1));
+
+  // Il pareggio per bisezione: dopo lo scalino il netto torna a crescere, quindi
+  // «primo valore che raggiunge di nuovo nettoTetto» è ben definito.
+  let pareggio = null;
+  if (perditaMax > 0) {
+    let a = tetto + 1;
+    let b = tetto + 5000;
+    if (netto(b) >= nettoTetto) {
+      while (a < b) {
+        const mid = Math.floor((a + b) / 2);
+        if (netto(mid) >= nettoTetto) b = mid;
+        else a = mid + 1;
+      }
+      pareggio = a;
+    }
+  }
+
+  return {
+    tetto,
+    nettoTetto,
+    perditaMax: Math.round(perditaMax),
+    pareggio,
+    larghezzaBuca: pareggio === null ? null : pareggio - tetto,
+  };
+}
+
+export const POSIZIONE = {
+  SOTTO: 'sotto',
+  DENTRO: 'dentro-buca',
+  OLTRE: 'oltre',
+};
+
+/**
+ * Dove si trova il reddito previsto rispetto alla buca.
+ *
+ * È su questo che l'interfaccia sceglie cosa dire, e i tre casi vogliono tre
+ * messaggi diversi — non tre intensità dello stesso allarme:
+ *  · SOTTO  quanto margine resta, e quanto costerebbe bruciarlo
+ *  · DENTRO quanto manca per tornare in pari: l'unico caso in cui l'avviso
+ *           suggerisce di guadagnare DI PIÙ, ed è anche l'unico azionabile
+ *  · OLTRE  niente da fare e niente da temere, e va detto: allarmare qui è il
+ *           difetto che questa funzione esiste per togliere
+ */
+export function posizioneRispettoSoglia(proiezioneAnnua, settings = {}, costo = null) {
+  const c = costo || costoSoglia(settings);
+  const g = Math.max(0, Number(proiezioneAnnua) || 0);
+  if (g <= c.tetto) return POSIZIONE.SOTTO;
+  if (c.pareggio !== null && g < c.pareggio) return POSIZIONE.DENTRO;
+  return POSIZIONE.OLTRE;
+}
+
+/**
+ * Quanto manca, in euro di lordo, per uscire dalla buca dal basso.
+ * Zero se non si è dentro: così l'interfaccia non deve rifare il confronto.
+ */
+export function mancaAlPareggio(proiezioneAnnua, settings = {}, costo = null) {
+  const c = costo || costoSoglia(settings);
+  if (c.pareggio === null) return 0;
+  const g = Math.max(0, Number(proiezioneAnnua) || 0);
+  return g > c.tetto && g < c.pareggio ? Math.round(c.pareggio - g) : 0;
 }

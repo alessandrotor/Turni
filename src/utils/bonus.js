@@ -35,6 +35,27 @@ export const BONUS_STATUS = {
  *   deducibile sale e le soglie in lordo si spostano di qualche decina di euro
  * @returns margini e soglie espressi in LORDO (coerenti con `income`)
  */
+/**
+ * Il margine convertito in ORE, che è l'unità in cui si ragiona davvero.
+ *
+ * «Ancora 2.400 €» non dice quanto si può lavorare: bisogna dividere a mente
+ * per una paga oraria che non è quella base, perché le ore in più sono
+ * maggiorate. Qui si usa la maggiorazione dei SUPPLEMENTARI — per un part-time
+ * le ore eccedenti sono quelle, non straordinari, ed è la distinzione che il
+ * tooltip del riepilogo già spiega all'utente.
+ *
+ * Restituisce `null` senza paga oraria: meglio non dire le ore che dirne zero.
+ */
+export function margineInOre(margineLordo, settings = {}) {
+  const paga = Number(settings.hourlyRate) || 0;
+  if (paga <= 0 || !(Number(margineLordo) > 0)) return null;
+  const magg = Number.isFinite(Number(settings.overtimeSurchargePct))
+    ? Number(settings.overtimeSurchargePct) : 0;
+  const oraPiena = paga * (1 + magg / 100);
+  if (oraPiena <= 0) return null;
+  return Math.floor(Number(margineLordo) / oraPiena);
+}
+
 export function calcBonusMargin(annualIncome, settings = {}) {
   const C = BONUS_CONST;
   const income = Math.max(0, Number(annualIncome) || 0);
@@ -46,7 +67,7 @@ export function calcBonusMargin(annualIncome, settings = {}) {
   const base = { income, thresholdFullGross, thresholdMaxGross, taxable: redditoComplessivo(income, settings) };
 
   if (income <= 0) {
-    return { ...base, income: 0, taxable: 0, status: BONUS_STATUS.ATTESA, marginToFull: null, marginToMax: null, nearThreshold: false };
+    return { ...base, income: 0, taxable: 0, status: BONUS_STATUS.ATTESA, marginToFull: null, marginToMax: null, oreResidue: null, nearThreshold: false };
   }
 
   // LO STATO SI DECIDE SULL'IMPONIBILE, non sul lordo, ed è l'unico modo per
@@ -64,7 +85,7 @@ export function calcBonusMargin(annualIncome, settings = {}) {
   // pieno se il reddito complessivo «non è superiore a 15.000», fascia ridotta
   // se «superiore a 15.000 ma non a 28.000», niente oltre.
   if (base.taxable > C.SOGLIA_BONUS_MAX) {
-    return { ...base, status: BONUS_STATUS.OLTRE, marginToFull: null, marginToMax: null, nearThreshold: false };
+    return { ...base, status: BONUS_STATUS.OLTRE, marginToFull: null, marginToMax: null, oreResidue: null, nearThreshold: false };
   }
 
   if (base.taxable > C.SOGLIA_BONUS_PIENO) {
@@ -74,6 +95,7 @@ export function calcBonusMargin(annualIncome, settings = {}) {
       status: BONUS_STATUS.PARZIALE,
       marginToFull: null,
       marginToMax,
+      oreResidue: margineInOre(marginToMax, settings),
       nearThreshold: marginToMax <= C.SOGLIA_AVVISO_VICINO,
     };
   }
@@ -87,6 +109,7 @@ export function calcBonusMargin(annualIncome, settings = {}) {
     status: BONUS_STATUS.PIENO,
     marginToFull,
     marginToMax: thresholdMaxGross - income,
+    oreResidue: margineInOre(marginToFull, settings),
     nearThreshold: marginToFull <= C.SOGLIA_AVVISO_VICINO,
   };
 }

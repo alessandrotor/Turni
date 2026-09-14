@@ -7,8 +7,8 @@ import {
 import { calcShiftMinutes, calcTotalPay, formatCurrency, lordoTurno } from '../utils/pay';
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { isMensilizzato } from '../utils/ccnl';
-import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
-import { rischioRestituzione, quotaPotenziale, CAUSA } from '../utils/restituzione';
+import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../utils/bonus';
+import { rischioRestituzione, quotaPotenziale, CAUSA, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE } from '../utils/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
 import { contrattoMancante } from '../utils/configurazione';
 import { ENABLE_MESE_PAGA } from '../config/features';
@@ -311,6 +311,39 @@ export default function CalendarView({
   const rischio = useMemo(
     () => rischioRestituzione({ settings, proiezioneAnnua: annualProjection || annualGross }),
     [settings, annualProjection, annualGross],
+  );
+
+  // LA FORMA DELLA BUCA attorno ai 15.000, e dove ci si trova dentro.
+  // Costa una trentina di valutazioni del netto annuo, tutte per bisezione: si
+  // memoizza sulle sole impostazioni perché non dipende dal mese guardato.
+  const costo = useMemo(() => costoSoglia(settings), [settings]);
+  const proiezione = annualProjection || annualGross;
+  const posizione = useMemo(
+    () => posizioneRispettoSoglia(proiezione, settings, costo),
+    [proiezione, settings, costo],
+  );
+  const mancaPareggio = useMemo(
+    () => mancaAlPareggio(proiezione, settings, costo),
+    [proiezione, settings, costo],
+  );
+  const mancaOre = useMemo(() => margineInOre(mancaPareggio, settings), [mancaPareggio, settings]);
+
+  // UNA spiegazione sola, in hover, riusata dai tre casi. Prima lo stesso
+  // concetto era sparso in tre note diverse, ognuna un po' diversa dalle altre:
+  // ripetuto tre volte e mai per intero.
+  const spiegazione = (
+    <span className="tooltip-wrap">
+      <button type="button" className="linklike" aria-describedby="bonus-soglia-tip">
+        perché
+      </button>
+      <span className="tooltip-bubble" role="tooltip" id="bonus-soglia-tip">
+        Sopra i 15.000 € il bonus non spetta più, ma scatta una detrazione più
+        alta che te lo restituisce quasi tutto. Il datore riprende a dicembre
+        quello già dato: è un colpo in una volta sola, non una perdita.
+        Superata la soglia di circa {costo.larghezzaBuca || 200} €, guadagnare di
+        più conviene come prima. Vale se hai un solo datore quest'anno.
+      </span>
+    </span>
   );
   const fmt0 = (n) => formatCurrency(Math.round(n));
 
@@ -1177,22 +1210,19 @@ export default function CalendarView({
               </button>
             </div>
 
-            {/* LA CIFRA PRIMA DELLO STATO. «Bonus ridotto: reddito oltre i
-                15.000 € imponibili» descriveva una condizione; quello che costa
-                soldi è che quei mesi già incassati tornano indietro tutti
-                insieme a dicembre. Il numero viene prima, la spiegazione dopo.
+            {/* TRE CASI, NON QUATTRO INTENSITÀ DELLO STESSO ALLARME.
+                Prima qui si gridava «devi restituire ~805 €» a chiunque avesse
+                passato i 15.000 — anche a chi li aveva passati da un pezzo e
+                non ci stava più perdendo niente. Quel numero è vero come colpo
+                di cassa e falso come perdita: il bonus che sparisce (−1.200) se
+                lo riprende quasi tutto la detrazione che sale da 1.955 a 3.100.
+                Quello che resta scoperto sono ~130 € l'anno, e solo per i primi
+                ~200 € di lordo oltre la soglia (`costoSoglia`).
 
-                Il rimedio sta QUI e non solo in Impostazioni: mandare a cercare
-                un interruttore chi ha appena letto di dover restituire 640 €
-                significa che non lo troverà. */}
-            {/* Quattro stati, non due: RINUNCIATO ha bisogno di un modo di
-                tornare indietro (bug: la casella viveva solo dentro il
-                riquadro rosso, e spuntandola il riquadro spariva insieme a
-                lei — chi cambiava idea non trovava più nulla da spuntare, se
-                non tornando in Impostazioni). ANTEPRIMA esiste perché un
-                avviso che compare solo a soglia già superata arriva quando i
-                mesi passati sono ormai persi: qui parla PRIMA, mentre
-                superarla è ancora una scelta. */}
+                Da lì i tre messaggi: quanto margine resta (SOTTO), quanto manca
+                per tornare in pari (DENTRO — l'unico caso in cui la risposta è
+                «guadagna di più», ed è l'unico azionabile), niente da temere
+                (OLTRE). La cassa resta detta, ma come cassa. */}
             {rischio.causa === CAUSA.RINUNCIATO ? (
               <span className="bonus-strip-note">
                 Non ti accreditano più il bonus: niente da restituire a dicembre.{' '}
@@ -1204,57 +1234,77 @@ export default function CalendarView({
                   Annulla
                 </button>
               </span>
-            ) : rischio.daRestituire > 0 ? (
-              <div className="bonus-rischio">
+            ) : posizione === POSIZIONE.OLTRE ? (
+              <div className="bonus-rischio bonus-rischio--ok">
                 <span className="bonus-rischio-titolo">
-                  ⚠️ Di questo passo devi restituire ~{euroCella(rischio.daRestituire)}
+                  ✓ Sei oltre la soglia, ma non ci perdi più niente
                 </span>
-                {/* Il caveat più importante subito sotto il numero, non in
-                    fondo: chi ha avuto due datori quest'anno deve saperlo
-                    PRIMA di leggere il resto, perché il resto per lui è
-                    sbagliato per difetto. */}
-                <span className="bonus-strip-note bonus-strip-hint">
-                  Vale se hai un solo datore quest'anno. Con più di uno, aggiorna il reddito
-                  guadagnato in Impostazioni → Reddito e trattamento integrativo — altrimenti
-                  questo numero è più basso del vero.
-                </span>
+                {rischio.daRestituire > 0 && (
+                  <>
+                    <div className="bonus-cifre">
+                      <span>A dicembre ti riprendono</span>
+                      <strong>{euroCella(rischio.daRestituire)}</strong>
+                    </div>
+                    <span className="bonus-strip-note">
+                      È una trattenuta in una volta{rischio.rateizzabile ? ' (a rate)' : ''}, non una perdita. {spiegazione}
+                    </span>
+                    <label className="check-row bonus-rischio-scelta">
+                      <input
+                        type="checkbox"
+                        checked={!!settings.noTrattamentoIntegrativo}
+                        onChange={(e) => onUpdateSettings({ noTrattamentoIntegrativo: e.target.checked })}
+                      />
+                      <span>Chiedi al datore di sospenderlo, poi spunta qui</span>
+                    </label>
+                  </>
+                )}
+              </div>
+            ) : posizione === POSIZIONE.DENTRO ? (
+              <div className="bonus-rischio">
+                <span className="bonus-rischio-titolo">⚠️ Sei appena sopra la soglia</span>
+                <div className="bonus-cifre">
+                  <span>Ci stai perdendo</span>
+                  <strong>{euroCella(costo.perditaMax)}</strong>
+                </div>
+                <div className="bonus-cifre">
+                  <span>Torni in pari con altri</span>
+                  <strong>{euroCella(mancaPareggio)}</strong>
+                </div>
                 <span className="bonus-strip-note">
-                  Hai preso circa <strong>{euroCella(rischio.erogato)}</strong> di bonus.
-                  {rischio.causa === CAUSA.OLTRE_MAX
-                    ? ' Superi i 28.000 € imponibili: non spetta niente.'
-                    : ' Superi i 15.000 € imponibili: senza altre detrazioni oltre quella da lavoro, non spetta niente.'}
-                  {' '}Al conguaglio di dicembre te li riprendono
-                  {rischio.rateizzabile ? ', a rate.' : ' in una volta sola.'}
+                  {mancaOre !== null && <>Circa {mancaOre} ore supplementari. </>}{spiegazione}
                 </span>
-                <label className="check-row bonus-rischio-scelta">
-                  <input
-                    type="checkbox"
-                    checked={!!settings.noTrattamentoIntegrativo}
-                    onChange={(e) => onUpdateSettings({ noTrattamentoIntegrativo: e.target.checked })}
-                  />
-                  <span>Chiedi al datore di sospenderlo, poi spunta qui</span>
-                </label>
+                {rischio.daRestituire > 0 && (
+                  <label className="check-row bonus-rischio-scelta">
+                    <input
+                      type="checkbox"
+                      checked={!!settings.noTrattamentoIntegrativo}
+                      onChange={(e) => onUpdateSettings({ noTrattamentoIntegrativo: e.target.checked })}
+                    />
+                    <span>Chiedi al datore di sospenderlo, poi spunta qui</span>
+                  </label>
+                )}
               </div>
             ) : bonus.status === BONUS_STATUS.PIENO && bonus.nearThreshold ? (
               <div className="bonus-rischio bonus-rischio--anteprima">
-                {/* Ridotto all'osso di proposito: chi legge è in pausa, non a
-                    scuola di fisco. La cosa che decide cosa fare è QUANTO
-                    MANCA, quindi sta nel titolo; il costo di superarla è la
-                    riga sotto. «Vicino alla soglia», «15.000 € imponibili» e
-                    «Vale per un solo datore di lavoro» dicevano il vero
-                    spendendo tre righe per un numero: la soglia in euro
-                    imponibili non è un'informazione su cui si agisce, il
-                    margine sì. Il caveat del datore unico resta, in una riga
-                    corta: è l'unico caso in cui il numero è sbagliato. */}
+                {/* Il margine nel titolo, perché è la cosa su cui si decide; le
+                    ore sotto, perché è l'unità in cui si ragiona davvero — «2.400
+                    €» va diviso a mente per una paga oraria che nemmeno è quella
+                    base, visto che le ore in più sono maggiorate. */}
                 <span className="bonus-rischio-titolo">
-                  ⚠️ Ancora {euroCella(bonus.marginToFull)} e perdi il bonus
+                  ⚠️ Ancora {euroCella(bonus.marginToFull)} e superi la soglia
                 </span>
-                <span className="bonus-strip-note">
-                  Se li superi, a dicembre ne restituisci ~{euroCella(quotaPotenziale())}.
-                </span>
-                <span className="bonus-strip-note bonus-strip-hint">
-                  Vale se hai un solo datore quest'anno.
-                </span>
+                {bonus.oreResidue !== null && (
+                  <span className="bonus-strip-note">circa {bonus.oreResidue} ore supplementari</span>
+                )}
+                <div className="bonus-cifre">
+                  <span>Ti tolgono a dicembre</span>
+                  <strong>{euroCella(quotaPotenziale())}</strong>
+                </div>
+                <div className="bonus-cifre">
+                  <span>Alla fine ci perdi</span>
+                  <strong>{euroCella(costo.perditaMax)}</strong>
+                </div>
+                <span className="bonus-strip-note">{spiegazione}</span>
                 <label className="check-row bonus-rischio-scelta">
                   <input
                     type="checkbox"
@@ -1265,10 +1315,16 @@ export default function CalendarView({
                 </label>
               </div>
             ) : (
-              <span className={`bonus-strip-note ${bonus.status === BONUS_STATUS.OLTRE ? 'bonus-strip-note--warn' : ''}`}>
-                {bonus.status === BONUS_STATUS.PIENO && 'Bonus pieno: reddito entro le soglie.'}
-                {bonus.status === BONUS_STATUS.PARZIALE && 'Bonus ridotto: reddito oltre i 15.000 € imponibili.'}
-                {bonus.status === BONUS_STATUS.OLTRE && '🚨 Reddito oltre i 28.000 € imponibili: il bonus non spetta.'}
+              <span className="bonus-strip-note">
+                {bonus.status === BONUS_STATUS.PIENO && bonus.marginToFull > 0 && (
+                  <>
+                    Puoi guadagnare altri <strong>{fmt0(bonus.marginToFull)}</strong> da qui a dicembre
+                    {bonus.oreResidue !== null && <> (circa {bonus.oreResidue} ore supplementari)</>}
+                    {' '}prima di superare la soglia del bonus.
+                  </>
+                )}
+                {bonus.status === BONUS_STATUS.PARZIALE && 'Sei oltre la soglia del bonus.'}
+                {bonus.status === BONUS_STATUS.OLTRE && '🚨 Oltre i 28.000 €: il bonus non spetta.'}
               </span>
             )}
 
@@ -1299,46 +1355,28 @@ export default function CalendarView({
                   </span>
                 )}
 
-                {/* «PUOI ANCORA GUADAGNARE X» sparisce quando c'è una
-                    restituzione in ballo, e non è una pulizia estetica: quel
-                    riquadro misura quanto manca ai 28.000, cioè alla soglia in
-                    cui il bonus si perde DEL TUTTO. Ma se si è già oltre i
-                    15.000 il bonus è perso comunque, e le due strisce si
-                    contraddicevano a vista: «devi restituire 805 €» sopra e
-                    «puoi ancora guadagnare 429 €» sotto. Chi legge non sa a
-                    quale credere, e la seconda è quella che tranquillizza —
-                    cioè quella sbagliata. */}
-                {/* L'esclamativo sta già nel riquadro sopra quando nearThreshold
-                    è vero: ripeterlo qui impilerebbe due avvisi per lo stesso
-                    fatto. Qui resta solo il dettaglio in lordo. */}
-                {rischio.daRestituire === 0 && bonus.status === BONUS_STATUS.PIENO && (
-                  <div className="bonus-strip-body">
-                    <span className="bonus-strip-label">Puoi ancora guadagnare</span>
-                    <span className="bonus-strip-value">{fmt0(bonus.marginToFull)}</span>
-                    <span className="bonus-strip-note">
-                      prima di superare i {fmt0(bonus.thresholdFullGross)} lordi previsti a fine anno e uscire dal bonus pieno
-                      <span className="bonus-strip-hint"> (= 15.000 € imponibili, al netto dei contributi)</span>
-                    </span>
-                  </div>
-                )}
-
-                {rischio.daRestituire === 0 && bonus.status === BONUS_STATUS.PARZIALE && (
-                  <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
-                    <span className="bonus-strip-label">Puoi ancora guadagnare</span>
-                    <span className="bonus-strip-value">{fmt0(bonus.marginToMax)}</span>
-                    <span className="bonus-strip-note">
-                      prima di superare i {fmt0(bonus.thresholdMaxGross)} lordi e perdere del tutto il bonus
-                      <span className="bonus-strip-hint"> (= 28.000 € imponibili, al netto dei contributi)</span>
-                    </span>
-                  </div>
+                {/* IL MARGINE VIVE NEL RIQUADRO SOPRA, non qui.
+                    Prima questo blocco ripeteva «Puoi ancora guadagnare X» in
+                    lordo, con la soglia scritta due volte — una in euro lordi e
+                    una in imponibili — mentre il riquadro d'avviso diceva la
+                    stessa cosa con parole diverse. Due numeri per lo stesso
+                    fatto si leggono come due fatti, e chi legge sceglie quello
+                    che tranquillizza.
+                    Qui resta l'unica cosa che il riquadro NON dice: quanto
+                    manca alla soglia dei 28.000, che riguarda solo chi è già
+                    oltre i 15.000. */}
+                {bonus.status === BONUS_STATUS.PARZIALE && bonus.marginToMax > 0 && (
+                  <span className="bonus-strip-note">
+                    Oltre altri <strong>{fmt0(bonus.marginToMax)}</strong> il bonus non spetta
+                    in nessun caso{margineInOre(bonus.marginToMax, settings) !== null
+                      && <> (circa {margineInOre(bonus.marginToMax, settings)} ore supplementari)</>}.
+                  </span>
                 )}
 
                 {bonus.status === BONUS_STATUS.OLTRE && (
-                  <div className="bonus-strip-body bonus-strip-body--danger">
-                    <span className="bonus-strip-note">
-                      🚨 Reddito oltre i {fmt0(bonus.thresholdMaxGross)} lordi (28.000 € imponibili): il bonus non spetta.
-                    </span>
-                  </div>
+                  <span className="bonus-strip-note bonus-strip-note--warn">
+                    🚨 Sei oltre il tetto dei 28.000 €: il bonus non spetta.
+                  </span>
                 )}
               </>
             )}

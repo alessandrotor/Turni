@@ -1560,6 +1560,34 @@ input, select, textarea { font: inherit; }
   border-radius: var(--radius);
 }
 
+/* Il riquadro quando NON c'è niente da temere: stessa forma, colore opposto.
+   Serve perché il caso «oltre la buca» prima non esisteva e finiva nel riquadro
+   rosso, allarmando chi non ci sta perdendo nulla. Tenere la stessa scatola e
+   cambiarle colore dice «ho guardato, ed è a posto» meglio di quanto faccia
+   togliere il riquadro: una cosa che sparisce non si legge come rassicurazione,
+   si legge come una cosa che manca. */
+.bonus-rischio--ok {
+  background: var(--c-success-light);
+  border-color: var(--c-success);
+}
+
+/* Le due cifre affiancate: etichetta a sinistra, importo a destra.
+   `tabular-nums` perché incolonnate vanno lette confrontandole, ed è l'unico
+   modo perché le cifre stiano davvero una sopra l'altra. */
+.bonus-cifre {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .75rem;
+  font-size: .95rem;
+}
+
+.bonus-cifre strong {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  font-size: 1.05rem;
+}
+
 .bonus-rischio-titolo {
   font-size: 1.05rem;
   font-weight: 800;
@@ -1586,13 +1614,6 @@ input, select, textarea { font: inherit; }
   margin-top: .1rem;
   font-size: .85rem;
   font-weight: 600;
-}
-
-/* Precisazione sulla base di calcolo della soglia (lordo vs imponibile) */
-.bonus-strip-hint {
-  display: block;
-  font-size: .72rem;
-  opacity: .8;
 }
 
 /* ── Aumenti di paga ────────────────────────────────────────────── */
