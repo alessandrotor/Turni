@@ -947,35 +947,99 @@ input, select, textarea { font: inherit; }
   padding-top: .25rem;
 }
 
-.cosa-cambia-strip {
-  padding: .75rem 1rem;
-  background: var(--c-bg);
-  border-radius: var(--radius);
+.cosa-cambia-card {
+  margin-top: .5rem;
+  padding: 1.15rem 1.25rem;
+  background: var(--c-card);
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: .35rem .6rem;
-  font-size: .85rem;
-  border: 1px solid var(--c-border);
+  flex-direction: column;
+  gap: .9rem;
 }
-.cosa-cambia-label {
-  color: var(--c-text-2);
+
+.cosa-cambia-hero {
+  text-align: center;
 }
-.cosa-cambia-cifra {
+
+.cosa-cambia-hero-valore {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -.02em;
   color: var(--c-primary);
-  font-size: 1rem;
-  font-weight: 700;
+  line-height: 1.1;
 }
-.cosa-cambia-ore {
+
+.cosa-cambia-hero-label {
+  font-size: .95rem;
+  font-weight: 600;
+  color: var(--c-text);
+  margin-top: .25rem;
+}
+
+.cosa-cambia-hero-dettaglio {
+  font-size: .8rem;
   color: var(--c-text-2);
-  font-size: .82rem;
+  margin-top: .35rem;
 }
-.cosa-cambia-avviso {
-  width: 100%;
+
+.cosa-cambia-soglia-wrap {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: .75rem .95rem;
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+
+.cosa-cambia-soglia-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: .8rem;
+}
+
+.cosa-cambia-soglia-titolo {
+  font-weight: 600;
+  color: var(--c-text);
+}
+
+.cosa-cambia-soglia-quota {
+  color: var(--c-primary);
+  font-weight: 600;
   font-size: .78rem;
+}
+
+.cosa-cambia-progresso-bar {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.cosa-cambia-progresso-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  transition: width .3s ease;
+}
+
+.cosa-cambia-progresso-fill--warn {
+  background: linear-gradient(90deg, #f59e0b, #ef4444);
+}
+
+.cosa-cambia-soglia-nota {
+  font-size: .75rem;
+  color: var(--c-text-2);
+  line-height: 1.35;
+}
+
+.cosa-cambia-avviso {
   color: #b91c1c;
   font-weight: 600;
-  margin-top: .15rem;
 }
 
 /* Modal semplice per il nome sul foglio turni */
