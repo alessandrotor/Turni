@@ -1616,8 +1616,11 @@ input, select, textarea { font: inherit; }
 /* La casella della rinuncia sta DENTRO il riquadro rosso, non in fondo alla
    pagina: è l'unica cosa che si può fare, e mandarla a cercare in Impostazioni
    equivale a non offrirla. */
+/* Larga quanto il testo e staccata dalla nota: a tutta larghezza, 10 px sotto
+   «perché?», sul telefono il tocco finiva sulla casella e il riquadro spariva. */
 .bonus-rischio-scelta {
-  margin-top: .1rem;
+  align-self: flex-start;
+  margin-top: .6rem;
   font-size: .85rem;
   font-weight: 600;
 }

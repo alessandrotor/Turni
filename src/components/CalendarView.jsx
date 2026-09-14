@@ -337,11 +337,9 @@ export default function CalendarView({
         perché?
       </button>
       <span className="tooltip-bubble" role="tooltip" id="bonus-soglia-tip">
-        Sopra i 15.000 € il bonus non spetta più, ma scatta una detrazione più
-        alta che te lo restituisce quasi tutto. Il datore riprende a dicembre
-        quello già dato: è un colpo in una volta sola, non una perdita.
-        Bastano {costo.larghezzaBuca || 200} € di lordo in più e torni a
-        guadagnare come prima. Vale se hai un solo datore quest'anno.
+        Oltre i 15.000 € il bonus sparisce, ma sale la detrazione e lo
+        compensa quasi tutto. Con {costo.larghezzaBuca || 200} € in più torni
+        in pari. Vale con un solo datore.
       </span>
     </span>
   );
@@ -1225,7 +1223,10 @@ export default function CalendarView({
                 (OLTRE). La cassa resta detta, ma come cassa. */}
             {rischio.causa === CAUSA.RINUNCIATO ? (
               <span className="bonus-strip-note">
-                Non ti accreditano più il bonus: niente da restituire a dicembre.{' '}
+                {/* Deve dire PERCHÉ il riquadro è sparito: la casella sta a un
+                    dito da «perché?», e una spunta per sbaglio lasciava solo
+                    questa riga, senza far capire di averla causata. */}
+                Hai segnato il bonus come sospeso: niente da restituire.{' '}
                 <button
                   type="button"
                   className="linklike"
@@ -1370,9 +1371,7 @@ export default function CalendarView({
                     oltre i 15.000. */}
                 {bonus.status === BONUS_STATUS.PARZIALE && bonus.marginToMax > 0 && (
                   <span className="bonus-strip-note">
-                    Oltre altri <strong>{euroCella(bonus.marginToMax)}</strong> il bonus non spetta
-                    in nessun caso{margineInOre(bonus.marginToMax, settings) !== null
-                      && <> (circa {margineInOre(bonus.marginToMax, settings)} ore supplementari)</>}.
+                    Oltre altri <strong>{euroCella(bonus.marginToMax)}</strong> il bonus non spetta mai.
                   </span>
                 )}
 
