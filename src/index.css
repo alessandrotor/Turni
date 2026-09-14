@@ -19,27 +19,28 @@
 
   --c-primary:        #2563eb;
   --c-primary-dark:   #1d4ed8;
-  --c-primary-light:  #dbeafe;
+  --c-primary-light:  #eff6ff;
   --c-success:        #059669;
-  --c-success-light:  #d1fae5;
+  --c-success-light:  #ecfdf5;
   --c-danger:         #dc2626;
-  --c-danger-light:   #fee2e2;
+  --c-danger-light:   #fef2f2;
   --c-warning:        #d97706;
-  --c-warning-light:  #fef3c7;
+  --c-warning-light:  #fffbeb;
   --c-muted:          #94a3b8;
-  --c-bg:             #f1f5f9;
+  --c-bg:             #f8fafc;
   --c-card:           #ffffff;
   --c-text:           #0f172a;
   --c-text-2:         #475569;
   --c-border:         #e2e8f0;
 
-  --radius-sm:  6px;
-  --radius:     12px;
-  --radius-lg:  16px;
-  --shadow:     0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
-  --shadow-lg:  0 10px 25px rgba(0,0,0,.12);
+  --radius-sm:  8px;
+  --radius:     16px;
+  --radius-lg:  22px;
+  --radius-pill: 999px;
+  --shadow:     0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+  --shadow-lg:  0 14px 35px -5px rgba(15, 23, 42, 0.09), 0 4px 14px -2px rgba(15, 23, 42, 0.03);
 
-  --nav-h:      58px;
+  --nav-h:      62px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
@@ -80,27 +81,29 @@ input, select, textarea { font: inherit; }
   position: fixed;
   top: 0; left: 0; right: 0;
   height: var(--nav-h);
-  background: var(--c-card);
-  border-bottom: 1px solid var(--c-border);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1rem;
+  padding: 0 1.25rem;
   z-index: 100;
-  box-shadow: var(--shadow);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
 }
 
 .navbar-brand {
   display: flex;
   align-items: center;
-  gap: .4rem;
+  gap: .5rem;
 }
-.navbar-icon { font-size: 1.4rem; }
-.navbar-title { font-size: 1.2rem; font-weight: 700; color: var(--c-primary); }
+.navbar-icon { font-size: 1.35rem; }
+.navbar-title { font-size: 1.25rem; font-weight: 800; color: var(--c-primary); letter-spacing: -.02em; }
 
 .navbar-links {
   display: flex;
-  gap: .25rem;
+  gap: .35rem;
   /* Senza questi la barra non cede: `min-width: 0` permette ai pulsanti di
      restringersi sotto la larghezza del loro testo, che è il motivo per cui su
      un telefono stretto «Impostazioni» finiva fuori dallo schermo. */
@@ -112,26 +115,30 @@ input, select, textarea { font: inherit; }
   display: flex;
   align-items: center;
   gap: .35rem;
-  padding: .4rem .75rem;
-  border-radius: var(--radius);
+  padding: .45rem .85rem;
+  border-radius: var(--radius-pill);
   font-size: .85rem;
   font-weight: 500;
   color: var(--c-text-2);
-  transition: background .15s, color .15s;
+  transition: all .15s ease;
 }
 .nav-link { min-width: 0; flex-shrink: 1; }
 .nav-link:hover { background: var(--c-bg); color: var(--c-text); }
-.nav-link.active { background: var(--c-primary-light); color: var(--c-primary); }
+.nav-link.active {
+  background: var(--c-primary-light);
+  color: var(--c-primary);
+  font-weight: 600;
+}
 .nav-icon { font-size: 1rem; }
 
 /* ── Calendar view ──────────────────────────────────────────────── */
 .calendar-view {
-  max-width: 700px;
+  max-width: 720px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1.25rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: .75rem;
+  gap: 1.15rem;
 }
 
 /* La barra del mese non scorre via: scendendo lungo il calendario si può
@@ -146,11 +153,12 @@ input, select, textarea { font: inherit; }
   z-index: 30;
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: .75rem;
   background: var(--c-card);
-  border-radius: var(--radius);
-  padding: .75rem 1rem;
+  border-radius: var(--radius-lg);
+  padding: .9rem 1.2rem;
   box-shadow: var(--shadow);
+  border: 1px solid var(--c-border);
   /* Il totale del mese va a capo su una riga sua: mese e frecce restano dove
      sono sempre stati, e il numero non li stringe su schermi piccoli. */
   flex-wrap: wrap;
@@ -163,14 +171,14 @@ input, select, textarea { font: inherit; }
   flex: 1 0 100%;
   display: flex;
   align-items: baseline;
-  gap: .5rem;
-  margin-top: .35rem;
-  padding-top: .35rem;
-  border-top: 1px solid var(--c-border);
+  gap: .6rem;
+  margin-top: .45rem;
+  padding-top: .55rem;
+  border-top: 1px solid #f1f5f9;
 }
 
 .cal-header-soldi-val {
-  font-size: 1.35rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--c-success);
   letter-spacing: -.02em;
@@ -178,7 +186,7 @@ input, select, textarea { font: inherit; }
 }
 
 .cal-header-soldi-ore {
-  font-size: .8rem;
+  font-size: .84rem;
   color: var(--c-text-2);
 }
 
@@ -186,7 +194,7 @@ input, select, textarea { font: inherit; }
    numero per il netto che arriva sul conto. Piccola ma sempre presente. */
 .cal-header-soldi-eti {
   margin-left: auto;
-  font-size: .72rem;
+  font-size: .75rem;
   color: var(--c-text-2);
 }
 
@@ -200,9 +208,10 @@ input, select, textarea { font: inherit; }
 }
 
 .cal-month-name {
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.3rem;
+  font-weight: 800;
   color: var(--c-text);
+  letter-spacing: -.02em;
 }
 
 .cal-header-right {
@@ -213,23 +222,23 @@ input, select, textarea { font: inherit; }
 
 .cal-mode-toggle {
   display: flex;
-  background: var(--c-bg);
-  padding: 2px;
-  border-radius: var(--radius-sm);
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--c-border);
-  gap: 2px;
+  gap: 3px;
 }
 
 .cal-mode-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 4px;
-  font-size: 1rem;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-pill);
+  font-size: 1.05rem;
   color: var(--c-text-2);
-  transition: background .12s, color .12s;
+  transition: all .15s ease;
 }
 .cal-mode-btn:hover {
   color: var(--c-text);
@@ -237,7 +246,7 @@ input, select, textarea { font: inherit; }
 .cal-mode-btn.active {
   background: var(--c-card);
   color: var(--c-primary);
-  box-shadow: 0 1px 2px rgba(0,0,0,.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
   font-weight: 700;
 }
 
@@ -566,42 +575,57 @@ input, select, textarea { font: inherit; }
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 1px;
-  background: var(--c-border);
-  border-radius: var(--radius);
+  gap: 3px;
+  background: #f1f5f9;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   overflow: hidden;
+  padding: 5px;
+  border: 1px solid var(--c-border);
 }
 
 .cal-day-header {
   text-align: center;
-  padding: .45rem .2rem;
-  font-size: .7rem;
+  padding: .5rem .2rem;
+  font-size: .72rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .05em;
+  letter-spacing: .06em;
   color: var(--c-text-2);
-  background: var(--c-bg);
+  background: transparent;
 }
 
 .cal-cell {
-  min-height: 72px;
-  padding: .4rem .4rem .35rem;
+  min-height: 76px;
+  padding: .45rem .45rem .4rem;
   background: var(--c-card);
+  border-radius: 10px;
   cursor: pointer;
-  transition: background .12s;
+  transition: all .15s ease;
   display: flex;
   flex-direction: column;
-  gap: .18rem;
+  gap: .25rem;
   user-select: none;
 }
-.cal-cell:hover { background: #f8fafd; }
-.cal-cell--empty {
-  background: #fafafa;
-  cursor: default;
-  min-height: 72px;
+.cal-cell:hover {
+  background: #f8fafc;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
 }
-.cal-cell--today { background: #eef2ff; }
+.cal-cell--empty {
+  background: transparent;
+  cursor: default;
+  min-height: 76px;
+}
+.cal-cell--empty:hover {
+  background: transparent;
+  transform: none;
+  box-shadow: none;
+}
+.cal-cell--today {
+  background: #eff6ff;
+  box-shadow: inset 0 0 0 1.5px var(--c-primary);
+}
 .cal-cell--today:hover { background: #e0e7ff; }
 
 /* Giorno raggiunto dal calendarietto di Statistiche. L'anello è `inset`: la
@@ -690,17 +714,18 @@ input, select, textarea { font: inherit; }
 /* Calendar summary */
 .cal-summary {
   background: var(--c-card);
-  border-radius: var(--radius);
-  padding: 1rem 1.1rem;
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1.35rem;
   box-shadow: var(--shadow);
+  border: 1px solid var(--c-border);
   display: flex;
   flex-direction: column;
-  gap: .85rem;
+  gap: 1.1rem;
 }
 
 .cal-summary-row {
   display: flex;
-  gap: 1.5rem;
+  gap: 1.75rem;
   flex-wrap: wrap;
   align-items: flex-start;
 }
@@ -835,20 +860,25 @@ input, select, textarea { font: inherit; }
 .week-today-btn:hover { background: #bfdbfe; }
 
 .week-nav-btn {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  font-size: 1.4rem;
+  font-size: 1.15rem;
   font-weight: 700;
-  color: var(--c-primary);
-  background: var(--c-primary-light);
+  color: var(--c-text);
+  background: #f1f5f9;
+  border: 1px solid var(--c-border);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background .15s;
+  transition: all .15s ease;
 }
-.week-nav-btn:hover { background: #bfdbfe; }
+.week-nav-btn:hover {
+  background: #e2e8f0;
+  color: var(--c-primary);
+  transform: scale(1.05);
+}
 
 /* ── Riepilogo ──────────────────────────────────────────────────── */
 .summary-item {
@@ -877,13 +907,15 @@ input, select, textarea { font: inherit; }
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.45);
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: flex-end;
   justify-content: center;
   z-index: 200;
   padding: 0;
-  animation: fadeIn .15s ease;
+  animation: fadeIn .18s ease;
 }
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -891,48 +923,55 @@ input, select, textarea { font: inherit; }
 
 .modal {
   width: 100%;
-  max-width: 480px;
+  max-width: 520px;
   max-height: 92dvh;
   background: var(--c-card);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-radius: 24px 24px 0 0;
   overflow-y: auto;
-  animation: slideUp .2s ease;
+  animation: slideUp .22s cubic-bezier(0.16, 1, 0.3, 1);
   padding-bottom: calc(1.5rem + var(--safe-bottom));
+  box-shadow: 0 -8px 32px rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-bottom: none;
 }
 
-@media (min-width: 520px) {
-  .modal-overlay { align-items: center; padding: 1rem; }
-  .modal { border-radius: var(--radius-lg); max-height: 90dvh; }
+@media (min-width: 540px) {
+  .modal-overlay { align-items: center; padding: 1.25rem; }
+  .modal { border-radius: 24px; max-height: 88dvh; border-bottom: 1px solid rgba(226, 232, 240, 0.8); }
 }
 
 .modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.1rem 1.25rem .75rem;
+  padding: 1.25rem 1.4rem .85rem;
   border-bottom: 1px solid var(--c-border);
   position: sticky;
   top: 0;
   background: var(--c-card);
+  z-index: 10;
 }
 
 .modal-title {
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -.01em;
+  color: var(--c-text);
 }
 
 .modal-close {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
+  background: #f1f5f9;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: .9rem;
+  font-size: .95rem;
   color: var(--c-text-2);
-  transition: background .15s;
+  transition: all .15s ease;
 }
-.modal-close:hover { background: var(--c-bg); }
+.modal-close:hover { background: #e2e8f0; color: var(--c-text); transform: scale(1.05); }
 
 .modal-form {
   padding: 1.25rem;
@@ -1081,19 +1120,19 @@ input, select, textarea { font: inherit; }
 
 .form-input {
   width: 100%;
-  padding: .6rem .75rem;
+  padding: .75rem .95rem;
   border: 1.5px solid var(--c-border);
   border-radius: var(--radius-sm);
   font-size: .95rem;
   color: var(--c-text);
-  background: var(--c-bg);
-  transition: border-color .15s, box-shadow .15s;
+  background: #f8fafc;
+  transition: all .15s ease;
   outline: none;
 }
 .form-input:focus {
   border-color: var(--c-primary);
   box-shadow: 0 0 0 3px rgba(37,99,235,.15);
-  background: var(--c-card);
+  background: #ffffff;
 }
 .form-input:disabled {
   opacity: .5;
@@ -1314,11 +1353,12 @@ input, select, textarea { font: inherit; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: .65rem 1.25rem;
-  border-radius: var(--radius-sm);
-  font-size: .9rem;
-  font-weight: 600;
-  transition: background .15s, opacity .15s;
+  padding: .75rem 1.35rem;
+  border-radius: var(--radius);
+  font-size: .95rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  transition: all .15s ease;
 }
 .btn--full { width: 100%; }
 
@@ -1326,20 +1366,32 @@ input, select, textarea { font: inherit; }
   flex: 1;
   background: var(--c-primary);
   color: #fff;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
 }
-.btn-primary:hover { background: var(--c-primary-dark); }
+.btn-primary:hover {
+  background: var(--c-primary-dark);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
 
 .btn-secondary {
-  background: var(--c-bg);
-  color: var(--c-text-2);
-  border: 1.5px solid var(--c-border);
+  background: #f1f5f9;
+  color: var(--c-text);
+  border: 1px solid var(--c-border);
 }
-.btn-secondary:hover { background: var(--c-border); }
+.btn-secondary:hover {
+  background: #e2e8f0;
+  color: var(--c-text);
+}
 
 .btn-danger-ghost {
   background: transparent;
   color: var(--c-danger);
   border: 1.5px solid var(--c-danger-light);
+  border-radius: var(--radius);
   margin-top: .25rem;
 }
 .btn-danger-ghost:hover { background: var(--c-danger-light); }
