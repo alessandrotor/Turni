@@ -57,7 +57,11 @@ const DEFAULT_SETTINGS = {
   addComunalePct: 0,
   addizionaliAltrove: false,        // addizionali già trattenute da altro datore → 0
   noAddizionali: false,      // primo anno di lavoro: nessun anno precedente da cui calcolarle → 0
-  noTrattamentoIntegrativo: false,  // override: forza esclusione TI (va a conguaglio)
+  noTrattamentoIntegrativo: false,  // storico: oggi lo tiene allineato a tiModo
+  // Trattamento integrativo: 'auto' decide mese per mese come fa il software
+  // paghe (lordo del mese × 12 contro i 15.000), 'sempre' lo include comunque,
+  // 'mai' lo esclude. Vedi tiSpettaQuestoMese in utils/net.js.
+  tiModo: 'auto',
   tiProjectionMode: 'stimato',      // 'stimato' | 'ytd' — proiezione per la decisione TI
   // Mensilità aggiuntive (dipendono dal CCNL)
   hasTredicesima: false,

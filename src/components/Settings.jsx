@@ -7,6 +7,7 @@ import { esportaBackup, importaBackup, contaTurniSalvati } from '../services/bac
 import { ESITO } from '../services/export';
 import CcnlPicker from './CcnlPicker';
 import { statoConfigurazione } from '../utils/configurazione';
+import { modoTrattamentoIntegrativo } from '../utils/net';
 import { elencoOrariDaCorreggere, applicaCorrezioneOrari } from '../services/correzioni';
 import { ENABLE_NET_CALC } from '../config/features';
 import { genId } from '../utils/id';
@@ -81,7 +82,7 @@ export default function Settings({ settings, onSave }) {
     addComunalePct: toInput(settings.addComunalePct),
     addizionaliAltrove: !!settings.addizionaliAltrove,
     noAddizionali: !!settings.noAddizionali,
-    noTrattamentoIntegrativo: !!settings.noTrattamentoIntegrativo,
+    tiModo: modoTrattamentoIntegrativo(settings),
     tiProjectionMode: settings.tiProjectionMode === 'ytd' ? 'ytd' : 'stimato',
     workingDaysPerWeek: toInput(settings.workingDaysPerWeek ?? 6),
     absenceDailyHours: settings.absenceDailyHours === '' || settings.absenceDailyHours == null
@@ -347,7 +348,9 @@ export default function Settings({ settings, onSave }) {
       addComunalePct: parseNum(form.addComunalePct),
       addizionaliAltrove: form.addizionaliAltrove,
       noAddizionali: form.noAddizionali,
-      noTrattamentoIntegrativo: form.noTrattamentoIntegrativo,
+      tiModo: form.tiModo,
+      // Il vecchio campo si allinea, per non lasciare due verità nei dati.
+      noTrattamentoIntegrativo: form.tiModo === 'mai',
       tiProjectionMode: form.tiProjectionMode,
       workingDaysPerWeek: parseNum(form.workingDaysPerWeek),
       absenceDailyHours: form.absenceDailyHours === '' ? '' : parseNum(form.absenceDailyHours),
@@ -1472,28 +1475,39 @@ export default function Settings({ settings, onSave }) {
               </p>
             </div>
 
-            {/* Era «Forza esclusione TI (override, va a conguaglio)»: quattro
-                parole di gergo delle paghe per l'unica azione dell'app che
-                evita davvero di doversi ritrovare un conto a dicembre. Chi non
-                fa questo mestiere non poteva sapere che era quella. Adesso dice
-                cosa fa e cosa costa, come tutto il resto. */}
-            <label className="check-row">
-              <input
-                type="checkbox"
-                checked={form.noTrattamentoIntegrativo}
-                onChange={setCheck('noTrattamentoIntegrativo')}
-              />
-              <span>Non farmi accreditare il bonus ogni mese</span>
-            </label>
+            {/* Tre stati invece di una casella, perché il default è cambiato.
+                Prima l'app includeva sempre il bonus e serviva un modo per
+                toglierlo; ora decide mese per mese come fa il datore, e chi
+                vuole vederlo comunque ha bisogno dell'opposto. Chi aveva
+                spuntato la vecchia casella ritrova «Mai» (vedi
+                modoTrattamentoIntegrativo in net.js). */}
+            <label className="form-label" htmlFor="ti-modo">Bonus di 100 € al mese (trattamento integrativo)</label>
+            <select
+              id="ti-modo"
+              className="form-input"
+              value={form.tiModo}
+              onChange={set('tiModo')}
+            >
+              <option value="auto">Come fa il mio datore (consigliato)</option>
+              <option value="sempre">Contalo sempre</option>
+              <option value="mai">Non contarlo mai</option>
+            </select>
             <p className="form-hint">
-              Prendi ~100 € in meno al mese, ma non rischi di doverli restituire a dicembre.
-              Se a fine anno ti spetta davvero, lo ricevi tutto insieme al conguaglio.
-              Conviene a chi ha <strong>più datori nello stesso anno</strong>, contratti a
-              termine o un reddito che cambia molto: sono i casi in cui il datore lo accredita
-              credendo di essere l'unico, e poi torna indietro.
-              <br />
-              Va chiesto <strong>anche al datore</strong>, per iscritto: questa casella dice
-              all'app di non contarlo, non ferma la busta paga.
+              <strong>Come fa il mio datore</strong>: il bonus compare nei mesi in cui il lordo
+              sta sotto i <strong>1.250 €</strong>, e sparisce in quelli in cui lo supera —
+              perché moltiplicato per dodici uscirebbe dai 15.000 € entro cui spetta. È quello
+              che succede davvero in busta, verificato su cinque cedolini.
+              <br /><br />
+              <strong>Contalo sempre</strong>: se il tuo datore te lo accredita comunque. Alla
+              fine dell'anno il conto torna uguale: quello che non hai preso mese per mese
+              arriva col conguaglio di dicembre.
+              <br /><br />
+              <strong>Non contarlo mai</strong>: vedi ~100 € in meno al mese, ma non rischi di
+              doverli restituire. Conviene a chi ha <strong>più datori nello stesso anno</strong>,
+              contratti a termine o un reddito che cambia molto: sono i casi in cui il datore lo
+              accredita credendo di essere l'unico, e poi si torna indietro. Va chiesto
+              <strong> anche al datore</strong>, per iscritto: questa scelta dice all'app di non
+              contarlo, non ferma la busta paga.
             </p>
           </details>
         )}

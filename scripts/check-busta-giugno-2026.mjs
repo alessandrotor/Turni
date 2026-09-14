@@ -89,7 +89,17 @@ const b = calcNetMonthly(LORDO_GIUGNO, 14000, BASE_SETTINGS, GIORNI, QUATTORDICE
 check('Contributi totali', b.contributi, 201.72, 0.1);
 check('Cuneo: aliquota di fascia', b.cuneoPct, 0.053, 0.0001);
 check('Indennità L.207/24', b.bonusCuneo, 1849.65 * 0.053, 0.5);
-check('Trattamento integrativo', b.trattamentoIntegrativo, 1200 * (GIORNI / 365), 0.5);
+// IL TRATTAMENTO INTEGRATIVO NON TORNA con una proiezione annua bassa, e dal
+// 14 settembre 2026 è voluto. Qui si pretendeva 98,63 €, cioè che bastasse
+// l'anno a farlo scattare. La busta di giugno dice di no: il TI non c'è, e non
+// c'entra l'anno — il software paghe decide sul MESE, e giugno porta dentro la
+// quattordicesima (2.047,58 × 12 sfonda i 15.000). Per questo su questa voce il
+// caso A e il caso B ora coincidono: la proiezione annua governa detrazioni e
+// cuneo, non più il TI. Vedi tiSpettaQuestoMese e check-ti-mensile.mjs.
+check('Trattamento integrativo: 0 anche qui', b.trattamentoIntegrativo, 0, 0.001);
+// «Sempre zero» non sarebbe un risultato: con un lordo sotto soglia il TI torna.
+const sottoSoglia = calcNetMonthly(1100, 14000, BASE_SETTINGS, GIORNI, 0);
+check('  ma con 1.100 EUR di lordo il TI torna', sottoSoglia.trattamentoIntegrativo, 1200 * (GIORNI / 365), 0.5);
 check('Detrazioni (1.955 × 30/365)', b.detrazioni, 1955 * (GIORNI / 365), 0.5);
 
 // ---------------------------------------------------------------- caso C

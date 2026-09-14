@@ -370,6 +370,7 @@ export default function CalendarView({
     netProjection, netBasis, extraThisMonth, monthGross,
     netMonth, monthNet, monthTrattenute, monthBonus, monthTfr,
     tiInfo, effectiveRatePct, addizionaliPct, showNetPanel: showNetPanelRaw,
+    riferimento,
   } = useMonthlyNet({ year, month, settings, pay, annualGross, annualExtras, daysInMonth });
   // Senza nemmeno un turno segnato nel mese non c'è niente da stimare: voci
   // fisse mensili o mensilità aggiuntive maturate da sole (senza turni)
@@ -1082,15 +1083,52 @@ export default function CalendarView({
                   </>
                 )}
 
-                {tiInfo && (
+                {/* La decisione sul TI è MENSILE e segue quella del software
+                    paghe. Va spiegata dove compare il numero, perché altrimenti
+                    un bonus che sparisce da un mese all'altro sembra un
+                    capriccio dell'app — e invece dipende da quanto si è
+                    lavorato in quel mese. */}
+                {netMonth?.esitoTi && (
                   <div className="net-subnote">
-                    TI automatico: {tiInfo.motivo} · reddito annuo stimato {fmt0(tiInfo.redditoStimato)}
+                    {netMonth.esitoTi.spetta ? (
+                      <>
+                        <strong>Trattamento integrativo incluso.</strong> Il tuo datore lo eroga
+                        nei mesi in cui il lordo sta sotto i <strong>1.250 €</strong>: questo mese
+                        sei a {fmt0(netMonth.esitoTi.baseMese)} €.
+                      </>
+                    ) : (
+                      <>
+                        <strong>Trattamento integrativo non incluso questo mese.</strong> Il tuo
+                        datore lo toglie quando il lordo del mese supera i <strong>1.250 €</strong>
+                        {' '}(qui {fmt0(netMonth.esitoTi.baseMese)} €): moltiplicato per dodici
+                        supererebbe i 15.000 € oltre i quali non spetta. Se a fine anno hai
+                        guadagnato meno, te lo restituisce il conguaglio di dicembre.
+                      </>
+                    )}
                   </div>
                 )}
+                {/* QUALE numero ha prodotto questo netto. Prima qui c'era
+                    scritto «proiezione annua usata», e dal 14 settembre 2026 non
+                    è più vero: il netto del mese esce dal lordo del mese × 12,
+                    come fa il software paghe. La proiezione dell'anno resta
+                    sotto, dove serve ancora — il bonus e il rischio di
+                    restituzione sono domande annuali. Tenerle separate è l'unico
+                    modo perché un utente possa ritrovare i propri numeri. */}
                 <div className="net-subnote">
-                  Proiezione annua usata: {fmt0(netBasis)} lordi ({PROJECTION_LABEL[netProjection.source]}).
-                  È una previsione: su lavoro a turni le ore cambiano, e il conguaglio di dicembre
-                  rimette a posto detrazioni e bonus. Puoi correggerla in Impostazioni.
+                  Questo netto esce da <strong>{fmt0(netMonth?.esitoTi?.baseMese ?? monthGross)} €</strong>
+                  {' '}di lordo del mese: il tuo datore calcola tasse e bonus mese per mese,
+                  moltiplicando per dodici quello che hai guadagnato.
+                  {riferimento > 0 && netMonth?.esitoTi && !netMonth.esitoTi.spetta && (
+                    <> Un mese pieno come questo ti colloca nella fascia sopra i 15.000, dove la
+                    detrazione è più alta e il bonus non spetta.</>
+                  )}
+                  {' '}A dicembre il conguaglio rifà il conto sull'anno vero e rimette a posto
+                  la differenza.
+                </div>
+                <div className="net-subnote">
+                  Sull'anno, la stima è {fmt0(netBasis)} € lordi ({PROJECTION_LABEL[netProjection.source]}):
+                  serve per il bonus e per il rischio di restituzione qui sotto, non per questo netto.
+                  Puoi correggerla in Impostazioni.
                 </div>
                 {/* Proiezione costruita su pochi mesi di turni: i mesi dell'anno
                     senza turni inseriti contano come ZERO e schiacciano la stima

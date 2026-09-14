@@ -178,6 +178,17 @@ nemmeno la maggiorazione domenicale lo comprendeva.
   e la busta ne paga **una** (`Ferie godute 4,00 ORE`). Conferma il totale:
   120,75 h col calendario contro le 120,70 stampate, 138,75 col mese di paga.
   → `check-busta-agosto-2026.mjs`
+- **Tasse e bonus si decidono sul MESE, non sull'anno.** Il software paghe
+  prende il lordo del mese, lo moltiplica per dodici e da lì sceglie in blocco
+  detrazione, indennità L. 207/2024 e trattamento integrativo. L'app faceva come
+  la legge — guardava l'anno — e prometteva ogni mese un bonus che in busta
+  spesso non c'era. Riscontro su quattro cedolini 2026, al centesimo sul TI:
+  febbraio e maggio e luglio sotto soglia col bonus, agosto sopra senza. Per chi
+  legge, la soglia si dice in una cifra sola: **1.250 € di lordo al mese**
+  (15.000 ÷ 12). → `check-ti-mensile.mjs`
+  Attenzione a non confonderla con la proiezione annua, che RESTA e serve ad
+  altro: il margine del bonus e il rischio di restituzione sono domande
+  sull'anno. Il pannello del netto le tiene su due righe separate apposta.
 - **La soglia del supplementare resta MENSILE** (103,20 h = 24 × 4,3), non
   settimanale: questo lo avevano stabilito giugno e luglio, e non cambia.
   → `check-mese-paga-2026.mjs`

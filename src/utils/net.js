@@ -307,6 +307,111 @@ export function redditoComplessivo(gross, settings = {}, contributi = null) {
   return g - cont.deducibili + cont.fringeImponibile;
 }
 
+/**
+ * Il trattamento integrativo spetta in QUESTO mese?
+ *
+ * PERCHÉ MENSILE E NON ANNUALE
+ * La legge guarda l'anno, il software paghe guarda il mese. Fino al 14
+ * settembre 2026 l'app faceva come la legge, e prometteva un TI che in busta
+ * spesso non c'era: il conto tornava a dicembre, ma intanto il netto di ogni
+ * mese era sbagliato — che è l'unico numero su cui il lavoratore decide.
+ *
+ * LA REGOLA, RICAVATA DA CINQUE BUSTE DEL 2026 (stesso datore, LUL Zucchetti):
+ * si prende l'imponibile previdenziale del mese, lo si moltiplica per 12 e lo
+ * si confronta con i 15.000 € della prima fascia. Sopra, il TI non viene
+ * erogato; sotto, sì.
+ *
+ *   febbraio 1.099 × 12 = 13.188  →  TI 92,05      in busta: c'è      ✓
+ *   maggio   1.163 × 12 = 13.956  →  TI 101,91     in busta: c'è      ✓
+ *   giugno   2.048 × 12 = 24.576  →  niente        in busta: assente  ✓
+ *   luglio   1.173 × 12 = 14.076  →  TI 101,91     in busta: c'è      ✓
+ *   agosto   1.298 × 12 = 15.576  →  niente        in busta: assente  ✓
+ *
+ * QUALE IMPONIBILE: quello PREVIDENZIALE (il lordo arrotondato all'euro), non
+ * quello fiscale. Le due ipotesi sono state provate una contro l'altra sulle
+ * stesse cinque buste: col fiscale agosto darebbe 14.081, cioè sotto soglia e
+ * TI erogato, mentre in busta non c'è. Il previdenziale spiega tutti e cinque i
+ * mesi, il fiscale quattro.
+ *
+ * Che il confronto giusto per legge sarebbe sul reddito complessivo — cioè sul
+ * fiscale — resta vero, ed è il motivo per cui questa è una regola PRUDENTE:
+ * toglie il TI in mesi in cui a rigore spetterebbe, e il conguaglio di fine
+ * anno lo restituisce. L'app riproduce quello che succede in busta, e lo dice.
+ *
+ * LIMITE: cinque buste, un datore solo. Se un altro software paghe usasse una
+ * regola diversa, `tiModo: 'sempre'` la scavalca.
+ */
+export function tiSpettaQuestoMese(lordoMese, settings = {}) {
+  const modo = modoTrattamentoIntegrativo(settings);
+  if (modo === 'mai') return { spetta: false, motivo: 'escluso a mano' };
+  if (modo === 'sempre') return { spetta: true, motivo: 'incluso a mano' };
+
+  // L'imponibile previdenziale è il lordo arrotondato all'euro: è la stessa
+  // base su cui la busta calcola l'IVS (vedi calcContributi).
+  const baseMese = Math.round(Math.max(0, Number(lordoMese) || 0));
+  const proiezione = baseMese * 12;
+  const spetta = proiezione <= TAX_2026.TI_SOGLIA_PIENO;
+  return {
+    spetta,
+    proiezione,
+    baseMese,
+    motivo: spetta
+      ? `${baseMese} × 12 = ${proiezione} €, sotto i 15.000`
+      : `${baseMese} × 12 = ${proiezione} €, sopra i 15.000`,
+  };
+}
+
+/**
+ * 'auto' (come il datore) · 'sempre' · 'mai'.
+ *
+ * `noTrattamentoIntegrativo` era l'interruttore di prima, quando il default
+ * includeva il TI e serviva un modo per toglierlo. Ora la decisione automatica
+ * lo esclude più spesso, quindi serve l'opposto — ma chi aveva spuntato quella
+ * casella deve ritrovare il comportamento che aveva scelto, non un altro.
+ */
+export function modoTrattamentoIntegrativo(settings = {}) {
+  if (settings.tiModo === 'sempre' || settings.tiModo === 'mai' || settings.tiModo === 'auto') {
+    return settings.tiModo;
+  }
+  return settings.noTrattamentoIntegrativo ? 'mai' : 'auto';
+}
+
+/**
+ * Il reddito annuo di riferimento che il software paghe usa PER QUESTO MESE.
+ *
+ * Non è una proiezione dell'anno: è il lordo del mese moltiplicato per dodici.
+ * Governa insieme tre cose — detrazione, indennità L. 207/2024 e trattamento
+ * integrativo — e le governa in blocco, perché dipendono tutte dalla fascia di
+ * reddito in cui il sostituto d'imposta ti colloca quel mese.
+ *
+ * Sopra i 15.000 il riferimento si ferma «appena sopra soglia» invece di
+ * seguire il lordo: è ciò che riproduce la detrazione stampata. Un mese con la
+ * quattordicesima dentro proietterebbe 24.576 € e una detrazione molto più
+ * bassa di quella che la busta mostra davvero.
+ *
+ * Riscontro su quattro buste del 2026, al centesimo (check-ti-mensile.mjs):
+ *
+ *   mese      riferimento   detrazione        TI        indennità
+ *   febbraio      13.188   149,97 = busta   92,05 ✓    52,58 ≈ 52,68
+ *   maggio        13.956   166,04 = busta  101,91 ✓    55,62 ≈ 55,71
+ *   luglio        14.076   166,04 = busta  101,91 ✓    56,12 ≈ 56,22
+ *   agosto        16.733   262,51 ≈ 261,50   0,00 ✓    56,23 ≈ 56,32
+ */
+export function riferimentoAnnuoDelMese(lordoMese, settings = {}) {
+  const esito = tiSpettaQuestoMese(lordoMese, settings);
+  if (esito.spetta) {
+    // Sotto soglia: il riferimento è la proiezione del mese. Se la decisione è
+    // forzata a mano («sempre»), si resta comunque nella fascia bassa, che è
+    // quella coerente con un TI erogato.
+    const base = Math.round(Math.max(0, Number(lordoMese) || 0)) * 12;
+    return Math.min(base, taxableToGross(TAX_2026.TI_SOGLIA_PIENO, settings));
+  }
+  // Sopra soglia: appena oltre i 15.000 di reddito complessivo. I 100 € di
+  // margine non sono un numero magico — servono a stare dentro la fascia
+  // 15.000-28.000 senza sporgere, ed è lì che cade la detrazione stampata.
+  return taxableToGross(TAX_2026.TI_SOGLIA_PIENO + 100, settings);
+}
+
 export function taxableToGross(taxable, settings = {}) {
   return Math.max(0, Number(taxable) || 0) / (1 - deductibleContribRate(settings));
 }
@@ -799,8 +904,12 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   // Entrambe TRONCATE a due decimali, non arrotondate: in busta 1.200 × 31/365
   // fa 101,91 (il valore pieno è 101,9178) e 1.060,92 × 5,3% fa 56,22 (56,2288).
   const dayFraction = monthDays / 365;
-  const trattamentoIntegrativo = settings.noTrattamentoIntegrativo
-    ? 0 : trunc2(ann.trattamentoIntegrativo * dayFraction);
+  // La decisione è MENSILE e segue quella del software paghe: vedi
+  // `tiSpettaQuestoMese`. L'importo, quando spetta, resta la quota annua
+  // rapportata ai giorni — su quello la busta tornava già al centesimo.
+  const esitoTi = tiSpettaQuestoMese(gross, settings);
+  const trattamentoIntegrativo = esitoTi.spetta
+    ? trunc2(ann.trattamentoIntegrativo * dayFraction) : 0;
   // L'indennità L. 207/2024 NON è una quota annua spalmata sui giorni: in busta
   // è la percentuale di fascia applicata all'imponibile fiscale DEL MESE, quindi
   // segue le ore effettivamente lavorate (verificato: 4,8% × 1.849,65 = 88,78).
@@ -836,7 +945,7 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
     imponibileOrdinario, imponibileExtra, irpefExtra, cuneoPct,
     irpefLorda, detrazioni, detrazioniApplicate, irpefNetta,
     addRegionale, addComunale, trattenuteFisse, trattenute,
-    trattamentoIntegrativo, bonusCuneo, bonus,
+    trattamentoIntegrativo, bonusCuneo, bonus, esitoTi,
     tfrLordo, tfrImposta, aliqTfr, tfr, net,
   };
 }
