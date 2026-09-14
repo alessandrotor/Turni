@@ -483,6 +483,52 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
             )}
           </div>
 
+          {cosaCambia && !periodoAttivo && (
+            <div className="cosa-cambia-card">
+              <div className="cosa-cambia-hero">
+                <div className="cosa-cambia-hero-valore">
+                  {cosaCambia.hasRate ? cosaCambia.testoDeltaNetto : cosaCambia.testoDeltaOre}
+                </div>
+                <div className="cosa-cambia-hero-label">
+                  {cosaCambia.hasRate ? 'netti stimati in tasca' : 'di lavoro questo mese'}
+                </div>
+                <div className="cosa-cambia-hero-dettaglio">
+                  {cosaCambia.hasRate ? (
+                    <>Lordo: {cosaCambia.testoDeltaLordo} ({cosaCambia.testoDeltaOre}) · Trattenute: {cosaCambia.deltaTrattenute ? formatDeltaCurrency(cosaCambia.deltaTrattenute) : '0,00 €'}</>
+                  ) : (
+                    'Imposta la paga oraria nelle Impostazioni per stimare il netto in euro'
+                  )}
+                </div>
+              </div>
+
+              {cosaCambia.hasRate && cosaCambia.margineBonus !== null && (
+                <div className="cosa-cambia-soglia-wrap">
+                  <div className="cosa-cambia-soglia-head">
+                    <span className="cosa-cambia-soglia-titolo">Trattamento Integrativo</span>
+                    <span className="cosa-cambia-soglia-quota">
+                      {cosaCambia.margineBonus > 0 ? `${Math.round(cosaCambia.margineBonus).toLocaleString('it-IT')} € di margine` : 'Oltre soglia'}
+                    </span>
+                  </div>
+                  <div className="cosa-cambia-progresso-bar" role="progressbar" aria-valuenow={Math.round(((15000 - cosaCambia.margineBonus) / 15000) * 100)} aria-valuemin="0" aria-valuemax="100">
+                    <div
+                      className={`cosa-cambia-progresso-fill${cosaCambia.superaSoglia || cosaCambia.margineBonus <= 0 ? ' cosa-cambia-progresso-fill--warn' : ''}`}
+                      style={{ width: `${Math.min(100, Math.max(5, ((15000 - cosaCambia.margineBonus) / 15000) * 100))}%` }}
+                    />
+                  </div>
+                  <div className="cosa-cambia-soglia-nota">
+                    {cosaCambia.superaSoglia ? (
+                      <span className="cosa-cambia-avviso">⚠️ Questo turno supera la soglia 15.000 €: a fine anno il bonus non spetta</span>
+                    ) : cosaCambia.margineBonus > 0 ? (
+                      `Margine prima dei 15.000 €: rimangono ${Math.round(cosaCambia.margineBonus).toLocaleString('it-IT')} € di sicurezza`
+                    ) : (
+                      'Sei oltre la soglia dei 15.000 €'
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="form-group">
             <label className="form-label">Pausa</label>
             <div className="break-presets">
@@ -584,44 +630,6 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
               />
             </div>
           </details>
-
-          {cosaCambia && cosaCambia.hasRate && !periodoAttivo && (
-            <div className="cosa-cambia-card">
-              <div className="cosa-cambia-hero">
-                <div className="cosa-cambia-hero-valore">{cosaCambia.testoDeltaNetto}</div>
-                <div className="cosa-cambia-hero-label">netti stimati in tasca</div>
-                <div className="cosa-cambia-hero-dettaglio">
-                  Lordo: {cosaCambia.testoDeltaLordo} ({cosaCambia.testoDeltaOre}) · Trattenute: {cosaCambia.deltaTrattenute ? formatDeltaCurrency(cosaCambia.deltaTrattenute) : '0,00 €'}
-                </div>
-              </div>
-
-              {cosaCambia.margineBonus !== null && (
-                <div className="cosa-cambia-soglia-wrap">
-                  <div className="cosa-cambia-soglia-head">
-                    <span className="cosa-cambia-soglia-titolo">Trattamento Integrativo</span>
-                    <span className="cosa-cambia-soglia-quota">
-                      {cosaCambia.margineBonus > 0 ? `${Math.round(cosaCambia.margineBonus).toLocaleString('it-IT')} € di margine` : 'Oltre soglia'}
-                    </span>
-                  </div>
-                  <div className="cosa-cambia-progresso-bar" role="progressbar" aria-valuenow={Math.round(((15000 - cosaCambia.margineBonus) / 15000) * 100)} aria-valuemin="0" aria-valuemax="100">
-                    <div
-                      className={`cosa-cambia-progresso-fill${cosaCambia.superaSoglia || cosaCambia.margineBonus <= 0 ? ' cosa-cambia-progresso-fill--warn' : ''}`}
-                      style={{ width: `${Math.min(100, Math.max(5, ((15000 - cosaCambia.margineBonus) / 15000) * 100))}%` }}
-                    />
-                  </div>
-                  <div className="cosa-cambia-soglia-nota">
-                    {cosaCambia.superaSoglia ? (
-                      <span className="cosa-cambia-avviso">⚠️ Questo turno supera la soglia 15.000 €: a fine anno il bonus non spetta</span>
-                    ) : cosaCambia.margineBonus > 0 ? (
-                      `Margine prima dei 15.000 €: rimangono ${Math.round(cosaCambia.margineBonus).toLocaleString('it-IT')} € di sicurezza`
-                    ) : (
-                      'Sei oltre la soglia dei 15.000 €'
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>
