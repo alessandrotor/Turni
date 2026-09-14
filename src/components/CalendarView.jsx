@@ -334,14 +334,14 @@ export default function CalendarView({
   const spiegazione = (
     <span className="tooltip-wrap">
       <button type="button" className="linklike" aria-describedby="bonus-soglia-tip">
-        perché
+        perché?
       </button>
       <span className="tooltip-bubble" role="tooltip" id="bonus-soglia-tip">
         Sopra i 15.000 € il bonus non spetta più, ma scatta una detrazione più
         alta che te lo restituisce quasi tutto. Il datore riprende a dicembre
         quello già dato: è un colpo in una volta sola, non una perdita.
-        Superata la soglia di circa {costo.larghezzaBuca || 200} €, guadagnare di
-        più conviene come prima. Vale se hai un solo datore quest'anno.
+        Bastano {costo.larghezzaBuca || 200} € di lordo in più e torni a
+        guadagnare come prima. Vale se hai un solo datore quest'anno.
       </span>
     </span>
   );
@@ -1246,7 +1246,10 @@ export default function CalendarView({
                       <strong>{euroCella(rischio.daRestituire)}</strong>
                     </div>
                     <span className="bonus-strip-note">
-                      È una trattenuta in una volta{rischio.rateizzabile ? ' (a rate)' : ''}, non una perdita. {spiegazione}
+                      {rischio.rateizzabile
+                        ? 'Te li riprendono a rate, non tutti insieme.'
+                        : 'Te li riprendono in una volta sola.'}
+                      {' '}È una trattenuta, non una perdita. {spiegazione}
                     </span>
                     <label className="check-row bonus-rischio-scelta">
                       <input
@@ -1318,7 +1321,7 @@ export default function CalendarView({
               <span className="bonus-strip-note">
                 {bonus.status === BONUS_STATUS.PIENO && bonus.marginToFull > 0 && (
                   <>
-                    Puoi guadagnare altri <strong>{fmt0(bonus.marginToFull)}</strong> da qui a dicembre
+                    Puoi guadagnare altri <strong>{euroCella(bonus.marginToFull)}</strong> da qui a dicembre
                     {bonus.oreResidue !== null && <> (circa {bonus.oreResidue} ore supplementari)</>}
                     {' '}prima di superare la soglia del bonus.
                   </>
@@ -1367,7 +1370,7 @@ export default function CalendarView({
                     oltre i 15.000. */}
                 {bonus.status === BONUS_STATUS.PARZIALE && bonus.marginToMax > 0 && (
                   <span className="bonus-strip-note">
-                    Oltre altri <strong>{fmt0(bonus.marginToMax)}</strong> il bonus non spetta
+                    Oltre altri <strong>{euroCella(bonus.marginToMax)}</strong> il bonus non spetta
                     in nessun caso{margineInOre(bonus.marginToMax, settings) !== null
                       && <> (circa {margineInOre(bonus.marginToMax, settings)} ore supplementari)</>}.
                   </span>

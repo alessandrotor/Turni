@@ -1571,6 +1571,12 @@ input, select, textarea { font: inherit; }
   border-color: var(--c-success);
 }
 
+/* Il titolo eredita il rosso d'allarme dalla classe base: su fondo verde, con
+   un ✓ davanti, diceva due cose opposte nello stesso rigo. */
+.bonus-rischio--ok .bonus-rischio-titolo {
+  color: var(--c-success);
+}
+
 /* Le due cifre affiancate: etichetta a sinistra, importo a destra.
    `tabular-nums` perché incolonnate vanno lette confrontandole, ed è l'unico
    modo perché le cifre stiano davvero una sopra l'altra. */
