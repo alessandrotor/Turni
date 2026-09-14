@@ -478,6 +478,15 @@ non un riscontro: agosto è la prima occasione vera di verificarlo.
 > **Resta aperto** il criterio del domenicale: la busta ne paga 7,75 h contro
 > le 22,25 che risultano dai turni, e nessuna combinazione delle domeniche del
 > mese dà quel numero. Serve un'altra busta.
+>
+> **Resta aperta** anche la scomposizione dell'IRPEF di agosto. Il netto ora
+> torna entro 3,24 €, ma l'app trattiene 6,94 € di imposta dove la busta ne
+> trattiene 136,91: circa 130 € di IRPEF lorda in più su un lordo identico, come
+> se il cedolino tassasse ~565 € di imponibile che l'app non vede. Le ipotesi —
+> tassazione sul cumulativo progressivo, oppure voci di competenza precedente
+> liquidate ad agosto — non si distinguono su una busta sola.
+> Il totale giusto non chiude la questione: il pannello del netto esiste perché
+> qualcuno confronti le RIGHE con la propria busta, ed è lì che non tornano.
 
 ---
 

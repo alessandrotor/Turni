@@ -83,5 +83,53 @@ esito(modoTrattamentoIntegrativo({ noTrattamentoIntegrativo: true }) === 'mai',
 esito(modoTrattamentoIntegrativo({ noTrattamentoIntegrativo: true, tiModo: 'sempre' }) === 'sempre',
   'ma la scelta nuova ha la precedenza');
 
+// ── La busta intera, col riferimento del mese ─────────────────────────────
+//
+// Il TI non si decide da solo: insieme a lui si spostano detrazione e indennità,
+// perché dipendono tutte dalla fascia in cui il sostituto d'imposta colloca il
+// lavoratore QUEL mese. Verificare il solo bonus lascerebbe passare la versione
+// sbagliata della regola — quella che azzera il TI di agosto e intanto peggiora
+// il netto di 79 €, perché continua a detrarre con la fascia bassa.
+//
+// Tolleranze: il centesimo sul TI, che è una moltiplicazione secca; un euro
+// sulla detrazione e dieci centesimi sull'indennità, dove il cedolino parte da
+// un imponibile suo che l'app ricostruisce.
+console.log('');
+console.log('Le voci del mese, col riferimento del datore');
+console.log('');
+
+const SET_BUSTA = {
+  ccnl: 'turismo', expectedWeeklyHours: 24, aziendaDipendenti: 'oltre15',
+  addizionaliAltrove: true, addRegionalePct: 0, addComunalePct: 0,
+};
+const CEDOLINI_2026 = [
+  { mese: 'febbraio', lordo: 1099.42, giorni: 28, detrazioni: 149.97, ti: 92.05, indennita: 52.68 },
+  { mese: 'maggio',   lordo: 1162.92, giorni: 31, detrazioni: 166.04, ti: 101.91, indennita: 55.71 },
+  { mese: 'luglio',   lordo: 1173.48, giorni: 31, detrazioni: 166.04, ti: 101.91, indennita: 56.22 },
+  { mese: 'agosto',   lordo: 1298.15, giorni: 31, detrazioni: 261.50, ti: 0,      indennita: 56.32 },
+];
+
+for (const c of CEDOLINI_2026) {
+  const n = calcNetMonthly(c.lordo, riferimentoAnnuoDelMese(c.lordo, SET_BUSTA), SET_BUSTA, c.giorni, 0);
+  const vicino = (a, b, t) => Math.abs(a - b) <= t;
+  esito(vicino(n.detrazioni, c.detrazioni, 1.1), `${c.mese}: detrazione`,
+    `${n.detrazioni.toFixed(2)} contro ${c.detrazioni.toFixed(2)}`);
+  esito(vicino(n.trattamentoIntegrativo, c.ti, 0.01), `${c.mese}: trattamento integrativo`,
+    `${n.trattamentoIntegrativo.toFixed(2)} contro ${c.ti.toFixed(2)}`);
+  esito(vicino(n.bonusCuneo, c.indennita, 0.12), `${c.mese}: indennità L.207/2024`,
+    `${n.bonusCuneo.toFixed(2)} contro ${c.indennita.toFixed(2)}`);
+}
+
+// QUESTIONE APERTA: l'IRPEF di agosto.
+// Il netto torna (1.220,80 contro 1.217,56), ma per compensazione, non perché
+// ogni voce coincida: l'app trattiene 6,94 € di IRPEF dove la busta ne trattiene
+// 136,91 — circa 130 € di imposta lorda su un lordo identico, come se il
+// cedolino tassasse ~565 € di imponibile che l'app non vede. Compatibile con una
+// tassazione sul cumulativo progressivo, o con voci di competenza precedente
+// liquidate ad agosto. Da una busta sola non si distingue, e finché non si
+// distingue non si indovina.
+// Non è un dettaglio salvato dal totale: chi apre il pannello per capire dove
+// sono finiti i soldi legge le righe, non la somma.
+
 console.log(`\n${falliti === 0 ? '✓ la regola del TI mensile regge' : falliti + ' controlli falliti'}\n`);
 process.exit(falliti > 0 ? 1 : 0);
