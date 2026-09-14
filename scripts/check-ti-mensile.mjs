@@ -120,16 +120,43 @@ for (const c of CEDOLINI_2026) {
     `${n.bonusCuneo.toFixed(2)} contro ${c.indennita.toFixed(2)}`);
 }
 
-// QUESTIONE APERTA: l'IRPEF di agosto.
-// Il netto torna (1.220,80 contro 1.217,56), ma per compensazione, non perché
-// ogni voce coincida: l'app trattiene 6,94 € di IRPEF dove la busta ne trattiene
-// 136,91 — circa 130 € di imposta lorda su un lordo identico, come se il
-// cedolino tassasse ~565 € di imponibile che l'app non vede. Compatibile con una
-// tassazione sul cumulativo progressivo, o con voci di competenza precedente
-// liquidate ad agosto. Da una busta sola non si distingue, e finché non si
-// distingue non si indovina.
-// Non è un dettaglio salvato dal totale: chi apre il pannello per capire dove
-// sono finiti i soldi legge le righe, non la somma.
+// -- Agosto, voce per voce ------------------------------------------------
+//
+// Il totale puo' tornare per compensazione, quindi da solo non prova niente:
+// chi apre il pannello confronta le RIGHE con la propria busta. Qui si
+// confrontano tutte.
+//
+// Serve `ebtBase`, la base dell'Ente Bilaterale (948,05), che non coincide col
+// lordo perche' il terzo elemento non ci entra - vedi check-tabellare-turismo.
+// Senza, mancano 1,89 EUR di contributo e ogni riga successiva slitta.
+console.log('');
+console.log('Agosto 2026, riga per riga');
+console.log('');
+
+const AGO = { ...SET_BUSTA, ebtBase: 948.05 };
+const a = calcNetMonthly(1298.15, riferimentoAnnuoDelMese(1298.15, AGO), AGO, 31, 0);
+const riga = (avuto, atteso, etichetta, tol) => esito(
+  Math.abs(avuto - atteso) <= tol, etichetta,
+  avuto.toFixed(2) + ' contro ' + atteso.toFixed(2),
+);
+
+riga(a.contributi, 128.52, 'contributi (IVS+FIS+CIGS+EBT)', 0.05);
+riga(a.imponibile, 1173.41, 'imponibile IRPEF', 0.05);
+riga(a.irpefLorda, 269.88, 'IRPEF lorda', 0.05);
+riga(a.irpefNetta, 8.38, 'ritenute IRPEF', 1.05);
+riga(a.bonusCuneo, 56.32, 'indennita L.207/2024', 0.05);
+riga(a.net, 1217.56, 'NETTO DEL MESE', 1.05);
+
+// L'EURO DI DETRAZIONE, unico scarto rimasto: 262,50 contro 261,50.
+// Invertendo l'art. 13 TUIR, la detrazione stampata corrisponde a un reddito di
+// riferimento di circa 15.225 EUR, mentre qui se ne usa uno di circa 15.096 - i
+// 15.000 della soglia piu' un margine minimo per cadere nella fascia superiore.
+// Il margine esatto che azzererebbe lo scarto esiste, ma sarebbe tarato su
+// QUESTA busta: una costante scelta per far quadrare un solo cedolino non e' una
+// regola, e' un numero travestito. Si tiene il margine minimo e si registra
+// l'euro, finche' un secondo mese sopra soglia non dice da dove viene davvero.
+riga(a.detrazioni, 261.50, 'detrazioni (scarto noto: 1 EUR)', 1.05);
+
 
 console.log(`\n${falliti === 0 ? '✓ la regola del TI mensile regge' : falliti + ' controlli falliti'}\n`);
 process.exit(falliti > 0 ? 1 : 0);
