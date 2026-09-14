@@ -11,6 +11,7 @@ import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
 import { rischioRestituzione, quotaPotenziale, CAUSA } from '../utils/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
 import { contrattoMancante } from '../utils/configurazione';
+import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../utils/assenze';
 import { EXTRA_MONTHS } from '../utils/net';
@@ -774,7 +775,7 @@ export default function CalendarView({
 
             Il default è «calendario» perché lo ha deciso la busta di agosto
             2026: vedi DEFAULT_SETTINGS in App.jsx. */}
-        {mensilizzato && (
+        {mensilizzato && ENABLE_MESE_PAGA && (
           <div className="periodo-testata">
             <span className="periodo-toggle">
               <button
@@ -1315,7 +1316,10 @@ export default function CalendarView({
         {/* Esporta i turni del mese */}
         <div className="export-bar">
           <span className="export-label">Esporta il mese:</span>
-          {payrollRange && (
+          {/* Anche l'export segue il flag: offrire di esportare una finestra
+              che l'app non conta più sarebbe un comando che produce un foglio
+              diverso dai numeri appena letti a schermo. */}
+          {ENABLE_MESE_PAGA && payrollRange && (
             <select
               className="export-period-select"
               value={exportPeriod}

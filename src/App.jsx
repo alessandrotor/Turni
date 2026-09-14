@@ -5,7 +5,7 @@ import { getMonthStart, parseDate, payrollMonthKey, formatDate } from './utils/d
 import { computePayByShift } from './utils/pay';
 import { isMensilizzato } from './utils/ccnl';
 import { computeAnnualGrossFromShifts, projectAnnualIncome } from './utils/net';
-import { ENABLE_NET_CALC, ENABLE_STATS } from './config/features';
+import { ENABLE_NET_CALC, ENABLE_STATS, ENABLE_MESE_PAGA } from './config/features';
 import { genId } from './utils/id';
 import CalendarView from './components/CalendarView';
 import StatsView from './components/StatsView';
@@ -208,7 +208,16 @@ export default function App() {
   // spegnerebbero in silenzio (es. expectedWeeklyHours mancante = nessuno
   // straordinario calcolato finché non si risalva la pagina Impostazioni).
   const settings = useMemo(
-    () => ({ ...DEFAULT_SETTINGS, ...storedSettings }),
+    () => {
+      const uniti = { ...DEFAULT_SETTINGS, ...storedSettings };
+      // Col selettore spento il periodo è sempre il calendario, anche per chi
+      // si era salvato «paga» quando era il default. Si normalizza QUI, dove i
+      // settings nascono, così tutto il resto — calendario, motore, statistiche
+      // — vede un valore solo e nessuno deve ricordarsi del flag. Il dato
+      // salvato non viene toccato: riaccendendo il flag torna com'era.
+      if (!ENABLE_MESE_PAGA) uniti.periodoConteggio = 'calendario';
+      return uniti;
+    },
     [storedSettings],
   );
 
