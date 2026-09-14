@@ -1233,11 +1233,13 @@ export default function CalendarView({
                 </div>
                 <div className="bonus-cifre">
                   <span>Torni in pari con altri</span>
-                  <strong>{euroCella(mancaPareggio)}</strong>
+                  {/* Le ore accanto agli euro che traducono: su una riga a sé
+                      non si capiva a quale cifra si riferissero. */}
+                  <strong>
+                    {euroCella(mancaPareggio)}{mancaOre !== null && ` (~${mancaOre} h)`}
+                  </strong>
                 </div>
-                <span className="bonus-strip-note">
-                  {mancaOre !== null && <>Circa {mancaOre} ore supplementari. </>}{spiegazione}
-                </span>
+                <span className="bonus-strip-note">{spiegazione}</span>
                 {rischio.daRestituire > 0 && (
                   <label className="check-row bonus-rischio-scelta">
                     <input
@@ -1297,9 +1299,9 @@ export default function CalendarView({
                 voce «turni» che non corrisponde a nessun turno inserito. Il
                 margine non si ripete qui: lo dice già il riquadro sopra. */}
             <span className="bonus-strip-income">
-              Previsto a fine anno <strong>{fmt0(bonus.income)}</strong>
-              {' · '}maturato {fmt0(annualGross)}
-              {montante > 0 && ` (montante ${fmt0(montante)})`}
+              Previsto a fine anno <strong>{euroCella(bonus.income)}</strong>
+              {' · '}maturato {euroCella(annualGross)}
+              {montante > 0 && ` (montante ${euroCella(montante)})`}
             </span>
             {montanteMismatch && (
               <span className="bonus-strip-note bonus-strip-note--warn">
