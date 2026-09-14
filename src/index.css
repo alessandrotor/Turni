@@ -1659,6 +1659,13 @@ input, select, textarea { font: inherit; }
 .conti-bonus .form-hint:not(.form-hint--warn) {
   color: var(--c-text);
 }
+/* Lo stesso tono dentro il riquadro: frasi, non etichette con cifra. */
+.bonus-spiega {
+  margin: 0;
+  font-size: .9rem;
+  line-height: 1.45;
+  color: var(--c-text);
+}
 
 .bonus-rischio-scelta {
   align-self: flex-start;

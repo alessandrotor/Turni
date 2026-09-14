@@ -330,8 +330,10 @@ export default function CalendarView({
   const mancaOre = useMemo(() => margineInOre(mancaPareggio, settings), [mancaPareggio, settings]);
 
   // UNA spiegazione sola, riusata dai tre casi. Non più un tooltip: i conti
-  // non ci stavano, e il punto da far capire — il bonus in busta è un
-  // anticipo, non soldi già tuoi — ha bisogno dei conti per essere creduto.
+  // non ci stavano, e il punto da far capire — il bonus in busta torna
+  // indietro se superi la soglia — ha bisogno dei conti per essere creduto.
+  // Non chiamarlo «anticipo»: per chi lo riceve sono soldi del datore, e la
+  // parola suona come un prestito.
   // Il popup lo apre chi tocca «perché?»: non interrompe nessuno.
   const spiegazione = (
     <button type="button" className="linklike" onClick={() => setContiBonusAperti(true)}>
@@ -1203,13 +1205,18 @@ export default function CalendarView({
                 </span>
                 {rischio.daRestituire > 0 && (
                   <>
-                    <div className="bonus-cifre">
-                      <span>Lo restituisci a dicembre{rischio.rateizzabile ? ' (a rate)' : ''}</span>
-                      <strong>{euroCella(rischio.daRestituire)}</strong>
-                    </div>
-                    <span className="bonus-strip-note">
-                      Non ci perdi: paghi meno tasse. {spiegazione}
-                    </span>
+                    {/* A frasi, come il popup: «Lo restituisci 845 €» accanto a
+                        «Torni in pari con 119 €» faceva credere che guadagnando
+                        di più la restituzione sparisse. Non dipende da quanto
+                        sopra si va: si restituisce tutto quello già preso. */}
+                    <p className="bonus-spiega">
+                      Supererai i 15.000 €, quindi a dicembre il datore si riprende tutto il
+                      bonus che ti ha dato: finora <strong>{euroCella(rischio.daRestituire)}</strong>
+                      {rischio.rateizzabile ? ', a rate' : ''}.
+                    </p>
+                    <p className="bonus-spiega">
+                      In compenso paghi meno tasse, e non ci perdi niente. {spiegazione}
+                    </p>
                     <label className="check-row bonus-rischio-scelta">
                       <input
                         type="checkbox"
@@ -1225,22 +1232,17 @@ export default function CalendarView({
               <div className="bonus-rischio">
                 <span className="bonus-rischio-titolo">⚠️ Non spendere il bonus in busta</span>
                 {rischio.daRestituire > 0 && (
-                  <div className="bonus-cifre">
-                    <span>Lo restituisci a dicembre</span>
-                    <strong>{euroCella(rischio.daRestituire)}</strong>
-                  </div>
+                  <p className="bonus-spiega">
+                    Supererai i 15.000 €, quindi a dicembre il datore si riprende tutto il
+                    bonus che ti ha dato: finora <strong>{euroCella(rischio.daRestituire)}</strong>.
+                  </p>
                 )}
-                <div className="bonus-cifre">
-                  <span>Torni in pari con altri</span>
-                  {/* Le ore accanto agli euro che traducono: su una riga a sé
-                      non si capiva a quale cifra si riferissero. */}
-                  <strong>
-                    {euroCella(mancaPareggio)}{mancaOre !== null && ` (~${mancaOre} h)`}
-                  </strong>
-                </div>
-                <span className="bonus-strip-note">
-                  Sull'anno ci perdi {euroCella(costo.perditaMax)}. {spiegazione}
-                </span>
+                <p className="bonus-spiega">
+                  Paghi meno tasse, ma non abbastanza: sull'anno ci perdi {euroCella(costo.perditaMax)}.
+                  Con altri <strong>{euroCella(mancaPareggio)}</strong>
+                  {mancaOre !== null && ` (~${mancaOre} h)`} torni in pari, ma il bonus
+                  lo restituisci comunque. {spiegazione}
+                </p>
                 {rischio.daRestituire > 0 && (
                   <label className="check-row bonus-rischio-scelta">
                     <input
@@ -1260,15 +1262,12 @@ export default function CalendarView({
                     base, visto che le ore in più sono maggiorate. */}
                 <span className="bonus-rischio-titolo">
                   ⚠️ Ancora {euroCella(bonus.marginToFull)}
-                  {bonus.oreResidue !== null && <> (~{bonus.oreResidue} h)</>} e superi la soglia
+                  {bonus.oreResidue !== null && <> (~{bonus.oreResidue} h)</>} e superi i 15.000 €
                 </span>
-                <div className="bonus-cifre">
-                  <span>Restituiresti a dicembre</span>
-                  <strong>{euroCella(quotaPotenziale())}</strong>
-                </div>
-                <span className="bonus-strip-note">
-                  Il bonus in busta è un anticipo. {spiegazione}
-                </span>
+                <p className="bonus-spiega">
+                  Se li superi, a dicembre il datore si riprende tutto il bonus che ti ha
+                  dato: finora <strong>{euroCella(quotaPotenziale())}</strong>. {spiegazione}
+                </p>
                 <label className="check-row bonus-rischio-scelta">
                   <input
                     type="checkbox"
@@ -1379,12 +1378,12 @@ export default function CalendarView({
             </div>
             <div className="modal-form conti-bonus">
               <p className="form-hint">
-                Ogni mese in busta ricevi circa 100 € di bonus. È un <strong>anticipo</strong>:
-                il datore te lo dà contando che a fine anno resterai sotto i 15.000 €.
+                Ogni mese in busta ricevi circa 100 € di bonus. Il datore te lo dà
+                contando che a fine anno resterai sotto i 15.000 €.
               </p>
               <p className="form-hint">
-                Se li superi, a dicembre lo <strong>restituisci tutto</strong>: finora
-                sono {euroCella(rischio.erogato || quotaPotenziale())}. Non spenderlo.
+                Se li superi, anche di poco, a dicembre lo <strong>restituisci tutto</strong>:
+                finora sono {euroCella(rischio.erogato || quotaPotenziale())}. Non spenderlo.
               </p>
               <div className="bonus-cifre">
                 <span>Bonus restituito</span>
