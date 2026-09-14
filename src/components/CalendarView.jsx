@@ -443,20 +443,6 @@ export default function CalendarView({
   const bonusTakenThisMonth = !!monthlyBonusEntry;
   const monthlyBonusAmount = Number(settings.monthlyBonusAmount) || 0;
 
-  // Striscia "bonus Renzi": di default si apre solo quando è rilevante (vicino
-  // o oltre soglia), altrimenti resta ridotta a una riga per chi vuole solo
-  // controllare. Si risincronizza cambiando mese, non a ogni ricalcolo, così
-  // un'apertura manuale non viene richiusa da un turno appena inserito.
-  // Con una restituzione in ballo il blocco si apre da solo: e' l'unico caso in
-  // cui c'e' una cifra da vedere e qualcosa da fare, e lasciarla dietro
-  // «Dettagli ▼» equivarrebbe a non dirla.
-  const bonusRelevant = rischio.daRestituire > 0 || bonus.nearThreshold
-    || bonus.status === BONUS_STATUS.PARZIALE || bonus.status === BONUS_STATUS.OLTRE;
-  const [showBonusDetail, setShowBonusDetail] = useState(bonusRelevant);
-  useEffect(() => {
-    setShowBonusDetail(bonusRelevant);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthKey]);
 
   async function runImport(file, name) {
     setImportLoading(true);
@@ -853,20 +839,14 @@ export default function CalendarView({
             <span className="summary-value">{formatMinutesShort(totalMins - assenze.minuti)}</span>
             {assenze.minuti > 0 && (
               <span className="summary-sublabel">
-                + {assenze.dettaglio} = {formatMinutesShort(totalMins)} contate in busta
+                + {assenze.dettaglio}
               </span>
             )}
             {festivitaDaSegnare.length > 0 && oreFestivita > 0 && onAddShifts && (
               <span className="summary-sublabel festivita-proposta">
-                {festivitaDaSegnare.length === 1 ? 'C’è ' : 'Ci sono '}
-                <strong>
-                  {festivitaDaSegnare.length}
-                  {festivitaDaSegnare.length === 1 ? ' giorno festivo' : ' giorni festivi'}
-                </strong>
-                {' '}senza turno ({festivitaDaSegnare.map(d => Number(d.slice(8))).join(', ')}
-                {' '}{formatMonthYear(currentMonth).split(' ')[0].toLowerCase()}).
-                {' '}Se ti vengono pagati, aggiungili —{' '}
-                {formatMinutesShort(oreFestivita)} ciascuno.
+                {festivitaDaSegnare.length === 1 ? 'Festivo' : 'Festivi'} senza turno:{' '}
+                {festivitaDaSegnare.map(d => Number(d.slice(8))).join(', ')}
+                {' '}{formatMonthYear(currentMonth).split(' ')[0].toLowerCase().slice(0, 3)}.
                 <button
                   type="button"
                   className="linklike festivita-proposta-btn"
@@ -927,11 +907,7 @@ export default function CalendarView({
         {pay !== null && contrattoMancante(settings) && (
           <div className="contratto-avviso">
             <div className="contratto-avviso-testo">
-              <strong>Sto contando con regole generiche</strong>
-              <p>
-                Il tuo contratto decide le ore del mese e i contributi. Senza, questo
-                totale è più alto del vero di circa 45 € al mese.
-              </p>
+              <strong>Senza contratto conto ~45 € in più del vero</strong>
             </div>
             <button type="button" className="btn btn-primary" onClick={() => onNavigate?.('settings')}>
               Scegli il contratto
@@ -943,12 +919,8 @@ export default function CalendarView({
         {/* Netto stimato del mese — beta (gated dal feature flag) */}
         {showNetPanel && (
           <div className="net-strip">
-            <div className="bonus-strip-head">
-              <span className="bonus-strip-income">
-                Lordo del mese: <strong>{fmt0(monthGross)}</strong>
-                <span className="beta-tag">beta</span>
-              </span>
-            </div>
+            {/* Niente «Lordo del mese» in testa: è il totale della barra in alto,
+                ripeterlo qui era una cifra in più da leggere. */}
 
             {monthlyBonusAmount > 0 && (
               <div className="month-bonus-row">
@@ -968,23 +940,22 @@ export default function CalendarView({
             )}
 
             <div className="net-strip-body">
-              <span className="bonus-strip-label">Netto stimato del mese</span>
+              <span className="bonus-strip-label">
+                Netto stimato del mese <span className="beta-tag">beta</span>
+              </span>
               <span className="net-strip-value">{fmt0(monthNet)}</span>
               <span className="bonus-strip-note">
                 trattenute {fmt0(monthTrattenute)} ({effectiveRatePct.toFixed(1)}% del lordo)
                 {monthBonus > 0 && <> · bonus +{fmt0(monthBonus)}</>}
                 {monthTfr > 0 && <> · TFR +{fmt0(monthTfr)}</>}
               </span>
-              {extraThisMonth > 0 && (
+              {(extraThisMonth > 0 || fixedMonthlyTotal > 0 || perMonthBonus > 0) && (
                 <span className="bonus-strip-note">
-                  include {month === EXTRA_MONTHS.tredicesima ? 'tredicesima' : 'quattordicesima'} (+{fmt0(extraThisMonth)} lordi)
-                </span>
-              )}
-              {(fixedMonthlyTotal > 0 || perMonthBonus > 0) && (
-                <span className="bonus-strip-note">
-                  include {fixedMonthlyTotal > 0 ? `voci fisse +${fmt0(fixedMonthlyTotal)}` : ''}
-                  {fixedMonthlyTotal > 0 && perMonthBonus > 0 ? ' · ' : ''}
-                  {perMonthBonus > 0 ? `bonus del mese +${fmt0(perMonthBonus)}` : ''}
+                  include {[
+                    extraThisMonth > 0 && `${month === EXTRA_MONTHS.tredicesima ? '13ª' : '14ª'} +${fmt0(extraThisMonth)}`,
+                    fixedMonthlyTotal > 0 && `voci fisse +${fmt0(fixedMonthlyTotal)}`,
+                    perMonthBonus > 0 && `bonus +${fmt0(perMonthBonus)}`,
+                  ].filter(Boolean).join(' · ')}
                 </span>
               )}
             </div>
@@ -1198,14 +1169,6 @@ export default function CalendarView({
           <div className="bonus-strip">
             <div className="bonus-strip-head">
               <span className="bonus-strip-title">💶 Trattamento integrativo (ex bonus Renzi)</span>
-              <button
-                type="button"
-                className="net-toggle"
-                onClick={() => setShowBonusDetail(v => !v)}
-                aria-expanded={showBonusDetail}
-              >
-                {showBonusDetail ? 'Nascondi ▲' : 'Dettagli ▼'}
-              </button>
             </div>
 
             {/* TRE CASI, NON QUATTRO INTENSITÀ DELLO STESSO ALLARME.
@@ -1247,10 +1210,8 @@ export default function CalendarView({
                       <strong>{euroCella(rischio.daRestituire)}</strong>
                     </div>
                     <span className="bonus-strip-note">
-                      {rischio.rateizzabile
-                        ? 'Te li riprendono a rate, non tutti insieme.'
-                        : 'Te li riprendono in una volta sola.'}
-                      {' '}È una trattenuta, non una perdita. {spiegazione}
+                      {rischio.rateizzabile ? 'A rate' : 'In una volta sola'}, non è una perdita.
+                      {' '}{spiegazione}
                     </span>
                     <label className="check-row bonus-rischio-scelta">
                       <input
@@ -1295,11 +1256,9 @@ export default function CalendarView({
                     €» va diviso a mente per una paga oraria che nemmeno è quella
                     base, visto che le ore in più sono maggiorate. */}
                 <span className="bonus-rischio-titolo">
-                  ⚠️ Ancora {euroCella(bonus.marginToFull)} e superi la soglia
+                  ⚠️ Ancora {euroCella(bonus.marginToFull)}
+                  {bonus.oreResidue !== null && <> (~{bonus.oreResidue} h)</>} e superi la soglia
                 </span>
-                {bonus.oreResidue !== null && (
-                  <span className="bonus-strip-note">circa {bonus.oreResidue} ore supplementari</span>
-                )}
                 <div className="bonus-cifre">
                   <span>Ti tolgono a dicembre</span>
                   <strong>{euroCella(quotaPotenziale())}</strong>
@@ -1322,9 +1281,8 @@ export default function CalendarView({
               <span className="bonus-strip-note">
                 {bonus.status === BONUS_STATUS.PIENO && bonus.marginToFull > 0 && (
                   <>
-                    Puoi guadagnare altri <strong>{euroCella(bonus.marginToFull)}</strong> da qui a dicembre
-                    {bonus.oreResidue !== null && <> (circa {bonus.oreResidue} ore supplementari)</>}
-                    {' '}prima di superare la soglia del bonus.
+                    Margine prima della soglia: <strong>{euroCella(bonus.marginToFull)}</strong>
+                    {bonus.oreResidue !== null && <> (~{bonus.oreResidue} h)</>}
                   </>
                 )}
                 {bonus.status === BONUS_STATUS.PARZIALE && 'Sei oltre la soglia del bonus.'}
@@ -1332,55 +1290,21 @@ export default function CalendarView({
               </span>
             )}
 
-            {showBonusDetail && (
-              <>
-                <span className="bonus-strip-income">
-                  Reddito {currentMonth.getFullYear()} previsto a fine anno: <strong>{fmt0(bonus.income)}</strong>
-                </span>
-
-                {/* La scomposizione appartiene al MATURATO, non alla
-                    proiezione: sottrarre montante ed extra da un numero
-                    proiettato darebbe una voce «turni» che non corrisponde a
-                    nessun turno inserito. Il maturato si mostra accanto, così
-                    si vede da dove parte la previsione. */}
-                <span className="bonus-strip-note">
-                  Maturato finora <strong>{fmt0(annualGross)}</strong>
-                  {(montante > 0 || annualExtras > 0) && (
-                    <>
-                      {' ='}{montante > 0 ? ` montante ${fmt0(montante)}${priorMonthLabel ? ` (fino a ${priorMonthLabel})` : ''} +` : ''}
-                      {' '}turni {fmt0(annualGross - montante - annualExtras)}
-                      {annualExtras > 0 && ` + 13ª/14ª ${fmt0(annualExtras)}`}
-                    </>
-                  )}
-                </span>
-                {montanteMismatch && (
-                  <span className="bonus-strip-note bonus-strip-note--warn">
-                    ⚠️ Montante dichiarato {fmt0(montante)} diverso dai turni fino a {priorMonthLabel} ({fmt0(shiftsCovered)}). Normale se include altri redditi o paghe diverse.
-                  </span>
-                )}
-
-                {/* IL MARGINE VIVE NEL RIQUADRO SOPRA, non qui.
-                    Prima questo blocco ripeteva «Puoi ancora guadagnare X» in
-                    lordo, con la soglia scritta due volte — una in euro lordi e
-                    una in imponibili — mentre il riquadro d'avviso diceva la
-                    stessa cosa con parole diverse. Due numeri per lo stesso
-                    fatto si leggono come due fatti, e chi legge sceglie quello
-                    che tranquillizza.
-                    Qui resta l'unica cosa che il riquadro NON dice: quanto
-                    manca alla soglia dei 28.000, che riguarda solo chi è già
-                    oltre i 15.000. */}
-                {bonus.status === BONUS_STATUS.PARZIALE && bonus.marginToMax > 0 && (
-                  <span className="bonus-strip-note">
-                    Oltre altri <strong>{euroCella(bonus.marginToMax)}</strong> il bonus non spetta mai.
-                  </span>
-                )}
-
-                {bonus.status === BONUS_STATUS.OLTRE && (
-                  <span className="bonus-strip-note bonus-strip-note--warn">
-                    🚨 Sei oltre il tetto dei 28.000 €: il bonus non spetta.
-                  </span>
-                )}
-              </>
+            {/* Una riga fissa al posto di «Dettagli ▼»: previsto e maturato
+                stanno insieme, e la soglia dei 28.000 la dice già il caso OLTRE. */}
+            {/* La scomposizione appartiene al MATURATO, non alla proiezione:
+                sottrarre montante ed extra da un numero proiettato darebbe una
+                voce «turni» che non corrisponde a nessun turno inserito. Il
+                margine non si ripete qui: lo dice già il riquadro sopra. */}
+            <span className="bonus-strip-income">
+              Previsto a fine anno <strong>{fmt0(bonus.income)}</strong>
+              {' · '}maturato {fmt0(annualGross)}
+              {montante > 0 && ` (montante ${fmt0(montante)})`}
+            </span>
+            {montanteMismatch && (
+              <span className="bonus-strip-note bonus-strip-note--warn">
+                ⚠️ Il montante ({fmt0(montante)}) non torna coi turni fino a {priorMonthLabel} ({fmt0(shiftsCovered)}).
+              </span>
             )}
           </div>
         )}
