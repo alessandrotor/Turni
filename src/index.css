@@ -947,6 +947,37 @@ input, select, textarea { font: inherit; }
   padding-top: .25rem;
 }
 
+.cosa-cambia-strip {
+  padding: .75rem 1rem;
+  background: var(--c-bg);
+  border-radius: var(--radius);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .35rem .6rem;
+  font-size: .85rem;
+  border: 1px solid var(--c-border);
+}
+.cosa-cambia-label {
+  color: var(--c-text-2);
+}
+.cosa-cambia-cifra {
+  color: var(--c-primary);
+  font-size: 1rem;
+  font-weight: 700;
+}
+.cosa-cambia-ore {
+  color: var(--c-text-2);
+  font-size: .82rem;
+}
+.cosa-cambia-avviso {
+  width: 100%;
+  font-size: .78rem;
+  color: #b91c1c;
+  font-weight: 600;
+  margin-top: .15rem;
+}
+
 /* Modal semplice per il nome sul foglio turni */
 .name-modal {
   padding: 1.25rem 1.25rem;

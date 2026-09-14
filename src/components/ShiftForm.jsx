@@ -5,6 +5,7 @@ import useModalDismiss from '../hooks/useModalDismiss';
 import { TIPO, ETICHETTA, ICONA, tipoTurno, isAssenza, minutiGiornoAssenza } from '../utils/assenze';
 import { proponiOrari, sagomeFrequenti, ORARI_DEFAULT, MAX_SAGOME } from '../utils/orari-proposti';
 import { parseNum } from '../utils/pay';
+import { calcolaCosaCambia } from '../utils/cosa-cambia';
 
 const TIPI = [TIPO.LAVORO, TIPO.FERIE, TIPO.PERMESSO, TIPO.MALATTIA, TIPO.FESTIVITA];
 
@@ -221,6 +222,38 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
         };
     onSave(shift);
   };
+
+  const candidate = useMemo(() => {
+    if (periodoAttivo) return null;
+    const base = {
+      ...(modal.type === 'edit' ? { id: modal.shift.id } : {}),
+      date: form.date,
+      note: form.note.trim(),
+    };
+    if (assenzaSelezionata) {
+      const mins = Math.max(0, Math.round(parseNum(form.absenceHours) * 60));
+      return { ...base, type: form.kind, durationMinutes: mins };
+    }
+    if (!form.startTime || !form.endTime) return null;
+    return {
+      ...base,
+      type: form.kind,
+      startTime: form.startTime,
+      endTime: form.endTime,
+      breakMinutes: Number(form.breakMinutes) || 0,
+      surchargePct: Number(form.surchargePct) || 0,
+    };
+  }, [periodoAttivo, modal.type, modal.shift, form.date, form.note, assenzaSelezionata, form.absenceHours, form.kind, form.startTime, form.endTime, form.breakMinutes, form.surchargePct]);
+
+  const cosaCambia = useMemo(() => {
+    if (!candidate) return null;
+    return calcolaCosaCambia({
+      candidateShift: candidate,
+      originalShift: isEdit ? modal.shift : null,
+      allShifts: turni,
+      settings,
+    });
+  }, [candidate, isEdit, modal.shift, turni, settings]);
 
   // «Nuovo turno» su una giornata di ferie sarebbe fuorviante: titolo e
   // pulsanti seguono il tipo scelto. Nomi scritti per esteso invece che
@@ -551,6 +584,17 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
               />
             </div>
           </details>
+
+          {cosaCambia && cosaCambia.hasRate && !periodoAttivo && (
+            <div className="cosa-cambia-strip">
+              <span className="cosa-cambia-label">Cosa cambia nel mese:</span>
+              <strong className="cosa-cambia-cifra">{cosaCambia.testoDeltaNetto} netti</strong>
+              <span className="cosa-cambia-ore">({cosaCambia.testoDeltaOre})</span>
+              {cosaCambia.superaSoglia && (
+                <span className="cosa-cambia-avviso">⚠️ Supera la soglia 15.000 € del bonus</span>
+              )}
+            </div>
+          )}
 
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>

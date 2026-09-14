@@ -1,0 +1,184 @@
+// Calcolo del «Cosa cambia?»: impatto sul mese e sull'anno di una modifica a un turno.
+//
+// PERCHÉ ESISTE
+// Chi usa l'app valuta di continuo variazioni: fare due ore in più, coprire un
+// turno notturno, cedere una giornata o scambiare l'orario. La domanda immediata
+// è pratica: «quanto mi entra in tasca netto?» e «rischio di sforare la soglia
+// del trattamento integrativo?».
+//
+// Questo modulo calcola la differenza (delta) fra il mese PRIMA e il mese DOPO,
+// usando lo stesso motore di calcolo già collaudato (pay.js e net.js).
+// È una funzione pura, senza React e senza dipendenze dal DOM.
+
+import { calcShiftMinutes, calcTotalPay, computePayByShift, hasAnyRate } from './pay.js';
+import {
+  calcNetMonthly,
+  riferimentoAnnuoDelMese,
+  monthlyBaseGross,
+  extraMonthAccrual,
+  EXTRA_MONTHS,
+  computeAnnualGrossFromShifts,
+  projectAnnualIncome,
+  TAX_2026,
+} from './net.js';
+import { getDaysInMonth } from './dates.js';
+
+export function formatDeltaCurrency(val) {
+  const n = Number.isFinite(Number(val)) ? Number(val) : 0;
+  const segno = n > 0 ? '+' : (n < 0 ? '−' : '');
+  const abs = Math.abs(n);
+  const formatted = abs.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return `${segno}${formatted} €`;
+}
+
+export function formatDeltaMinutes(mins) {
+  const m = Number.isFinite(Number(mins)) ? Math.round(Number(mins)) : 0;
+  const segno = m > 0 ? '+' : (m < 0 ? '−' : '');
+  const abs = Math.abs(m);
+  const h = Math.floor(abs / 60);
+  const restMins = abs % 60;
+  if (h === 0 && restMins === 0) return '0h';
+  if (restMins === 0) return `${segno}${h}h`;
+  if (h === 0) return `${segno}${restMins}m`;
+  return `${segno}${h}h ${restMins}m`;
+}
+
+/**
+ * Calcola l'impatto di un turno candidato (nuovo, modificato o rimosso).
+ *
+ * @param {Object} params
+ * @param {Object|null} params.candidateShift turno dopo la modifica (null per cancellazione)
+ * @param {Object|null} params.originalShift turno prima della modifica (null per nuovo inserimento)
+ * @param {Array|Object} params.allShifts turni attuali
+ * @param {Object} params.settings impostazioni utente
+ * @returns {Object|null}
+ */
+export function calcolaCosaCambia({
+  candidateShift = null,
+  originalShift = null,
+  allShifts = [],
+  settings = {},
+}) {
+  const targetDate = candidateShift?.date || originalShift?.date;
+  if (!targetDate || typeof targetDate !== 'string') return null;
+
+  const year = Number(targetDate.slice(0, 4));
+  const month = Number(targetDate.slice(5, 7)) - 1;
+  if (Number.isNaN(year) || Number.isNaN(month)) return null;
+
+  const monthPrefix = targetDate.slice(0, 7);
+  const shiftsList = Array.isArray(allShifts) ? allShifts : Object.values(allShifts);
+
+  // 1. Costruzione insiemi PRIMA e DOPO
+  const shiftsBefore = shiftsList.filter(s => s && s.date);
+  const shiftsAfter = shiftsBefore.filter(s => s.id !== originalShift?.id);
+  if (candidateShift) {
+    const candidateId = candidateShift.id || originalShift?.id || 'temp_candidate_id';
+    shiftsAfter.push({ ...candidateShift, id: candidateId });
+  }
+
+  // 2. Filtraggio sul mese
+  const monthShiftsBefore = shiftsBefore.filter(s => s.date.startsWith(monthPrefix));
+  const monthShiftsAfter = shiftsAfter.filter(s => s.date.startsWith(monthPrefix));
+
+  // 3. Minuti lavorati
+  const minsBefore = monthShiftsBefore.reduce((acc, s) => acc + calcShiftMinutes(s), 0);
+  const minsAfter = monthShiftsAfter.reduce((acc, s) => acc + calcShiftMinutes(s), 0);
+  const deltaMinuti = minsAfter - minsBefore;
+
+  // 4. Retribuzione lorda
+  const rateAvailable = hasAnyRate(settings);
+  let deltaLordo = 0;
+  let payBefore = null;
+  let payAfter = null;
+
+  if (rateAvailable) {
+    const payMapBefore = computePayByShift(shiftsBefore, settings);
+    payBefore = calcTotalPay(monthShiftsBefore, settings, shiftsBefore, payMapBefore);
+
+    const payMapAfter = computePayByShift(shiftsAfter, settings);
+    payAfter = calcTotalPay(monthShiftsAfter, settings, shiftsAfter, payMapAfter);
+
+    deltaLordo = (payAfter?.total || 0) - (payBefore?.total || 0);
+  }
+
+  // 5. Netto del mese
+  let deltaNetto = 0;
+  let deltaTrattenute = 0;
+  let netBefore = null;
+  let netAfter = null;
+
+  if (rateAvailable && payBefore && payAfter) {
+    const daysInMonth = getDaysInMonth(year, month);
+    const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+    const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
+      .reduce((s, v) => s + (Number(v.amount) || 0), 0);
+    const monthlyBonusAmount = Number(settings.monthlyBonusAmount) || 0;
+    const perMonthBonus = settings.monthlyBonus?.[monthKey] ? monthlyBonusAmount : 0;
+
+    const extraThisMonth = monthlyBaseGross(settings) * (
+      (settings.hasQuattordicesima && month === EXTRA_MONTHS.quattordicesima
+        ? extraMonthAccrual('quattordicesima', year, settings) : 0)
+      + (settings.hasTredicesima && month === EXTRA_MONTHS.tredicesima
+        ? extraMonthAccrual('tredicesima', year, settings) : 0)
+    );
+
+    const grossBefore = (payBefore.total || 0) + extraThisMonth + fixedMonthlyTotal + perMonthBonus;
+    const refBefore = riferimentoAnnuoDelMese(grossBefore, settings);
+    netBefore = calcNetMonthly(grossBefore, refBefore, settings, daysInMonth, extraThisMonth);
+
+    const grossAfter = (payAfter.total || 0) + extraThisMonth + fixedMonthlyTotal + perMonthBonus;
+    const refAfter = riferimentoAnnuoDelMese(grossAfter, settings);
+    netAfter = calcNetMonthly(grossAfter, refAfter, settings, daysInMonth, extraThisMonth);
+
+    if (netBefore && netAfter) {
+      deltaNetto = netAfter.net - netBefore.net;
+      deltaTrattenute = netAfter.trattenute - netBefore.trattenute;
+    }
+  }
+
+  // 6. Proiezione annua e Margine Trattamento Integrativo
+  let margineBonusBefore = null;
+  let margineBonusAfter = null;
+  let deltaMargineBonus = 0;
+  let superaSoglia = false;
+  let rientraSottoSoglia = false;
+
+  if (rateAvailable) {
+    const payMapBefore = computePayByShift(shiftsBefore, settings);
+    const annualBefore = computeAnnualGrossFromShifts(year, shiftsBefore, settings, payMapBefore);
+    const projBefore = projectAnnualIncome(annualBefore.total, annualBefore.extras, settings, year);
+
+    const payMapAfter = computePayByShift(shiftsAfter, settings);
+    const annualAfter = computeAnnualGrossFromShifts(year, shiftsAfter, settings, payMapAfter);
+    const projAfter = projectAnnualIncome(annualAfter.total, annualAfter.extras, settings, year);
+
+    const soglia = TAX_2026.TI_SOGLIA_PIENO; // 15.000 €
+    margineBonusBefore = Math.max(0, soglia - projBefore.value);
+    margineBonusAfter = Math.max(0, soglia - projAfter.value);
+    deltaMargineBonus = margineBonusAfter - margineBonusBefore;
+
+    superaSoglia = projBefore.value <= soglia && projAfter.value > soglia;
+    rientraSottoSoglia = projBefore.value > soglia && projAfter.value <= soglia;
+  }
+
+  return {
+    deltaMinuti,
+    deltaLordo,
+    deltaNetto,
+    deltaTrattenute,
+    hasRate: rateAvailable,
+    margineBonus: margineBonusAfter,
+    deltaMargineBonus,
+    superaSoglia,
+    rientraSottoSoglia,
+    netBefore: netBefore?.net ?? null,
+    netAfter: netAfter?.net ?? null,
+    grossBefore: payBefore?.total ?? null,
+    grossAfter: payAfter?.total ?? null,
+    testoDeltaNetto: formatDeltaCurrency(deltaNetto),
+    testoDeltaLordo: formatDeltaCurrency(deltaLordo),
+    testoDeltaOre: formatDeltaMinutes(deltaMinuti),
+  };
+}
