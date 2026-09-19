@@ -1390,8 +1390,8 @@ export default function CalendarView({
             </div>
             <div className="modal-form conti-bonus">
               <p className="form-hint">
-                Lo Stato dà {euroCella(TAX_2026.TI_MASSIMO)} l'anno a chi sta sotto i
-                15.000 €. Se li superi, anche di 1 €, a dicembre il datore si riprende
+                Il bonus spetta a chi sta sotto i 15.000 €. Se li superi, anche di 1 €, a
+                dicembre il datore si riprende
                 tutto: {euroCella(rischio.erogato || quotaPotenziale())} finora.
               </p>
               {/* La tabella è un'ALTRA grandezza rispetto alla cifra qui sopra:
@@ -1422,10 +1422,15 @@ export default function CalendarView({
                   <strong>{euroCella(-costo.perditaMax)}</strong>
                 </div>
               </div>
+              {/* L'ESEMPIO COI NUMERI SUOI, non la regola astratta: «il netto
+                  torna quello di prima della soglia» non si capiva. Tetto,
+                  netto al tetto e pareggio li calcola `costoSoglia` sulle sue
+                  impostazioni, quindi sono le cifre che vedrebbe davvero. */}
               {costo.larghezzaBuca > 0 && (
                 <p className="form-hint">
-                  E solo se ti fermi qui: con {euroCella(costo.larghezzaBuca)} di lordo in
-                  più il netto torna quello di prima della soglia.
+                  Ma solo se ti fermi qui: con {euroCella(costo.tetto)} lordi in tasca ne
+                  resterebbero {euroCella(costo.nettoTetto)}, e li ritrovi solo
+                  a {euroCella(costo.pareggio)} lordi.
                 </p>
               )}
               <p className="form-hint form-hint--warn">
