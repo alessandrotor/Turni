@@ -1389,29 +1389,24 @@ export default function CalendarView({
             </div>
             <div className="modal-form conti-bonus">
               <p className="form-hint">
-                <strong>Perché lo ricevi.</strong> Lo Stato dà {euroCella(TAX_2026.TI_MASSIMO)} l'anno
-                a chi guadagna fino a 15.000 €. Il datore te li versa in busta un po' per
-                volta, circa 100 € al mese, prevedendo a gennaio quanto guadagnerai.
+                Lo Stato dà {euroCella(TAX_2026.TI_MASSIMO)} l'anno a chi guadagna fino a
+                15.000 €, e il datore te li versa in busta, circa 100 € al mese.
               </p>
               <p className="form-hint">
-                <strong>Perché te li riprende.</strong> A dicembre rifà il conto sul tuo
-                reddito vero. Se hai superato i 15.000 €, il bonus non ti spettava: si
-                riprende tutto quello che ti ha versato, {euroCella(rischio.erogato || quotaPotenziale())} finora.
-                Non dipende da quanto superi la soglia: anche di 1 € torna indietro tutto.
+                Se superi i 15.000 €, anche di 1 €, non ti spettano: a dicembre si riprende
+                tutto quello che ti ha dato, {euroCella(rischio.erogato || quotaPotenziale())} finora.
               </p>
-              <p className="form-hint">
-                <strong>Perché non ci rimetti {euroCella(TAX_2026.TI_MASSIMO)}.</strong> Sopra i
-                15.000 € la legge alza la detrazione da lavoro
-                da {euroCella(costo.voci.detrazioneSotto)} a {euroCella(costo.voci.detrazioneSopra)},
-                apposta perché superare la soglia non ti penalizzi. Paghi meno tasse quasi
-                quanto il bonus che restituisci.
-              </p>
+              {/* La tabella è un'ALTRA grandezza rispetto alla cifra qui sopra:
+                  quella è cassa, questa è il saldo di un anno intero. Senza
+                  questa riga i due numeri sembrano lo stesso conto fatto male. */}
+              <div className="net-group-label">Ma su un anno intero il saldo è questo</div>
               <div className="bonus-cifre">
                 <span>Bonus che non ti spetta più</span>
                 <strong>{euroCella(costo.voci.bonus)}</strong>
               </div>
               <div className="bonus-cifre">
-                <span>Tasse in meno, detrazione più alta</span>
+                <span>Tasse in meno: la detrazione sale
+                  da {euroCella(costo.voci.detrazioneSotto)} a {euroCella(costo.voci.detrazioneSopra)}</span>
                 <strong>+{euroCella(costo.voci.tasse)}</strong>
               </div>
               <div className="bonus-cifre">
@@ -1419,19 +1414,19 @@ export default function CalendarView({
                 <strong>{euroCella(costo.voci.indennita + costo.voci.altro)}</strong>
               </div>
               <div className="bonus-cifre bonus-cifre--totale">
-                <span><strong>In un anno ci perdi</strong></span>
+                <span><strong>Ci perdi</strong></span>
                 <strong>{euroCella(-costo.perditaMax)}</strong>
               </div>
               {costo.larghezzaBuca > 0 && (
                 <p className="form-hint">
-                  Quei {euroCella(costo.perditaMax)} li recuperi
-                  guadagnando {euroCella(costo.larghezzaBuca)} in più: da lì in poi ogni euro
-                  vale come prima della soglia.
+                  La legge alza la detrazione apposta perché superare la soglia non ti
+                  penalizzi. Quei {euroCella(costo.perditaMax)} li recuperi
+                  guadagnando {euroCella(costo.larghezzaBuca)} in più.
                 </p>
               )}
               <p className="form-hint form-hint--warn">
-                Conto fatto con un solo datore: se quest'anno ne hai due, ognuno prevede il
-                tuo reddito per conto suo e ti restituiscono di più.
+                Con due datori nello stesso anno ti restituiscono di più: ognuno prevede il
+                tuo reddito per conto suo.
               </p>
               <div className="modal-footer">
                 <button type="button" className="btn btn-primary" onClick={() => setContiBonusAperti(false)}>
