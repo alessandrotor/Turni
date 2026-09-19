@@ -1399,7 +1399,9 @@ export default function CalendarView({
                   questa riga i due numeri sembrano lo stesso conto fatto male.
                   Le righe stanno in un blocco loro per stringere gli spazi:
                   il popup deve stare in uno schermo senza scorrere. */}
-              <div className="net-group-label">Ma su un anno intero il saldo è questo</div>
+              {/* L'intestazione dice RISPETTO A COSA, altrimenti «ci perdi
+                  129 €» è un confronto con un termine che non si vede. */}
+              <div className="net-group-label">Rispetto a restare sotto i 15.000, in un anno</div>
               <div className="conti-bonus-righe">
                 <div className="bonus-cifre">
                   <span>Bonus che non ti spetta più</span>
@@ -1422,15 +1424,17 @@ export default function CalendarView({
                   <strong>{euroCella(-costo.perditaMax)}</strong>
                 </div>
               </div>
-              {/* L'ESEMPIO COI NUMERI SUOI, non la regola astratta: «il netto
-                  torna quello di prima della soglia» non si capiva. Tetto,
-                  netto al tetto e pareggio li calcola `costoSoglia` sulle sue
-                  impostazioni, quindi sono le cifre che vedrebbe davvero. */}
+              {/* LA FASCIA MORTA, non la curva. Le versioni prima dicevano «il
+                  netto torna quello di prima della soglia» e «li ritrovi solo
+                  a X»: descrivevano il grafico, con un confronto controfattuale
+                  («se ti fossi fermato») che nessuno si fa. La domanda vera è
+                  «mi conviene lavorare di più?», e la risposta è che per due
+                  soli centoni la risposta è no, dopo torna sì. */}
               {costo.larghezzaBuca > 0 && (
                 <p className="form-hint">
-                  Ma solo se ti fermi qui: con {euroCella(costo.tetto)} lordi in tasca ne
-                  resterebbero {euroCella(costo.nettoTetto)}, e li ritrovi solo
-                  a {euroCella(costo.pareggio)} lordi.
+                  Ma solo qui in mezzo: fra {euroCella(costo.tetto)}
+                  {' '}e {euroCella(costo.pareggio)} lordi l'anno il netto non cresce.
+                  Sopra, riprende a salire.
                 </p>
               )}
               <p className="form-hint form-hint--warn">
