@@ -1649,6 +1649,19 @@ input, select, textarea { font: inherit; }
    equivale a non offrirla. */
 /* Larga quanto il testo e staccata dalla nota: a tutta larghezza, 10 px sotto
    «perché?», sul telefono il tocco finiva sulla casella e il riquadro spariva. */
+/* Il popup dei conti deve stare in uno schermo di telefono SENZA scorrere:
+   arrivare a «Ho capito» scrollando è il segno che il testo è troppo lungo.
+   Gli spazi qui sono più stretti che negli altri moduli, e le righe del conto
+   stanno insieme perché sono una tabella, non voci separate. */
+.conti-bonus {
+  gap: .8rem;
+}
+.conti-bonus-righe {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+
 /* Nel popup dei conti la spiegazione È il contenuto: non una nota a margine
    piccola e in corsivo come negli altri moduli. */
 .conti-bonus .form-hint {

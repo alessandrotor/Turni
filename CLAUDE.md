@@ -242,5 +242,14 @@ Discendono tutte dalla parola d'ordine qui sopra.
 - Quando i conteggi non coprono il mese visualizzato (mese di paga), il periodo
   si **dichiara sopra i numeri**. Non si allunga il calendario per farceli stare:
   provato, era brutto e si perdeva di vista che mese si stava guardando.
+- **Non si scrolla se non è assolutamente necessario.** Vale soprattutto per
+  ciò che si apre sopra la pagina: una finestra che costa uno scorrimento per
+  arrivare al pulsante che la chiude è una finestra scritta troppo lunga, e la
+  risposta giusta è tagliare il testo, non allungare il contenitore. Il
+  calendario e la pagina scorrono, quello è il loro mestiere; un popup no.
+- Le voci che esistono anche **sul cedolino si chiamano come lì** («Indennità
+  L. 207/24», non «sconto sui contributi»): la prima cosa che si fa con una
+  cifra dell'app è cercarla in busta, e un nome inventato la rende
+  irrintracciabile. Il gergo si spiega accanto, non si sostituisce.
 - I calcoli fiscali sono marcati BETA e invitano a farsi controllare da un
   professionista. Non togliere quell'avviso.

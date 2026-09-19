@@ -356,14 +356,15 @@ export default function CalendarView({
   // parte da cinque cifre (16.600 sì, 1200 no), e in un riquadro che spiega un
   // conto «1200» accanto a «16.600» sembrano scritti da due mani diverse.
   // Fallback per le WebView vecchie, dove l'opzione non esiste.
-  const euroCella = (n) => {
+  const numeroIt = (n) => {
     const v = Math.round(n);
     try {
-      return `${new Intl.NumberFormat('it-IT', { useGrouping: 'always', maximumFractionDigits: 0 }).format(v)} €`;
+      return new Intl.NumberFormat('it-IT', { useGrouping: 'always', maximumFractionDigits: 0 }).format(v);
     } catch {
-      return `${v.toLocaleString('it-IT')} €`;
+      return v.toLocaleString('it-IT');
     }
   };
+  const euroCella = (n) => `${numeroIt(n)} €`;
 
   // Quanto vale una giornata. `null` — non zero — quando la paga oraria manca o
   // non copre quei turni: uno «0 €» in cella sembrerebbe un turno non pagato,
@@ -1389,44 +1390,46 @@ export default function CalendarView({
             </div>
             <div className="modal-form conti-bonus">
               <p className="form-hint">
-                Lo Stato dà {euroCella(TAX_2026.TI_MASSIMO)} l'anno a chi guadagna fino a
-                15.000 €, e il datore te li versa in busta, circa 100 € al mese.
-              </p>
-              <p className="form-hint">
-                Se superi i 15.000 €, anche di 1 €, non ti spettano: a dicembre si riprende
-                tutto quello che ti ha dato, {euroCella(rischio.erogato || quotaPotenziale())} finora.
+                Lo Stato dà {euroCella(TAX_2026.TI_MASSIMO)} l'anno a chi sta sotto i
+                15.000 €. Se li superi, anche di 1 €, a dicembre il datore si riprende
+                tutto: {euroCella(rischio.erogato || quotaPotenziale())} finora.
               </p>
               {/* La tabella è un'ALTRA grandezza rispetto alla cifra qui sopra:
                   quella è cassa, questa è il saldo di un anno intero. Senza
-                  questa riga i due numeri sembrano lo stesso conto fatto male. */}
+                  questa riga i due numeri sembrano lo stesso conto fatto male.
+                  Le righe stanno in un blocco loro per stringere gli spazi:
+                  il popup deve stare in uno schermo senza scorrere. */}
               <div className="net-group-label">Ma su un anno intero il saldo è questo</div>
-              <div className="bonus-cifre">
-                <span>Bonus che non ti spetta più</span>
-                <strong>{euroCella(costo.voci.bonus)}</strong>
-              </div>
-              <div className="bonus-cifre">
-                <span>Tasse in meno: la detrazione sale
-                  da {euroCella(costo.voci.detrazioneSotto)} a {euroCella(costo.voci.detrazioneSopra)}</span>
-                <strong>+{euroCella(costo.voci.tasse)}</strong>
-              </div>
-              <div className="bonus-cifre">
-                <span>Sconto sui contributi, che cala</span>
-                <strong>{euroCella(costo.voci.indennita + costo.voci.altro)}</strong>
-              </div>
-              <div className="bonus-cifre bonus-cifre--totale">
-                <span><strong>Ci perdi</strong></span>
-                <strong>{euroCella(-costo.perditaMax)}</strong>
+              <div className="conti-bonus-righe">
+                <div className="bonus-cifre">
+                  <span>Bonus che non ti spetta più</span>
+                  <strong>{euroCella(costo.voci.bonus)}</strong>
+                </div>
+                <div className="bonus-cifre">
+                  <span>Tasse in meno: la detrazione sale
+                    da {numeroIt(costo.voci.detrazioneSotto)} a {euroCella(costo.voci.detrazioneSopra)}</span>
+                  <strong>+{euroCella(costo.voci.tasse)}</strong>
+                </div>
+                {/* Il nome che la voce ha IN BUSTA («Indennit L.207/24» sui
+                    cedolini letti): «sconto sui contributi» spiegava cos'è ma
+                    non si poteva cercare sul cedolino, che è ciò che uno fa. */}
+                <div className="bonus-cifre">
+                  <span>Indennità L. 207/24, che cala</span>
+                  <strong>{euroCella(costo.voci.indennita + costo.voci.altro)}</strong>
+                </div>
+                <div className="bonus-cifre bonus-cifre--totale">
+                  <span><strong>Ci perdi</strong></span>
+                  <strong>{euroCella(-costo.perditaMax)}</strong>
+                </div>
               </div>
               {costo.larghezzaBuca > 0 && (
                 <p className="form-hint">
-                  La legge alza la detrazione apposta perché superare la soglia non ti
-                  penalizzi. Quei {euroCella(costo.perditaMax)} li recuperi
-                  guadagnando {euroCella(costo.larghezzaBuca)} in più.
+                  E solo se ti fermi qui: con {euroCella(costo.larghezzaBuca)} di lordo in
+                  più il netto torna quello di prima della soglia.
                 </p>
               )}
               <p className="form-hint form-hint--warn">
-                Con due datori nello stesso anno ti restituiscono di più: ognuno prevede il
-                tuo reddito per conto suo.
+                Con due datori ti riprendono di più.
               </p>
               <div className="modal-footer">
                 <button type="button" className="btn btn-primary" onClick={() => setContiBonusAperti(false)}>
