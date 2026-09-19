@@ -218,9 +218,10 @@ export function rischioRestituzione({ settings = {}, proiezioneAnnua = 0, oggi =
  * resto da ricerche binarie, una trentina di valutazioni in tutto. La scansione
  * euro per euro serviva per capire, non per girare dentro un componente.
  *
- * @returns {{tetto, nettoTetto, perditaMax, pareggio, larghezzaBuca}}
+ * @returns {{tetto, nettoTetto, perditaMax, pareggio, larghezzaBuca, voci}}
  *   `tetto` è l'ultimo lordo che resta sotto soglia; `pareggio` il primo oltre
- *   il quale si sta di nuovo bene come prima.
+ *   il quale si sta di nuovo bene come prima; `voci` scompone la perdita nei
+ *   movimenti che la producono (vedi sotto).
  */
 export function costoSoglia(settings = {}) {
   const netto = (g) => calcNetAnnual(g, settings).net;
@@ -260,12 +261,36 @@ export function costoSoglia(settings = {}) {
     }
   }
 
+  // PERCHÉ la perdita è quella e non 1.200: i movimenti che la compongono,
+  // presi dal motore ai due lati dello scalino. Servono a un'interfaccia che
+  // deve spiegare, non solo annunciare — e spiegare con numeri ricalcolati a
+  // mano nel componente è il modo sicuro per farli smettere di combaciare.
+  //
+  // `altro` assorbe il resto (l'euro di lordo in più, meno i suoi contributi)
+  // così le voci sommano SEMPRE a `perditaMax`, anche dopo gli arrotondamenti:
+  // un riquadro che spiega un conto e poi non torna è peggio che tacere.
+  const sotto = calcNetAnnual(tetto, settings);
+  const sopra = calcNetAnnual(tetto + 1, settings);
+  const tasseDi = (v) => v.irpefNetta + v.addRegionale + v.addComunale;
+  const perdita = Math.round(perditaMax);
+  const bonus = Math.round(sopra.trattamentoIntegrativo - sotto.trattamentoIntegrativo);
+  const tasse = Math.round(tasseDi(sotto) - tasseDi(sopra));
+  const indennita = Math.round(sopra.bonusCuneo - sotto.bonusCuneo);
+
   return {
     tetto,
     nettoTetto,
-    perditaMax: Math.round(perditaMax),
+    perditaMax: perdita,
     pareggio,
     larghezzaBuca: pareggio === null ? null : pareggio - tetto,
+    voci: {
+      bonus,                                             // sparisce: negativo
+      tasse,                                             // scendono: positivo
+      indennita,                                         // scende: negativo
+      altro: -perdita - (bonus + tasse + indennita),
+      detrazioneSotto: Math.round(sotto.detrazioneLavoro),
+      detrazioneSopra: Math.round(sopra.detrazioneLavoro),
+    },
   };
 }
 

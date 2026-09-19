@@ -352,7 +352,18 @@ export default function CalendarView({
   // cifre che contano. La cifra esatta resta nel `title` e nell'agenda — è la
   // stessa distinzione che l'app fa già fra la griglia (colpo d'occhio) e
   // l'agenda (dettaglio).
-  const euroCella = (n) => `${Math.round(n).toLocaleString('it-IT')} €`;
+  // `useGrouping: 'always'` non è un vezzo: in italiano il punto delle migliaia
+  // parte da cinque cifre (16.600 sì, 1200 no), e in un riquadro che spiega un
+  // conto «1200» accanto a «16.600» sembrano scritti da due mani diverse.
+  // Fallback per le WebView vecchie, dove l'opzione non esiste.
+  const euroCella = (n) => {
+    const v = Math.round(n);
+    try {
+      return `${new Intl.NumberFormat('it-IT', { useGrouping: 'always', maximumFractionDigits: 0 }).format(v)} €`;
+    } catch {
+      return `${v.toLocaleString('it-IT')} €`;
+    }
+  };
 
   // Quanto vale una giornata. `null` — non zero — quando la paga oraria manca o
   // non copre quei turni: uno «0 €» in cella sembrerebbe un turno non pagato,
@@ -1378,32 +1389,49 @@ export default function CalendarView({
             </div>
             <div className="modal-form conti-bonus">
               <p className="form-hint">
-                Ogni mese in busta ricevi circa 100 € di bonus. Il datore te lo dà
-                contando che a fine anno resterai sotto i 15.000 €.
+                <strong>Perché lo ricevi.</strong> Lo Stato dà {euroCella(TAX_2026.TI_MASSIMO)} l'anno
+                a chi guadagna fino a 15.000 €. Il datore te li versa in busta un po' per
+                volta, circa 100 € al mese, prevedendo a gennaio quanto guadagnerai.
               </p>
               <p className="form-hint">
-                Se li superi, anche di poco, a dicembre lo <strong>restituisci tutto</strong>:
-                finora sono {euroCella(rischio.erogato || quotaPotenziale())}. Non spenderlo.
+                <strong>Perché te li riprende.</strong> A dicembre rifà il conto sul tuo
+                reddito vero. Se hai superato i 15.000 €, il bonus non ti spettava: si
+                riprende tutto quello che ti ha versato, {euroCella(rischio.erogato || quotaPotenziale())} finora.
+                Non dipende da quanto superi la soglia: anche di 1 € torna indietro tutto.
+              </p>
+              <p className="form-hint">
+                <strong>Perché non ci rimetti {euroCella(TAX_2026.TI_MASSIMO)}.</strong> Sopra i
+                15.000 € la legge alza la detrazione da lavoro
+                da {euroCella(costo.voci.detrazioneSotto)} a {euroCella(costo.voci.detrazioneSopra)},
+                apposta perché superare la soglia non ti penalizzi. Paghi meno tasse quasi
+                quanto il bonus che restituisci.
               </p>
               <div className="bonus-cifre">
-                <span>Bonus restituito</span>
-                <strong>−{euroCella(TAX_2026.TI_MASSIMO)}</strong>
+                <span>Bonus che non ti spetta più</span>
+                <strong>{euroCella(costo.voci.bonus)}</strong>
               </div>
               <div className="bonus-cifre">
-                <span>Meno tasse e altre voci</span>
-                <strong>+{euroCella(TAX_2026.TI_MASSIMO - costo.perditaMax)}</strong>
+                <span>Tasse in meno, detrazione più alta</span>
+                <strong>+{euroCella(costo.voci.tasse)}</strong>
               </div>
               <div className="bonus-cifre">
-                <span><strong>Sull'anno ci perdi</strong></span>
-                <strong>−{euroCella(costo.perditaMax)}</strong>
+                <span>Sconto sui contributi, che cala</span>
+                <strong>{euroCella(costo.voci.indennita + costo.voci.altro)}</strong>
+              </div>
+              <div className="bonus-cifre bonus-cifre--totale">
+                <span><strong>In un anno ci perdi</strong></span>
+                <strong>{euroCella(-costo.perditaMax)}</strong>
               </div>
               {costo.larghezzaBuca > 0 && (
                 <p className="form-hint">
-                  Con {euroCella(costo.larghezzaBuca)} di lordo in più torni a guadagnare come prima.
+                  Quei {euroCella(costo.perditaMax)} li recuperi
+                  guadagnando {euroCella(costo.larghezzaBuca)} in più: da lì in poi ogni euro
+                  vale come prima della soglia.
                 </p>
               )}
               <p className="form-hint form-hint--warn">
-                Conto fatto con un solo datore: se quest'anno ne hai due, rischi di più.
+                Conto fatto con un solo datore: se quest'anno ne hai due, ognuno prevede il
+                tuo reddito per conto suo e ti restituiscono di più.
               </p>
               <div className="modal-footer">
                 <button type="button" className="btn btn-primary" onClick={() => setContiBonusAperti(false)}>

@@ -91,6 +91,37 @@ esito(sotto.bonusCuneo - sopra.bonusCuneo > 50,
   'la buca la causa il cuneo, non il bonus',
   `indennità ${sotto.bonusCuneo.toFixed(0)} → ${sopra.bonusCuneo.toFixed(0)}`);
 
+// ── 2-bis. La scomposizione che il popup mostra ──────────────────────────────
+// Il riquadro non annuncia più solo «ci perdi 129 €»: fa vedere il conto, voce
+// per voce. Un conto mostrato che non torna è peggio di nessun conto, quindi
+// la somma delle voci deve fare ESATTAMENTE la perdita — arrotondamenti
+// compresi, su ogni profilo.
+console.log('');
+console.log('Le voci del conto, quelle che si leggono nel popup');
+console.log('');
+
+for (const [nome, S] of PROFILI) {
+  const { voci, perditaMax } = costoSoglia(S);
+  const somma = voci.bonus + voci.tasse + voci.indennita + voci.altro;
+  esito(somma === -perditaMax,
+    `${nome}: le voci sommano alla perdita`,
+    `${voci.bonus} + ${voci.tasse} + ${voci.indennita} + ${voci.altro} = ${somma} contro −${perditaMax}`);
+  esito(voci.bonus === -TAX_2026.TI_MASSIMO,
+    `${nome}: sparisce il bonus intero`, `${voci.bonus} €`);
+  // È l'affermazione su cui poggia tutta la spiegazione: la detrazione sale
+  // APPOSTA, e da sola vale quasi quanto il bonus perso.
+  esito(voci.tasse > 0 && voci.tasse > TAX_2026.TI_MASSIMO * 0.9,
+    `${nome}: le tasse in meno coprono oltre il 90% del bonus`,
+    `+${voci.tasse} € su ${TAX_2026.TI_MASSIMO}`);
+  esito(voci.detrazioneSotto < voci.detrazioneSopra,
+    `${nome}: la detrazione da lavoro sale oltre la soglia`,
+    `${voci.detrazioneSotto} → ${voci.detrazioneSopra}`);
+  // Quel che resta scoperto è il cuneo: se un giorno il suo scalino sparisse,
+  // la buca si chiuderebbe e il riquadro andrebbe riscritto.
+  esito(voci.indennita < 0,
+    `${nome}: lo sconto sui contributi cala`, `${voci.indennita} €`);
+}
+
 // ── 3. I tre casi dell'interfaccia ───────────────────────────────────────────
 console.log('');
 console.log('Dove ti trovi, e cosa deve dirti');

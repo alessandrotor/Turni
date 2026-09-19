@@ -1659,6 +1659,13 @@ input, select, textarea { font: inherit; }
 .conti-bonus .form-hint:not(.form-hint--warn) {
   color: var(--c-text);
 }
+/* La riga del totale si stacca dalle voci che somma. */
+.bonus-cifre--totale {
+  border-top: 1px solid var(--c-border);
+  padding-top: .45rem;
+  margin-top: .1rem;
+}
+
 /* Lo stesso tono dentro il riquadro: frasi, non etichette con cifra. */
 .bonus-spiega {
   margin: 0;
