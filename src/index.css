@@ -151,6 +151,43 @@ input, select, textarea { font: inherit; }
   border-radius: var(--radius);
   padding: .75rem 1rem;
   box-shadow: var(--shadow);
+  /* Il totale del mese va a capo su una riga sua: mese e frecce restano dove
+     sono sempre stati, e il numero non li stringe su schermi piccoli. */
+  flex-wrap: wrap;
+}
+
+/* Quanto ho fatto questo mese, agganciato in alto insieme al mese.
+   Prima stava sotto tutta la griglia — cioè fuori schermo — e in vista agenda
+   sotto trenta schede: si poteva usare l'app per mezz'ora senza incontrarlo. */
+.cal-header-soldi {
+  flex: 1 0 100%;
+  display: flex;
+  align-items: baseline;
+  gap: .5rem;
+  margin-top: .35rem;
+  padding-top: .35rem;
+  border-top: 1px solid var(--c-border);
+}
+
+.cal-header-soldi-val {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--c-success);
+  letter-spacing: -.02em;
+  line-height: 1.1;
+}
+
+.cal-header-soldi-ore {
+  font-size: .8rem;
+  color: var(--c-text-2);
+}
+
+/* «lordo stimato» a destra: è la parola che impedisce di scambiare questo
+   numero per il netto che arriva sul conto. Piccola ma sempre presente. */
+.cal-header-soldi-eti {
+  margin-left: auto;
+  font-size: .72rem;
+  color: var(--c-text-2);
 }
 
 .cal-header-center {
@@ -204,6 +241,25 @@ input, select, textarea { font: inherit; }
   font-weight: 700;
 }
 
+.cal-header-share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  font-size: .95rem;
+  color: var(--c-text-2);
+  transition: background .12s, color .12s, border-color .12s;
+}
+.cal-header-share-btn:hover {
+  background: var(--c-card);
+  color: var(--c-primary);
+  border-color: var(--c-muted);
+}
+
 /* ── Timeline Agenda View ────────────────────────────────────────── */
 .timeline-view {
   display: flex;
@@ -213,7 +269,7 @@ input, select, textarea { font: inherit; }
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   overflow: hidden;
-  padding: .75rem .5rem;
+  padding: .75rem .5rem calc(4.5rem + var(--safe-bottom));
 }
 
 .timeline-item {
@@ -396,6 +452,30 @@ input, select, textarea { font: inherit; }
   color: var(--c-text-2);
 }
 
+/* Nell'agenda c'è spazio per la cifra esatta: due decimali, cioè quella che si
+   ritrova in busta, non l'arrotondamento della griglia. `margin-left: auto` la
+   spinge contro la matita, così resta allineata anche quando gli orari sono più
+   corti (una mezza giornata) o più lunghi (un turno a cavallo di mezzanotte). */
+.timeline-euro {
+  margin-left: auto;
+  margin-right: .4rem;
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--c-success);
+  white-space: nowrap;
+}
+
+/* Da cosa è fatto l'importo. È la riga che spiega perché una domenica vale più
+   di ieri, e per questo sta sotto i badge e non accanto alla cifra: chi vuole
+   solo il numero l'ha già letto e può saltarla. */
+.timeline-scomposizione {
+  flex: 1 0 100%;
+  margin-top: .1rem;
+  font-size: .72rem;
+  color: var(--c-text-2);
+  line-height: 1.35;
+}
+
 .timeline-card-edit-btn {
   font-size: .85rem;
   color: var(--c-muted);
@@ -500,6 +580,47 @@ input, select, textarea { font: inherit; }
 .timeline-rest-card:hover .timeline-rest-action {
   color: var(--c-success);
   font-weight: 600;
+}
+
+/* Pulsante rapido flottante (Vista Agenda) */
+.cal-floating-add-btn {
+  position: fixed;
+  bottom: calc(1.25rem + var(--safe-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .65rem 1.25rem;
+  background: var(--c-primary);
+  color: #ffffff;
+  border-radius: 9999px;
+  font-size: .92rem;
+  font-weight: 700;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, .38), 0 2px 6px rgba(0, 0, 0, .08);
+  z-index: 50;
+  transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+  pointer-events: auto;
+}
+
+.cal-floating-add-btn:hover {
+  background: var(--c-primary-dark);
+  transform: translateX(-50%) translateY(-1px);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, .48), 0 3px 8px rgba(0, 0, 0, .1);
+}
+
+.cal-floating-add-btn:active {
+  transform: translateX(-50%) scale(.97);
+}
+
+.cal-floating-add-icon {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cal-floating-add-text {
+  letter-spacing: .01em;
 }
 
 .cal-grid {
@@ -844,6 +965,37 @@ input, select, textarea { font: inherit; }
   .modal { border-radius: var(--radius-lg); max-height: 90dvh; }
 }
 
+/* ── Il tocco fuori bersaglio, quando c'è del lavoro da perdere ───
+   Prima l'area scura attorno chiudeva sempre, e su un telefono è la parte più
+   grande dello schermo: un periodo di ferie corretto riga per riga spariva per
+   un dito appoggiato. Ora quel tocco non chiude più (`utils/bozza.js`), e
+   perché non sembri un guasto la finestra risponde con un cenno.
+   Non è una domanda: non c'è niente da leggere e niente da toccare. */
+.modal--trattieni { animation: modal-trattieni .45s ease; }
+
+@keyframes modal-trattieni {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(3px); }
+}
+
+/* Il cenno dice «no», questo dice «di là»: la ✕ è la via d'uscita voluta.
+   Sta fuori dall'animazione di proposito — chi ha chiesto meno movimento al
+   sistema si vede azzerare le durate, e allora questo resta l'unica risposta
+   al suo tocco. È un colore, non un movimento. */
+.modal--trattieni .modal-close {
+  background: var(--c-primary);
+  color: #fff;
+  /* `.modal-close` sfuma lo sfondo in .15s per l'hover del mouse. Qui no: il
+     cenno dura mezzo secondo in tutto, e una dissolvenza in entrata se ne
+     mangerebbe un terzo arrivando quando il movimento è già finito. Si accende
+     di colpo; a spegnersi ci pensa la transizione di prima, che torna appena
+     la classe se ne va. */
+  transition: none;
+}
+
 .modal-header {
   display: flex;
   align-items: center;
@@ -884,6 +1036,163 @@ input, select, textarea { font: inherit; }
   display: flex;
   gap: .75rem;
   padding-top: .25rem;
+}
+
+/* ── Share Week Modal ────────────────────────────────────────────── */
+.share-modal {
+  max-width: 440px;
+  width: 92%;
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .85rem;
+}
+
+.share-week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .25rem .45rem;
+  background: var(--c-bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--c-border);
+}
+
+.share-week-label {
+  font-weight: 700;
+  font-size: .92rem;
+  color: var(--c-text);
+}
+
+.share-card {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: .75rem .85rem;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+
+.share-week-list {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+
+.share-day-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .25rem 0;
+  border-bottom: 1px solid var(--c-border);
+  font-size: .88rem;
+}
+.share-day-row:last-child {
+  border-bottom: none;
+}
+
+.share-day-date {
+  color: var(--c-text);
+  font-size: .85rem;
+}
+.share-day-date strong {
+  color: var(--c-primary);
+  display: inline-block;
+  width: 34px;
+}
+
+.share-day-info {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .85rem;
+}
+
+.share-day-rest {
+  color: var(--c-success);
+  font-weight: 600;
+  font-size: .82rem;
+}
+
+.share-day-shift {
+  font-weight: 600;
+  color: var(--c-text);
+}
+.share-day-shift small {
+  font-weight: 500;
+  color: var(--c-text-2);
+  margin-left: 2px;
+}
+
+.share-card-total {
+  background: var(--c-bg);
+  padding: .4rem .65rem;
+  border-radius: var(--radius-sm);
+  font-size: .82rem;
+  color: var(--c-text-2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.share-card-total strong {
+  color: var(--c-text);
+  font-size: .9rem;
+}
+
+.share-copied-toast {
+  background: var(--c-success-light);
+  color: var(--c-success);
+  padding: .4rem .65rem;
+  border-radius: var(--radius-sm);
+  font-size: .82rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.share-actions {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.share-btn-main {
+  background: #16a34a;
+}
+.share-btn-main:hover {
+  background: #15803d;
+}
+
+.cosa-cambia-strip {
+  padding: .75rem 1rem;
+  background: var(--c-bg);
+  border-radius: var(--radius);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .35rem .6rem;
+  font-size: .85rem;
+  border: 1px solid var(--c-border);
+}
+.cosa-cambia-label {
+  color: var(--c-text-2);
+}
+.cosa-cambia-cifra {
+  color: var(--c-primary);
+  font-size: 1rem;
+  font-weight: 700;
+}
+.cosa-cambia-ore {
+  color: var(--c-text-2);
+  font-size: .82rem;
+}
+.cosa-cambia-avviso {
+  width: 100%;
+  font-size: .78rem;
+  color: #b91c1c;
+  font-weight: 600;
+  margin-top: .15rem;
 }
 
 /* Modal semplice per il nome sul foglio turni */
@@ -1351,6 +1660,47 @@ input, select, textarea { font: inherit; }
 }
 .backup-row .form-hint { margin-top: 0; }
 
+/* ── Il riepilogo prima di sostituire ─────────────────────────────
+   Prende il posto del «sei sicuro?» di sistema. Costa lo stesso tocco, ma
+   mostra le due cifre a confronto e la via per portarsi via i dati di adesso:
+   dopo il ripristino l'app si ricarica, e un annullamento non è più possibile.
+   Colore di avvertimento, non di errore — non è successo niente di male, si
+   sta per fare una cosa che non torna indietro. */
+.ripristino-riepilogo {
+  border: 1px solid var(--c-warning);
+  background: var(--c-warning-light);
+  border-radius: var(--radius);
+  padding: .8rem .9rem;
+  margin: .2rem 0 .8rem;
+}
+
+.ripristino-file {
+  font-weight: 600;
+  font-size: .9rem;
+  word-break: break-all;
+}
+
+.ripristino-conti {
+  margin: .4rem 0 .6rem;
+  font-size: .95rem;
+}
+
+.ripristino-azioni {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  flex-wrap: wrap;
+}
+
+/* «Ci ho ripensato» non è un'azione da pulsante pieno: deve essere raggiungibile
+   con un dito e riconoscibile, non attirare il tocco al posto delle altre due. */
+.ripristino-annulla {
+  padding: .5rem .2rem;
+  font-size: .9rem;
+  color: var(--c-text-2);
+  text-decoration: underline;
+}
+
 /* Elenco delle correzioni proposte: va letto PRIMA di premere il pulsante, ma
    può essere lungo — scorre da solo invece di allungare la pagina. */
 .correzioni-elenco {
@@ -1482,11 +1832,124 @@ input, select, textarea { font: inherit; }
   color: var(--c-warning);
 }
 
-/* Precisazione sulla base di calcolo della soglia (lordo vs imponibile) */
-.bonus-strip-hint {
-  display: block;
-  font-size: .72rem;
-  opacity: .8;
+/* ── Il rischio di restituzione ──────────────────────────────────
+   Il riquadro che dice la cifra invece dello stato. Fondo rosso chiaro come
+   `--danger`, perché qui non si sta descrivendo una condizione: si sta dicendo
+   che dei soldi già incassati tornano indietro. È l'unico posto dell'app in cui
+   un numero è una brutta notizia, e va distinto dal giallo del «sei vicino alla
+   soglia», che invece è ancora rimediabile senza costi. */
+.bonus-rischio {
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+  margin-top: .5rem;
+  padding: .85rem;
+  background: var(--c-danger-light);
+  border: 1px solid var(--c-danger);
+  border-radius: var(--radius);
+}
+
+/* Il riquadro quando NON c'è niente da temere: stessa forma, colore opposto.
+   Serve perché il caso «oltre la buca» prima non esisteva e finiva nel riquadro
+   rosso, allarmando chi non ci sta perdendo nulla. Tenere la stessa scatola e
+   cambiarle colore dice «ho guardato, ed è a posto» meglio di quanto faccia
+   togliere il riquadro: una cosa che sparisce non si legge come rassicurazione,
+   si legge come una cosa che manca. */
+.bonus-rischio--ok {
+  background: var(--c-success-light);
+  border-color: var(--c-success);
+}
+
+/* Il titolo eredita il rosso d'allarme dalla classe base: su fondo verde, con
+   un ✓ davanti, diceva due cose opposte nello stesso rigo. */
+.bonus-rischio--ok .bonus-rischio-titolo {
+  color: var(--c-success);
+}
+
+/* Le due cifre affiancate: etichetta a sinistra, importo a destra.
+   `tabular-nums` perché incolonnate vanno lette confrontandole, ed è l'unico
+   modo perché le cifre stiano davvero una sopra l'altra. */
+.bonus-cifre {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .75rem;
+  font-size: .95rem;
+}
+
+.bonus-cifre strong {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  font-size: 1.05rem;
+}
+
+.bonus-rischio-titolo {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--c-danger);
+  line-height: 1.25;
+}
+
+/* L'anteprima («sei vicino, se la superi restituisci X») parla PRIMA che ci
+   sia qualcosa da restituire davvero: ambra come un avviso da tenere
+   d'occhio, non rosso come un conto già aperto. Stesso riquadro, colore
+   diverso — la differenza deve leggersi a colpo d'occhio quanto il testo. */
+.bonus-rischio--anteprima {
+  background: var(--c-warning-light);
+  border-color: var(--c-warning);
+}
+.bonus-rischio--anteprima .bonus-rischio-titolo {
+  color: var(--c-warning);
+}
+
+/* La casella della rinuncia sta DENTRO il riquadro rosso, non in fondo alla
+   pagina: è l'unica cosa che si può fare, e mandarla a cercare in Impostazioni
+   equivale a non offrirla. */
+/* Larga quanto il testo e staccata dalla nota: a tutta larghezza, 10 px sotto
+   «perché?», sul telefono il tocco finiva sulla casella e il riquadro spariva. */
+/* Il popup dei conti deve stare in uno schermo di telefono SENZA scorrere:
+   arrivare a «Ho capito» scrollando è il segno che il testo è troppo lungo.
+   Gli spazi qui sono più stretti che negli altri moduli, e le righe del conto
+   stanno insieme perché sono una tabella, non voci separate. */
+.conti-bonus {
+  gap: .8rem;
+}
+.conti-bonus-righe {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+
+/* Nel popup dei conti la spiegazione È il contenuto: non una nota a margine
+   piccola e in corsivo come negli altri moduli. */
+.conti-bonus .form-hint {
+  font-size: .92rem;
+  font-style: normal;
+  line-height: 1.45;
+}
+.conti-bonus .form-hint:not(.form-hint--warn) {
+  color: var(--c-text);
+}
+/* La riga del totale si stacca dalle voci che somma. */
+.bonus-cifre--totale {
+  border-top: 1px solid var(--c-border);
+  padding-top: .45rem;
+  margin-top: .1rem;
+}
+
+/* Lo stesso tono dentro il riquadro: frasi, non etichette con cifra. */
+.bonus-spiega {
+  margin: 0;
+  font-size: .9rem;
+  line-height: 1.45;
+  color: var(--c-text);
+}
+
+.bonus-rischio-scelta {
+  align-self: flex-start;
+  margin-top: .6rem;
+  font-size: .85rem;
+  font-weight: 600;
 }
 
 /* ── Aumenti di paga ────────────────────────────────────────────── */
@@ -2355,6 +2818,19 @@ input, select, textarea { font: inherit; }
   letter-spacing: -.01em;
 }
 
+/* Quanto vale la giornata, nella cella. Verde come «Retribuzione stimata» —
+   è lo stesso numero, a un'altra granularità — e più marcato delle ore, che
+   restano il contesto. Spento di default: `settings.mostraEuroPerTurno`. */
+.cal-day-euro {
+  align-self: flex-end;
+  margin-top: 1px;
+  font-size: .68rem;
+  font-weight: 800;
+  color: var(--c-success);
+  white-space: nowrap;
+  letter-spacing: -.02em;
+}
+
 .timeline-day-total {
   display: flex;
   align-items: baseline;
@@ -2688,6 +3164,16 @@ input, select, textarea { font: inherit; }
   border-radius: var(--radius);
 }
 .avviso-agg-chiudi:hover { background: var(--c-bg); color: var(--c-text); }
+
+/* La striscia dell'annulla è la stessa scheda dell'aggiornamento — stessa
+   posizione, stessa forma, stesso comportamento — quindi eredita `.avviso-agg`
+   invece di ridichiararne le venti proprietà: una sola definizione visiva da
+   mantenere. Cambia solo il filetto rosso a sinistra, ed è l'unica cosa che
+   deve cambiare: dice «qualcosa è appena sparito» a chi la vede con la coda
+   dell'occhio, senza gridare come l'ambra delle maggiorazioni, che invece
+   parla di soldi contati male tutti i mesi. Qui in ballo c'è un turno solo, e
+   per pochi secondi. */
+.avviso-annulla { border-left: 3px solid var(--c-danger); }
 
 /* Voce evidenziata dalle frecce nella tendina del contratto: senza, muovere la
    selezione da tastiera non si vedrebbe. */

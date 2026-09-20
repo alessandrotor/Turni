@@ -6,6 +6,26 @@ import { isMensilizzato, monthlyContractHours, monthlyFullTimeHours } from './cc
 import { isAssenza, tipoTurno, percentualeAssenza, giorniEventoMalattia, TIPO } from './assenze.js';
 import { minutiNotturniPagati, pctNotturnoAggiuntiva } from './notturno.js';
 
+// UNA SOLA STRADA PER LA PAGA, e non è una preferenza di stile.
+//
+// Il percorso vero è `computePayByShift` → `calcTotalPay`: è lì che stanno la
+// soglia mensile del supplementare (103,20 h sul MESE DI PAGA, non sul mese di
+// calendario), le maggiorazioni con il loro cumulo, le assenze che riempiono la
+// soglia senza generare straordinari. È l'unico percorso riscontrato sulle
+// buste reali — `check-busta-giugno-2026`, `check-busta-luglio-2026`,
+// `check-mese-paga-2026`.
+//
+// Fino al 1° settembre 2026 qui accanto ne vivevano altre quattro, esportate e
+// mai chiamate da nessuno: `calcPay(ore, paga)` che moltiplicava e basta,
+// `calcShiftPay` che calcolava un turno IGNORANDO la soglia mensile (e lo
+// ammetteva nel proprio commento), più `calcShiftHours` e `calcWeekTotals`,
+// resti di quando l'app ragionava a settimane. Non erano disordine: erano una
+// trappola. Nomi autorevoli, export pubblico, e un numero diverso da quello
+// riscontrato per chiunque le avesse chiamate credendole il motore.
+//
+// Chi aggiunge qui un secondo modo di calcolare la paga si porti il riscontro
+// sulla busta, oppure non lo aggiunga.
+
 // Ferie, permessi e malattia non hanno orari: portano una durata già in minuti,
 // perché in busta valgono un numero fisso di ore e non un intervallo. Il
 // controllo sta qui e non nei chiamanti così ore, totali e statistiche
@@ -16,22 +36,8 @@ export function calcShiftMinutes(shift) {
   return Math.max(0, total - (shift.breakMinutes || 0));
 }
 
-export function calcShiftHours(shift) {
-  return calcShiftMinutes(shift) / 60;
-}
 
-export function calcWeekTotals(shifts) {
-  const workedMinutes = shifts.reduce((sum, s) => sum + calcShiftMinutes(s), 0);
-  return {
-    workedMinutes,
-    workedHours: workedMinutes / 60,
-  };
-}
 
-export function calcPay(workedHours, hourlyRate) {
-  if (!hourlyRate || hourlyRate <= 0) return null;
-  return workedHours * hourlyRate;
-}
 
 // Parsing robusto di numeri all'italiana: accetta "7123,28", "17.213,28"
 // e anche "7123.28". La virgola, se presente, è il separatore decimale.
@@ -133,11 +139,16 @@ function minutesInBand(before, after, lo, hi) {
 //  - contratto (default): oltre le ore da contratto nella settimana (lun-dom);
 //  - contratto MENSILIZZATO (es. Turismo): la busta non ragiona a settimana ma a
 //    mese — retribuisce un numero fisso di ore (24 × 4,3 = 103,20) e paga come
-//    supplementari le ore eccedenti nel MESE DI PAGA, che è fatto di settimane
-//    intere (vedi payrollMonthKey). Riscontrato sulle buste di giugno e luglio
-//    2026: 131,45 − 103,20 = 28,25 e 109,70 − 103,20 = 6,50, entrambi esatti.
-//    Con la soglia settimanale i conti non tornerebbero: quattro settimane da 24
-//    ore fanno 96 ore ordinarie, non 103,20.
+//    supplementari quelle eccedenti. Che la soglia sia MENSILE è riscontrato su
+//    tre buste: la differenza fra ore attribuite e monte ore fa esattamente il
+//    supplementare stampato. Con la soglia settimanale i conti non tornerebbero:
+//    quattro settimane da 24 ore fanno 96 ore ordinarie, non 103,20.
+//    QUALE mese, invece, non è deciso: il mese di paga a settimane intere
+//    (`payrollMonthKey`) spiega bene giugno, il mese di calendario spiega bene
+//    agosto, e lo scarto residuo è dello stesso ordine delle ore che nell'app
+//    non risultano segnate. Finché il dubbio resta, decide `periodoConteggio` —
+//    vedi `scripts/check-busta-agosto-2026.mjs`, che registra la misura senza
+//    scegliere.
 //  - a chiamata (onCall): oltre la soglia giornaliera (dailyOvertimeThreshold).
 //    Ha la precedenza: chi lavora a chiamata non ha un orario mensilizzato da
 //    rispettare, né una soglia full-time (vedi sopra).
@@ -165,12 +176,21 @@ export function computePayByShift(allShifts, settings) {
   // turni in una volta: un giorno isolato non sa di che evento fa parte.
   const eventoMalattia = giorniEventoMalattia(allShifts);
 
-  // Raggruppa per giorno (a chiamata), per mese di paga (mensilizzato) o per
-  // settimana (contratto).
+  // Raggruppa per giorno (a chiamata), per mese (mensilizzato) o per settimana
+  // (contratto).
+  //
+  // Sul mensilizzato il raggruppamento SEGUE `periodoConteggio`, cioè la stessa
+  // scelta che decide quali turni si vedono a schermo. Finché non lo faceva,
+  // chi sceglieva «mese di calendario» otteneva un ibrido: i turni dell'1-31
+  // ma con le quote di supplementare calcolate su gruppi a settimane intere,
+  // che sconfinano nel mese dopo. La ripartizione fra ore ordinarie e
+  // supplementari che ne usciva non era né quella di una regola né quella
+  // dell'altra, e non corrispondeva a nessuna busta.
+  const perCalendario = settings?.periodoConteggio === 'calendario';
   const groups = new Map();
   for (const s of allShifts) {
     const key = onCall ? s.date
-      : mensile ? payrollMonthKey(s.date)
+      : mensile ? (perCalendario ? s.date.slice(0, 7) : payrollMonthKey(s.date))
         : formatDate(getWeekStart(parseDate(s.date)));
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(s);
@@ -178,7 +198,33 @@ export function computePayByShift(allShifts, settings) {
 
   const result = {};
   for (const groupShifts of groups.values()) {
-    groupShifts.sort((a, b) => (a.date + (a.startTime || '')).localeCompare(b.date + (b.startTime || '')));
+    // LE ASSENZE PRIMA, poi il lavoro in ordine cronologico.
+    //
+    // Non è un vezzo: decide quante ore risultano supplementari, e lo si vede
+    // sulla busta di agosto 2026. Quel mese ha quindici giorni di ferie che
+    // cominciano il 31, cioè DOPO che la soglia mensile è già stata superata.
+    //
+    // In ordine puramente cronologico il motore incontrava quelle 4 ore a
+    // soglia piena: le scartava dai supplementari — giustamente, un'assenza non
+    // si paga in più — ma così non riempivano più la soglia, e altrettante ore
+    // di lavoro restavano ordinarie. Risultato: 13,55 ore supplementari contro
+    // le 17,50 stampate, esattamente 4 ore di meno.
+    //
+    // La busta fa l'opposto, e lo dichiara nella propria aritmetica:
+    //   4,00 ferie + 99,20 retribuzione = 103,20 (il monte ore fisso)
+    //   + 17,50 supplementare
+    // Le ferie stanno DENTRO le ore fisse, non oltre.
+    //
+    // Vale in generale, non solo per agosto: chi va in ferie a fine mese si
+    // vedeva sottrarre ore supplementari già maturate, e l'effetto cresceva con
+    // la durata dell'assenza. Fra assenze, e fra turni di lavoro, l'ordine
+    // resta quello cronologico — cambia solo quale dei due gruppi viene prima.
+    groupShifts.sort((a, b) => {
+      const pesoA = isAssenza(a) ? 0 : 1;
+      const pesoB = isAssenza(b) ? 0 : 1;
+      if (pesoA !== pesoB) return pesoA - pesoB;
+      return (a.date + (a.startTime || '')).localeCompare(b.date + (b.startTime || ''));
+    });
     let cumMin = 0;
     for (const s of groupShifts) {
       const m = calcShiftMinutes(s);
@@ -295,18 +341,6 @@ export function computePayByShift(allShifts, settings) {
   return result;
 }
 
-export function calcShiftPay(shift, settings) {
-  const rate = getRateForDate(shift.date, settings);
-  if (rate <= 0) return null;
-  const ratePerMin = rate / 60;
-  const pctGiorno = getShiftSurchargePct(shift, settings);
-  const base = calcShiftMinutes(shift) * ratePerMin;
-  // Il notturno sta fuori dalla percentuale del turno: vale sui soli minuti in
-  // fascia (vedi computePayByShift, che e' la strada che l'app percorre davvero).
-  const notte = minutiNotturniPagati(shift, settings, calcShiftMinutes(shift)) * ratePerMin
-    * (pctNotturnoAggiuntiva(settings, pctGiorno) / 100);
-  return base * (1 + pctGiorno / 100) + notte;
-}
 
 // Totale paga con dettaglio maggiorazioni. Ritorna null se nessuna paga
 // oraria è configurata. `allShifts` (default = shifts) fornisce il contesto
@@ -315,6 +349,26 @@ export function calcShiftPay(shift, settings) {
 // Passarla evita di ricostruirla a ogni chiamata (è O(N) su TUTTA la storia dei
 // turni): con più viste che chiamano questa funzione, ricalcolarla ogni volta
 // rallenta l'app man mano che i turni crescono.
+/**
+ * Il lordo di UN turno: base + tutte le maggiorazioni.
+ *
+ * Sembra una somma da scrivere sul posto, e invece deve stare qui. Il totale
+ * del mese (`calcTotalPay`) accumula esattamente questi due addendi: se la
+ * cella del calendario ne facesse una sua, prima o poi i due numeri
+ * divergerebbero di qualche centesimo e nessuno saprebbe quale credere. Una
+ * somma sola, in un posto solo — è la regola dichiarata in testa a questo file.
+ *
+ * `scripts/check-lordo-turno.mjs` verifica che la somma dei lordi dei turni di
+ * un mese sia identica al totale di quel mese.
+ *
+ * @param {object} voce una voce di `computePayByShift`
+ * @returns {number} euro lordi del turno
+ */
+export function lordoTurno(voce) {
+  if (!voce) return 0;
+  return (Number(voce.base) || 0) + (Number(voce.surcharge) || 0);
+}
+
 export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = null) {
   if (!hasAnyRate(settings)) return null;
   const map = byShift || computePayByShift(allShifts, settings);

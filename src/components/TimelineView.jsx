@@ -2,7 +2,7 @@ import { useRef, useEffect, useMemo } from 'react';
 import {
   formatDate, formatDayShort, isToday, isWeekend, formatMinutes,
 } from '../utils/dates';
-import { calcShiftMinutes, getShiftSurchargePct } from '../utils/pay';
+import { calcShiftMinutes, getShiftSurchargePct, formatCurrency, lordoTurno } from '../utils/pay';
 import { minutiNotturniPagati, pctNotturno, fasciaNotturna } from '../utils/notturno';
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { isHoliday } from '../utils/holidays';
@@ -22,6 +22,26 @@ function spiegaNotturno(minuti, settings) {
     : `${formatMinutes(minuti)} nella fascia ${fascia}. Non hai impostato una maggiorazione notturna, quindi non cambia la stima: puoi aggiungerla in Impostazioni.`;
 }
 
+// Da cosa è fatto l'importo di un turno, scritto per esteso.
+//
+// Nell'agenda c'è lo spazio che la cella della griglia non ha, ed è l'unico
+// posto dell'app in cui si può rispondere alla domanda vera: non «quanto ho
+// preso» ma «perché questa domenica vale più di ieri». I numeri sono gli stessi
+// che finiscono in busta come righe separate.
+function scomponi(voce) {
+  if (!voce) return '';
+  const eur = (n) => n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const pezzi = [`base ${eur(voce.base)}`];
+  if (voce.surchargeNight > 0) pezzi.push(`notturno ${eur(voce.surchargeNight)}`);
+  if (voce.surchargeSunday > 0) pezzi.push(`domenicale ${eur(voce.surchargeSunday)}`);
+  if (voce.surchargeHoliday > 0) pezzi.push(`festivo ${eur(voce.surchargeHoliday)}`);
+  if (voce.surchargeOvertime > 0) pezzi.push(`supplementare ${eur(voce.surchargeOvertime)}`);
+  if (voce.surchargeStraordinario > 0) pezzi.push(`straordinario ${eur(voce.surchargeStraordinario)}`);
+  if (voce.surchargeManual > 0) pezzi.push(`maggiorazione ${eur(voce.surchargeManual)}`);
+  // Con la sola base non c'è niente da spiegare: la cifra è già lì sopra.
+  return pezzi.length > 1 ? pezzi.join(' + ') : '';
+}
+
 export default function TimelineView({
   daysInMonth,
   year,
@@ -31,6 +51,8 @@ export default function TimelineView({
   onEditShift,
   settings,
   focusDate = null,
+  payByShift = null,
+  mostraEuro = false,
 }) {
   const todayRef = useRef(null);
   const focusRef = useRef(null);
@@ -122,6 +144,7 @@ export default function TimelineView({
                   {d.dayShifts.map((shift) => {
                     const tipo = tipoTurno(shift);
                     const isAssenza = tipo !== TIPO.LAVORO;
+                    const voce = payByShift?.[shift.id] ?? null;
                     const mins = calcShiftMinutes(shift);
                     // Gli stessi minuti che il motore paga, non quelli di
                     // orologio: con una pausa i due numeri differiscono, e il
@@ -173,6 +196,16 @@ export default function TimelineView({
                             </div>
                           )}
 
+                          {/* L'importo prima della matita: è il dato, non un
+                              comando. `null` e non zero quando la paga oraria
+                              non c'è — uno «0,00 €» direbbe che il turno non
+                              vale niente, che è falso. */}
+                          {mostraEuro && voce && !voce.missingRate && (
+                            <span className="timeline-euro">
+                              {formatCurrency(lordoTurno(voce))}
+                            </span>
+                          )}
+
                           <button
                             type="button"
                             className="timeline-card-edit-btn"
@@ -210,6 +243,10 @@ export default function TimelineView({
                             <span className="timeline-badge timeline-badge--note" title={shift.note}>
                               💬 {shift.note}
                             </span>
+                          )}
+
+                          {mostraEuro && voce && !voce.missingRate && scomponi(voce) && (
+                            <span className="timeline-scomposizione">{scomponi(voce)}</span>
                           )}
                         </div>
                       </div>

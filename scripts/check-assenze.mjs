@@ -122,9 +122,26 @@ console.log('\nLe assenze riempiono la soglia ma non diventano supplementari\n')
   const p = paga(conFerie);
   check('ore totali del mese', (100 * 60 + 480) / 60, 108);
   check('  di cui ferie', p.ferieMinutes / 60, 8);
-  // Le ferie stanno in coda al mese: superano la soglia ma restano ferie.
-  // Il lavoro (100 h) da solo non arriva a 103,20, quindi zero supplementari.
-  check('  supplementari generate dalle ferie', p.overtimeMinutes / 60, 0);
+  // LE FERIE RIEMPIONO IL MONTE ORE, anche quando cadono in coda al mese.
+  //
+  // Fino al 13 settembre 2026 qui si pretendeva ZERO supplementari, con questo
+  // ragionamento: «il lavoro da solo (100 h) non arriva a 103,20». Era
+  // un'inferenza, non un riscontro — e la busta di AGOSTO 2026 la smentisce.
+  //
+  // Quel mese ha 4 h di ferie il 31, cioè in coda, e la busta le mette DENTRO
+  // le 103,20 ore fisse:  4,00 ferie + 99,20 retribuzione = 103,20, e tutto il
+  // lavoro eccedente diventa supplementare (17,50 stampate contro le 13,55 che
+  // usciva con la regola vecchia). Vedi check-busta-agosto-2026.mjs.
+  //
+  // Qui il totale è 108 h contro un monte di 103,20: l'eccedenza è 4,80 h, e
+  // sono ore di LAVORO — le ferie restano ferie e non diventano mai
+  // supplementari, cosa che il controllo sotto continua a verificare.
+  //
+  // ONESTÀ SUL PERIMETRO: la busta riscontra il caso in cui il lavoro supera
+  // già da solo il monte ore. Questo caso — lavoro sotto soglia, ferie che la
+  // fanno sforare — non è riscontrato su nessun cedolino: segue dalla stessa
+  // aritmetica, ma se una busta futura dicesse il contrario, vince la busta.
+  check('  supplementari dal lavoro eccedente', p.overtimeMinutes / 60, 4.8);
 
   // Le stesse ferie a INIZIO mese riempiono la soglia, e il lavoro che segue
   // la supera davvero: quelle sì che sono ore supplementari.
@@ -132,6 +149,12 @@ console.log('\nLe assenze riempiono la soglia ma non diventano supplementari\n')
   const p2 = paga(ferriePrima);
   check('ferie a inizio mese: supplementari del lavoro', p2.overtimeMinutes / 60, 108 - 103.2);
   check('  il lordo non cambia con l\'ordine', p2.base, p.base);
+  // L'INVARIANZA, che è il modo giusto di dire la regola: a parità di ore
+  // lavorate e di ore di assenza, QUANDO cadono le ferie nel mese non deve
+  // cambiare quante ore risultano supplementari. Prima cambiava — ferie in
+  // coda davano 0, a inizio mese 4,80 — e significava che chi prendeva le
+  // ferie a fine agosto ci rimetteva ore già maturate.
+  check('  stesso risultato con le ferie in coda', p.overtimeMinutes / 60, p2.overtimeMinutes / 60);
 }
 
 console.log('\nMalattia: carenza contata per evento\n');

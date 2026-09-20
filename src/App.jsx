@@ -1,11 +1,11 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Capacitor } from '@capacitor/core';
 import useLocalStorage from './hooks/useLocalStorage';
-import { getMonthStart, parseDate, payrollMonthKey } from './utils/dates';
-import { calcTotalPay, computePayByShift } from './utils/pay';
+import { getMonthStart, parseDate, payrollMonthKey, formatDate } from './utils/dates';
+import { computePayByShift } from './utils/pay';
 import { isMensilizzato } from './utils/ccnl';
 import { computeAnnualGrossFromShifts, projectAnnualIncome } from './utils/net';
-import { ENABLE_NET_CALC, ENABLE_STATS } from './config/features';
+import { ENABLE_NET_CALC, ENABLE_STATS, ENABLE_MESE_PAGA } from './config/features';
 import { genId } from './utils/id';
 import CalendarView from './components/CalendarView';
 import StatsView from './components/StatsView';
@@ -18,6 +18,8 @@ import DatiMinimi from './components/DatiMinimi';
 import SistemaMancanti from './components/SistemaMancanti';
 import AvvisoMaggiorazione from './components/AvvisoMaggiorazione';
 import AvvisoAggiornamento from './components/AvvisoAggiornamento';
+import AvvisoAnnulla from './components/AvvisoAnnulla';
+import { avvisoDaMostrare, DURATA_ANNULLA } from './utils/avvisi';
 import { iscrivitiAggiornamenti, applicaAggiornamento, primaDiRicaricare } from './services/aggiornamento';
 import useOccupato from './hooks/useOccupato';
 import { haDatiMinimi, maggiorazioneDaChiedere } from './utils/configurazione';
@@ -55,7 +57,11 @@ const DEFAULT_SETTINGS = {
   addComunalePct: 0,
   addizionaliAltrove: false,        // addizionali già trattenute da altro datore → 0
   noAddizionali: false,      // primo anno di lavoro: nessun anno precedente da cui calcolarle → 0
-  noTrattamentoIntegrativo: false,  // override: forza esclusione TI (va a conguaglio)
+  noTrattamentoIntegrativo: false,  // storico: oggi lo tiene allineato a tiModo
+  // Trattamento integrativo: 'auto' decide mese per mese come fa il software
+  // paghe (lordo del mese × 12 contro i 15.000), 'sempre' lo include comunque,
+  // 'mai' lo esclude. Vedi tiSpettaQuestoMese in utils/net.js.
+  tiModo: 'auto',
   tiProjectionMode: 'stimato',      // 'stimato' | 'ytd' — proiezione per la decisione TI
   // Mensilità aggiuntive (dipendono dal CCNL)
   hasTredicesima: false,
@@ -71,6 +77,12 @@ const DEFAULT_SETTINGS = {
   // Voci fisse mensili (indennità, superminimo...) e bonus per singolo mese
   fixedMonthlyItems: [],   // [{ id, label, amount }] ricorrenti ogni mese
   fixedMonthlyDeductions: [], // [{ id, label, amount }] trattenute fisse ogni mese
+  // Quanto vale ogni singolo turno, in griglia e in agenda. SPENTO di default:
+  // chi non lo accende trova il calendario identico a prima, e il totale del
+  // mese lo ha comunque nella barra in alto. Una sola chiave per tutte e due le
+  // viste — sono due modi di guardare lo stesso mese, non due funzioni, e due
+  // interruttori per la stessa intenzione sarebbero attrito.
+  mostraEuroPerTurno: false,
   monthlyBonusAmount: 0,   // importo fisso del bonus (es. bonus presenza), se lo si prende
   monthlyBonus: {},        // { 'YYYY-MM': true } mesi in cui il bonus fisso è stato preso
                            // (valori numerici legacy: importo di quel mese, preservato com'era)
@@ -86,11 +98,25 @@ const DEFAULT_SETTINGS = {
   malattiaCarenzaGiorni: 3,  // primi giorni di ogni evento pagati diversamente
   malattiaCarenzaPct: 0,     // % della paga in quei giorni
   malattiaPct: 100,          // % della paga dal giorno successivo
-  // Su quale periodo si contano ore e paga del mese: 'paga' = settimane intere
-  // come in busta (primo lunedì → domenica prima del primo lunedì dopo),
-  // 'calendario' = dal 1 all'ultimo del mese. Conta solo sui CCNL mensilizzati:
-  // altrove i due periodi coincidono già.
-  periodoConteggio: 'paga',
+  // Su quale periodo si contano ore e paga del mese: 'calendario' = dal 1
+  // all'ultimo del mese, 'paga' = settimane intere (primo lunedì → domenica
+  // prima del primo lunedì dopo). Conta solo sui CCNL mensilizzati: altrove i
+  // due periodi coincidono già.
+  //
+  // IL DEFAULT ERA 'paga', e la busta di agosto 2026 lo ha smentito.
+  //
+  // Che la SOGLIA del supplementare fosse mensile lo avevano stabilito giugno e
+  // luglio; quale finestra di giorni la busta consideri era rimasto aperto, ed
+  // era la questione in fondo a RILASCIO.md. Il discriminante era stato scritto
+  // PRIMA che la busta arrivasse: quindici giorni di ferie cominciati lunedì
+  // 31 agosto cadono in modo diverso nelle due finestre — 7 giornate nel mese
+  // di paga, 1 sola nel calendario. La busta stampa «Ferie godute 4,00 ORE»,
+  // cioè una giornata.
+  //
+  // Confermano le stesse due letture sul totale: 120,75 ore col calendario
+  // contro le 120,70 stampate, 138,75 col mese di paga.
+  // Riscontro: scripts/check-busta-agosto-2026.mjs.
+  periodoConteggio: 'calendario',
 };
 
 // Schermata da riprendere dopo un aggiornamento applicato mentre l'app era in
@@ -114,6 +140,27 @@ const RIPRESA = (() => {
   }
 })();
 
+// La scorciatoia dall'icona dell'app: «Segna il turno di oggi» apre il modulo
+// invece del calendario (il manifest è in vite.config.js). Il PARAMETRO È UN
+// CONTRATTO fra quel file e questo — riscontrato da check-configurazione.mjs,
+// perché rinominarlo da una parte sola non darebbe nessun errore: la
+// scorciatoia aprirebbe il calendario nudo e nessuno saprebbe perché.
+//
+// Letto e cancellato subito, come RIPRESA e per lo stesso motivo: senza la
+// pulizia dell'indirizzo, un ricaricamento riaprirebbe il modulo a sorpresa —
+// e `history.replaceState` non lascia una voce in più nella cronologia, quindi
+// il tasto Indietro continua a fare quello che ci si aspetta.
+const SCORCIATOIA = (() => {
+  try {
+    const chiesto = new URLSearchParams(window.location.search).get('nuovo');
+    if (!chiesto) return null;
+    window.history.replaceState({}, '', window.location.pathname);
+    return chiesto;
+  } catch {
+    return null;
+  }
+})();
+
 export default function App() {
   const [shifts, setShifts, erroreTurni] = useLocalStorage('turni_shifts', {});
   const [storedSettings, setSettings, erroreImpostazioni] = useLocalStorage('turni_settings', DEFAULT_SETTINGS);
@@ -130,7 +177,13 @@ export default function App() {
   const [currentMonth, setCurrentMonth] = useState(() => (
     RIPRESA?.mese ? getMonthStart(new Date(RIPRESA.mese)) : getMonthStart(new Date())
   ));
-  const [modal, setModal] = useState(null); // null | {type:'add',date} | {type:'edit',shift}
+  // Arrivando dalla scorciatoia dell'icona, il modulo è già aperto sul giorno
+  // di oggi al primo render: non «si apre da solo» dopo un istante, che è la
+  // cosa che si vede e infastidisce. La proposta degli orari fa il resto, e
+  // spesso resta solo da toccare «Aggiungi turno».
+  const [modal, setModal] = useState( // null | {type:'add',date} | {type:'edit',shift}
+    SCORCIATOIA === 'oggi' ? { type: 'add', date: formatDate(new Date()) } : null,
+  );
   // Giorno su cui atterrare arrivando dal calendarietto di Statistiche.
   const [focusDate, setFocusDate] = useState(null);
 
@@ -159,7 +212,16 @@ export default function App() {
   // spegnerebbero in silenzio (es. expectedWeeklyHours mancante = nessuno
   // straordinario calcolato finché non si risalva la pagina Impostazioni).
   const settings = useMemo(
-    () => ({ ...DEFAULT_SETTINGS, ...storedSettings }),
+    () => {
+      const uniti = { ...DEFAULT_SETTINGS, ...storedSettings };
+      // Col selettore spento il periodo è sempre il calendario, anche per chi
+      // si era salvato «paga» quando era il default. Si normalizza QUI, dove i
+      // settings nascono, così tutto il resto — calendario, motore, statistiche
+      // — vede un valore solo e nessuno deve ricordarsi del flag. Il dato
+      // salvato non viene toccato: riaccendendo il flag torna com'era.
+      if (!ENABLE_MESE_PAGA) uniti.periodoConteggio = 'calendario';
+      return uniti;
+    },
     [storedSettings],
   );
 
@@ -330,10 +392,32 @@ export default function App() {
   const [aggiornamentoPronto, setAggiornamentoPronto] = useState(false);
   useEffect(() => iscrivitiAggiornamenti(setAggiornamentoPronto), []);
 
+  // L'ultimo turno cancellato, finché si fa in tempo a rimetterlo. Vive qui e
+  // non nel modulo perché il modulo si smonta nell'istante della cancellazione.
+  const [annullabile, setAnnullabile] = useState(null);
+
+  // La finestra si chiude da sola, ed è per costruzione che si chiude: il timer
+  // sta in un effetto con la sua pulizia, non in un `setTimeout` sparso. Senza
+  // la pulizia, in sviluppo StrictMode monta due volte e lascia due timer; e
+  // una seconda cancellazione dentro gli otto secondi lascerebbe in giro quello
+  // della prima, che spegnerebbe la striscia nuova prima del tempo.
+  useEffect(() => {
+    if (!annullabile) return undefined;
+    const t = setTimeout(() => setAnnullabile(null), DURATA_ANNULLA);
+    return () => clearTimeout(t);
+  }, [annullabile]);
+
   // Niente ricaricamenti mentre c'è del lavoro in sospeso, e qui il caso più
   // grave non è il modulo a metà: è `inAttesa`, che tiene un turno GIÀ
   // COMPILATO e non ancora salvato, fermo ad aspettare paga e ore.
   useOccupato('modale', !!modal || !!inAttesa || sistemaAperto);
+
+  // Anche l'annulla è lavoro in sospeso: un ricaricamento dentro quegli otto
+  // secondi porta via la finestra, e il turno cancellato non torna più. La
+  // chiave si spegne da sé — `useOccupato` la lega allo stato, e lo stato ha
+  // vita finita per l'effetto qui sopra — quindi non può restare accesa per
+  // sempre, che è il difetto silenzioso di questo registro.
+  useOccupato('annulla', !!annullabile);
 
   // Un istante prima che la pagina se ne vada per l'aggiornamento, si mette da
   // parte cosa si stava guardando: al ritorno l'app riparte da lì e il
@@ -366,6 +450,30 @@ export default function App() {
     proponiMaggiorazione(dati);
   }, [modal, settings, salvaDavvero, proponiMaggiorazione]);
 
+  // La cancellazione avviene SUBITO, come sempre: la via di ritorno viene dopo
+  // (utils/avvisi.js). Il turno si tiene per intero, non il solo id — con l'id
+  // soltanto non ci sarebbe più niente da rimettere, visto che il record è già
+  // stato tolto dalla mappa.
+  const cancellaTurno = useCallback((id) => {
+    const turno = shifts[id];
+    deleteShift(id);
+    setModal(null);
+    // Cancellare è «la prossima cosa»: la domanda sulle maggiorazioni, che per
+    // sua natura torna al turno successivo che la attiva, cede il posto invece
+    // di accavallarsi.
+    setAvviso(null);
+    if (turno) setAnnullabile(turno);
+  }, [shifts, deleteShift]);
+
+  // Rimettere il turno è `updateShift`, che riscrive `shifts[id]`: torna lo
+  // stesso record con lo STESSO id, non una copia con un id nuovo. Non riparte
+  // la domanda sulle maggiorazioni — era già nata quando il turno fu salvato la
+  // prima volta, e riproporla sarebbe una domanda già chiusa che ritorna.
+  const annullaCancellazione = useCallback(() => {
+    if (annullabile) updateShift(annullabile);
+    setAnnullabile(null);
+  }, [annullabile, updateShift]);
+
   // Dati minimi arrivati: si scrivono con updateSettings (una PATCH), mai con
   // setSettings — quello sostituisce l'intero oggetto e porterebbe via i campi
   // che questo modulo non conosce, com'è già successo a `periodoConteggio`.
@@ -382,6 +490,15 @@ export default function App() {
     }
     setInAttesa(null);
   }, [updateSettings, inAttesa, salvaDavvero, settings]);
+
+  // Chi ha diritto alla striscia in fondo, adesso. Una riga sola perché la
+  // regola vive altrove, riscontrata: vedi utils/avvisi.js.
+  const chiParla = avvisoDaMostrare({
+    modaleAperto: !!modal || !!inAttesa || sistemaAperto,
+    annulla: !!annullabile,
+    maggiorazione: !!avviso,
+    aggiornamento: aggiornamentoPronto,
+  });
 
   return (
     <div className="app">
@@ -407,7 +524,10 @@ export default function App() {
           onNavigate={setView}
           onSistema={() => setSistemaAperto(true)}
           turniInseriti={allShifts.length}
-          sospeso={!!avviso}
+          // Quando la striscia in fondo parla, il promemoria in alto tace —
+          // chiunque sia a parlare, non più le sole maggiorazioni. Due avvisi
+          // impilati sono un muro.
+          sospeso={chiParla !== null}
         />
         <InstallPrompt />
         {view === 'calendar' && (
@@ -483,29 +603,42 @@ export default function App() {
 
       {modal && (
         <ShiftForm
+          // ShiftForm fissa lo stato iniziale al montaggio (`initial`): se un
+          // domani si passasse da un turno a un altro senza chiudere, senza
+          // key resterebbero i dati del primo.
+          key={modal.type === 'edit' ? modal.shift.id : modal.date}
           modal={modal}
           settings={settings}
           turni={allShifts}
           onSave={handleSaveShift}
-          onDelete={(id) => { deleteShift(id); setModal(null); }}
+          onDelete={cancellaTurno}
           onClose={() => setModal(null)}
         />
       )}
 
-      {/* Un avviso alla volta, e la precedenza è di quello nato dal turno appena
-          segnato: parla di soldi contati male, ed è la risposta a una cosa che
-          l'utente ha appena fatto. L'aggiornamento non ha nessuna urgenza — se
-          lo si ignora entra da sé alla prossima apertura — quindi aspetta. */}
-      {aggiornamentoPronto && !avviso && !modal && (
+      {/* UN AVVISO ALLA VOLTA. La precedenza non è più scritta qui a mano:
+          con tre strisce le condizioni incrociate diventano sei, e nessuno si
+          accorgerebbe che una è finita in fondo alla catena e non compare mai
+          più. La regola, col suo perché, sta in utils/avvisi.js e ha il suo
+          riscontro. Qui si legge soltanto chi ha vinto. */}
+      {chiParla === 'aggiornamento' && (
         <AvvisoAggiornamento
           onAggiorna={applicaAggiornamento}
           onChiudi={() => setAggiornamentoPronto(false)}
         />
       )}
 
-      {/* Ultima nel documento e in fondo allo schermo: non copre l'app, non
-          ferma niente, e se la si ignora se ne va da sé alla prossima cosa. */}
-      {avviso && !modal && (
+      {chiParla === 'annulla' && (
+        <AvvisoAnnulla
+          turno={annullabile}
+          onAnnulla={annullaCancellazione}
+          onChiudi={() => setAnnullabile(null)}
+        />
+      )}
+
+      {/* In fondo allo schermo: non copre l'app, non ferma niente, e se la si
+          ignora se ne va da sé alla prossima cosa. */}
+      {chiParla === 'maggiorazione' && (
         <AvvisoMaggiorazione
           avviso={avviso}
           onImposta={(chiave, valore) => updateSettings({ [chiave]: valore })}

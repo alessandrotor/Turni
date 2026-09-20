@@ -35,3 +35,23 @@ export const ENABLE_STATS = import.meta.env.VITE_BETA_STATS === 'true';
 // deve comparire, quindi il default è OFF e si accende solo di proposito
 // (`VITE_DEBUG=true`, tipicamente in .env.local durante `npm run dev`).
 export const ENABLE_DEBUG = import.meta.env.VITE_DEBUG === 'true';
+
+// ENABLE_MESE_PAGA mostra il selettore fra «mese di calendario» e «mese di
+// paga» (settimane intere, dal primo lunedì) nel Calendario.
+//
+// SPENTO dal 14 settembre 2026, e non perché il codice sia sbagliato.
+//
+// La busta di agosto 2026 ha stabilito che la finestra giusta è il CALENDARIO
+// (vedi DEFAULT_SETTINGS in App.jsx e check-busta-agosto-2026.mjs). Con quella
+// risposta in mano, il selettore è un comando che offre di sbagliare: chi lo
+// tocca senza sapere cosa fa si porta a casa diciotto ore di differenza.
+//
+// Il codice del mese di paga RESTA — `payrollMonthKey`, `payrollMonthRange`, il
+// raggruppamento in pay.js, i riscontri — perché la regola vale per QUEL
+// datore, e un contratto che tagli a settimane intere potrebbe saltare fuori
+// domani. Il giorno in cui succede, qui si rimette `true` e il selettore torna:
+// niente da riscrivere.
+//
+// Con il flag spento il periodo è sempre «calendario», anche per chi si era
+// salvato «paga» quando era il default (App.jsx lo normalizza in un punto solo).
+export const ENABLE_MESE_PAGA = import.meta.env.VITE_MESE_PAGA === 'true';

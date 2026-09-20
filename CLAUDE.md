@@ -57,10 +57,27 @@ In pratica, e sono regole, non aspirazioni:
   verità sul perché.** Quando l'app non sa (la fascia notturna senza contratto)
   guarda largo e scrive «potrebbe»: chiedere di più costa un tocco, non chiedere
   costa soldi ogni mese.
+- **Non chiedere non basta: il GESTO va contato.** Per un anno tutte le regole
+  qui sopra hanno riguardato le domande, e nessuna il gesto che l'app esiste per
+  fare. Segnare un turno costava dieci interazioni, e otto erano lì per
+  correggere `08:00–16:00` scritti a mano nel modulo. Ora gli orari li propone
+  lo storico (`utils/orari-proposti.js`) e il turno tipico costa due tocchi.
+  La regola generale: **quello che l'app può dedurre dai dati già inseriti non
+  si fa digitare.** Ma non si inventa nemmeno — la proposta è una coppia che
+  nello storico esiste davvero, mai una media, e il riscontro lo verifica.
+- **Per ciò che si recupera, l'annulla dopo; la conferma prima mai.** Una
+  domanda «sei sicuro?» costa un tocco a tutti per un errore che fa uno, e
+  insegna a chiudere gli avvisi a riflesso. Cancellare un turno agisce subito e
+  apre una finestra per tornare indietro (`utils/avvisi.js`, `DURATA_ANNULLA`).
+  Quella finestra è lavoro in sospeso: tiene la sua chiave in `occupato`.
 
 Il riscontro di queste regole è `scripts/check-primo-avvio.mjs`: non verifica che
 le funzioni rispondano, verifica che una configurazione completa non chieda
-niente e che un «no» non torni.
+niente e che un «no» non torni. Accanto, `check-orari-proposti.mjs` (l'app non
+inventa un orario) e `check-avvisi.mjs`, che sull'ordine delle strisce controlla
+la cosa che nessun occhio umano controlla: che ogni avviso abbia almeno una
+schermata in cui compare, cioè che il prossimo aggiunto in cima non ne seppellisca
+un altro per sempre.
 
 ## Comandi
 
@@ -70,9 +87,61 @@ npm run build
 for f in scripts/check-*.mjs; do node "$f" >/dev/null || echo "FAIL $f"; done
 ```
 
-`check-dati-in-uscita.mjs` ispeziona `dist/`: vuole una build fatta con
-`VITE_AI_PROXY_URL=https://turni-ai-proxy-test.magnaopa.workers.dev`, altrimenti
-fallisce senza che ci sia niente di rotto. È l'unico falso allarme noto.
+`check-dati-in-uscita.mjs` ispeziona `dist/`, e su una build locale fallisce
+senza che ci sia niente di rotto: `.env.local` imposta `VITE_TELEMETRY_URL`,
+quindi in `dist/` finisce `script.google.com`. La CI non la imposta
+(`deploy-test.yml`). Vuole anche il proxy AI nel bundle. È l'unico falso
+allarme noto.
+
+## A cosa serve l'app, secondo chi la usa
+
+Da un'analisi empirica su una manciata di persone, le due domande che contano
+davvero sono **quanto guadagno con questi turni** e **come evito di dover
+restituire il trattamento integrativo**. Non il calendario: quello è il mezzo.
+
+Il motore le sapeva già rispondere entrambe; nessuna delle due arrivava a
+schermo. `computePayByShift` produce venti campi in euro per ogni turno e per un
+anno non se n'è visto nemmeno uno — il primo euro compariva nel totale del mese,
+sotto tutta la griglia. E `tiDecision` sapeva dire se il bonus spetta ADESSO, mai
+quanto costa scoprire a dicembre che non spettava.
+
+- **Il totale del mese sta nella barra flottante**, sempre, perché è la risposta
+  alla prima domanda. Gli euro sul singolo turno sono un'opzione
+  (`mostraEuroPerTurno`), spenta di default: chi non l'accende trova il
+  calendario di prima.
+- **Il lordo di un turno si chiede a `lordoTurno`** (`utils/pay.js`), mai
+  sommando a mano `base + surcharge` dentro un componente. Il riscontro
+  (`check-lordo-turno.mjs`) verifica che la somma dei turni faccia esattamente
+  il totale del mese: se la cella e il riepilogo dicessero cifre diverse,
+  nessuna delle due sarebbe più credibile.
+- **Il rischio di restituzione è una CIFRA, non uno stato**
+  (`utils/restituzione.js`). «Bonus ridotto: reddito oltre i 15.000» descriveva
+  una condizione; «di questo passo devi restituire ~805 €» dice cosa costa.
+  **Ma quella cifra è cassa, non perdita**, e per un anno l'app le ha confuse.
+  Superare i 15.000 costa **~129 € l'anno**, non 1.200: la detrazione da lavoro
+  salta da 1.955 a 3.100 (art. 13 TUIR) nello stesso momento in cui il bonus
+  sparisce, e compensa il 95%. Quel che resta scoperto è il cuneo, non il bonus.
+  La buca è larga ~200 € di lordo: oltre, guadagnare di più conviene come prima.
+  Da qui i tre casi dell'avviso — sotto, dentro la buca, oltre — invece di un
+  allarme unico che gridava anche a chi non stava più perdendo niente.
+  → `check-costo-soglia.mjs`, `costoSoglia()`
+- **Il rimedio sta accanto al numero.** L'unica azione che evita il conguaglio —
+  chiedere al datore di non erogarlo — viveva in Impostazioni come «Forza
+  esclusione TI (override, va a conguaglio)», in gergo delle paghe. Ora si legge,
+  e la casella è dentro il riquadro rosso: mandare a cercare un interruttore chi
+  ha appena letto di dover restituire dei soldi significa che non lo troverà.
+
+Tre cose che il modello NON sa, e che vanno scritte accanto alla cifra e non in
+un disclaimer generico: quanto è stato accreditato davvero (lo dice il cedolino,
+non l'app); che **l'app vede un solo datore**, quindi per chi ne ha due la stima
+è per difetto proprio nel caso più a rischio; e che nella fascia 15.000–28.000 si
+conosce la sola detrazione da lavoro, con cui la capienza non c'è mai — quindi il
+modello dice «non spetta» a chiunque superi i 15.000.
+
+Attenzione al difetto che è già capitato: **il TI può essere zero per due motivi
+opposti** — reddito troppo alto (rischio vero) o troppo basso, sotto la no tax
+area (nessuna imposta da compensare, e il datore non l'ha mai accreditato).
+Confonderli faceva dire «devi restituire 805 €» a chi guadagna 2.150 € l'anno.
 
 ## La regola che conta più di tutte
 
@@ -91,39 +160,61 @@ Busta di riferimento: LUL Zucchetti, CCNL Turismo, **livello 5, part-time 60%**,
 giugno e luglio 2026. Nel repository entrano solo cifre — mai nome, codice
 fiscale, indirizzo, IBAN o datore.
 
+**Le cifre esatte vivono nel codice dei riscontri (`scripts/check-*.mjs`), non
+qui.** Questo file spiega il RAGIONAMENTO — perché un dato è fatto così, cosa
+dimostra, dove si rompe — non ripete gli importi: sono usati, non pubblicati.
+Per i numeri, apri lo script citato.
+
 ### Da dove viene la paga oraria — confermato sul cedolino
 
-```
-minimo tabellare   1.057,72
-contingenza          522,37
-terzo elemento         5,41   ← voce a sé, stampata in busta
-                   ─────────
-mensile full-time  1.585,50   ÷ 172 = 9,21802 €/h   × 60% = 951,30 €
-```
+La paga oraria non è il solo minimo tabellare: ci entra anche il **terzo
+elemento**, un importo fisso mensile della contrattazione territoriale. Il
+divisore orario del Turismo è lo stesso `monthlyHoursFactor: 4.3` di
+`src/data/ccnl.json` scritto in un altro modo (40 h × 4,3).
 
-- Il divisore **172** è lo stesso `monthlyHoursFactor: 4.3` di
-  `src/data/ccnl.json` scritto in un altro modo (40 h × 4,3). Le ore mensili del
-  contratto, 103,20, sono 172 × 60%.
-- Il **terzo elemento** è un importo fisso mensile della contrattazione
-  territoriale: entra nella retribuzione e quindi nella paga oraria, ma **non**
-  nella base dell'Ente Bilaterale (948,05 = (tabellare + contingenza) × 60%). Da
-  lì i 3,25 € di scarto con la retribuzione, che per mesi sono rimasti annotati
-  come inspiegati. Sul datore 2024-2025 nemmeno la maggiorazione domenicale lo
-  comprendeva (rapporto 0,99547).
+Il terzo elemento entra nella retribuzione e quindi nella paga oraria, ma
+**non** nella base dell'Ente Bilaterale — da lì nasce uno scarto fra i due
+totali che per mesi era rimasto annotato come inspiegato. Sul datore 2024-2025
+nemmeno la maggiorazione domenicale lo comprendeva.
+
 - Riscontro: `scripts/check-tabellare-turismo.mjs`.
 
 ### Gli altri, con il loro riscontro
 
-- **Mese di paga**: nei contratti mensilizzati la busta taglia a settimane
-  intere, e la settimana a cavallo appartiene al mese del **lunedì**. La soglia
-  del supplementare è **mensile** (103,20 h), non settimanale.
+- **La finestra del mese è il CALENDARIO**, dal 1 all'ultimo giorno — non le
+  settimane intere. Lo ha deciso la busta di **agosto 2026**, su un
+  discriminante scritto prima che arrivasse: quindici giorni di ferie iniziati
+  lunedì 31 agosto valgono 7 giornate nel mese di paga e 1 sola nel calendario,
+  e la busta ne paga **una** (`Ferie godute 4,00 ORE`). Conferma il totale:
+  120,75 h col calendario contro le 120,70 stampate, 138,75 col mese di paga.
+  → `check-busta-agosto-2026.mjs`
+- **Tasse e bonus si decidono sul MESE, non sull'anno.** Il software paghe
+  prende il lordo del mese, lo moltiplica per dodici e da lì sceglie in blocco
+  detrazione, indennità L. 207/2024 e trattamento integrativo. L'app faceva come
+  la legge — guardava l'anno — e prometteva ogni mese un bonus che in busta
+  spesso non c'era. Riscontro su quattro cedolini 2026, al centesimo sul TI:
+  febbraio e maggio e luglio sotto soglia col bonus, agosto sopra senza. Per chi
+  legge, la soglia si dice in una cifra sola: **1.250 € di lordo al mese**
+  (15.000 ÷ 12). → `check-ti-mensile.mjs`
+  Attenzione a non confonderla con la proiezione annua, che RESTA e serve ad
+  altro: il margine del bonus e il rischio di restituzione sono domande
+  sull'anno. Il pannello del netto le tiene su due righe separate apposta.
+- **La soglia del supplementare resta MENSILE** (103,20 h = 24 × 4,3), non
+  settimanale: questo lo avevano stabilito giugno e luglio, e non cambia.
   → `check-mese-paga-2026.mjs`
+- **Le assenze riempiono il monte ore**, anche quando cadono in coda al mese:
+  in busta `4,00 ferie + 99,20 retribuzione = 103,20`, e il lavoro eccedente è
+  tutto supplementare. Contarle in ordine cronologico faceva perdere ore già
+  maturate a chi andava in ferie a fine mese. → `check-assenze.mjs`
+- **La busta arrotonda l'eccedenza al quarto d'ora**: il monte ore 103,20 non è
+  un multiplo di 15 minuti (è 103h12min), quindi l'eccedenza vera di agosto era
+  17,55 h e il cedolino stampa 17,50.
 - **Ore oltre soglia**: la busta scrive l'ora INTERA al 130%, non il solo +30%.
   → `check-busta-luglio-2026.mjs`
-- **Maggiorazioni Turismo** (17 cedolini 2024-2025): notturno 25%, domenicale
-  10%, supplementare 30%, festivo 20%. Attenzione a come il cedolino le SCRIVE:
-  domenicale e notturno riportano la sola maggiorazione, il festivo il totale
-  (120% = +20%). → `check-busta-maggiorazioni-reali.mjs`
+- **Maggiorazioni Turismo** (17 cedolini 2024-2025): notturno, domenicale,
+  supplementare, festivo. Attenzione a come il cedolino le SCRIVE: domenicale e
+  notturno riportano la sola maggiorazione, il festivo il totale.
+  → `check-busta-maggiorazioni-reali.mjs`
 - **Fascia notturna**: le buste non riportano le timbrature, quindi non è
   ricavabile da lì. L'art. 13 CCNL prevede orari diversi per settore (24:00-06:00
   ordinario, 23:00-06:00 pubblici esercizi, 23:30-06:30 alberghiero); l'app usa
@@ -133,14 +224,12 @@ mensile full-time  1.585,50   ÷ 172 = 9,21802 €/h   × 60% = 951,30 €
   → `check-assenze.mjs`, `check-festivita.mjs`
 - **Malattia**: la carenza si conta per EVENTO, non per anno. Percentuali e
   giorni NON sono verificati su nessun cedolino, e **le buste che la contengono
-  non fanno testo**: `luglio-24` e `novembre-24` mostrano una scomposizione
-  completa e invitante («Carenza Malattia», «Malattia Inps 80», «Int. Car.
-  Malattia»), ma sono di un altro datore che sceglieva di **integrare** la
-  malattia. È una scelta aziendale, non la norma del CCNL — tararci sopra i
-  default significherebbe promettere a tutti quello che faceva un'azienda sola.
-  Marzo 2026 ha una malattia sul datore attuale, ma come semplice storno
-  («Assenza per malattia», −72,06): dice quanto viene tolto, non quanto l'INPS
-  o il contratto restituiscono.
+  non fanno testo**: due mesi mostrano una scomposizione completa e invitante,
+  ma sono di un altro datore che sceglieva di **integrare** la malattia. È una
+  scelta aziendale, non la norma del CCNL — tararci sopra i default
+  significherebbe promettere a tutti quello che faceva un'azienda sola. Un mese
+  sul datore attuale ha una malattia come semplice storno: dice quanto viene
+  tolto, non quanto l'INPS o il contratto restituiscono.
 
 ## Convenzioni dell'interfaccia
 
@@ -153,5 +242,14 @@ Discendono tutte dalla parola d'ordine qui sopra.
 - Quando i conteggi non coprono il mese visualizzato (mese di paga), il periodo
   si **dichiara sopra i numeri**. Non si allunga il calendario per farceli stare:
   provato, era brutto e si perdeva di vista che mese si stava guardando.
+- **Non si scrolla se non è assolutamente necessario.** Vale soprattutto per
+  ciò che si apre sopra la pagina: una finestra che costa uno scorrimento per
+  arrivare al pulsante che la chiude è una finestra scritta troppo lunga, e la
+  risposta giusta è tagliare il testo, non allungare il contenitore. Il
+  calendario e la pagina scorrono, quello è il loro mestiere; un popup no.
+- Le voci che esistono anche **sul cedolino si chiamano come lì** («Indennità
+  L. 207/24», non «sconto sui contributi»): la prima cosa che si fa con una
+  cifra dell'app è cercarla in busta, e un nome inventato la rende
+  irrintracciabile. Il gergo si spiega accanto, non si sostituisce.
 - I calcoli fiscali sono marcati BETA e invitano a farsi controllare da un
   professionista. Non togliere quell'avviso.

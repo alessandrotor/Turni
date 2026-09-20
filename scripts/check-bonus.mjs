@@ -19,7 +19,7 @@
 // estensione: Node non riusciva a caricarlo.
 
 import { calcBonusMargin, BONUS_CONST, BONUS_STATUS } from '../src/utils/bonus.js';
-import { grossToTaxable } from '../src/utils/net.js';
+import { grossToTaxable, redditoComplessivo, tiDecision } from '../src/utils/net.js';
 
 let falliti = 0;
 let totale = 0;
@@ -57,9 +57,51 @@ const massimo = calcBonusMargin(20000, s).thresholdMaxGross;
 
 verifica('nessun reddito', calcBonusMargin(0, s).status, BONUS_STATUS.ATTESA, '');
 verifica('un euro sotto la prima soglia', calcBonusMargin(pieno - 1, s).status, BONUS_STATUS.PIENO, '');
-verifica('esattamente sulla prima soglia', calcBonusMargin(pieno, s).status, BONUS_STATUS.PARZIALE, 'la soglia e gia fuori dal pieno');
 verifica('un euro sotto la seconda', calcBonusMargin(massimo - 1, s).status, BONUS_STATUS.PARZIALE, '');
-verifica('esattamente sulla seconda', calcBonusMargin(massimo, s).status, BONUS_STATUS.OLTRE, 'niente bonus');
+verifica('molto oltre la seconda', calcBonusMargin(massimo + 100, s).status, BONUS_STATUS.OLTRE, 'niente bonus');
+
+// I confini si misurano sull'IMPONIBILE, come nel testo di legge: pieno se il
+// reddito complessivo «non e' superiore a 15.000», fascia ridotta se
+// «superiore a 15.000 ma non a 28.000». Il lordo corrispondente non e' un
+// valore di legge, quindi lo si costruisce a partire dall'imponibile voluto.
+const lordoPer = (imponibileVoluto) => {
+  // bisezione: si cerca il lordo il cui imponibile e' quello chiesto
+  let lo = 0; let hi = imponibileVoluto * 3;
+  for (let i = 0; i < 200; i++) {
+    const mid = (lo + hi) / 2;
+    if (redditoComplessivo(mid, s) < imponibileVoluto) lo = mid; else hi = mid;
+  }
+  return hi;
+};
+
+verifica('imponibile appena sotto i 15.000', calcBonusMargin(lordoPer(14999.5), s).status, BONUS_STATUS.PIENO, '');
+verifica('imponibile appena sopra i 15.000', calcBonusMargin(lordoPer(15000.5), s).status, BONUS_STATUS.PARZIALE, '');
+verifica('imponibile appena sotto i 28.000', calcBonusMargin(lordoPer(27999.5), s).status, BONUS_STATUS.PARZIALE, '');
+verifica('imponibile appena sopra i 28.000', calcBonusMargin(lordoPer(28000.5), s).status, BONUS_STATUS.OLTRE, '');
+
+// ── 2b. LE DUE SCHERMATE NON SI CONTRADDICONO ──────────────────────────────
+// La striscia del bonus (`calcBonusMargin`) e il pannello del netto
+// (`tiDecision`) rispondono alla stessa domanda per due strade diverse: la
+// prima traduce le soglie in lordo, la seconda traduce il reddito in
+// imponibile. Le due conversioni arrotondano in punti diversi, e prima di
+// questo riscontro restava una fascia di circa UN EURO di lordo in cui la
+// striscia diceva «hai superato la soglia» mentre il netto erogava ancora il
+// bonus pieno. Nessuna delle due cifre e' credibile, se si contraddicono.
+console.log('\nCoerenza fra la striscia del bonus e il pannello del netto\n');
+
+for (const [nome, imp] of [['turismo', { ccnl: 'turismo' }], ['senza CCNL', {}]]) {
+  const sogliaLorda = calcBonusMargin(20000, imp).thresholdFullGross;
+  let disaccordi = 0;
+  // Un passo da un centesimo per due euro attorno alla soglia: e' la finestra
+  // in cui il difetto viveva.
+  for (let g = sogliaLorda - 1; g <= sogliaLorda + 1; g += 0.01) {
+    const dicePieno = calcBonusMargin(g, imp).status === BONUS_STATUS.PIENO;
+    const erogaPieno = tiDecision(g, imp).importoAnnuo === BONUS_CONST.BONUS_MASSIMO;
+    if (dicePieno !== erogaPieno) disaccordi++;
+  }
+  verifica(`${nome}: nessun disaccordo attorno alla soglia`, disaccordi, 0,
+    `201 valori a cavallo di ${arrotonda(sogliaLorda)} €`);
+}
 
 // ── 3. I margini ───────────────────────────────────────────────────────────
 console.log('\nQuanto manca\n');

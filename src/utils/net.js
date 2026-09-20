@@ -166,6 +166,24 @@ export function calcContributi(gross, settings = {}, ebBase = 0) {
   // più per meno di un centesimo, non si fa. `ebtBase` resta l'appiglio per i
   // riscontri, che il numero preciso lo leggono dal cedolino; in Impostazioni
   // non c'è, di proposito.
+  //
+  // DA DOVE VIENE QUEL CENTESIMO, perché non è una stima a occhio.
+  // La base certificata è `(minimo tabellare + contingenza) × part-time`, cioè
+  // la retribuzione SENZA il terzo elemento — riscontrata sul cedolino in
+  // check-tabellare-turismo.mjs, che verifica anche l'identità inversa
+  // (`retribuzione − base = terzo elemento riproporzionato`).
+  // Qui si usa `monthlyBaseGross`, che il terzo elemento ce l'ha dentro perché
+  // deriva dalla paga oraria: 951,30 invece di 948,05, +0,34%. Allo 0,20% del
+  // contributo fanno 1,90 contro 1,89.
+  //
+  // Il valore certificato quindi ESISTE, ma non è riportabile qui: il terzo
+  // elemento è contrattazione territoriale di secondo livello, cambia per
+  // provincia e per accordo, e in `ccnl.json` — che è nazionale — non ci può
+  // stare come costante valida per tutti. L'unico modo di averlo esatto sarebbe
+  // chiederlo, e un campo in più per un centesimo al mese è esattamente lo
+  // scambio che la regola di CLAUDE.md vieta.
+  // Se un giorno le tabelle territoriali entrassero nel progetto, questo è il
+  // punto da cambiare: due righe, e la base diventa esatta.
   const eb = ccnl.enteBilaterale;
   const base = Math.max(0, Number(settings.ebtBase) || Number(ebBase) || 0);
   if (eb && base > 0) {
@@ -237,13 +255,25 @@ function bonusCuneo(redditoComplessivo, redditoLavoro) {
 // NON riscontrato su busta: nelle buste disponibili la capienza c'è comunque, con
 // o senza lo sconto. Viene dalla norma, non dai dati — se un cedolino dovesse
 // dire il contrario, è il cedolino a vincere.
-function trattamentoIntegrativo(reddito, irpef, detLavoro, detrTotali) {
+// Nella fascia 15.000–28.000 la somma delle detrazioni che fa da metro è
+// ELENCATA DALLA NORMA, e l'elenco è chiuso: artt. 12 e 13 c. 1 TUIR, art. 15
+// c. 1 lett. a) e b) e c. 1-ter per mutui contratti entro il 2021, rate di
+// art. 15 c. 1 lett. c) e 16-bis e di altre norme per spese sostenute entro il
+// 2021 (testo in docs/trattamento-integrativo.md §10).
+// L'ulteriore detrazione della L. 207/2024 NON è in quell'elenco — è del 2025,
+// non è del TUIR e non è una detrazione per spese — quindi qui NON entra,
+// anche se entra (giustamente) nel calcolo dell'IRPEF netta.
+// Con i parametri 2026 la differenza non si vede: in tutta la fascia l'imposta
+// lorda supera la detrazione da lavoro di più di quanto il cuneo possa
+// aggiungere. Si tiene lo stesso, perché è la norma, e perché un domani in cui
+// le due cose si avvicinano arriva senza avvisare.
+function trattamentoIntegrativo(reddito, irpef, detLavoro) {
   const T = TAX_2026;
   if (reddito > T.TI_SOGLIA_MAX) return 0;
   if (reddito <= T.TI_SOGLIA_PIENO) {
     return irpef > detLavoro - T.TI_CAPIENZA_SCONTO ? T.TI_MASSIMO : 0;
   }
-  const diff = detrTotali - irpef;
+  const diff = detLavoro - irpef;
   return Math.min(T.TI_MASSIMO, Math.max(0, diff));
 }
 
@@ -266,6 +296,138 @@ export function deductibleContribRate(settings = {}) {
 // di queste due funzioni per confrontare mele con mele.
 export function grossToTaxable(gross, settings = {}) {
   return Math.max(0, Number(gross) || 0) * (1 - deductibleContribRate(settings));
+}
+
+/**
+ * Reddito complessivo ai fini IRPEF — la grandezza su cui la legge misura le
+ * soglie del trattamento integrativo (15.000 / 28.000). Al lordo si tolgono i
+ * soli contributi DEDUCIBILI e si aggiunge il fringe benefit (quota Ente
+ * Bilaterale a carico ditta), tassato pur non essendo trattenuto.
+ *
+ * Sta qui, esportata, per una ragione precisa: è l'UNICA definizione, e la
+ * usano sia il pannello del netto sia la striscia del bonus. Finché la
+ * striscia se la calcolava per conto suo con `grossToTaxable` — una
+ * moltiplicazione pulita, senza l'arrotondamento dei contributi né il fringe —
+ * le due schermate si contraddicevano in una fascia di circa un euro di lordo:
+ * una diceva «soglia superata» mentre l'altra erogava ancora il bonus pieno.
+ * Riscontro in `scripts/check-bonus.mjs`.
+ *
+ * `grossToTaxable` resta, ma per quello che sa fare: una conversione
+ * approssimata e invertibile, buona per TRADURRE una soglia in lordo e dire
+ * «quanto manca», non per decidere da che parte della soglia si sta.
+ *
+ * @param {object} [contributi] i contributi già calcolati, per non rifare il
+ *   lavoro quando chi chiama li ha già.
+ */
+export function redditoComplessivo(gross, settings = {}, contributi = null) {
+  const g = Math.max(0, Number(gross) || 0);
+  const cont = contributi || calcContributi(g, settings, monthlyBaseGross(settings) * 12);
+  return g - cont.deducibili + cont.fringeImponibile;
+}
+
+/**
+ * Il trattamento integrativo spetta in QUESTO mese?
+ *
+ * PERCHÉ MENSILE E NON ANNUALE
+ * La legge guarda l'anno, il software paghe guarda il mese. Fino al 14
+ * settembre 2026 l'app faceva come la legge, e prometteva un TI che in busta
+ * spesso non c'era: il conto tornava a dicembre, ma intanto il netto di ogni
+ * mese era sbagliato — che è l'unico numero su cui il lavoratore decide.
+ *
+ * LA REGOLA, RICAVATA DA CINQUE BUSTE DEL 2026 (stesso datore, LUL Zucchetti):
+ * si prende l'imponibile previdenziale del mese, lo si moltiplica per 12 e lo
+ * si confronta con i 15.000 € della prima fascia. Sopra, il TI non viene
+ * erogato; sotto, sì.
+ *
+ *   febbraio 1.099 × 12 = 13.188  →  TI 92,05      in busta: c'è      ✓
+ *   maggio   1.163 × 12 = 13.956  →  TI 101,91     in busta: c'è      ✓
+ *   giugno   2.048 × 12 = 24.576  →  niente        in busta: assente  ✓
+ *   luglio   1.173 × 12 = 14.076  →  TI 101,91     in busta: c'è      ✓
+ *   agosto   1.298 × 12 = 15.576  →  niente        in busta: assente  ✓
+ *
+ * QUALE IMPONIBILE: quello PREVIDENZIALE (il lordo arrotondato all'euro), non
+ * quello fiscale. Le due ipotesi sono state provate una contro l'altra sulle
+ * stesse cinque buste: col fiscale agosto darebbe 14.081, cioè sotto soglia e
+ * TI erogato, mentre in busta non c'è. Il previdenziale spiega tutti e cinque i
+ * mesi, il fiscale quattro.
+ *
+ * Che il confronto giusto per legge sarebbe sul reddito complessivo — cioè sul
+ * fiscale — resta vero, ed è il motivo per cui questa è una regola PRUDENTE:
+ * toglie il TI in mesi in cui a rigore spetterebbe, e il conguaglio di fine
+ * anno lo restituisce. L'app riproduce quello che succede in busta, e lo dice.
+ *
+ * LIMITE: cinque buste, un datore solo. Se un altro software paghe usasse una
+ * regola diversa, `tiModo: 'sempre'` la scavalca.
+ */
+export function tiSpettaQuestoMese(lordoMese, settings = {}) {
+  const modo = modoTrattamentoIntegrativo(settings);
+  if (modo === 'mai') return { spetta: false, motivo: 'escluso a mano' };
+  if (modo === 'sempre') return { spetta: true, motivo: 'incluso a mano' };
+
+  // L'imponibile previdenziale è il lordo arrotondato all'euro: è la stessa
+  // base su cui la busta calcola l'IVS (vedi calcContributi).
+  const baseMese = Math.round(Math.max(0, Number(lordoMese) || 0));
+  const proiezione = baseMese * 12;
+  const spetta = proiezione <= TAX_2026.TI_SOGLIA_PIENO;
+  return {
+    spetta,
+    proiezione,
+    baseMese,
+    motivo: spetta
+      ? `${baseMese} × 12 = ${proiezione} €, sotto i 15.000`
+      : `${baseMese} × 12 = ${proiezione} €, sopra i 15.000`,
+  };
+}
+
+/**
+ * 'auto' (come il datore) · 'sempre' · 'mai'.
+ *
+ * `noTrattamentoIntegrativo` era l'interruttore di prima, quando il default
+ * includeva il TI e serviva un modo per toglierlo. Ora la decisione automatica
+ * lo esclude più spesso, quindi serve l'opposto — ma chi aveva spuntato quella
+ * casella deve ritrovare il comportamento che aveva scelto, non un altro.
+ */
+export function modoTrattamentoIntegrativo(settings = {}) {
+  if (settings.tiModo === 'sempre' || settings.tiModo === 'mai' || settings.tiModo === 'auto') {
+    return settings.tiModo;
+  }
+  return settings.noTrattamentoIntegrativo ? 'mai' : 'auto';
+}
+
+/**
+ * Il reddito annuo di riferimento che il software paghe usa PER QUESTO MESE.
+ *
+ * Non è una proiezione dell'anno: è il lordo del mese moltiplicato per dodici.
+ * Governa insieme tre cose — detrazione, indennità L. 207/2024 e trattamento
+ * integrativo — e le governa in blocco, perché dipendono tutte dalla fascia di
+ * reddito in cui il sostituto d'imposta ti colloca quel mese.
+ *
+ * Sopra i 15.000 il riferimento si ferma «appena sopra soglia» invece di
+ * seguire il lordo: è ciò che riproduce la detrazione stampata. Un mese con la
+ * quattordicesima dentro proietterebbe 24.576 € e una detrazione molto più
+ * bassa di quella che la busta mostra davvero.
+ *
+ * Riscontro su quattro buste del 2026, al centesimo (check-ti-mensile.mjs):
+ *
+ *   mese      riferimento   detrazione        TI        indennità
+ *   febbraio      13.188   149,97 = busta   92,05 ✓    52,58 ≈ 52,68
+ *   maggio        13.956   166,04 = busta  101,91 ✓    55,62 ≈ 55,71
+ *   luglio        14.076   166,04 = busta  101,91 ✓    56,12 ≈ 56,22
+ *   agosto        16.733   262,51 ≈ 261,50   0,00 ✓    56,23 ≈ 56,32
+ */
+export function riferimentoAnnuoDelMese(lordoMese, settings = {}) {
+  const esito = tiSpettaQuestoMese(lordoMese, settings);
+  if (esito.spetta) {
+    // Sotto soglia: il riferimento è la proiezione del mese. Se la decisione è
+    // forzata a mano («sempre»), si resta comunque nella fascia bassa, che è
+    // quella coerente con un TI erogato.
+    const base = Math.round(Math.max(0, Number(lordoMese) || 0)) * 12;
+    return Math.min(base, taxableToGross(TAX_2026.TI_SOGLIA_PIENO, settings));
+  }
+  // Sopra soglia: appena oltre i 15.000 di reddito complessivo. I 100 € di
+  // margine non sono un numero magico — servono a stare dentro la fascia
+  // 15.000-28.000 senza sporgere, ed è lì che cade la detrazione stampata.
+  return taxableToGross(TAX_2026.TI_SOGLIA_PIENO + 100, settings);
 }
 
 export function taxableToGross(taxable, settings = {}) {
@@ -408,21 +570,6 @@ export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, pay
   return { total: fromShifts + (applyMontante ? montante : 0) + extras, extras };
 }
 
-/**
- * Stima del reddito annuo lordo pieno a partire dal contratto:
- * (ore settimanali × paga oraria × 52) + tredicesima/quattordicesima.
- *
- * Serve come riferimento per l'aliquota IRPEF effettiva: la tassazione è
- * progressiva e annuale, quindi va ancorata al reddito annuo pieno (incluse
- * le mensilità aggiuntive), non a quello maturato finora nell'anno.
- *
- * @param {object} settings hourlyRate, expectedWeeklyHours, has(Tre|Quattor)dicesima
- * @param {number} year anno di riferimento (per il rateo delle mensilità aggiuntive)
- * @returns {number} reddito annuo lordo stimato (0 se dati insufficienti)
- */
-export function projectAnnualGross(settings = {}, year = new Date().getFullYear()) {
-  return monthlyBaseGross(settings) * (12 + extraMonthsAccrued(settings, year));
-}
 
 /**
  * Reddito annuo di RIFERIMENTO per l'aliquota IRPEF e le soglie del bonus:
@@ -618,10 +765,7 @@ export function calcNetAnnual(grossAnnual, settings = {}) {
 
   const cont = calcContributi(gross, settings, monthlyBaseGross(settings) * 12);
   const contributi = cont.totale;
-  // Reddito complessivo ≈ imponibile: al lordo si tolgono i soli contributi
-  // deducibili e si aggiunge l'eventuale fringe benefit (quota Ente Bilaterale
-  // a carico ditta), che è tassato pur non essendo trattenuto.
-  const imponibile = gross - cont.deducibili + cont.fringeImponibile;
+  const imponibile = redditoComplessivo(gross, settings, cont);
 
   const lorda = irpefLorda(imponibile);
   const detLav = detrazioneLavoro(imponibile);
@@ -640,7 +784,7 @@ export function calcNetAnnual(grossAnnual, settings = {}) {
   const addRegionale = addDovute ? imponibile * aliqReg : 0;
   const addComunale = addDovute ? imponibile * aliqCom : 0;
 
-  const ti = trattamentoIntegrativo(imponibile, lorda, detLav, detrTotali);
+  const ti = trattamentoIntegrativo(imponibile, lorda, detLav);
   const cuneo = bonusCuneo(imponibile, imponibile);
 
   const net = gross - contributi - irpefNetta - addRegionale - addComunale + ti + cuneo;
@@ -778,8 +922,12 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   // Entrambe TRONCATE a due decimali, non arrotondate: in busta 1.200 × 31/365
   // fa 101,91 (il valore pieno è 101,9178) e 1.060,92 × 5,3% fa 56,22 (56,2288).
   const dayFraction = monthDays / 365;
-  const trattamentoIntegrativo = settings.noTrattamentoIntegrativo
-    ? 0 : trunc2(ann.trattamentoIntegrativo * dayFraction);
+  // La decisione è MENSILE e segue quella del software paghe: vedi
+  // `tiSpettaQuestoMese`. L'importo, quando spetta, resta la quota annua
+  // rapportata ai giorni — su quello la busta tornava già al centesimo.
+  const esitoTi = tiSpettaQuestoMese(gross, settings);
+  const trattamentoIntegrativo = esitoTi.spetta
+    ? trunc2(ann.trattamentoIntegrativo * dayFraction) : 0;
   // L'indennità L. 207/2024 NON è una quota annua spalmata sui giorni: in busta
   // è la percentuale di fascia applicata all'imponibile fiscale DEL MESE, quindi
   // segue le ore effettivamente lavorate (verificato: 4,8% × 1.849,65 = 88,78).
@@ -815,7 +963,7 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
     imponibileOrdinario, imponibileExtra, irpefExtra, cuneoPct,
     irpefLorda, detrazioni, detrazioniApplicate, irpefNetta,
     addRegionale, addComunale, trattenuteFisse, trattenute,
-    trattamentoIntegrativo, bonusCuneo, bonus,
+    trattamentoIntegrativo, bonusCuneo, bonus, esitoTi,
     tfrLordo, tfrImposta, aliqTfr, tfr, net,
   };
 }

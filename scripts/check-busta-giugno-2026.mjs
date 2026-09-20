@@ -3,8 +3,9 @@
 //   node scripts/check-busta-giugno-2026.mjs
 //
 // Busta di riferimento: LUL Zucchetti, giugno 2026, CCNL Turismo, livello 5,
-// part-time 60%, assunzione 29/12/2025. Non è un test unitario di comodo: i
-// valori attesi sono le cifre stampate sul cedolino.
+// part-time 60%. Non è un test unitario di comodo: i valori attesi sono le
+// cifre stampate sul cedolino — vivono come costanti qui sotto, non ripetute
+// in questo commento.
 //
 // ATTENZIONE alla lettura del caso A. Il reddito annuo di riferimento è un
 // INPUT dello scenario, non un risultato del motore: il consulente lavora su
@@ -29,8 +30,9 @@ const BASE_SETTINGS = {
   addComunalePct: 0,
 };
 
-// Lordo di giugno: 951,30 retribuzione + 338,53 supplementare 30% + 475,65 14ª
-// + 25,35 magg. festivo + 120,00 TOP STORE + 10,00 flessibilità + 126,75 festivo.
+// Lordo di giugno: somma delle voci del cedolino (retribuzione, supplementare,
+// 14ª, maggiorazioni, indennità) — costante qui sotto, non elencata voce per
+// voce in questo commento.
 const LORDO_GIUGNO = 2047.58;
 const QUATTORDICESIMA = 475.65;
 const GIORNI = 30;
@@ -49,12 +51,10 @@ function check(label, actual, expected, tol) {
 
 // ---------------------------------------------------------------- caso A
 // Proiezione annua implicita nella busta. Non è un tondo scelto a mano: è il
-// reddito che riproduce la detrazione di 239,19 € stampata sul cedolino,
-// invertendo la formula dell'art. 13 TUIR —
-//   detrazione annua = 239,19 × 365/30 = 2.910,14
-//   2.910,14 = 1.910 + 1.190 × (28.000 − R)/13.000  →  R = 17.074 di imponibile
-//   → 18.895 € di lordo.
-// Cade nella fascia 15.000–20.000, il che quadra con il cuneo liquidato al 4,8%.
+// reddito che riproduce la detrazione stampata sul cedolino, invertendo la
+// formula dell'art. 13 TUIR (dettaglio del calcolo non ripetuto qui, il
+// risultato è la costante usata sotto). Cade nella fascia 15.000–20.000, il
+// che quadra con il cuneo liquidato in busta a quella fascia.
 // Resta una PREVISIONE del consulente: se il secondo semestre porta meno ore,
 // l'anno chiude più in basso e il conguaglio di dicembre rimette tutto a posto.
 console.log('\nCaso A — proiezione 18.895 € lordi (fascia 15.000–20.000)\n');
@@ -89,7 +89,17 @@ const b = calcNetMonthly(LORDO_GIUGNO, 14000, BASE_SETTINGS, GIORNI, QUATTORDICE
 check('Contributi totali', b.contributi, 201.72, 0.1);
 check('Cuneo: aliquota di fascia', b.cuneoPct, 0.053, 0.0001);
 check('Indennità L.207/24', b.bonusCuneo, 1849.65 * 0.053, 0.5);
-check('Trattamento integrativo', b.trattamentoIntegrativo, 1200 * (GIORNI / 365), 0.5);
+// IL TRATTAMENTO INTEGRATIVO NON TORNA con una proiezione annua bassa, e dal
+// 14 settembre 2026 è voluto. Qui si pretendeva 98,63 €, cioè che bastasse
+// l'anno a farlo scattare. La busta di giugno dice di no: il TI non c'è, e non
+// c'entra l'anno — il software paghe decide sul MESE, e giugno porta dentro la
+// quattordicesima (2.047,58 × 12 sfonda i 15.000). Per questo su questa voce il
+// caso A e il caso B ora coincidono: la proiezione annua governa detrazioni e
+// cuneo, non più il TI. Vedi tiSpettaQuestoMese e check-ti-mensile.mjs.
+check('Trattamento integrativo: 0 anche qui', b.trattamentoIntegrativo, 0, 0.001);
+// «Sempre zero» non sarebbe un risultato: con un lordo sotto soglia il TI torna.
+const sottoSoglia = calcNetMonthly(1100, 14000, BASE_SETTINGS, GIORNI, 0);
+check('  ma con 1.100 EUR di lordo il TI torna', sottoSoglia.trattamentoIntegrativo, 1200 * (GIORNI / 365), 0.5);
 check('Detrazioni (1.955 × 30/365)', b.detrazioni, 1955 * (GIORNI / 365), 0.5);
 
 // ---------------------------------------------------------------- caso C

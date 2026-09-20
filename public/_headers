@@ -37,6 +37,24 @@
 # worker-src blob:: il service worker e le librerie di export.
 # frame-ancestors 'none': nessuno può incorniciare l'app. `X-Frame-Options`
 #   qui sotto dice la stessa cosa ai browser che non leggono la CSP.
+#
+# ── Chi NON è in connect-src, e resta fuori apposta: la telemetria ────────
+# `services/telemetry.js` manda i token consumati dall'import a una web app
+# Apps Script (`script.google.com`), che qui dentro non è elencata: sul web
+# quella chiamata viene BLOCCATA, in silenzio — `sendBeacon` torna `false` e il
+# `fetch` di ripiego ha un `.catch(() => {})`.
+#
+# Non è una svista, ed è il motivo per cui sta scritto qui. La telemetria è
+# pensata per il solo pacchetto Android, dove questo file non arriva: Capacitor
+# serve l'app da `https://localhost` e gli header di Cloudflare Pages non
+# esistono. Sul web l'endpoint non c'è (l'auto-deploy non imposta
+# `VITE_TELEMETRY_URL`) e la CSP fa da seconda cintura per il caso che è già
+# successo una volta col pacchetto Android — un deploy fatto a mano dalla
+# `.env.local`, che l'endpoint ce l'ha (COSE-NUOVE.md, B2).
+#
+# Quindi: chi un giorno volesse la telemetria anche sul web non ha un bug da
+# cercare, ha una decisione da cambiare — e dovrà aggiungere `script.google.com`
+# qui, non altrove.
 
 /*
   Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; worker-src 'self' blob:; manifest-src 'self'; connect-src 'self' https://turni-ai-proxy.magnaopa.workers.dev https://turni-ai-proxy-test.magnaopa.workers.dev https://challenges.cloudflare.com https://cloudflareinsights.com https://static.cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'

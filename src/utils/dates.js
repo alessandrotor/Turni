@@ -7,13 +7,6 @@ export function getWeekStart(date) {
   return d;
 }
 
-export function getWeekDays(weekStart) {
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekStart);
-    d.setDate(weekStart.getDate() + i);
-    return d;
-  });
-}
 
 export function formatDate(date) {
   const y = date.getFullYear();
@@ -56,17 +49,7 @@ export function formatDayShort(date) {
   return DAY_NAMES[date.getDay()];
 }
 
-export function formatDayNumber(date) {
-  return String(date.getDate()).padStart(2, '0') + '/' + String(date.getMonth() + 1).padStart(2, '0');
-}
 
-export function formatWeekRange(weekStart) {
-  const end = new Date(weekStart);
-  end.setDate(weekStart.getDate() + 6);
-  const startStr = `${weekStart.getDate()} ${MONTH_NAMES[weekStart.getMonth()]}`;
-  const endStr = `${end.getDate()} ${MONTH_NAMES[end.getMonth()]} ${end.getFullYear()}`;
-  return `${startStr} – ${endStr}`;
-}
 
 // 'HH:MM' → minuti dalla mezzanotte, oppure null se non è un orario valido.
 // Serve a non propagare NaN fino alla UI quando un campo orario è vuoto o
@@ -110,16 +93,7 @@ export function isWeekend(date) {
   return d === 0 || d === 6;
 }
 
-export function addWeeks(date, n) {
-  const d = new Date(date);
-  d.setDate(d.getDate() + n * 7);
-  return d;
-}
 
-export function isCurrentWeek(weekStart) {
-  const thisWeek = getWeekStart(new Date());
-  return formatDate(weekStart) === formatDate(thisWeek);
-}
 
 // --- Mese di paga (contratti mensilizzati) ---------------------------------
 //

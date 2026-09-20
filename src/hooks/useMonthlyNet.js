@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  calcNetMonthly, monthlyBaseGross,
+  calcNetMonthly, monthlyBaseGross, riferimentoAnnuoDelMese,
   extraMonthAccrual, EXTRA_MONTHS, TAX_2026, tiDecision, projectAnnualIncome,
 } from '../utils/net';
 import { ENABLE_NET_CALC } from '../config/features';
@@ -55,9 +55,24 @@ export default function useMonthlyNet({ year, month, settings, pay, annualGross,
       )
     : 0;
   const monthGross = (pay ? pay.total : 0) + extraThisMonth + fixedMonthlyTotal + perMonthBonus;
+  // IL RIFERIMENTO DEL MESE, non quello dell'anno.
+  //
+  // Il software paghe non proietta l'anno: prende il lordo del mese, lo
+  // moltiplica per dodici e da lì decide fascia, detrazione e bonus. L'app
+  // faceva come la legge — guardava l'anno — e per questo prometteva un
+  // trattamento integrativo che in busta spesso non c'era, e detrazioni della
+  // fascia sbagliata. Il conto tornava a dicembre col conguaglio, ma il netto
+  // di ogni mese era sbagliato, ed è l'unico numero su cui si decide qualcosa.
+  //
+  // La proiezione annua resta e serve ancora: è quella che il pannello mostra
+  // per spiegare l'aliquota, e quella su cui si misura il margine del bonus.
+  const riferimento = useMemo(
+    () => riferimentoAnnuoDelMese(monthGross, settings),
+    [monthGross, settings],
+  );
   const netMonth = useMemo(
-    () => (ENABLE_NET_CALC ? calcNetMonthly(monthGross, netBasis, settings, daysInMonth, extraThisMonth) : null),
-    [monthGross, netBasis, settings, daysInMonth, extraThisMonth],
+    () => (ENABLE_NET_CALC ? calcNetMonthly(monthGross, riferimento, settings, daysInMonth, extraThisMonth) : null),
+    [monthGross, riferimento, settings, daysInMonth, extraThisMonth],
   );
   const monthNet = netMonth ? netMonth.net : 0;
   const monthTrattenute = netMonth ? netMonth.trattenute : 0;
@@ -75,7 +90,7 @@ export default function useMonthlyNet({ year, month, settings, pay, annualGross,
 
   return {
     monthKey, perMonthBonus, fixedMonthlyTotal,
-    netProjection, netBasis, extraThisMonth, monthGross,
+    netProjection, netBasis, riferimento, extraThisMonth, monthGross,
     netMonth, monthNet, monthTrattenute, monthBonus, monthTfr,
     tiInfo, effectiveRatePct, addizionaliPct, showNetPanel,
   };

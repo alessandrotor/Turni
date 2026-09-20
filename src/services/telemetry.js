@@ -14,6 +14,13 @@ const ENDPOINT = import.meta.env.VITE_TELEMETRY_URL || '';
 // l'endpoint in .env.local, puoi spegnerla dall'interruttore in Impostazioni.
 const IS_TEST_ENV = typeof location !== 'undefined' && location.hostname.startsWith('test.');
 
+// SUL WEB QUESTA CHIAMATA NON PARTE COMUNQUE, anche con l'endpoint impostato:
+// `script.google.com` non è in `connect-src` di `public/_headers`, quindi la CSP
+// la blocca — e la blocca in silenzio, perché qui sotto `sendBeacon` torna
+// `false` e il `fetch` di ripiego ha il `catch` vuoto. È voluto e spiegato in
+// quel file: la telemetria è del solo pacchetto Android, dove la CSP di
+// Cloudflare Pages non arriva. Chi non lo sapesse la cercherebbe qui dentro.
+
 // La telemetria ESISTE davvero solo se c'è un endpoint. Nel pacchetto di
 // produzione non c'è (l'auto-deploy non imposta VITE_TELEMETRY_URL), e senza
 // questo l'interfaccia mostrava comunque l'interruttore «Invia statistiche

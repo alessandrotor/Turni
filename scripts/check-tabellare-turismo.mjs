@@ -8,37 +8,33 @@
 // ma si dimostra anche COSA verifica: la PAGA ORARIA, non il periodo su cui si
 // contano i turni.
 //
-// I DATI, tutti dalla busta di luglio 2026 (CCNL Turismo, part-time 60%)
-//   minimo tabellare   1.057,72
-//   contingenza          522,37
-//   paga oraria          9,21802
-//   ore del mese          103,20   →  «Retribuzione» 951,30
-//   base Ente Bilaterale 948,05   (tabellare + contingenza, riproporzionati)
+// I valori (minimo tabellare, contingenza, terzo elemento, divisore, base Ente
+// Bilaterale) sono presi da un cedolino reale — CCNL Turismo, part-time 60%,
+// luglio 2026 — e vivono come costanti qui sotto, non ripetuti in prosa: sono
+// usati per il riscontro, non pubblicati come spiegazione a sé.
 //
 // LA CATENA
-//   1.057,72 + 522,37 + 5,41 = 1.585,50   ← mensile a tempo pieno
-//              ↑ terzo elemento, letto in busta
-//   1.585,50 ÷ 172 = 9,21802              ← il divisore orario del Turismo
-//   1.585,50 × 60% = 951,30               ← la voce del cedolino, al centesimo
+//   tabellare + contingenza + terzo elemento = mensile a tempo pieno
+//   mensile a tempo pieno ÷ divisore orario  = paga oraria
+//   mensile a tempo pieno × part-time %      = la voce «Retribuzione» del cedolino
 //
-// I 5,41 nascevano come residuo del conto; il cedolino li CONFERMA: è il TERZO
-// ELEMENTO, stampato come voce a sé accanto a tabellare e contingenza. Non è
-// quindi un numero dedotto, è una voce letta.
+// Il TERZO ELEMENTO nasceva come residuo del conto; il cedolino lo CONFERMA:
+// è stampato come voce a sé accanto a tabellare e contingenza, quindi non è un
+// numero dedotto, è una voce letta.
 //
 // È un importo fisso mensile della contrattazione territoriale: entra nella
 // retribuzione, e quindi nella paga oraria, ma non in tutte le basi che il
 // cedolino calcola. Non sta nella base dell'Ente Bilaterale — ed è esattamente
-// da lì che nascono i 3,25 € di scarto fra 951,30 e 948,05 annotati in
+// da lì che nasce lo scarto fra le due basi annotato in
 // check-busta-luglio-2026.mjs — e sul datore 2024-2025 non stava nemmeno nella
-// base della maggiorazione domenicale (vedi check-busta-maggiorazioni-reali.mjs,
-// rapporto 0,99547).
+// base della maggiorazione domenicale (vedi check-busta-maggiorazioni-reali.mjs).
 //
 // COSA NON DIMOSTRA
-// L'ultimo blocco: le ore ordinarie restano 103,20 — e quindi 951,30 € —
-// qualunque sia il periodo su cui si contano i turni. È un numero fissato dal
-// contratto, non una misura: non può dire se il mese va tagliato a settimane
-// intere o dal 1 al 31. Quello che cambia col periodo è solo la parte OLTRE la
-// soglia (vedi check-mese-paga-2026.mjs).
+// L'ultimo blocco: le ore ordinarie del mese restano quelle da contratto —
+// e quindi la «Retribuzione» pure — qualunque sia il periodo su cui si contano
+// i turni. È un numero fissato dal contratto, non una misura: non può dire se
+// il mese va tagliato a settimane intere o dal 1 al 31. Quello che cambia col
+// periodo è solo la parte OLTRE la soglia (vedi check-mese-paga-2026.mjs).
 
 import { calcTotalPay } from '../src/utils/pay.js';
 import { monthlyHoursFactor, monthlyContractHours, monthlyFullTimeHours } from '../src/utils/ccnl.js';
@@ -99,7 +95,7 @@ eq('tabella → busta: mensile × part-time', MENSILE_FT * PART_TIME, RETRIBUZIO
 eq('ore → busta: 103,20 × paga oraria', ORE_MESE * RATE, RETRIBUZIONE);
 
 // 4. La base dell'Ente Bilaterale è la stessa tabella SENZA il terzo elemento:
-//    è da qui che nascono i 3,25 € di differenza con la retribuzione.
+//    è da qui che nasce la differenza con la retribuzione.
 eq('base Ente Bilaterale = (tabellare + contingenza) × part-time',
   (TABELLARE + CONTINGENZA) * PART_TIME, BASE_EBT);
 eq('scarto retribuzione − base EBT = terzo elemento riproporzionato',

@@ -1,6 +1,6 @@
 # Cose nuove — quello che il cancello di rilascio non copre
 
-**Stato al 31 agosto 2026.** Compagno di `RILASCIO.md`, non un suo doppione:
+**Stato al 31 agosto 2026, con gli aggiornamenti del 21 settembre.** Compagno di `RILASCIO.md`, non un suo doppione:
 quello si cancella dopo la pubblicazione, questo serve soprattutto dopo.
 
 `RILASCIO.md` fa otto domande sulla **pubblicazione** — proxy protetto, piano
@@ -81,6 +81,13 @@ iOS possono svuotare quando vogliono.
 
 ### A5. Il ripristino sostituisce senza rete — `services/backup.js:135-146` *(verificato)*
 
+> **Chiuso il 21/09/2026.** O passa tutto, o non cambia niente: `utils/backup-contenuto.js`
+> prepara le scritture, si ricorda com'era e al primo fallimento rimette solo ciò che
+> aveva toccato. Se nemmeno il ritorno riesce, lo dichiara. L'annullamento che questa
+> strada non può avere — dopo il ripristino l'app si ricarica — è diventato la copia
+> offerta PRIMA di sostituire, dentro il riquadro che ha preso il posto del
+> `window.confirm`. Riscontro: `check-backup.mjs`, che rompe lo storage a metà.
+
 Quattro `setItem` in fila, nessuno protetto, e **nessuna copia dei dati attuali**
 prima di sovrascriverli: nessun annullamento, nessuna opzione «unisci invece di
 sostituire». Chi sbaglia file perde tutto in un click. Il commento a `:116` dice
@@ -96,6 +103,12 @@ e le impostazioni no: **stato misto**, e l'eccezione che risale è un
 perché.)*
 
 ### A6. `validaBackup` controlla la busta, non il contenuto — `backup.js:98-112` *(verificato)*
+
+> **Chiuso il 21/09/2026.** `vagliaTurni` guarda dentro voce per voce e separa quelle
+> che romperebbero il render; non si rifiuta l'intero file per tre voci storte su
+> duecento, ma non si scartano nemmeno in silenzio — il riquadro le conta e dice
+> perché. Chiuso anche il buco del formato: `undefined > 1` è `false`, quindi ora si
+> controlla che ci sia e che sia un intero.
 
 Verifica che sia un oggetto, che `app === 'turni'`, che `turni` sia un oggetto.
 **Nessun controllo sulle singole voci**: chiavi non-data, orari assurdi,
@@ -132,6 +145,12 @@ perché l'informativa una volta diceva il falso: queste sono della stessa
 famiglia.
 
 ### B1. `allowBackup="true"` contro l'informativa *(verificato)*
+
+> **Lasciato aperto per scelta, 21/09/2026.** L'app Android è da considerarsi quasi
+> deprecata e il prodotto vivo è la PWA: questo difetto esiste solo dentro l'APK.
+> Resta qui perché finché l'AndroidManifest è quello, l'informativa dice il falso a
+> chi usa il pacchetto nativo — ma non blocca niente sul web. Vale lo stesso per E6, E9
+> e F1.
 
 `android/app/src/main/AndroidManifest.xml:5` lascia attivo Auto Backup: i dati
 dell'app — WebView storage compreso, dove stanno i turni — finiscono sul Google
@@ -239,6 +258,12 @@ cose dimostrabili.
 
 ### D1. «Salva» che non salva, senza un solo messaggio — `Settings.jsx:396` + i 16 `<details>` *(verificato)*
 
+> **Chiuso il 21/09/2026.** `noValidate` sul form e validazione nostra: si trova il
+> primo campo che non va, si APRE la sezione che lo contiene, ci si porta il fuoco e
+> solo allora si chiede al browser di dirlo — che a quel punto ha un campo visibile a
+> cui attaccarsi. Tutti gli `step` passano ad `any`: 37,25 ore e 66,66% sono valori
+> veri. Riscontro: `check-impostazioni.mjs`, che legge la marcatura.
+
 Il modulo è `<form onSubmit>` **senza `noValidate`**, quindi la validazione HTML
 nativa è attiva. I campi stanno dentro **16 sezioni `<details>`, di cui una sola
 aperta** (`:401`). Un `<input>` invalido dentro una sezione chiusa non è
@@ -256,6 +281,10 @@ invalido 66,66; `step="0.5"` su `absence-hours-setting` (`:848`) rende invalido
 (40 h ÷ 6 giorni).
 
 ### D2. Ore settimanali a 0: uno stato invisibile che falsa tutto — `Settings.jsx:28,497` *(verificato)*
+
+> **Chiuso il 21/09/2026.** `required` e `min="1"`: lo zero non è un valore basso, è
+> un dato mancante travestito. E `?? ''` al posto di `|| ''`, così uno zero salvato si
+> VEDE invece di mostrarsi come campo vuoto identico a «non l'ho ancora messo».
 
 `required` non compare **nemmeno una volta** nel file, e un `<input type=number>`
 vuoto senza `required` è valido: si salva `expectedWeeklyHours: 0`. Alla
@@ -290,6 +319,13 @@ l'unico controllo di coerenza del file e dimostra che il pattern era alla
 portata.
 
 ### D4. Il lavoro in corso si perde con un tocco — `ShiftForm.jsx:198` *(verificato)*
+
+> **Chiuso il 21/09/2026** per il modulo del turno. Niente «sei sicuro?»: finché non
+> c'è niente da perdere il tocco fuori chiude come sempre, appena c'è smette, e la
+> finestra risponde con un cenno che indica la ✕. La regola sta in `utils/bozza.js`,
+> e `check-bozza.mjs` confronta l'elenco dei campi protetti con quelli che il modulo
+> modifica davvero. **Impostazioni resta scoperto**: lì non c'è un overlay, si perde
+> uscendo dalla vista.
 
 `onClick={(e) => e.target === e.currentTarget && onClose()}` sull'overlay:
 chiusura immediata, nessuna conferma. Su un telefono l'area attorno al modale è

@@ -200,22 +200,51 @@ del gruppo dipende dal contratto, con questa **precedenza**:
 | Condizione | Chiave del gruppo | Soglia contrattuale |
 |---|---|---|
 | `settings.onCall` | `s.date` (il giorno) | `dailyOvertimeThreshold × 60` |
-| CCNL **mensilizzato** | `payrollMonthKey(s.date)` | `monthlyContractHours × 60` |
+| CCNL **mensilizzato** | `'YYYY-MM'` della data, oppure `payrollMonthKey(s.date)` se `periodoConteggio === 'paga'` | `monthlyContractHours × 60` |
 | altrimenti | lunedì della settimana | `expectedWeeklyHours × 60` |
 
-### 5.1 Il mese di paga
+### 5.1 La finestra è il mese di calendario
 
-`payrollMonthKey(dateStr)` (dates.js) restituisce il mese del **lunedì** della
-settimana in cui la data cade. Conseguenza: la settimana a cavallo di fine mese
-appartiene **per intero** al mese del suo lunedì. Giugno 2026 comincia di lunedì
-e vale quindi 5 settimane (1/6 → 5/7), luglio ne vale 4 (6/7 → 2/8).
+**Deciso dalla busta di agosto 2026**, e per un po' si era creduto il
+contrario. Due cose che è facile confondere:
 
-Non è una convenzione scelta a caso: è l'unica compatibile con le due buste
-reali disponibili, dove giugno risulta 131,45 h e luglio 109,70 h — rapporto
-1,198 ≈ 5/4. Con la convenzione opposta (settimana attribuita al mese della
-domenica) giugno varrebbe 4 settimane e dovrebbe risultare **minore** di luglio:
-il contrario di quel che è stampato. Riscontro:
-`node scripts/check-mese-paga-2026.mjs`.
+- la **soglia** del supplementare è mensile (103,20 h = 24 × 4,3), non
+  settimanale — questo lo avevano stabilito giugno e luglio, e non è cambiato;
+- la **finestra di giorni** che compone il mese è il calendario, dal 1
+  all'ultimo. Restava aperta, ed è quella che agosto ha chiuso.
+
+Il discriminante era stato scritto *prima* che la busta arrivasse: quindici
+giorni di ferie iniziati lunedì 31 agosto valgono **7 giornate** nel mese di
+paga e **1 sola** nel calendario. La busta ne paga una
+(`Ferie godute 4,00 ORE`). Conferma il totale: 120,75 h col calendario contro
+le 120,70 stampate, 138,75 col mese di paga.
+
+Perché prima sembrava il contrario: giugno e luglio erano stati confrontati con
+turni che l'utente stesso considera poco affidabili — a luglio ne mancavano
+5,20 h — e lo scarto fra le due regole era dello stesso ordine del rumore nei
+dati. Agosto è il mese tenuto bene, ed è l'unico su cui la misura decide.
+
+`payrollMonthKey` resta in `dates.js` e serve ancora: il mese di paga è una
+delle due modalità del selettore nel Calendario, e chi vuole confrontare riga
+per riga con un cedolino che taglia a settimane intere lo usa. Riscontri:
+`check-busta-agosto-2026.mjs` (la decisione) e `check-mese-paga-2026.mjs` (gli
+estremi delle settimane).
+
+### 5.1-bis Le assenze riempiono il monte ore
+
+Dentro il gruppo, **le assenze vengono contate prima del lavoro**. Non è un
+dettaglio d'ordine: decide quante ore risultano supplementari.
+
+La busta di agosto lo dichiara nella propria aritmetica — `4,00 ferie +
+99,20 retribuzione = 103,20`, e tutto il lavoro eccedente è supplementare.
+Cumulando in ordine puramente cronologico, le ferie del 31 agosto arrivavano a
+soglia già superata: il motore le scartava dai supplementari (giusto, un'assenza
+non si paga in più) ma così non riempivano più il monte ore, e altrettante ore
+di lavoro restavano ordinarie. Uscivano 13,55 h contro le 17,50 stampate.
+
+La regola, detta come invarianza: **a parità di ore lavorate e di ore di
+assenza, quando cadono le ferie nel mese non deve cambiare la paga.**
+Riscontro: `check-assenze.mjs`.
 
 ### 5.2 Perché il mensilizzato non usa la settimana
 
@@ -796,6 +825,7 @@ Non sono bug, e vanno capite prima di «correggerle»:
   Sono due domande diverse ed entrambe legittime.
 
   > **Quale dei due sia il numero che la busta stampa non è ancora confermato.**
+  > *(Chiuso il 13/09/2026: vince il mese di calendario — vedi §5.1.)*
   > Riscontrata è la *soglia* del supplementare sul mese di paga, non il totale
   > ore. Si scioglie con il cedolino di agosto 2026, ed è la questione aperta in
   > fondo a `RILASCIO.md`: se vincesse il mese di calendario, cambia il default

@@ -2,26 +2,24 @@
 //
 //   node scripts/check-busta-luglio-2026.mjs
 //
-// Stessa busta (LUL Zucchetti, CCNL Turismo, livello 5, part-time 60%,
-// assunzione 29/12/2025) del riscontro di giugno, un mese dopo. Nasce per
-// rispondere a una domanda precisa: l'app segnava 122,5h per luglio contro le
-// 109,70h realmente pagate in busta (103,20 ordinarie + 6,50 supplementari) —
-// usando SOLO le ore che risultano in busta, il motore del netto riproduce i
-// numeri stampati sul cedolino? Se sì, la discrepanza osservata in app è
-// tutta nei dati dei turni (o nella busta stessa), non nelle formule fiscali.
+// Stessa busta (LUL Zucchetti, CCNL Turismo, livello 5, part-time 60%) del
+// riscontro di giugno, un mese dopo. Nasce per rispondere a una domanda
+// precisa: le ore che l'app segnava per luglio erano più di quelle realmente
+// pagate in busta (ordinarie + supplementari) — usando SOLO le ore che
+// risultano in busta, il motore del netto riproduce i numeri stampati sul
+// cedolino? Se sì, la discrepanza osservata in app è tutta nei dati dei turni
+// (o nella busta stessa), non nelle formule fiscali.
 //
-// Lordo di luglio SOLO dalle voci in busta:
-//   951,30 retribuzione (103,20h) + 77,89 supplementare 30% (6,50h)
-//   + 120,00 Indennità TOP STORE + 10,00 Ind. Flessibilità
-//   + 14,29 Magg. Domenicale 10% = 1.173,48
+// Il lordo di luglio è la somma delle voci del cedolino (retribuzione,
+// supplementare, indennità, maggiorazione domenicale) — costante nel codice
+// qui sotto, non elencata voce per voce qui.
 //
 // La proiezione annua di reddito è un INPUT (come nel caso A/B di giugno):
 // non è stampata in busta, ma dal fatto che la detrazione lavoro dipendente
-// sia quella "piena" (1.955 × 31/365 = 166,04, ESATTO) e il cuneo sia al
-// 5,3% si deduce che il consulente lavora con un imponibile annuo stimato fra
-// 8.500 e 15.000 € — qualunque proiezione in questa fascia dà lo stesso
-// risultato (soglie a scaglino, non lineari), quindi il valore preciso non è
-// determinante.
+// sia quella "piena" e il cuneo sia alla sua aliquota più bassa si deduce che
+// il consulente lavora con un imponibile annuo stimato in una fascia bassa —
+// qualunque proiezione in quella fascia dà lo stesso risultato (soglie a
+// scaglino, non lineari), quindi il valore preciso non è determinante.
 
 import { calcNetMonthly, round2, trunc2 } from '../src/utils/net.js';
 import { calcTotalPay } from '../src/utils/pay.js';
@@ -92,9 +90,9 @@ check('Lordo del mese', LORDO_LUGLIO, 1173.48, CENT);
 //
 // Fin qui le competenze sono gli importi letti dal cedolino. Ma in app quegli
 // importi nascono dai turni, ed è proprio lì che si era aperto lo scarto: il
-// riepilogo segnava 1.113 € di lordo contro i 1.173,48 stampati, perché contava
-// 104,65 h invece di 109,70. Le 5 ore mancanti valevano 60 € e non 46 perché,
-// oltre la soglia di 103,20 h, ogni ora è supplementare al 130%.
+// riepilogo contava meno ore di quelle realmente pagate in busta. Le ore
+// mancanti valevano più del previsto perché, oltre la soglia mensile, ogni
+// ora è supplementare al 130% e non al solo +30%.
 //
 // Con un totale unico di «maggiorazioni» quella voce non si vedeva. Qui si
 // verifica che il percorso turni → maggiorazioni produca, diviso per tipo,

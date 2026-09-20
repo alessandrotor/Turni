@@ -4,15 +4,17 @@ import {
   formatDate, formatMonthYear, isToday, isWeekend,
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth, formatPayrollRange,
 } from '../utils/dates';
-import { calcShiftMinutes, calcTotalPay, formatCurrency } from '../utils/pay';
+import { calcShiftMinutes, calcTotalPay, formatCurrency, lordoTurno } from '../utils/pay';
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { isMensilizzato } from '../utils/ccnl';
-import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
+import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../utils/bonus';
+import { rischioRestituzione, quotaPotenziale, CAUSA, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE } from '../utils/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
 import { contrattoMancante } from '../utils/configurazione';
+import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../utils/assenze';
-import { EXTRA_MONTHS } from '../utils/net';
+import { EXTRA_MONTHS, TAX_2026 } from '../utils/net';
 import { ENABLE_DEBUG } from '../config/features';
 import useMonthlyNet from '../hooks/useMonthlyNet';
 
@@ -34,6 +36,7 @@ import { exportShiftsExcel, exportShiftsPDF } from '../services/export';
 import { sendImportTelemetry } from '../services/telemetry';
 import ImportModal from './ImportModal';
 import TimelineView from './TimelineView';
+import ShareWeekModal from './ShareWeekModal';
 import useOccupato from '../hooks/useOccupato';
 import { KEY_CAL_LAYOUT } from '../services/backup';
 
@@ -111,6 +114,8 @@ export default function CalendarView({
   // Avvertenza sull'invio della foto: mostrata una volta sola, ricordata nel
   // browser. Vedi `accettatoInvioFoto` in services/gemini.js.
   const [mostraAvvisoFoto, setMostraAvvisoFoto] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [contiBonusAperti, setContiBonusAperti] = useState(false);
   const [calLayout, setCalLayout] = useState(() => {
     try { return localStorage.getItem(KEY_CAL_LAYOUT) || 'grid'; } catch { return 'grid'; }
   });
@@ -301,7 +306,85 @@ export default function CalendarView({
     () => calcBonusMargin(annualProjection || annualGross, settings),
     [annualProjection, annualGross, settings],
   );
+
+  // Quanto rischia di dover RIDARE INDIETRO. E' la domanda che la gente si fa
+  // davvero, e fino a settembre 2026 l'app non la sfiorava: sapeva dire se il
+  // bonus spetta adesso, mai quanto costa scoprire a dicembre che non spettava.
+  // Vedi utils/restituzione.js per il modello e per cosa l'app NON puo' sapere.
+  const rischio = useMemo(
+    () => rischioRestituzione({ settings, proiezioneAnnua: annualProjection || annualGross }),
+    [settings, annualProjection, annualGross],
+  );
+
+  // LA FORMA DELLA BUCA attorno ai 15.000, e dove ci si trova dentro.
+  // Costa una trentina di valutazioni del netto annuo, tutte per bisezione: si
+  // memoizza sulle sole impostazioni perché non dipende dal mese guardato.
+  const costo = useMemo(() => costoSoglia(settings), [settings]);
+  const proiezione = annualProjection || annualGross;
+  const posizione = useMemo(
+    () => posizioneRispettoSoglia(proiezione, settings, costo),
+    [proiezione, settings, costo],
+  );
+  const mancaPareggio = useMemo(
+    () => mancaAlPareggio(proiezione, settings, costo),
+    [proiezione, settings, costo],
+  );
+  const mancaOre = useMemo(() => margineInOre(mancaPareggio, settings), [mancaPareggio, settings]);
+
+  // UNA spiegazione sola, riusata dai tre casi. Non più un tooltip: i conti
+  // non ci stavano, e il punto da far capire — il bonus in busta torna
+  // indietro se superi la soglia — ha bisogno dei conti per essere creduto.
+  // Non chiamarlo «anticipo»: per chi lo riceve sono soldi del datore, e la
+  // parola suona come un prestito.
+  // Il popup lo apre chi tocca «perché?»: non interrompe nessuno.
+  const spiegazione = (
+    <button type="button" className="linklike" onClick={() => setContiBonusAperti(true)}>
+      perché?
+    </button>
+  );
   const fmt0 = (n) => formatCurrency(Math.round(n));
+
+  // Gli euro sul singolo turno sono un'OPZIONE, spenta di default: chi non
+  // l'accende trova la griglia e l'agenda identiche a prima. Il totale del mese
+  // ce l'ha comunque, nella barra in alto.
+  const mostraEuro = !!settings.mostraEuroPerTurno;
+
+  // Nella cella l'importo va SENZA decimali: `formatCurrency` scrive «55,00 €»
+  // e in uno spazio da tre cifre quei due zeri sono rumore che allontana le
+  // cifre che contano. La cifra esatta resta nel `title` e nell'agenda — è la
+  // stessa distinzione che l'app fa già fra la griglia (colpo d'occhio) e
+  // l'agenda (dettaglio).
+  // `useGrouping: 'always'` non è un vezzo: in italiano il punto delle migliaia
+  // parte da cinque cifre (16.600 sì, 1200 no), e in un riquadro che spiega un
+  // conto «1200» accanto a «16.600» sembrano scritti da due mani diverse.
+  // Fallback per le WebView vecchie, dove l'opzione non esiste.
+  const numeroIt = (n) => {
+    const v = Math.round(n);
+    try {
+      return new Intl.NumberFormat('it-IT', { useGrouping: 'always', maximumFractionDigits: 0 }).format(v);
+    } catch {
+      return v.toLocaleString('it-IT');
+    }
+  };
+  const euroCella = (n) => `${numeroIt(n)} €`;
+
+  // Quanto vale una giornata. `null` — non zero — quando la paga oraria manca o
+  // non copre quei turni: uno «0 €» in cella sembrerebbe un turno non pagato,
+  // che è una cosa diversa e falsa. `lordoTurno` sta in pay.js apposta, così
+  // questa somma e il totale del riepilogo escono dalla stessa riga di codice
+  // (riscontro: scripts/check-lordo-turno.mjs).
+  const euroDelGiorno = useCallback((turni) => {
+    if (!payByShift) return null;
+    let somma = 0;
+    let noti = 0;
+    for (const s of turni) {
+      const voce = payByShift[s.id];
+      if (!voce || voce.missingRate) continue;
+      somma += lordoTurno(voce);
+      noti += 1;
+    }
+    return noti > 0 ? somma : null;
+  }, [payByShift]);
 
   // Montante + confine automatico (granularità MESE): composizione del reddito e avviso.
   const montante = Number(settings.priorTaxableIncome) || 0;
@@ -329,6 +412,7 @@ export default function CalendarView({
     netProjection, netBasis, extraThisMonth, monthGross,
     netMonth, monthNet, monthTrattenute, monthBonus, monthTfr,
     tiInfo, effectiveRatePct, addizionaliPct, showNetPanel: showNetPanelRaw,
+    riferimento,
   } = useMonthlyNet({ year, month, settings, pay, annualGross, annualExtras, daysInMonth });
   // Senza nemmeno un turno segnato nel mese non c'è niente da stimare: voci
   // fisse mensili o mensilità aggiuntive maturate da sole (senza turni)
@@ -370,17 +454,6 @@ export default function CalendarView({
   const bonusTakenThisMonth = !!monthlyBonusEntry;
   const monthlyBonusAmount = Number(settings.monthlyBonusAmount) || 0;
 
-  // Striscia "bonus Renzi": di default si apre solo quando è rilevante (vicino
-  // o oltre soglia), altrimenti resta ridotta a una riga per chi vuole solo
-  // controllare. Si risincronizza cambiando mese, non a ogni ricalcolo, così
-  // un'apertura manuale non viene richiusa da un turno appena inserito.
-  const bonusRelevant = bonus.nearThreshold
-    || bonus.status === BONUS_STATUS.PARZIALE || bonus.status === BONUS_STATUS.OLTRE;
-  const [showBonusDetail, setShowBonusDetail] = useState(bonusRelevant);
-  useEffect(() => {
-    setShowBonusDetail(bonusRelevant);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthKey]);
 
   async function runImport(file, name) {
     setImportLoading(true);
@@ -531,7 +604,33 @@ export default function CalendarView({
               ≡
             </button>
           </div>
+          <button
+            type="button"
+            className="cal-header-share-btn"
+            onClick={() => setShowShareModal(true)}
+            title="Condividi i turni della settimana"
+            aria-label="Condividi i turni della settimana"
+          >
+            💬
+          </button>
         </div>
+
+        {/* IL NUMERO PER CUI SI APRE L'APP, dove lo si vede sempre.
+            «Retribuzione stimata» esisteva già, ma sotto l'intera griglia: non
+            era mai sullo schermo insieme al calendario, e in vista agenda
+            finiva sotto trenta schede. Qui sta nella barra agganciata, quindi
+            segue lo scorrimento e c'è mentre si segna un turno.
+            Sotto resta il riepilogo completo, con le voci di busta: questa è la
+            risposta, quello è il perché. */}
+        {pay !== null && (
+          <div className="cal-header-soldi">
+            <span className="cal-header-soldi-val" title={`${formatCurrency(pay.total)} lordi in ${formatMonthYear(currentMonth)}`}>
+              {euroCella(pay.total)}
+            </span>
+            <span className="cal-header-soldi-ore">{formatMinutesShort(totalMins)}</span>
+            <span className="cal-header-soldi-eti">lordo stimato</span>
+          </div>
+        )}
       </div>
 
       {/* Import bar */}
@@ -588,6 +687,11 @@ export default function CalendarView({
           onEditShift={onEditShift}
           settings={settings}
           focusDate={focusDate}
+          // L'agenda non riceveva `payByShift`: sapeva le ore e non gli euro,
+          // ed era l'unica vista dell'app a non avere in mano il numero che
+          // l'utente cerca.
+          payByShift={payByShift}
+          mostraEuro={mostraEuro}
         />
       ) : (
         <div className="cal-grid">
@@ -669,6 +773,20 @@ export default function CalendarView({
                     {formatMinutesShort(minutiDelGiorno(dayShifts))}
                   </span>
                 )}
+                {/* Quanto vale la giornata, se l'utente ha chiesto di vederlo.
+                    Arrotondato all'euro: nella cella servono tre cifre che si
+                    leggano di sfuggita, non il centesimo — quello sta
+                    nell'agenda e nel riepilogo. Niente «0 €» quando manca la
+                    paga oraria: uno zero sembrerebbe un turno non pagato invece
+                    che un dato che non c'è. */}
+                {mostraEuro && euroDelGiorno(dayShifts) !== null && (
+                  <span
+                    className="cal-day-euro"
+                    title={`${formatCurrency(euroDelGiorno(dayShifts))} lordi in questa giornata`}
+                  >
+                    {euroCella(euroDelGiorno(dayShifts))}
+                  </span>
+                )}
               </div>
             );
           })}
@@ -685,11 +803,17 @@ export default function CalendarView({
             retribuzione; le ferie, contandosi a giornate, lo rendono evidente.
 
             Il toggle compare solo sui CCNL mensilizzati: altrove i due periodi
-            coincidono e sarebbe un comando che non cambia niente. NON cambia il
-            calcolo degli straordinari, che resta ancorato al periodo di paga —
-            le ore oltre soglia sono un fatto del contratto, non della finestra
-            che si sta guardando. */}
-        {mensilizzato && (
+            coincidono e sarebbe un comando che non cambia niente.
+
+            CAMBIA anche il calcolo delle ore in più, non solo cosa si vede: la
+            soglia è mensile, quindi spostare la finestra sposta quali ore ci
+            finiscono dentro. Qui c'era scritto il contrario fino al 13
+            settembre 2026, ed era già falso da quando `computePayByShift` ha
+            imparato a raggruppare per mese di calendario.
+
+            Il default è «calendario» perché lo ha deciso la busta di agosto
+            2026: vedi DEFAULT_SETTINGS in App.jsx. */}
+        {mensilizzato && ENABLE_MESE_PAGA && (
           <div className="periodo-testata">
             <span className="periodo-toggle">
               <button
@@ -735,20 +859,14 @@ export default function CalendarView({
             <span className="summary-value">{formatMinutesShort(totalMins - assenze.minuti)}</span>
             {assenze.minuti > 0 && (
               <span className="summary-sublabel">
-                + {assenze.dettaglio} = {formatMinutesShort(totalMins)} contate in busta
+                + {assenze.dettaglio}
               </span>
             )}
             {festivitaDaSegnare.length > 0 && oreFestivita > 0 && onAddShifts && (
               <span className="summary-sublabel festivita-proposta">
-                {festivitaDaSegnare.length === 1 ? 'C’è ' : 'Ci sono '}
-                <strong>
-                  {festivitaDaSegnare.length}
-                  {festivitaDaSegnare.length === 1 ? ' giorno festivo' : ' giorni festivi'}
-                </strong>
-                {' '}senza turno ({festivitaDaSegnare.map(d => Number(d.slice(8))).join(', ')}
-                {' '}{formatMonthYear(currentMonth).split(' ')[0].toLowerCase()}).
-                {' '}Se ti vengono pagati, aggiungili —{' '}
-                {formatMinutesShort(oreFestivita)} ciascuno.
+                {festivitaDaSegnare.length === 1 ? 'Festivo' : 'Festivi'} senza turno:{' '}
+                {festivitaDaSegnare.map(d => Number(d.slice(8))).join(', ')}
+                {' '}{formatMonthYear(currentMonth).split(' ')[0].toLowerCase().slice(0, 3)}.
                 <button
                   type="button"
                   className="linklike festivita-proposta-btn"
@@ -809,11 +927,7 @@ export default function CalendarView({
         {pay !== null && contrattoMancante(settings) && (
           <div className="contratto-avviso">
             <div className="contratto-avviso-testo">
-              <strong>Sto contando con regole generiche</strong>
-              <p>
-                Il tuo contratto decide le ore del mese e i contributi. Senza, questo
-                totale è più alto del vero di circa 45 € al mese.
-              </p>
+              <strong>Senza contratto conto ~45 € in più del vero</strong>
             </div>
             <button type="button" className="btn btn-primary" onClick={() => onNavigate?.('settings')}>
               Scegli il contratto
@@ -821,75 +935,12 @@ export default function CalendarView({
           </div>
         )}
 
-        {/* Esporta i turni del mese */}
-        <div className="export-bar">
-          <span className="export-label">Esporta il mese:</span>
-          {payrollRange && (
-            <select
-              className="export-period-select"
-              value={exportPeriod}
-              onChange={e => setExportPeriod(e.target.value)}
-              aria-label="Periodo da esportare"
-            >
-              <option value="calendar">Mese di calendario</option>
-              <option value="payroll">Mese di paga ({payrollRange})</option>
-            </select>
-          )}
-          <button
-            type="button"
-            className="btn-export"
-            disabled={(exportPeriod === 'payroll' ? counted : shifts).length === 0 || exportBusy}
-            onClick={() => handleExport('xlsx')}
-          >
-            📊 Excel
-          </button>
-          <button
-            type="button"
-            className="btn-export"
-            disabled={(exportPeriod === 'payroll' ? counted : shifts).length === 0 || exportBusy}
-            onClick={() => handleExport('pdf')}
-          >
-            📄 PDF
-          </button>
-        </div>
-        {exportError && <p className="import-error">{exportError}</p>}
 
         {/* Netto stimato del mese — beta (gated dal feature flag) */}
         {showNetPanel && (
           <div className="net-strip">
-            <div className="bonus-strip-head">
-              <span className="bonus-strip-title">🧪 Netto stimato del mese <span className="beta-tag">beta</span></span>
-              <span className="bonus-strip-income">
-                Lordo del mese: <strong>{fmt0(monthGross)}</strong>
-              </span>
-            </div>
-
-            <div className="net-strip-body">
-              <span className="bonus-strip-label">Netto stimato del mese</span>
-              <span className="net-strip-value">{fmt0(monthNet)}</span>
-              <span className="bonus-strip-note">
-                trattenute {fmt0(monthTrattenute)} ({effectiveRatePct.toFixed(1)}% del lordo)
-                {monthBonus > 0 && <> · bonus +{fmt0(monthBonus)}</>}
-                {monthTfr > 0 && <> · TFR +{fmt0(monthTfr)}</>}
-              </span>
-              {extraThisMonth > 0 && (
-                <span className="bonus-strip-note">
-                  include {month === EXTRA_MONTHS.tredicesima ? 'tredicesima' : 'quattordicesima'} (+{fmt0(extraThisMonth)} lordi)
-                </span>
-              )}
-              {(fixedMonthlyTotal > 0 || perMonthBonus > 0) && (
-                <span className="bonus-strip-note">
-                  include {fixedMonthlyTotal > 0 ? `voci fisse +${fmt0(fixedMonthlyTotal)}` : ''}
-                  {fixedMonthlyTotal > 0 && perMonthBonus > 0 ? ' · ' : ''}
-                  {perMonthBonus > 0 ? `bonus del mese +${fmt0(perMonthBonus)}` : ''}
-                </span>
-              )}
-            </div>
-
-            <p className="net-disclaimer--prominent">
-              ⚠️ Funzione beta: i calcoli possono contenere errori. Fai sempre controllare
-              questi dati a un professionista prima di usarli.
-            </p>
+            {/* Niente «Lordo del mese» in testa: è il totale della barra in alto,
+                ripeterlo qui era una cifra in più da leggere. */}
 
             {monthlyBonusAmount > 0 && (
               <div className="month-bonus-row">
@@ -901,12 +952,38 @@ export default function CalendarView({
                     onChange={handleMonthBonusToggle}
                   />
                   <span>
-                    Ho preso il bonus di {formatMonthYear(currentMonth)}
+                    Prenderò il bonus di {formatMonthYear(currentMonth)}
                     {' '}<strong>(+{fmt0(monthlyBonusAmount)})</strong>
                   </span>
                 </label>
               </div>
             )}
+
+            <div className="net-strip-body">
+              <span className="bonus-strip-label">
+                Netto stimato del mese <span className="beta-tag">beta</span>
+              </span>
+              <span className="net-strip-value">{fmt0(monthNet)}</span>
+              <span className="bonus-strip-note">
+                trattenute {fmt0(monthTrattenute)} ({effectiveRatePct.toFixed(1)}% del lordo)
+                {monthBonus > 0 && <> · bonus +{fmt0(monthBonus)}</>}
+                {monthTfr > 0 && <> · TFR +{fmt0(monthTfr)}</>}
+              </span>
+              {(extraThisMonth > 0 || fixedMonthlyTotal > 0 || perMonthBonus > 0) && (
+                <span className="bonus-strip-note">
+                  include {[
+                    extraThisMonth > 0 && `${month === EXTRA_MONTHS.tredicesima ? '13ª' : '14ª'} +${fmt0(extraThisMonth)}`,
+                    fixedMonthlyTotal > 0 && `voci fisse +${fmt0(fixedMonthlyTotal)}`,
+                    perMonthBonus > 0 && `bonus +${fmt0(perMonthBonus)}`,
+                  ].filter(Boolean).join(' · ')}
+                </span>
+              )}
+            </div>
+
+            <p className="net-disclaimer--prominent">
+              ⚠️ Funzione beta: i calcoli possono contenere errori. Fai sempre controllare
+              questi dati a un professionista prima di usarli.
+            </p>
 
             <button
               type="button"
@@ -1028,15 +1105,52 @@ export default function CalendarView({
                   </>
                 )}
 
-                {tiInfo && (
+                {/* La decisione sul TI è MENSILE e segue quella del software
+                    paghe. Va spiegata dove compare il numero, perché altrimenti
+                    un bonus che sparisce da un mese all'altro sembra un
+                    capriccio dell'app — e invece dipende da quanto si è
+                    lavorato in quel mese. */}
+                {netMonth?.esitoTi && (
                   <div className="net-subnote">
-                    TI automatico: {tiInfo.motivo} · reddito annuo stimato {fmt0(tiInfo.redditoStimato)}
+                    {netMonth.esitoTi.spetta ? (
+                      <>
+                        <strong>Trattamento integrativo incluso.</strong> Il tuo datore lo eroga
+                        nei mesi in cui il lordo sta sotto i <strong>1.250 €</strong>: questo mese
+                        sei a {fmt0(netMonth.esitoTi.baseMese)} €.
+                      </>
+                    ) : (
+                      <>
+                        <strong>Trattamento integrativo non incluso questo mese.</strong> Il tuo
+                        datore lo toglie quando il lordo del mese supera i <strong>1.250 €</strong>
+                        {' '}(qui {fmt0(netMonth.esitoTi.baseMese)} €): moltiplicato per dodici
+                        supererebbe i 15.000 € oltre i quali non spetta. Se a fine anno hai
+                        guadagnato meno, te lo restituisce il conguaglio di dicembre.
+                      </>
+                    )}
                   </div>
                 )}
+                {/* QUALE numero ha prodotto questo netto. Prima qui c'era
+                    scritto «proiezione annua usata», e dal 14 settembre 2026 non
+                    è più vero: il netto del mese esce dal lordo del mese × 12,
+                    come fa il software paghe. La proiezione dell'anno resta
+                    sotto, dove serve ancora — il bonus e il rischio di
+                    restituzione sono domande annuali. Tenerle separate è l'unico
+                    modo perché un utente possa ritrovare i propri numeri. */}
                 <div className="net-subnote">
-                  Proiezione annua usata: {fmt0(netBasis)} lordi ({PROJECTION_LABEL[netProjection.source]}).
-                  È una previsione: su lavoro a turni le ore cambiano, e il conguaglio di dicembre
-                  rimette a posto detrazioni e bonus. Puoi correggerla in Impostazioni.
+                  Questo netto esce da <strong>{fmt0(netMonth?.esitoTi?.baseMese ?? monthGross)} €</strong>
+                  {' '}di lordo del mese: il tuo datore calcola tasse e bonus mese per mese,
+                  moltiplicando per dodici quello che hai guadagnato.
+                  {riferimento > 0 && netMonth?.esitoTi && !netMonth.esitoTi.spetta && (
+                    <> Un mese pieno come questo ti colloca nella fascia sopra i 15.000, dove la
+                    detrazione è più alta e il bonus non spetta.</>
+                  )}
+                  {' '}A dicembre il conguaglio rifà il conto sull'anno vero e rimette a posto
+                  la differenza.
+                </div>
+                <div className="net-subnote">
+                  Sull'anno, la stima è {fmt0(netBasis)} € lordi ({PROJECTION_LABEL[netProjection.source]}):
+                  serve per il bonus e per il rischio di restituzione qui sotto, non per questo netto.
+                  Puoi correggerla in Impostazioni.
                 </div>
                 {/* Proiezione costruita su pochi mesi di turni: i mesi dell'anno
                     senza turni inseriti contano come ZERO e schiacciano la stima
@@ -1075,85 +1189,197 @@ export default function CalendarView({
           <div className="bonus-strip">
             <div className="bonus-strip-head">
               <span className="bonus-strip-title">💶 Trattamento integrativo (ex bonus Renzi)</span>
-              <button
-                type="button"
-                className="net-toggle"
-                onClick={() => setShowBonusDetail(v => !v)}
-                aria-expanded={showBonusDetail}
-              >
-                {showBonusDetail ? 'Nascondi ▲' : 'Dettagli ▼'}
-              </button>
             </div>
 
-            <span className={`bonus-strip-note ${bonus.status === BONUS_STATUS.OLTRE ? 'bonus-strip-note--warn' : ''}`}>
-              {bonus.status === BONUS_STATUS.PIENO && !bonus.nearThreshold && 'Bonus pieno: reddito entro le soglie.'}
-              {bonus.status === BONUS_STATUS.PIENO && bonus.nearThreshold && '⚠️ Vicino alla soglia del bonus pieno.'}
-              {bonus.status === BONUS_STATUS.PARZIALE && 'Bonus ridotto: reddito oltre i 15.000 € imponibili.'}
-              {bonus.status === BONUS_STATUS.OLTRE && '🚨 Reddito oltre i 28.000 € imponibili: il bonus non spetta.'}
+            {/* TRE CASI, NON QUATTRO INTENSITÀ DELLO STESSO ALLARME.
+                Prima qui si gridava «devi restituire ~805 €» a chiunque avesse
+                passato i 15.000 — anche a chi li aveva passati da un pezzo e
+                non ci stava più perdendo niente. Quel numero è vero come colpo
+                di cassa e falso come perdita: il bonus che sparisce (−1.200) se
+                lo riprende quasi tutto la detrazione che sale da 1.955 a 3.100.
+                Quello che resta scoperto sono ~130 € l'anno, e solo per i primi
+                ~200 € di lordo oltre la soglia (`costoSoglia`).
+
+                Da lì i tre messaggi: quanto margine resta (SOTTO), quanto manca
+                per tornare in pari (DENTRO — l'unico caso in cui la risposta è
+                «guadagna di più», ed è l'unico azionabile), niente da temere
+                (OLTRE). La cassa resta detta, ma come cassa. */}
+            {rischio.causa === CAUSA.RINUNCIATO ? (
+              <span className="bonus-strip-note">
+                {/* Deve dire PERCHÉ il riquadro è sparito: la casella sta a un
+                    dito da «perché?», e una spunta per sbaglio lasciava solo
+                    questa riga, senza far capire di averla causata. */}
+                Hai segnato il bonus come sospeso: niente da restituire.{' '}
+                <button
+                  type="button"
+                  className="linklike"
+                  onClick={() => onUpdateSettings({ noTrattamentoIntegrativo: false })}
+                >
+                  Annulla
+                </button>
+              </span>
+            ) : posizione === POSIZIONE.OLTRE ? (
+              // Il rischio vero qui non è perdere soldi, è averli già spesi:
+              // chi non sa del conguaglio tratta il bonus in busta come
+              // stipendio. Per questo il titolo dice cosa FARE, non uno stato.
+              <div className={`bonus-rischio ${rischio.daRestituire > 0 ? 'bonus-rischio--anteprima' : 'bonus-rischio--ok'}`}>
+                <span className="bonus-rischio-titolo">
+                  {rischio.daRestituire > 0 ? '⚠️ Non spendere il bonus in busta' : '✓ Oltre la soglia, niente da restituire'}
+                </span>
+                {rischio.daRestituire > 0 && (
+                  <>
+                    {/* A frasi, come il popup: «Lo restituisci 845 €» accanto a
+                        «Torni in pari con 119 €» faceva credere che guadagnando
+                        di più la restituzione sparisse. Non dipende da quanto
+                        sopra si va: si restituisce tutto quello già preso. */}
+                    <p className="bonus-spiega">
+                      Supererai i 15.000 €, quindi a dicembre il datore si riprende tutto il
+                      bonus che ti ha dato: finora <strong>{euroCella(rischio.daRestituire)}</strong>
+                      {rischio.rateizzabile ? ', a rate' : ''}.
+                    </p>
+                    <p className="bonus-spiega">
+                      In compenso paghi meno tasse, e non ci perdi niente. {spiegazione}
+                    </p>
+                    <label className="check-row bonus-rischio-scelta">
+                      <input
+                        type="checkbox"
+                        checked={!!settings.noTrattamentoIntegrativo}
+                        onChange={(e) => onUpdateSettings({ noTrattamentoIntegrativo: e.target.checked })}
+                      />
+                      <span>Chiedi al datore di sospenderlo, poi spunta qui</span>
+                    </label>
+                  </>
+                )}
+              </div>
+            ) : posizione === POSIZIONE.DENTRO ? (
+              <div className="bonus-rischio">
+                <span className="bonus-rischio-titolo">⚠️ Non spendere il bonus in busta</span>
+                {rischio.daRestituire > 0 && (
+                  <p className="bonus-spiega">
+                    Supererai i 15.000 €, quindi a dicembre il datore si riprende tutto il
+                    bonus che ti ha dato: finora <strong>{euroCella(rischio.daRestituire)}</strong>.
+                  </p>
+                )}
+                <p className="bonus-spiega">
+                  Paghi meno tasse, ma non abbastanza: sull'anno ci perdi {euroCella(costo.perditaMax)}.
+                  Con altri <strong>{euroCella(mancaPareggio)}</strong>
+                  {mancaOre !== null && ` (~${mancaOre} h)`} torni in pari, ma il bonus
+                  lo restituisci comunque. {spiegazione}
+                </p>
+                {rischio.daRestituire > 0 && (
+                  <label className="check-row bonus-rischio-scelta">
+                    <input
+                      type="checkbox"
+                      checked={!!settings.noTrattamentoIntegrativo}
+                      onChange={(e) => onUpdateSettings({ noTrattamentoIntegrativo: e.target.checked })}
+                    />
+                    <span>Chiedi al datore di sospenderlo, poi spunta qui</span>
+                  </label>
+                )}
+              </div>
+            ) : bonus.status === BONUS_STATUS.PIENO && bonus.nearThreshold ? (
+              <div className="bonus-rischio bonus-rischio--anteprima">
+                {/* Il margine nel titolo, perché è la cosa su cui si decide; le
+                    ore sotto, perché è l'unità in cui si ragiona davvero — «2.400
+                    €» va diviso a mente per una paga oraria che nemmeno è quella
+                    base, visto che le ore in più sono maggiorate. */}
+                <span className="bonus-rischio-titolo">
+                  ⚠️ Ancora {euroCella(bonus.marginToFull)}
+                  {bonus.oreResidue !== null && <> (~{bonus.oreResidue} h)</>} e superi i 15.000 €
+                </span>
+                <p className="bonus-spiega">
+                  Se li superi, a dicembre il datore si riprende tutto il bonus che ti ha
+                  dato: finora <strong>{euroCella(quotaPotenziale())}</strong>. {spiegazione}
+                </p>
+                <label className="check-row bonus-rischio-scelta">
+                  <input
+                    type="checkbox"
+                    checked={!!settings.noTrattamentoIntegrativo}
+                    onChange={(e) => onUpdateSettings({ noTrattamentoIntegrativo: e.target.checked })}
+                  />
+                  <span>Chiedi al datore di sospenderlo, poi spunta qui</span>
+                </label>
+              </div>
+            ) : (
+              <span className="bonus-strip-note">
+                {bonus.status === BONUS_STATUS.PIENO && bonus.marginToFull > 0 && (
+                  <>
+                    Margine prima della soglia: <strong>{euroCella(bonus.marginToFull)}</strong>
+                    {bonus.oreResidue !== null && <> (~{bonus.oreResidue} h)</>}
+                  </>
+                )}
+                {bonus.status === BONUS_STATUS.PARZIALE && 'Sei oltre la soglia del bonus.'}
+                {bonus.status === BONUS_STATUS.OLTRE && '🚨 Oltre i 28.000 €: il bonus non spetta.'}
+              </span>
+            )}
+
+            {/* Una riga fissa al posto di «Dettagli ▼»: previsto e maturato
+                stanno insieme, e la soglia dei 28.000 la dice già il caso OLTRE. */}
+            {/* La scomposizione appartiene al MATURATO, non alla proiezione:
+                sottrarre montante ed extra da un numero proiettato darebbe una
+                voce «turni» che non corrisponde a nessun turno inserito. Il
+                margine non si ripete qui: lo dice già il riquadro sopra. */}
+            <span className="bonus-strip-income">
+              Previsto a fine anno <strong>{euroCella(bonus.income)}</strong>
+              {' · '}maturato {euroCella(annualGross)}
+              {montante > 0 && ` (montante ${euroCella(montante)})`}
             </span>
-
-            {showBonusDetail && (
-              <>
-                <span className="bonus-strip-income">
-                  Reddito {currentMonth.getFullYear()} previsto a fine anno: <strong>{fmt0(bonus.income)}</strong>
-                </span>
-
-                {/* La scomposizione appartiene al MATURATO, non alla
-                    proiezione: sottrarre montante ed extra da un numero
-                    proiettato darebbe una voce «turni» che non corrisponde a
-                    nessun turno inserito. Il maturato si mostra accanto, così
-                    si vede da dove parte la previsione. */}
-                <span className="bonus-strip-note">
-                  Maturato finora <strong>{fmt0(annualGross)}</strong>
-                  {(montante > 0 || annualExtras > 0) && (
-                    <>
-                      {' ='}{montante > 0 ? ` montante ${fmt0(montante)}${priorMonthLabel ? ` (fino a ${priorMonthLabel})` : ''} +` : ''}
-                      {' '}turni {fmt0(annualGross - montante - annualExtras)}
-                      {annualExtras > 0 && ` + 13ª/14ª ${fmt0(annualExtras)}`}
-                    </>
-                  )}
-                </span>
-                {montanteMismatch && (
-                  <span className="bonus-strip-note bonus-strip-note--warn">
-                    ⚠️ Montante dichiarato {fmt0(montante)} diverso dai turni fino a {priorMonthLabel} ({fmt0(shiftsCovered)}). Normale se include altri redditi o paghe diverse.
-                  </span>
-                )}
-
-                {bonus.status === BONUS_STATUS.PIENO && (
-                  <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
-                    <span className="bonus-strip-label">
-                      {bonus.nearThreshold ? '⚠️ Sei vicino alla soglia' : 'Puoi ancora guadagnare'}
-                    </span>
-                    <span className="bonus-strip-value">{fmt0(bonus.marginToFull)}</span>
-                    <span className="bonus-strip-note">
-                      prima di superare i {fmt0(bonus.thresholdFullGross)} lordi previsti a fine anno e uscire dal bonus pieno
-                      <span className="bonus-strip-hint"> (= 15.000 € imponibili, al netto dei contributi)</span>
-                    </span>
-                  </div>
-                )}
-
-                {bonus.status === BONUS_STATUS.PARZIALE && (
-                  <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
-                    <span className="bonus-strip-label">Puoi ancora guadagnare</span>
-                    <span className="bonus-strip-value">{fmt0(bonus.marginToMax)}</span>
-                    <span className="bonus-strip-note">
-                      prima di superare i {fmt0(bonus.thresholdMaxGross)} lordi e perdere del tutto il bonus
-                      <span className="bonus-strip-hint"> (= 28.000 € imponibili, al netto dei contributi)</span>
-                    </span>
-                  </div>
-                )}
-
-                {bonus.status === BONUS_STATUS.OLTRE && (
-                  <div className="bonus-strip-body bonus-strip-body--danger">
-                    <span className="bonus-strip-note">
-                      🚨 Reddito oltre i {fmt0(bonus.thresholdMaxGross)} lordi (28.000 € imponibili): il bonus non spetta.
-                    </span>
-                  </div>
-                )}
-              </>
+            {montanteMismatch && (
+              <span className="bonus-strip-note bonus-strip-note--warn">
+                ⚠️ Il montante ({fmt0(montante)}) non torna coi turni fino a {priorMonthLabel} ({fmt0(shiftsCovered)}).
+              </span>
             )}
           </div>
         )}
+
+        {/* ESPORTA IN FONDO, e non è una rifinitura: stava incastrato FRA il
+            lordo e il netto, cioè in mezzo a un ragionamento sui soldi che
+            andava letto di fila — lordo, netto, bonus. Due pulsanti di
+            esportazione nel mezzo spezzavano la lettura proprio dove serviva
+            continuità. Esportare è quello che si fa DOPO aver guardato i conti,
+            quindi sta dopo. */}
+        {/* Esporta i turni del mese */}
+        <div className="export-bar">
+          <span className="export-label">Esporta il mese:</span>
+          {/* Anche l'export segue il flag: offrire di esportare una finestra
+              che l'app non conta più sarebbe un comando che produce un foglio
+              diverso dai numeri appena letti a schermo. */}
+          {ENABLE_MESE_PAGA && payrollRange && (
+            <select
+              className="export-period-select"
+              value={exportPeriod}
+              onChange={e => setExportPeriod(e.target.value)}
+              aria-label="Periodo da esportare"
+            >
+              <option value="calendar">Mese di calendario</option>
+              <option value="payroll">Mese di paga ({payrollRange})</option>
+            </select>
+          )}
+          <button
+            type="button"
+            className="btn-export"
+            disabled={(exportPeriod === 'payroll' ? counted : shifts).length === 0 || exportBusy}
+            onClick={() => handleExport('xlsx')}
+          >
+            📊 Excel
+          </button>
+          <button
+            type="button"
+            className="btn-export"
+            disabled={(exportPeriod === 'payroll' ? counted : shifts).length === 0 || exportBusy}
+            onClick={() => handleExport('pdf')}
+          >
+            📄 PDF
+          </button>
+          <button
+            type="button"
+            className="btn-export"
+            onClick={() => setShowShareModal(true)}
+          >
+            💬 Settimana
+          </button>
+        </div>
+        {exportError && <p className="import-error">{exportError}</p>}
 
         {/* Il riepilogo AI del mese è stato rimosso insieme a services/ai.js:
             teneva due chiavi API in chiaro nel sorgente. Per riproporlo, la
@@ -1167,6 +1393,79 @@ export default function CalendarView({
           onConfirm={handleImportConfirm}
           onClose={() => setImportParsed(null)}
         />
+      )}
+
+      {/* I CONTI DELLA SOGLIA, per chi tocca «perché?». Il pericolo da
+          togliere è uno solo: considerare i ~100 € al mese già spesi.
+          «Meno tasse e altre voci» non si scompone in detrazione (+1.145) e
+          indennità 207/2024 (−~70): a schermo basta la somma, che esce dal
+          motore (`costoSoglia`) e non da costanti scritte qui. */}
+      {contiBonusAperti && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setContiBonusAperti(false)}>
+          <div className="modal" role="dialog" aria-modal="true" aria-label="Come funziona il bonus">
+            <div className="modal-header">
+              <h2 className="modal-title">Come funziona il bonus</h2>
+            </div>
+            <div className="modal-form conti-bonus">
+              <p className="form-hint">
+                Il bonus spetta a chi sta sotto i 15.000 €. Se li superi, anche di 1 €, a
+                dicembre il datore si riprende
+                tutto: {euroCella(rischio.erogato || quotaPotenziale())} finora.
+              </p>
+              {/* La tabella è un'ALTRA grandezza rispetto alla cifra qui sopra:
+                  quella è cassa, questa è il saldo di un anno intero. Senza
+                  questa riga i due numeri sembrano lo stesso conto fatto male.
+                  Le righe stanno in un blocco loro per stringere gli spazi:
+                  il popup deve stare in uno schermo senza scorrere. */}
+              {/* L'intestazione dice RISPETTO A COSA, altrimenti «ci perdi
+                  129 €» è un confronto con un termine che non si vede. */}
+              <div className="net-group-label">Rispetto a restare sotto i 15.000, in un anno</div>
+              <div className="conti-bonus-righe">
+                <div className="bonus-cifre">
+                  <span>Bonus che non ti spetta più</span>
+                  <strong>{euroCella(costo.voci.bonus)}</strong>
+                </div>
+                <div className="bonus-cifre">
+                  <span>Tasse in meno: la detrazione sale
+                    da {numeroIt(costo.voci.detrazioneSotto)} a {euroCella(costo.voci.detrazioneSopra)}</span>
+                  <strong>+{euroCella(costo.voci.tasse)}</strong>
+                </div>
+                {/* Il nome che la voce ha IN BUSTA («Indennit L.207/24» sui
+                    cedolini letti): «sconto sui contributi» spiegava cos'è ma
+                    non si poteva cercare sul cedolino, che è ciò che uno fa. */}
+                <div className="bonus-cifre">
+                  <span>Indennità L. 207/24, che cala</span>
+                  <strong>{euroCella(costo.voci.indennita + costo.voci.altro)}</strong>
+                </div>
+                <div className="bonus-cifre bonus-cifre--totale">
+                  <span><strong>Ci perdi</strong></span>
+                  <strong>{euroCella(-costo.perditaMax)}</strong>
+                </div>
+              </div>
+              {/* LA FASCIA MORTA, non la curva. Le versioni prima dicevano «il
+                  netto torna quello di prima della soglia» e «li ritrovi solo
+                  a X»: descrivevano il grafico, con un confronto controfattuale
+                  («se ti fossi fermato») che nessuno si fa. La domanda vera è
+                  «mi conviene lavorare di più?», e la risposta è che per due
+                  soli centoni la risposta è no, dopo torna sì. */}
+              {costo.larghezzaBuca > 0 && (
+                <p className="form-hint">
+                  Ma solo qui in mezzo: fra {euroCella(costo.tetto)}
+                  {' '}e {euroCella(costo.pareggio)} lordi l'anno il netto non cresce.
+                  Sopra, riprende a salire.
+                </p>
+              )}
+              <p className="form-hint form-hint--warn">
+                Con due datori ti riprendono di più.
+              </p>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-primary" onClick={() => setContiBonusAperti(false)}>
+                  Ho capito
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {mostraAvvisoFoto && (
@@ -1215,6 +1514,19 @@ export default function CalendarView({
         </div>
       )}
 
+      {/* Pulsante rapido flottante: solo in vista agenda/timeline */}
+      {calLayout === 'timeline' && (
+        <button
+          type="button"
+          className="cal-floating-add-btn"
+          onClick={() => onAddShift(focusDate || formatDate(new Date()))}
+          aria-label="Aggiungi turno"
+        >
+          <span className="cal-floating-add-icon" aria-hidden="true">+</span>
+          <span className="cal-floating-add-text">Aggiungi turno</span>
+        </button>
+      )}
+
       {(pendingImportFile || editingName) && (
         <div className="modal-overlay" onClick={closeNameModal}>
           <div
@@ -1255,6 +1567,14 @@ export default function CalendarView({
             </div>
           </div>
         </div>
+      )}
+
+      {showShareModal && (
+        <ShareWeekModal
+          shifts={shifts}
+          initialDate={currentMonth}
+          onClose={() => setShowShareModal(false)}
+        />
       )}
     </div>
   );
