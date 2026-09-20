@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import { formatDate, formatDayShort, parseDate, minutesDiff, formatMinutes } from '../utils/dates';
 import { proponiPeriodo, totalePeriodo } from '../utils/periodo-assenza';
 import useModalDismiss from '../hooks/useModalDismiss';
@@ -6,6 +6,7 @@ import { TIPO, ETICHETTA, ICONA, tipoTurno, isAssenza, minutiGiornoAssenza } fro
 import { proponiOrari, sagomeFrequenti, ORARI_DEFAULT, MAX_SAGOME } from '../utils/orari-proposti';
 import { parseNum } from '../utils/pay';
 import { calcolaCosaCambia } from '../utils/cosa-cambia';
+import { bozzaDaSalvare } from '../utils/bozza';
 
 const TIPI = [TIPO.LAVORO, TIPO.FERIE, TIPO.PERMESSO, TIPO.MALATTIA, TIPO.FESTIVITA];
 
@@ -107,6 +108,16 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
 
   const dialogRef = useRef(null);
   useModalDismiss(dialogRef, onClose);
+
+  // Il tocco fuori bersaglio arrivato mentre c'era del lavoro da perdere: la
+  // finestra lo segnala e torna normale da sola. Mezzo secondo è quanto dura
+  // il movimento — più a lungo diventerebbe uno stato, e questo è un cenno.
+  const [trattieni, setTrattieni] = useState(false);
+  useEffect(() => {
+    if (!trattieni) return undefined;
+    const t = setTimeout(() => setTrattieni(false), 500);
+    return () => clearTimeout(t);
+  }, [trattieni]);
 
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }));
 
@@ -268,9 +279,33 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
   const nomeTipo = NOME[form.kind];
   const titolo = `${isEdit ? 'Modifica' : 'Nuovo'} ${nomeTipo}`;
 
+  // Il tocco sull'area scura attorno alla finestra. Finché non c'è niente da
+  // perdere chiude come ha sempre fatto; appena c'è, smette — e invece di
+  // chiedere «sei sicuro?» la finestra si scuote e mette in evidenza la ✕, che
+  // è dove si esce. Nessun tocco in più per nessuno, e niente da leggere.
+  // Il perché per esteso sta in `utils/bozza.js`.
+  const chiudiDaFuori = (e) => {
+    if (e.target !== e.currentTarget) return;
+    if (!bozzaDaSalvare({ iniziale: initial.current, form, modifiche })) {
+      onClose();
+      return;
+    }
+    setTrattieni(true);
+  };
+
   return (
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div ref={dialogRef} className="modal" role="dialog" aria-modal="true" aria-label={titolo}>
+    <div className="modal-overlay" onClick={chiudiDaFuori}>
+      <div
+        ref={dialogRef}
+        // La classe si toglie da sé con un timer e non con `animationend`:
+        // chi ha chiesto meno animazioni al sistema ha le durate azzerate da
+        // `prefers-reduced-motion`, e quell'evento arriverebbe subito — cioè
+        // resterebbe senza nessuna risposta al suo tocco.
+        className={`modal${trattieni ? ' modal--trattieni' : ''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={titolo}
+      >
         <div className="modal-header">
           <h2 className="modal-title">{titolo}</h2>
           <button className="modal-close" onClick={onClose} aria-label="Chiudi">✕</button>

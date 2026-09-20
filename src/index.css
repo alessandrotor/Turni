@@ -965,6 +965,37 @@ input, select, textarea { font: inherit; }
   .modal { border-radius: var(--radius-lg); max-height: 90dvh; }
 }
 
+/* ── Il tocco fuori bersaglio, quando c'è del lavoro da perdere ───
+   Prima l'area scura attorno chiudeva sempre, e su un telefono è la parte più
+   grande dello schermo: un periodo di ferie corretto riga per riga spariva per
+   un dito appoggiato. Ora quel tocco non chiude più (`utils/bozza.js`), e
+   perché non sembri un guasto la finestra risponde con un cenno.
+   Non è una domanda: non c'è niente da leggere e niente da toccare. */
+.modal--trattieni { animation: modal-trattieni .45s ease; }
+
+@keyframes modal-trattieni {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(3px); }
+}
+
+/* Il cenno dice «no», questo dice «di là»: la ✕ è la via d'uscita voluta.
+   Sta fuori dall'animazione di proposito — chi ha chiesto meno movimento al
+   sistema si vede azzerare le durate, e allora questo resta l'unica risposta
+   al suo tocco. È un colore, non un movimento. */
+.modal--trattieni .modal-close {
+  background: var(--c-primary);
+  color: #fff;
+  /* `.modal-close` sfuma lo sfondo in .15s per l'hover del mouse. Qui no: il
+     cenno dura mezzo secondo in tutto, e una dissolvenza in entrata se ne
+     mangerebbe un terzo arrivando quando il movimento è già finito. Si accende
+     di colpo; a spegnersi ci pensa la transizione di prima, che torna appena
+     la classe se ne va. */
+  transition: none;
+}
+
 .modal-header {
   display: flex;
   align-items: center;
