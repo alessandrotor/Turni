@@ -36,6 +36,7 @@ import { exportShiftsExcel, exportShiftsPDF } from '../services/export';
 import { sendImportTelemetry } from '../services/telemetry';
 import ImportModal from './ImportModal';
 import TimelineView from './TimelineView';
+import ShareWeekModal from './ShareWeekModal';
 import useOccupato from '../hooks/useOccupato';
 import { KEY_CAL_LAYOUT } from '../services/backup';
 
@@ -113,6 +114,7 @@ export default function CalendarView({
   // Avvertenza sull'invio della foto: mostrata una volta sola, ricordata nel
   // browser. Vedi `accettatoInvioFoto` in services/gemini.js.
   const [mostraAvvisoFoto, setMostraAvvisoFoto] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [contiBonusAperti, setContiBonusAperti] = useState(false);
   const [calLayout, setCalLayout] = useState(() => {
     try { return localStorage.getItem(KEY_CAL_LAYOUT) || 'grid'; } catch { return 'grid'; }
@@ -602,6 +604,15 @@ export default function CalendarView({
               ≡
             </button>
           </div>
+          <button
+            type="button"
+            className="cal-header-share-btn"
+            onClick={() => setShowShareModal(true)}
+            title="Condividi i turni della settimana"
+            aria-label="Condividi i turni della settimana"
+          >
+            💬
+          </button>
         </div>
 
         {/* IL NUMERO PER CUI SI APRE L'APP, dove lo si vede sempre.
@@ -1360,6 +1371,13 @@ export default function CalendarView({
           >
             📄 PDF
           </button>
+          <button
+            type="button"
+            className="btn-export"
+            onClick={() => setShowShareModal(true)}
+          >
+            💬 Settimana
+          </button>
         </div>
         {exportError && <p className="import-error">{exportError}</p>}
 
@@ -1549,6 +1567,14 @@ export default function CalendarView({
             </div>
           </div>
         </div>
+      )}
+
+      {showShareModal && (
+        <ShareWeekModal
+          shifts={shifts}
+          initialDate={currentMonth}
+          onClose={() => setShowShareModal(false)}
+        />
       )}
     </div>
   );

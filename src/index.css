@@ -241,6 +241,25 @@ input, select, textarea { font: inherit; }
   font-weight: 700;
 }
 
+.cal-header-share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  font-size: .95rem;
+  color: var(--c-text-2);
+  transition: background .12s, color .12s, border-color .12s;
+}
+.cal-header-share-btn:hover {
+  background: var(--c-card);
+  color: var(--c-primary);
+  border-color: var(--c-muted);
+}
+
 /* ── Timeline Agenda View ────────────────────────────────────────── */
 .timeline-view {
   display: flex;
@@ -986,6 +1005,132 @@ input, select, textarea { font: inherit; }
   display: flex;
   gap: .75rem;
   padding-top: .25rem;
+}
+
+/* ── Share Week Modal ────────────────────────────────────────────── */
+.share-modal {
+  max-width: 440px;
+  width: 92%;
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .85rem;
+}
+
+.share-week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .25rem .45rem;
+  background: var(--c-bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--c-border);
+}
+
+.share-week-label {
+  font-weight: 700;
+  font-size: .92rem;
+  color: var(--c-text);
+}
+
+.share-card {
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: .75rem .85rem;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+}
+
+.share-week-list {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+
+.share-day-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .25rem 0;
+  border-bottom: 1px solid var(--c-border);
+  font-size: .88rem;
+}
+.share-day-row:last-child {
+  border-bottom: none;
+}
+
+.share-day-date {
+  color: var(--c-text);
+  font-size: .85rem;
+}
+.share-day-date strong {
+  color: var(--c-primary);
+  display: inline-block;
+  width: 34px;
+}
+
+.share-day-info {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .85rem;
+}
+
+.share-day-rest {
+  color: var(--c-success);
+  font-weight: 600;
+  font-size: .82rem;
+}
+
+.share-day-shift {
+  font-weight: 600;
+  color: var(--c-text);
+}
+.share-day-shift small {
+  font-weight: 500;
+  color: var(--c-text-2);
+  margin-left: 2px;
+}
+
+.share-card-total {
+  background: var(--c-bg);
+  padding: .4rem .65rem;
+  border-radius: var(--radius-sm);
+  font-size: .82rem;
+  color: var(--c-text-2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.share-card-total strong {
+  color: var(--c-text);
+  font-size: .9rem;
+}
+
+.share-copied-toast {
+  background: var(--c-success-light);
+  color: var(--c-success);
+  padding: .4rem .65rem;
+  border-radius: var(--radius-sm);
+  font-size: .82rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.share-actions {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.share-btn-main {
+  background: #16a34a;
+}
+.share-btn-main:hover {
+  background: #15803d;
 }
 
 .cosa-cambia-strip {
