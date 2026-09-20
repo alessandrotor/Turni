@@ -3,7 +3,7 @@ import { formatCurrency, parseNum } from '../utils/pay';
 import { getCcnl } from '../utils/ccnl';
 import { FASCE_DIPENDENTI, FASCIA_DEFAULT, contributiDiLegge } from '../utils/contributi-legge';
 import { isTelemetryEnabled, setTelemetryEnabled, telemetriaDisponibile } from '../services/telemetry';
-import { esportaBackup, importaBackup, contaTurniSalvati } from '../services/backup';
+import { esportaBackup, leggiBackup, applicaBackup, contaTurniSalvati } from '../services/backup';
 import { ESITO } from '../services/export';
 import CcnlPicker from './CcnlPicker';
 import { statoConfigurazione } from '../utils/configurazione';
@@ -101,6 +101,10 @@ export default function Settings({ settings, onSave }) {
   // Il backup in chiaro, mostrato SOLO quando la consegna non è verificabile:
   // è la via di riserva, non un'opzione da tenere sempre a schermo.
   const [backupTesto, setBackupTesto] = useState(null);
+  // Il backup LETTO ma non ancora applicato: finché sta qui dentro non è stato
+  // scritto niente, ed è quello che permette di mostrare le due cifre a
+  // confronto invece di un «sei sicuro?» che non sa di cosa parla.
+  const [daRipristinare, setDaRipristinare] = useState(null);
   const backupInputRef = useRef(null);
   const [turniSalvati] = useState(contaTurniSalvati);
   // Turni con l'orario a :50 da correggere: letti una volta sola all'apertura,
@@ -243,27 +247,76 @@ export default function Settings({ settings, onSave }) {
     }
   }
 
+  // IL RIPRISTINO IN DUE TEMPI, E PERCHÉ NON COSTA UN TOCCO IN PIÙ
+  //
+  // Prima c'era un `window.confirm` che diceva «sostituisce TUTTI i turni.
+  // Continuare?». Un tocco lo chiedeva già, ma per una domanda che non sapeva
+  // niente: né quanti turni stavi per perdere, né quanti ne arrivavano, né se
+  // il file era davvero quello giusto. E se rispondevi sì per sbaglio non
+  // c'era modo di tornare indietro, perché nessuno aveva messo da parte una
+  // copia di quello che c'era.
+  //
+  // Adesso il file si legge SENZA scrivere niente (`leggiBackup`), e lo stesso
+  // tocco di prima serve a decidere sapendo: le due cifre a confronto, la data
+  // del backup, e le voci che non si sono potute leggere — che prima entravano
+  // in silenzio. Accanto, la copia dei dati attuali da portare via prima di
+  // sostituirli: è l'annullamento che questa strada non può avere, perché dopo
+  // il ripristino l'app si ricarica e la memoria è già quella nuova.
   async function handleImportaBackup(e) {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
 
-    // Il ripristino sovrascrive mesi di turni: la conferma non è una formalità.
-    const conferma = window.confirm(
-      'Il ripristino sostituisce TUTTI i turni e le impostazioni presenti su questo telefono. Continuare?'
-    );
-    if (!conferma) return;
+    setBackupBusy(true);
+    setBackupMsg(null);
+    setDaRipristinare(null);
+    try {
+      const letto = await leggiBackup(file);
+      setDaRipristinare({ ...letto, nomeFile: file.name });
+    } catch (err) {
+      setBackupMsg({ errore: true, testo: err.message || 'Ripristino non riuscito.' });
+    } finally {
+      setBackupBusy(false);
+    }
+  }
 
+  function confermaRipristino() {
     setBackupBusy(true);
     setBackupMsg(null);
     try {
-      const { turni } = await importaBackup(file);
-      setBackupMsg({ testo: `Ripristinati ${turni} turni. Ricarico l'app…` });
+      const { turni, scartati } = applicaBackup(daRipristinare);
+      setDaRipristinare(null);
+      const coda = scartati.length
+        ? ` ${scartati.length} vo${scartati.length === 1 ? 'ce non è stata' : 'ci non sono state'} ripristinat${scartati.length === 1 ? 'a' : 'e'}: nel file non erano leggibili.`
+        : '';
+      setBackupMsg({ attenzione: scartati.length > 0, testo: `Ripristinati ${turni} turni.${coda} Ricarico l'app…` });
       // Gli hook useLocalStorage leggono solo all'inizializzazione: senza reload
       // la schermata continuerebbe a mostrare i dati vecchi.
-      setTimeout(() => window.location.reload(), 800);
+      setTimeout(() => window.location.reload(), scartati.length ? 3000 : 800);
     } catch (err) {
       setBackupMsg({ errore: true, testo: err.message || 'Ripristino non riuscito.' });
+      setBackupBusy(false);
+    }
+  }
+
+  // «Portami via quelli di adesso, prima di sostituirli.» Passa dalla stessa
+  // strada dell'esportazione, quindi eredita ESITO e non promette un file che
+  // nessuno ha visto arrivare.
+  async function salvaPrimaDiSostituire() {
+    setBackupBusy(true);
+    try {
+      const { turni, esito, testo } = await esportaBackup();
+      if (esito === ESITO.SALVATO || esito === ESITO.CONDIVISO) {
+        setBackupMsg({ testo: `Dati attuali messi al sicuro: ${turni} turni.` });
+      } else if (esito === ESITO.ANNULLATO) {
+        setBackupMsg({ testo: 'Nessun file salvato.' });
+      } else {
+        setBackupMsg({ attenzione: true, testo: `Copia di ${turni} turni avviata: controlla che il file sia fra i download prima di sostituire. Se non lo trovi, copia il testo qui sotto.` });
+        setBackupTesto(testo);
+      }
+    } catch (err) {
+      setBackupMsg({ errore: true, testo: err.message || 'Impossibile creare la copia.' });
+    } finally {
       setBackupBusy(false);
     }
   }
@@ -286,8 +339,49 @@ export default function Settings({ settings, onSave }) {
     }
   }
 
+  // «SALVA» CHE NON SALVAVA E NON DICEVA NIENTE
+  //
+  // Il modulo era un `<form>` senza `noValidate`, quindi la validazione del
+  // browser era accesa; i campi stanno in sedici sezioni `<details>`, quasi
+  // tutte chiuse. Il browser trovava un campo invalido dentro una sezione
+  // chiusa, voleva mostrargli sopra il fumetto «inserisci un valore valido»,
+  // non poteva — quel campo non è a schermo — e allora ANNULLAVA L'INVIO senza
+  // mostrare niente. Solo una riga in console.
+  //
+  // Per chi usa l'app: apri una sezione, scrivi un numero, la richiudi, premi
+  // «Salva impostazioni» e non succede assolutamente nulla. Nemmeno il
+  // «✓ Salvato!». Il pulsante sembra rotto, e non c'è modo di capire perché.
+  //
+  // E scattava su valori LEGITTIMI: `step="0.5"` rendeva invalide 37,25 ore
+  // settimanali, `step="1"` il 66,66% di malattia, e su «ore di una giornata di
+  // assenza» rendeva invalido 6,67 — cioè proprio il numero che il segnaposto
+  // di quel campo suggerisce (40 ÷ 6). Da lì gli `step="any"`: il passo di un
+  // campo non è il posto dove dire quali valori esistono.
+  //
+  // Ora la validazione è nostra: si trova il primo campo che non va, SI APRE LA
+  // SEZIONE che lo contiene, ci si porta il fuoco sopra e solo allora si chiede
+  // al browser di dirlo — che a quel punto ha un campo visibile a cui
+  // attaccarsi. O si salva, o si dice dov'è il problema. Mai il silenzio.
+  function mostraIlProblema(modulo) {
+    const storto = [...modulo.elements].find((el) => el.willValidate && !el.checkValidity());
+    if (!storto) return false;
+
+    // `<details>` non è controllato da React qui: aprirlo dal DOM regge fino al
+    // prossimo render, che è molto più di quanto serva.
+    for (let n = storto.parentElement; n; n = n.parentElement) {
+      if (n.tagName === 'DETAILS') n.open = true;
+    }
+
+    storto.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    storto.focus({ preventScroll: true });
+    storto.reportValidity();
+    return true;
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (mostraIlProblema(e.currentTarget)) return;
+
     const previousRates = form.previousRates
       .filter(c => c.until && parseNum(c.rate) > 0)
       .map(c => ({ id: c.id, until: c.until, rate: parseNum(c.rate) }))
@@ -455,7 +549,10 @@ export default function Settings({ settings, onSave }) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="settings-form">
+      {/* `noValidate` non spegne la validazione: la toglie al browser, che qui
+          non può mostrarla (vedi `mostraIlProblema`), e la dà a noi. I vincoli
+          sui campi — `required`, `min`, `max` — restano e vengono letti da lì. */}
+      <form onSubmit={handleSubmit} className="settings-form" noValidate>
 
         {/* ══ ESSENZIALI ══════════════════════════════════════════ */}
 
@@ -572,10 +669,19 @@ export default function Settings({ settings, onSave }) {
                   id="expected-hours"
                   type="number"
                   className="form-input"
-                  min="0"
+                  // `required` e `min="1"` invece di `min="0"`: lo zero qui non
+                  // è un valore basso, è un dato mancante travestito. Manda a
+                  // zero la soglia dei supplementari — ogni ora lavorata
+                  // diventa supplementare — e le ore di una giornata di ferie.
+                  required
+                  min="1"
                   max="84"
-                  step="0.5"
-                  value={form.expectedWeeklyHours || ''}
+                  step="any"
+                  // `?? ''` e non `|| ''`: con `||` uno zero salvato si
+                  // ripresentava come CAMPO VUOTO, identico a «non l'ho ancora
+                  // messo», e chi lo guardava credeva valesse il default 40.
+                  // Lo zero era invisibile e sopravviveva ai riavvii.
+                  value={form.expectedWeeklyHours ?? ''}
                   onChange={set('expectedWeeklyHours')}
                 />
               </div>
@@ -587,7 +693,7 @@ export default function Settings({ settings, onSave }) {
                   className="form-input"
                   min="0"
                   max="84"
-                  step="0.5"
+                  step="any"
                   value={form.fullTimeWeeklyHours || ''}
                   onChange={set('fullTimeWeeklyHours')}
                 />
@@ -623,7 +729,7 @@ export default function Settings({ settings, onSave }) {
                   className="form-input"
                   min="0"
                   max="24"
-                  step="0.5"
+                  step="any"
                   placeholder="es. 8"
                   value={form.dailyOvertimeThreshold || ''}
                   onChange={set('dailyOvertimeThreshold')}
@@ -680,7 +786,7 @@ export default function Settings({ settings, onSave }) {
                 className="form-input form-input--with-symbol"
                 min="0"
                 max="200"
-                step="0.5"
+                step="any"
                 placeholder="es. 30"
                 value={form.sundaySurchargePct || ''}
                 onChange={set('sundaySurchargePct')}
@@ -700,7 +806,7 @@ export default function Settings({ settings, onSave }) {
                 className="form-input form-input--with-symbol"
                 min="0"
                 max="200"
-                step="0.5"
+                step="any"
                 placeholder="es. 50"
                 value={form.holidaySurchargePct || ''}
                 onChange={set('holidaySurchargePct')}
@@ -735,7 +841,7 @@ export default function Settings({ settings, onSave }) {
                 className="form-input form-input--with-symbol"
                 min="0"
                 max="200"
-                step="0.5"
+                step="any"
                 placeholder="es. 20"
                 value={form.nightSurchargePct || ''}
                 onChange={set('nightSurchargePct')}
@@ -846,7 +952,7 @@ export default function Settings({ settings, onSave }) {
                 className="form-input form-input--with-symbol"
                 min="0"
                 max="200"
-                step="0.5"
+                step="any"
                 placeholder="es. 15"
                 value={form.overtimeSurchargePct || ''}
                 onChange={set('overtimeSurchargePct')}
@@ -877,7 +983,7 @@ export default function Settings({ settings, onSave }) {
                   className="form-input form-input--with-symbol"
                   min="0"
                   max="200"
-                  step="0.5"
+                  step="any"
                   placeholder="es. 30"
                   value={form.straordinarioSurchargePct}
                   onChange={set('straordinarioSurchargePct')}
@@ -913,7 +1019,7 @@ export default function Settings({ settings, onSave }) {
                 className="form-input"
                 min="1"
                 max="7"
-                step="1"
+                step="any"
                 value={form.workingDaysPerWeek}
                 onChange={set('workingDaysPerWeek')}
               />
@@ -926,7 +1032,7 @@ export default function Settings({ settings, onSave }) {
                 className="form-input"
                 min="0"
                 max="24"
-                step="0.5"
+                step="any"
                 placeholder={String(oreAssenzaCalcolate)}
                 value={form.absenceDailyHours}
                 onChange={set('absenceDailyHours')}
@@ -952,7 +1058,7 @@ export default function Settings({ settings, onSave }) {
                 className="form-input"
                 min="0"
                 max="30"
-                step="1"
+                step="any"
                 value={form.malattiaCarenzaGiorni}
                 onChange={set('malattiaCarenzaGiorni')}
               />
@@ -967,7 +1073,7 @@ export default function Settings({ settings, onSave }) {
                   className="form-input form-input--with-symbol"
                   min="0"
                   max="100"
-                  step="1"
+                  step="any"
                   value={form.malattiaCarenzaPct}
                   onChange={set('malattiaCarenzaPct')}
                 />
@@ -983,7 +1089,7 @@ export default function Settings({ settings, onSave }) {
                   className="form-input form-input--with-symbol"
                   min="0"
                   max="100"
-                  step="1"
+                  step="any"
                   value={form.malattiaPct}
                   onChange={set('malattiaPct')}
                 />
@@ -1214,6 +1320,60 @@ export default function Settings({ settings, onSave }) {
             hidden
             onChange={handleImportaBackup}
           />
+
+          {/* Il file è stato letto, ma non ancora scritto da nessuna parte.
+              Le due cifre stanno una sopra l'altra perché la domanda vera è
+              quella: cosa entra, e cosa va via. */}
+          {daRipristinare && (
+            <div className="ripristino-riepilogo" role="group" aria-label="Conferma ripristino">
+              <p className="ripristino-file">
+                {daRipristinare.nomeFile}
+                {daRipristinare.dati.esportatoIl && (
+                  <span className="form-hint"> · del {daRipristinare.dati.esportatoIl.slice(0, 10).split('-').reverse().join('/')}</span>
+                )}
+              </p>
+
+              <p className="ripristino-conti">
+                <strong>{daRipristinare.turni}</strong> turn{daRipristinare.turni === 1 ? 'o' : 'i'} nel file
+                {' → '}
+                sostituiscono i <strong>{turniSalvati}</strong> di adesso
+              </p>
+
+              {daRipristinare.scartati.length > 0 && (
+                <p className="form-hint form-hint--warn">
+                  {daRipristinare.scartati.length} vo{daRipristinare.scartati.length === 1 ? 'ce del file non è leggibile e verrà lasciata fuori' : 'ci del file non sono leggibili e verranno lasciate fuori'}
+                  {' '}({[...new Set(daRipristinare.scartati.map(s => s.perche))].join(', ')}).
+                </p>
+              )}
+
+              <div className="ripristino-azioni">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={salvaPrimaDiSostituire}
+                  disabled={backupBusy || turniSalvati === 0}
+                >
+                  ⬇️ Salva prima quelli di adesso
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={confermaRipristino}
+                  disabled={backupBusy}
+                >
+                  Sostituisci
+                </button>
+                <button
+                  type="button"
+                  className="ripristino-annulla"
+                  onClick={() => setDaRipristinare(null)}
+                  disabled={backupBusy}
+                >
+                  Annulla
+                </button>
+              </div>
+            </div>
+          )}
 
           {backupMsg && (
             <p
