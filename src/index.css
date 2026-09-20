@@ -72,7 +72,7 @@ input, select, textarea { font: inherit; }
 .main-content {
   flex: 1;
   padding-top: var(--nav-h);
-  padding-bottom: calc(1rem + var(--safe-bottom));
+  padding-bottom: calc(5rem + var(--safe-bottom));
 }
 
 /* ── Navbar ─────────────────────────────────────────────────────── */
@@ -250,7 +250,7 @@ input, select, textarea { font: inherit; }
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   overflow: hidden;
-  padding: .75rem .5rem 1.5rem;
+  padding: .75rem .5rem;
 }
 
 .timeline-item {
@@ -564,24 +564,26 @@ input, select, textarea { font: inherit; }
 }
 
 /* Floating Bottom Summary Bar */
-.timeline-floating-bar {
-  position: sticky;
-  bottom: 1.25rem;
-  margin: 1rem auto 0;
-  max-width: 94%;
+.cal-floating-bar {
+  position: fixed;
+  bottom: calc(1.25rem + var(--safe-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: calc(100vw - 2rem);
   width: fit-content;
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: .5rem .65rem .5rem 1.1rem;
+  padding: .5rem .65rem .5rem 1.15rem;
   background: var(--c-card);
   border: 1px solid var(--c-border);
   border-radius: 9999px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, .1), 0 2px 6px rgba(0, 0, 0, .06);
-  z-index: 30;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .14), 0 2px 6px rgba(0, 0, 0, .08);
+  z-index: 50;
+  pointer-events: auto;
 }
 
-.timeline-floating-info {
+.cal-floating-info {
   display: flex;
   align-items: baseline;
   gap: .4rem;
@@ -590,27 +592,27 @@ input, select, textarea { font: inherit; }
   white-space: nowrap;
 }
 
-.timeline-floating-eti {
+.cal-floating-eti {
   font-size: .8rem;
   color: var(--c-text-2);
 }
 
-.timeline-floating-val {
+.cal-floating-val {
   font-weight: 800;
   color: var(--c-text);
   font-size: .98rem;
 }
 
-.timeline-floating-dot {
+.cal-floating-dot {
   color: var(--c-muted);
 }
 
-.timeline-floating-hours {
+.cal-floating-hours {
   font-size: .85rem;
   color: var(--c-text-2);
 }
 
-.timeline-floating-add-btn {
+.cal-floating-add-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -626,7 +628,7 @@ input, select, textarea { font: inherit; }
   transition: transform .12s ease, background .12s ease;
   flex-shrink: 0;
 }
-.timeline-floating-add-btn:hover {
+.cal-floating-add-btn:hover {
   background: var(--c-primary-dark);
   transform: scale(1.06);
 }
