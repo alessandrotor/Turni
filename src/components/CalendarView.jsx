@@ -1496,33 +1496,18 @@ export default function CalendarView({
         </div>
       )}
 
-      {/* Barra flottante riepilogo rapido */}
-      <div className="cal-floating-bar" role="status" aria-label="Riepilogo rapido">
-        <div className="cal-floating-info">
-          {pay !== null ? (
-            <>
-              <span className="cal-floating-eti">Stima lorda:</span>
-              <strong className="cal-floating-val">{formatCurrency(pay.total)}</strong>
-              <span className="cal-floating-dot">·</span>
-              <span className="cal-floating-hours">{formatMinutesShort(totalMins)}</span>
-            </>
-          ) : (
-            <>
-              <span className="cal-floating-eti">Ore mese:</span>
-              <strong className="cal-floating-val">{formatMinutesShort(totalMins)}</strong>
-            </>
-          )}
-        </div>
+      {/* Pulsante rapido flottante: solo in vista agenda/timeline */}
+      {calLayout === 'timeline' && (
         <button
           type="button"
           className="cal-floating-add-btn"
           onClick={() => onAddShift(focusDate || formatDate(new Date()))}
           aria-label="Aggiungi turno"
-          title="Aggiungi turno"
         >
-          +
+          <span className="cal-floating-add-icon" aria-hidden="true">+</span>
+          <span className="cal-floating-add-text">Aggiungi turno</span>
         </button>
-      </div>
+      )}
 
       {(pendingImportFile || editingName) && (
         <div className="modal-overlay" onClick={closeNameModal}>

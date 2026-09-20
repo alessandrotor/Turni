@@ -72,7 +72,7 @@ input, select, textarea { font: inherit; }
 .main-content {
   flex: 1;
   padding-top: var(--nav-h);
-  padding-bottom: calc(5rem + var(--safe-bottom));
+  padding-bottom: calc(1rem + var(--safe-bottom));
 }
 
 /* ── Navbar ─────────────────────────────────────────────────────── */
@@ -250,7 +250,7 @@ input, select, textarea { font: inherit; }
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   overflow: hidden;
-  padding: .75rem .5rem;
+  padding: .75rem .5rem calc(4.5rem + var(--safe-bottom));
 }
 
 .timeline-item {
@@ -563,74 +563,45 @@ input, select, textarea { font: inherit; }
   font-weight: 600;
 }
 
-/* Floating Bottom Summary Bar */
-.cal-floating-bar {
+/* Pulsante rapido flottante (Vista Agenda) */
+.cal-floating-add-btn {
   position: fixed;
   bottom: calc(1.25rem + var(--safe-bottom));
   left: 50%;
   transform: translateX(-50%);
-  max-width: calc(100vw - 2rem);
-  width: fit-content;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: .5rem .65rem .5rem 1.15rem;
-  background: var(--c-card);
-  border: 1px solid var(--c-border);
+  gap: .45rem;
+  padding: .65rem 1.25rem;
+  background: var(--c-primary);
+  color: #ffffff;
   border-radius: 9999px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, .14), 0 2px 6px rgba(0, 0, 0, .08);
+  font-size: .92rem;
+  font-weight: 700;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, .38), 0 2px 6px rgba(0, 0, 0, .08);
   z-index: 50;
+  transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
   pointer-events: auto;
 }
 
-.cal-floating-info {
-  display: flex;
-  align-items: baseline;
-  gap: .4rem;
-  font-size: .88rem;
-  color: var(--c-text-2);
-  white-space: nowrap;
-}
-
-.cal-floating-eti {
-  font-size: .8rem;
-  color: var(--c-text-2);
-}
-
-.cal-floating-val {
-  font-weight: 800;
-  color: var(--c-text);
-  font-size: .98rem;
-}
-
-.cal-floating-dot {
-  color: var(--c-muted);
-}
-
-.cal-floating-hours {
-  font-size: .85rem;
-  color: var(--c-text-2);
-}
-
-.cal-floating-add-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: var(--c-primary);
-  color: #ffffff;
-  font-size: 1.35rem;
-  font-weight: 700;
-  line-height: 1;
-  box-shadow: 0 2px 6px rgba(37, 99, 235, .35);
-  transition: transform .12s ease, background .12s ease;
-  flex-shrink: 0;
-}
 .cal-floating-add-btn:hover {
   background: var(--c-primary-dark);
-  transform: scale(1.06);
+  transform: translateX(-50%) translateY(-1px);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, .48), 0 3px 8px rgba(0, 0, 0, .1);
+}
+
+.cal-floating-add-btn:active {
+  transform: translateX(-50%) scale(.97);
+}
+
+.cal-floating-add-icon {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cal-floating-add-text {
+  letter-spacing: .01em;
 }
 
 .cal-grid {
