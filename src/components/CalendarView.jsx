@@ -681,6 +681,8 @@ export default function CalendarView({
           // l'utente cerca.
           payByShift={payByShift}
           mostraEuro={mostraEuro}
+          pay={pay}
+          totalMins={totalMins}
         />
       ) : (
         <div className="cal-grid">

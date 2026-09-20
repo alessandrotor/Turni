@@ -53,6 +53,8 @@ export default function TimelineView({
   focusDate = null,
   payByShift = null,
   mostraEuro = false,
+  pay = null,
+  totalMins = 0,
 }) {
   const todayRef = useRef(null);
   const focusRef = useRef(null);
@@ -294,6 +296,26 @@ export default function TimelineView({
           </div>
         );
       })}
+
+      {pay !== null && (
+        <div className="timeline-floating-bar" role="status" aria-label="Riepilogo rapido">
+          <div className="timeline-floating-info">
+            <span className="timeline-floating-eti">Stima lorda:</span>
+            <strong className="timeline-floating-val">{formatCurrency(pay.total)}</strong>
+            <span className="timeline-floating-dot">·</span>
+            <span className="timeline-floating-hours">{formatMinutes(totalMins)}</span>
+          </div>
+          <button
+            type="button"
+            className="timeline-floating-add-btn"
+            onClick={() => onAddShift(focusDate || formatDate(new Date()))}
+            aria-label="Aggiungi turno"
+            title="Aggiungi turno"
+          >
+            +
+          </button>
+        </div>
+      )}
     </div>
   );
 }
