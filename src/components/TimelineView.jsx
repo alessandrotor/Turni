@@ -1,17 +1,12 @@
 import { useRef, useEffect, useMemo } from 'react';
 import {
-  formatDate, formatDayShort, isToday, isWeekend, formatMinutes,
+  formatDate, formatDayShort, isToday, isWeekend, formatMinutes, MONTH_NAMES,
 } from '../utils/dates';
 import { calcShiftMinutes, getShiftSurchargePct, formatCurrency, lordoTurno } from '../utils/pay';
 import { minutiNotturniPagati, pctNotturno, fasciaNotturna } from '../utils/notturno';
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { isHoliday } from '../utils/holidays';
 
-// Il badge dice quante ore cadono in fascia; il suggerimento dice se quelle ore
-// valgono davvero di più. Sono due cose diverse e vanno tenute distinte: la
-// fascia è un fatto dell'orario, la maggiorazione è un'impostazione che l'utente
-// può non aver messo — e in quel caso il badge non deve lasciar credere a un
-// aumento che in busta non c'è.
 function spiegaNotturno(minuti, settings) {
   const { inizio, durata } = fasciaNotturna(settings);
   const hhmm = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
@@ -22,12 +17,6 @@ function spiegaNotturno(minuti, settings) {
     : `${formatMinutes(minuti)} nella fascia ${fascia}. Non hai impostato una maggiorazione notturna, quindi non cambia la stima: puoi aggiungerla in Impostazioni.`;
 }
 
-// Da cosa è fatto l'importo di un turno, scritto per esteso.
-//
-// Nell'agenda c'è lo spazio che la cella della griglia non ha, ed è l'unico
-// posto dell'app in cui si può rispondere alla domanda vera: non «quanto ho
-// preso» ma «perché questa domenica vale più di ieri». I numeri sono gli stessi
-// che finiscono in busta come righe separate.
 function scomponi(voce) {
   if (!voce) return '';
   const eur = (n) => n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -38,8 +27,21 @@ function scomponi(voce) {
   if (voce.surchargeOvertime > 0) pezzi.push(`supplementare ${eur(voce.surchargeOvertime)}`);
   if (voce.surchargeStraordinario > 0) pezzi.push(`straordinario ${eur(voce.surchargeStraordinario)}`);
   if (voce.surchargeManual > 0) pezzi.push(`maggiorazione ${eur(voce.surchargeManual)}`);
-  // Con la sola base non c'è niente da spiegare: la cifra è già lì sopra.
   return pezzi.length > 1 ? pezzi.join(' + ') : '';
+}
+
+function etichettaFasciaOraria(shift, d, tipo) {
+  if (tipo !== TIPO.LAVORO) return ETICHETTA[tipo];
+  if (d.holiday) return 'Festivo';
+  if (d.date.getDay() === 0) return 'Domenicale';
+  const [h] = (shift.startTime || '').split(':').map(Number);
+  if (!Number.isNaN(h)) {
+    if (h >= 5 && h < 12) return 'Mattina';
+    if (h >= 12 && h < 18) return 'Pomeriggio';
+    if (h >= 18 && h < 22) return 'Sera';
+    return 'Notturno';
+  }
+  return 'Turno';
 }
 
 export default function TimelineView({
@@ -53,36 +55,18 @@ export default function TimelineView({
   focusDate = null,
   payByShift = null,
   mostraEuro = false,
+  pay = null,
+  totalMins = 0,
 }) {
   const todayRef = useRef(null);
   const focusRef = useRef(null);
 
-  // Porta sotto gli occhi il giorno focus, o oggi nel mese corrente.
-  //
-  // SALTO ISTANTANEO, non animato, e non e' una scelta di stile: misurato sul
-  // sito pubblicato il 19 agosto, dallo stesso punto di partenza e con il
-  // layout fermo, `behavior:'smooth'` lasciava la pagina a zero e «oggi» a
-  // 1304 pixel sotto il bordo, mentre `'auto'` centrava il giorno al pixel
-  // giusto. Era la causa dello schermo mezzo bianco al passaggio dalla
-  // griglia: sembrava un problema di layout non ancora assestato, ed era
-  // l'animazione che finiva dove capitava.
-  //
-  // Niente attese su `requestAnimationFrame`: `getBoundingClientRect`, che
-  // `scrollIntoView` usa internamente, forza gia' il ricalcolo del layout,
-  // quindi la posizione e' quella vera anche subito dopo il commit di React.
-  // Un rinvio in piu' aggiunge solo un modo di non scorrere affatto.
-  //
-  // Essendo istantaneo, non c'e' animazione da ridurre: chi ha chiesto meno
-  // movimento e' servito per costruzione.
   useEffect(() => {
     const bersaglio = focusRef.current || todayRef.current;
     if (!bersaglio) return;
     bersaglio.scrollIntoView({ block: 'center', behavior: 'auto' });
   }, [focusDate, month, year]);
 
-  // I giorni si ricostruiscono solo quando cambia il mese o cambiano i turni:
-  // senza questo, ogni stato del calendario (menù export, modali, barra import)
-  // rifaceva da capo trentun giorni di celle.
   const days = useMemo(() => Array.from({ length: daysInMonth }, (_, i) => {
     const dayNum = i + 1;
     const date = new Date(year, month, dayNum);
@@ -105,6 +89,9 @@ export default function TimelineView({
       {days.map((d) => {
         const hasShifts = d.dayShifts.length > 0;
         const isFocus = d.dateStr === focusDate;
+        const monthShort = MONTH_NAMES[month];
+        const capMonth = monthShort ? monthShort.charAt(0).toUpperCase() + monthShort.slice(1) : '';
+        const cardDateLabel = d.today ? `${d.dayName} ${d.dayNum} ${capMonth}` : `${d.dayName} ${d.dayNum}`;
 
         return (
           <div
@@ -114,8 +101,6 @@ export default function TimelineView({
             className={[
               'timeline-item',
               d.today ? 'timeline-item--today' : '',
-              d.weekend ? 'timeline-item--weekend' : '',
-              d.holiday ? 'timeline-item--holiday' : '',
               isFocus ? 'timeline-item--focus' : '',
             ].filter(Boolean).join(' ')}
           >
@@ -125,7 +110,6 @@ export default function TimelineView({
               <span className={`timeline-day-num ${d.today ? 'timeline-day-num--today' : ''}`}>
                 {d.dayNum}
               </span>
-              {d.today && <span className="timeline-badge-today">Oggi</span>}
               {d.holiday && !d.today && (
                 <span className="timeline-badge-holiday" title="Festivo">Festivo</span>
               )}
@@ -146,42 +130,67 @@ export default function TimelineView({
                     const isAssenza = tipo !== TIPO.LAVORO;
                     const voce = payByShift?.[shift.id] ?? null;
                     const mins = calcShiftMinutes(shift);
-                    // Gli stessi minuti che il motore paga, non quelli di
-                    // orologio: con una pausa i due numeri differiscono, e il
-                    // riepilogo del mese direbbe una cosa diversa dal turno.
                     const notteMin = isAssenza ? 0 : minutiNotturniPagati(shift, settings, mins);
                     const night = notteMin > 0;
                     const surchargePct = getShiftSurchargePct(shift, settings);
+                    const fascia = etichettaFasciaOraria(shift, d, tipo);
                     const descrizione = isAssenza
                       ? `${ETICHETTA[tipo].toLowerCase()} del ${d.dayNum}/${month + 1}`
                       : `turno ${shift.startTime}–${shift.endTime} del ${d.dayNum}/${month + 1}`;
 
-                    // Il riquadro resta cliccabile col mouse, ma NON è un
-                    // comando per la tastiera: il comando vero è il pulsante
-                    // qui sotto. Un role="button" che ne contiene un altro è
-                    // invalido e regala due tabulazioni per la stessa azione —
-                    // è la stessa regola che vale per le celle della griglia.
                     return (
                       <div
                         key={shift.id}
-                        className={`timeline-card ${isAssenza ? `timeline-card--${tipo}` : ''} ${night ? 'timeline-card--night' : ''}`}
+                        className={[
+                          'timeline-card',
+                          isAssenza ? `timeline-card--${tipo}` : '',
+                          night ? 'timeline-card--night' : '',
+                          (d.holiday || d.date.getDay() === 0) && !night && !isAssenza ? 'timeline-card--holiday' : '',
+                          d.today ? 'timeline-card--today' : '',
+                        ].filter(Boolean).join(' ')}
                         onClick={() => onEditShift(shift)}
                       >
                         <div className="timeline-card-header">
+                          <span className="timeline-card-date">{cardDateLabel}</span>
+                          <div className="timeline-card-header-actions">
+                            {d.today ? (
+                              <span className="timeline-card-pill timeline-card-pill--today">Oggi</span>
+                            ) : night ? (
+                              <span className="timeline-card-pill timeline-card-pill--night">Notturno</span>
+                            ) : (d.holiday || surchargePct > 0) ? (
+                              <span className="timeline-card-pill timeline-card-pill--surcharge">
+                                +{surchargePct > 0 ? surchargePct : 30}% {d.holiday ? 'Festivo' : 'Domenicale'}
+                              </span>
+                            ) : isAssenza ? (
+                              <span className={`timeline-card-pill timeline-card-pill--${tipo}`}>
+                                {ETICHETTA[tipo]}
+                              </span>
+                            ) : (
+                              <span className="timeline-card-pill timeline-card-pill--shift">
+                                {fascia}
+                              </span>
+                            )}
+
+                            {mostraEuro && voce && !voce.missingRate && (
+                              <span className="timeline-euro">
+                                {formatCurrency(lordoTurno(voce))}
+                              </span>
+                            )}
+
+                            <button
+                              type="button"
+                              className="timeline-card-edit-btn"
+                              aria-label={`Modifica ${descrizione}`}
+                              onClick={(e) => { e.stopPropagation(); onEditShift(shift); }}
+                            >
+                              ✎
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="timeline-card-body">
                           {isAssenza ? (
                             <div className="timeline-card-title">
-                              {/* Nessuna classe sull'icona di proposito: non ne
-                                  ha mai avuta una nel CSS, e l'emoji sta bene
-                                  com'è — eredita il testo del titolo e la
-                                  spaziatura la dà il `gap` del contenitore.
-                                  C'era una classe che non corrispondeva a
-                                  nessuna regola — un aggancio che non
-                                  agganciava niente — tolta il 1° settembre
-                                  2026 senza cambiare un pixel. (Scritta senza
-                                  nominarla: un nome di classe citato in un
-                                  commento risulta «usato» a chi fa il conto
-                                  delle classi morte, ed è così che questa era
-                                  sopravvissuta.) */}
                               <span>{ICONA[tipo]}</span>
                               <strong>{ETICHETTA[tipo]}</strong>
                             </div>
@@ -190,30 +199,13 @@ export default function TimelineView({
                               <span className="timeline-time">
                                 {shift.startTime} – {shift.endTime}
                               </span>
+                              <span className="timeline-time-sep">·</span>
+                              <span className="timeline-shift-name">{fascia}</span>
                               <span className="timeline-duration">
                                 ({formatMinutes(mins)})
                               </span>
                             </div>
                           )}
-
-                          {/* L'importo prima della matita: è il dato, non un
-                              comando. `null` e non zero quando la paga oraria
-                              non c'è — uno «0,00 €» direbbe che il turno non
-                              vale niente, che è falso. */}
-                          {mostraEuro && voce && !voce.missingRate && (
-                            <span className="timeline-euro">
-                              {formatCurrency(lordoTurno(voce))}
-                            </span>
-                          )}
-
-                          <button
-                            type="button"
-                            className="timeline-card-edit-btn"
-                            aria-label={`Modifica ${descrizione}`}
-                            onClick={(e) => { e.stopPropagation(); onEditShift(shift); }}
-                          >
-                            ✎
-                          </button>
                         </div>
 
                         {/* Badge e Metadati del Turno */}
@@ -253,10 +245,6 @@ export default function TimelineView({
                     );
                   })}
 
-                  {/* Con più turni nello stesso giorno ogni riquadro dice le
-                      proprie ore, ma la somma resta da fare a mente: qui c'è
-                      già fatta. Su un turno solo il totale ripeterebbe il
-                      numero appena sopra. */}
                   {d.dayShifts.length > 1 && (
                     <div className="timeline-day-total">
                       Totale del giorno
@@ -266,7 +254,6 @@ export default function TimelineView({
                     </div>
                   )}
 
-                  {/* Pulsante per aggiungere un secondo turno nello stesso giorno */}
                   <button
                     type="button"
                     className="timeline-add-extra-btn"
@@ -276,24 +263,46 @@ export default function TimelineView({
                   </button>
                 </div>
               ) : (
-                /* Giorno libero: è un pulsante vero, così la tastiera e la barra
-                   spaziatrice funzionano senza doverle reimplementare a mano. */
                 <button
                   type="button"
                   className="timeline-rest-card"
                   onClick={() => onAddShift(d.dateStr)}
                   aria-label={`Giorno di riposo: aggiungi un turno il ${d.dayNum}/${month + 1}`}
                 >
-                  <span className="timeline-rest-content">
+                  <div className="timeline-card-header">
+                    <span className="timeline-card-date">{cardDateLabel}</span>
+                    <span className="timeline-card-pill timeline-card-pill--rest">Riposo</span>
+                  </div>
+                  <div className="timeline-rest-content">
                     <span className="timeline-rest-label">🌿 Riposo</span>
                     <span className="timeline-rest-action">+ Aggiungi turno</span>
-                  </span>
+                  </div>
                 </button>
               )}
             </div>
           </div>
         );
       })}
+
+      {pay !== null && (
+        <div className="timeline-floating-bar" role="status" aria-label="Riepilogo rapido">
+          <div className="timeline-floating-info">
+            <span className="timeline-floating-eti">Stima lorda:</span>
+            <strong className="timeline-floating-val">{formatCurrency(pay.total)}</strong>
+            <span className="timeline-floating-dot">·</span>
+            <span className="timeline-floating-hours">{formatMinutes(totalMins)}</span>
+          </div>
+          <button
+            type="button"
+            className="timeline-floating-add-btn"
+            onClick={() => onAddShift(focusDate || formatDate(new Date()))}
+            aria-label="Aggiungi turno"
+            title="Aggiungi turno"
+          >
+            +
+          </button>
+        </div>
+      )}
     </div>
   );
 }
