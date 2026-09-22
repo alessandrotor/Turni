@@ -70,6 +70,15 @@ In pratica, e sono regole, non aspirazioni:
   insegna a chiudere gli avvisi a riflesso. Cancellare un turno agisce subito e
   apre una finestra per tornare indietro (`utils/avvisi.js`, `DURATA_ANNULLA`).
   Quella finestra è lavoro in sospeso: tiene la sua chiave in `occupato`.
+- **Dove l'annulla dopo non può esistere, si protegge il gesto.** Un turno
+  cancellato esiste ancora per otto secondi; una bozza chiusa no, non è mai
+  stata scritta da nessuna parte. Quindi il tocco sull'area scura attorno al
+  modulo del turno chiude finché non c'è niente da perdere, e smette appena c'è
+  — con un cenno che indica la ✕ (`utils/bozza.js`). Il caso che conta non è il
+  turno da otto tocchi: è il periodo di assenza, venti giornate corrette riga
+  per riga. Difetto silenzioso: un campo nuovo nel modulo che nessuno elenca lì
+  resta scoperto, e per questo `check-bozza.mjs` l'elenco non lo dà per buono —
+  lo confronta con i campi che `ShiftForm.jsx` modifica davvero.
 
 Il riscontro di queste regole è `scripts/check-primo-avvio.mjs`: non verifica che
 le funzioni rispondano, verifica che una configurazione completa non chieda
@@ -92,6 +101,11 @@ senza che ci sia niente di rotto: `.env.local` imposta `VITE_TELEMETRY_URL`,
 quindi in `dist/` finisce `script.google.com`. La CI non la imposta
 (`deploy-test.yml`). Vuole anche il proxy AI nel bundle. È l'unico falso
 allarme noto.
+
+`COSE-NUOVE.md` è l'inventario dei difetti noti, e invecchia in silenzio se
+nessuno lo tocca: quando una voce si chiude va marcata lì, col riscontro che la
+tiene chiusa. Il testo del difetto resta sotto, perché spiega perché era un
+difetto.
 
 ## A cosa serve l'app, secondo chi la usa
 
@@ -231,6 +245,30 @@ nemmeno la maggiorazione domenicale lo comprendeva.
   sul datore attuale ha una malattia come semplice storno: dice quanto viene
   tolto, non quanto l'INPS o il contratto restituiscono.
 
+## L'archivio è il localStorage
+
+Non c'è server né account: quello che il browser tiene **è** l'archivio. Da qui
+due regole sul ripristino di un backup (`utils/backup-contenuto.js`,
+`check-backup.mjs`).
+
+- **O tutto o niente, e comunque si dice cosa è successo.** Quattro `setItem` in
+  fila non sono una sostituzione: se il secondo fallisce per quota — un backup
+  grosso su uno storage quasi pieno è il caso tipico — restano i turni nuovi con
+  le impostazioni vecchie, cioè due backup mescolati. Le scritture si preparano
+  prima, si eseguono sapendo com'era, e al primo fallimento si torna indietro;
+  se nemmeno il ritorno riesce, lo si dichiara. Il riscontro rompe lo storage a
+  metà ripristino, a capienze diverse, e verifica che i dati tornino al loro
+  posto — provarlo a mano non lo farà mai nessuno.
+- **Si valida il contenuto, non la busta.** Controllare `app === 'turni'` lascia
+  entrare chiavi che non sono date e minuti negativi, e da lì il render salta
+  con gli originali già cancellati. Attenzione al buco preciso già capitato:
+  `dati.formato > FORMATO` NON ferma un file senza `formato`, perché
+  `undefined > 1` è `false` — passava, e veniva letto come formato 1.
+- **Prima di sostituire si mostra il confronto, non si chiede «sei sicuro?»**
+  Il file si legge senza scrivere niente, e lo stesso tocco di prima mostra le
+  due cifre a confronto, la data del backup, le voci illeggibili e la via per
+  portarsi via i dati di adesso.
+
 ## Convenzioni dell'interfaccia
 
 Discendono tutte dalla parola d'ordine qui sopra.
@@ -251,5 +289,18 @@ Discendono tutte dalla parola d'ordine qui sopra.
   L. 207/24», non «sconto sui contributi»): la prima cosa che si fa con una
   cifra dell'app è cercarla in busta, e un nome inventato la rende
   irrintracciabile. Il gergo si spiega accanto, non si sostituisce.
+- **La validazione dei moduli è nostra, non del browser.** Impostazioni è un
+  `<form>` con sedici `<details>` quasi tutti chiusi: un campo invalido dentro
+  una sezione chiusa annulla l'invio SENZA un messaggio, perché il fumetto
+  nativo non ha dove attaccarsi — si premeva «Salva» e non succedeva niente.
+  Ora la sezione si apre, il fuoco va sul campo e solo allora si chiede al
+  browser di dirlo. E gli `step` valgono `"any"`: `step="0.5"` rifiutava 37,25
+  ore, `step="1"` il 66,66%. Il difetto non si vede provando l'app coi propri
+  dati, che sono tondi — si vede leggendo la marcatura, ed è ciò che fa
+  `check-impostazioni.mjs`.
+- **Un campo vuoto non è uno zero.** `|| ''` faceva sparire lo zero delle ore
+  settimanali mostrandolo identico a «non l'ho ancora messo», mentre mandava a
+  zero la soglia dei supplementari: `?? ''`, e `min="1"` dove lo zero è un dato
+  mancante travestito.
 - I calcoli fiscali sono marcati BETA e invitano a farsi controllare da un
   professionista. Non togliere quell'avviso.
