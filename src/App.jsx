@@ -24,6 +24,7 @@ import { iscrivitiAggiornamenti, applicaAggiornamento, primaDiRicaricare } from 
 import useOccupato from './hooks/useOccupato';
 import { iscrivitiOccupato } from './utils/occupato';
 import { isAssenza } from './utils/assenze';
+import { turniDaImportare } from './utils/import-turni';
 import { haDatiMinimi, maggiorazioneDaChiedere } from './utils/configurazione';
 
 const DEFAULT_SETTINGS = {
@@ -340,19 +341,18 @@ export default function App() {
     [annualGross, settings, year],
   );
 
+  // Doppioni, giorni già di ferie o malattia e campi da tenere: la regola sta
+  // in `utils/import-turni.js`, la stessa che l'anteprima usa per dire cosa
+  // verrà saltato — così quello che si conferma è quello che si salva.
   const importShifts = useCallback((parsedShifts) => {
     setShifts(prev => {
+      const { daSalvare } = turniDaImportare(parsedShifts, Object.values(prev));
+      if (daSalvare.length === 0) return prev;
       const next = { ...prev };
-      // Deduplica su data+orari: reimportare la stessa foto (o una foto che si
-      // sovrappone a turni già inseriti) non deve creare doppioni.
-      const seen = new Set(Object.values(prev).map(s => `${s.date}|${s.startTime}|${s.endTime}`));
-      parsedShifts.forEach(shiftData => {
-        const key = `${shiftData.date}|${shiftData.startTime}|${shiftData.endTime}`;
-        if (seen.has(key)) return;
-        seen.add(key);
+      for (const dati of daSalvare) {
         const id = genId();
-        next[id] = { ...shiftData, id, breakMinutes: shiftData.breakMinutes || 0, note: shiftData.note || '' };
-      });
+        next[id] = { ...dati, id };
+      }
       return next;
     });
   }, [setShifts]);

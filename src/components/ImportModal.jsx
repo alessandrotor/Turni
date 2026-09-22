@@ -1,17 +1,21 @@
 import { useRef } from 'react';
 import { parseDate, formatDayShort, minutesDiff, formatMinutes } from '../utils/dates';
 import useModalDismiss from '../hooks/useModalDismiss';
+import { turniDaImportare } from '../utils/import-turni';
 
 function ShiftPreviewRow({ shift }) {
   const mins = minutesDiff(shift.startTime, shift.endTime) - (shift.breakMinutes || 0);
   const date = parseDate(shift.date);
   const dayName = formatDayShort(date);
-  const [, m, d] = shift.date.split('-');
+  const [y, m, d] = shift.date.split('-');
+  // L'anno si scrive solo quando non è quello in corso: è il segnale che il
+  // foglio stava a cavallo di capodanno, ed è l'unico caso in cui serve.
+  const anno = Number(y) !== new Date().getFullYear() ? `/${y.slice(2)}` : '';
 
   return (
     <div className="import-row">
       <span className="import-row-date">
-        <strong>{dayName}</strong> {d}/{m}
+        <strong>{dayName}</strong> {d}/{m}{anno}
       </span>
       <span className="import-row-times">
         {shift.startTime} – {shift.endTime}
@@ -44,7 +48,7 @@ function sembraCorrispondere(riga, nome) {
   return parole.some(p => r.includes(p));
 }
 
-export default function ImportModal({ shifts, workerName, onConfirm, onClose }) {
+export default function ImportModal({ shifts, esistenti = [], workerName, onConfirm, onClose }) {
   const ref = useRef(null);
   const dialogRef = useRef(null);
   useModalDismiss(dialogRef, onClose);
@@ -60,6 +64,15 @@ export default function ImportModal({ shifts, workerName, onConfirm, onClose }) 
   // tutti i turni di un singolo import (una sola persona per richiesta).
   const rigaTrovata = shifts.find(s => s._riga)?._riga || '';
   const rigaSospetta = rigaTrovata && !sembraCorrispondere(rigaTrovata, workerName);
+
+  // Cosa verrà saltato, detto PRIMA di confermare: la stessa regola che poi
+  // usa il salvataggio (utils/import-turni.js), altrimenti il numero sul
+  // pulsante e i turni che compaiono nel calendario non tornerebbero.
+  const { daSalvare, suAssenza, doppioni } = turniDaImportare(shifts, esistenti);
+  const saltati = [
+    suAssenza.length > 0 && `${suAssenza.length} su giorni di ferie o malattia`,
+    doppioni > 0 && `${doppioni} già segnat${doppioni === 1 ? 'o' : 'i'}`,
+  ].filter(Boolean);
 
   return (
     <div className="modal-overlay" onClick={e => e.target === ref.current && onClose()} ref={ref}>
@@ -80,6 +93,9 @@ export default function ImportModal({ shifts, workerName, onConfirm, onClose }) 
             Trovati <strong>{shifts.length} turni</strong> · totale{' '}
             <strong>{formatMinutes(totalMinutes)}</strong>. Controlla e conferma.
           </p>
+          {saltati.length > 0 && (
+            <p className="import-match import-match--warn">Salto {saltati.join(' e ')}.</p>
+          )}
 
           <div className="import-list">
             {shifts
@@ -92,8 +108,8 @@ export default function ImportModal({ shifts, workerName, onConfirm, onClose }) 
 
         <div className="modal-footer" style={{ padding: '0 1.25rem 1.25rem' }}>
           <button className="btn btn-secondary" onClick={onClose}>Annulla</button>
-          <button className="btn btn-primary" onClick={() => onConfirm(shifts)}>
-            ✓ Importa {shifts.length} turni
+          <button className="btn btn-primary" onClick={() => onConfirm(shifts)} disabled={daSalvare.length === 0}>
+            ✓ Importa {daSalvare.length} turn{daSalvare.length === 1 ? 'o' : 'i'}
           </button>
         </div>
       </div>
