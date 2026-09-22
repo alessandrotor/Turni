@@ -104,8 +104,8 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
     [annualGross, settings, year],
   );
   const months = useMemo(
-    () => monthlyBreakdown(year, allShifts, settings, payByShift, projection.value, ENABLE_NET_CALC),
-    [year, allShifts, settings, payByShift, projection],
+    () => monthlyBreakdown(year, allShifts, settings, payByShift, ENABLE_NET_CALC),
+    [year, allShifts, settings, payByShift],
   );
   const byDay = useMemo(
     () => dailyBreakdown(year, allShifts, settings, payByShift),

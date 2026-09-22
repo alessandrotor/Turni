@@ -29,7 +29,7 @@
 // software paghe. `tiModo: 'sempre'` esiste per chi si trovasse davanti a un
 // datore che decide altrimenti.
 
-import { tiSpettaQuestoMese, modoTrattamentoIntegrativo, riferimentoAnnuoDelMese, calcNetMonthly, monthlyBaseGross } from '../src/utils/net.js';
+import { tiSpettaQuestoMese, modoTrattamentoIntegrativo, patchTiSospeso, riferimentoAnnuoDelMese, calcNetMonthly, monthlyBaseGross } from '../src/utils/net.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {
@@ -80,8 +80,37 @@ esito(tiSpettaQuestoMese(5000, { tiModo: 'sempre' }).spetta, '«sempre» include
 // un'altra: il default è cambiato, la volontà espressa no.
 esito(modoTrattamentoIntegrativo({ noTrattamentoIntegrativo: true }) === 'mai',
   'la vecchia casella «escludi» continua a valere');
-esito(modoTrattamentoIntegrativo({ noTrattamentoIntegrativo: true, tiModo: 'sempre' }) === 'sempre',
-  'ma la scelta nuova ha la precedenza');
+
+// LA CASELLA NEL RIQUADRO DEL BONUS, difetto trovato il 23/09/2026. I default
+// fondono sempre `tiModo: 'auto'`, e il flag vecchio veniva guardato solo se
+// `tiModo` mancava — cioè mai. La casella «chiedi al datore di sospenderlo»
+// scriveva il solo flag: il riquadro del rischio diceva «niente da restituire»
+// e intanto il netto del mese continuava a sommare il bonus. E al primo «Salva»
+// in Impostazioni la scelta spariva, perché il modulo rileggeva «auto».
+// Impostazioni scrive i due campi allineati, quindi un flag acceso con un modo
+// diverso l'ha scritto la casella: è la scelta più recente e vince.
+const DEFAULT_APP = { noTrattamentoIntegrativo: false, tiModo: 'auto' };
+const spuntata = { ...DEFAULT_APP, noTrattamentoIntegrativo: true };
+esito(modoTrattamentoIntegrativo(spuntata) === 'mai',
+  'la casella vale anche con «auto» fuso dai default');
+esito(modoTrattamentoIntegrativo({ noTrattamentoIntegrativo: true, tiModo: 'sempre' }) === 'mai',
+  'flag acceso e modo diverso: l’ha scritto la casella, vince lei');
+esito(calcNetMonthly(1100, riferimentoAnnuoDelMese(1100, spuntata), spuntata, 30, 0).trattamentoIntegrativo === 0,
+  'bonus sospeso: il netto del mese non lo somma più');
+esito(calcNetMonthly(1100, riferimentoAnnuoDelMese(1100, DEFAULT_APP), DEFAULT_APP, 30, 0).trattamentoIntegrativo > 0,
+  '...mentre senza spunta sotto soglia c’è');
+// Il giro in Impostazioni: il modulo legge il modo, il salvataggio riscrive i
+// due campi da lì (Settings.jsx, `tiModo` e `noTrattamentoIntegrativo`).
+const giro = (s) => {
+  const tiModo = modoTrattamentoIntegrativo(s);
+  return { ...s, tiModo, noTrattamentoIntegrativo: tiModo === 'mai' };
+};
+esito(modoTrattamentoIntegrativo(giro(spuntata)) === 'mai',
+  'un «Salva» in Impostazioni non cancella la scelta');
+esito(modoTrattamentoIntegrativo({ ...spuntata, ...patchTiSospeso(false) }) === 'auto',
+  '«Annulla» nel riquadro riattiva davvero');
+esito(modoTrattamentoIntegrativo(giro({ ...DEFAULT_APP, tiModo: 'sempre' })) === 'sempre',
+  '«sempre» scelto in Impostazioni sopravvive al giro');
 
 // ── La busta intera, col riferimento del mese ─────────────────────────────
 //

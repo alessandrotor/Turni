@@ -8,13 +8,13 @@ import { calcShiftMinutes, calcTotalPay, formatCurrency, lordoTurno } from '../u
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { isMensilizzato } from '../utils/ccnl';
 import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../utils/bonus';
-import { rischioRestituzione, quotaPotenziale, CAUSA, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE } from '../utils/restituzione';
+import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, CAUSA, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE } from '../utils/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
 import { contrattoMancante } from '../utils/configurazione';
 import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../utils/assenze';
-import { EXTRA_MONTHS, TAX_2026, projectAnnualIncome } from '../utils/net';
+import { EXTRA_MONTHS, TAX_2026, projectAnnualIncome, tiSospeso, patchTiSospeso } from '../utils/net';
 import { ENABLE_DEBUG, ENABLE_NET_CALC } from '../config/features';
 import useMonthlyNet from '../hooks/useMonthlyNet';
 
@@ -312,8 +312,8 @@ export default function CalendarView({
   // bonus spetta adesso, mai quanto costa scoprire a dicembre che non spettava.
   // Vedi utils/restituzione.js per il modello e per cosa l'app NON puo' sapere.
   const rischio = useMemo(
-    () => rischioRestituzione({ settings, proiezioneAnnua: annualProjection || annualGross }),
-    [settings, annualProjection, annualGross],
+    () => rischioRestituzione({ settings, proiezioneAnnua: annualProjection || annualGross, oggi: dataDiRiferimento(year) }),
+    [settings, annualProjection, annualGross, year],
   );
 
   // LA FORMA DELLA BUCA attorno ai 15.000, e dove ci si trova dentro.
@@ -1281,7 +1281,7 @@ export default function CalendarView({
                 <button
                   type="button"
                   className="linklike"
-                  onClick={() => onUpdateSettings({ noTrattamentoIntegrativo: false })}
+                  onClick={() => onUpdateSettings(patchTiSospeso(false))}
                 >
                   Annulla
                 </button>
@@ -1314,8 +1314,8 @@ export default function CalendarView({
                     <label className="check-row bonus-rischio-scelta">
                       <input
                         type="checkbox"
-                        checked={!!settings.noTrattamentoIntegrativo}
-                        onChange={(e) => onUpdateSettings({ noTrattamentoIntegrativo: e.target.checked })}
+                        checked={tiSospeso(settings)}
+                        onChange={(e) => onUpdateSettings(patchTiSospeso(e.target.checked))}
                       />
                       <span>Chiedi al datore di sospenderlo, poi spunta qui</span>
                     </label>
@@ -1341,8 +1341,8 @@ export default function CalendarView({
                   <label className="check-row bonus-rischio-scelta">
                     <input
                       type="checkbox"
-                      checked={!!settings.noTrattamentoIntegrativo}
-                      onChange={(e) => onUpdateSettings({ noTrattamentoIntegrativo: e.target.checked })}
+                      checked={tiSospeso(settings)}
+                      onChange={(e) => onUpdateSettings(patchTiSospeso(e.target.checked))}
                     />
                     <span>Chiedi al datore di sospenderlo, poi spunta qui</span>
                   </label>
@@ -1360,13 +1360,13 @@ export default function CalendarView({
                 </span>
                 <p className="bonus-spiega">
                   Se li superi, a dicembre il datore si riprende tutto il bonus che ti ha
-                  dato: finora <strong>{euroCella(quotaPotenziale())}</strong>. {spiegazione}
+                  dato: finora <strong>{euroCella(quotaPotenziale(dataDiRiferimento(year)))}</strong>. {spiegazione}
                 </p>
                 <label className="check-row bonus-rischio-scelta">
                   <input
                     type="checkbox"
-                    checked={!!settings.noTrattamentoIntegrativo}
-                    onChange={(e) => onUpdateSettings({ noTrattamentoIntegrativo: e.target.checked })}
+                    checked={tiSospeso(settings)}
+                    onChange={(e) => onUpdateSettings(patchTiSospeso(e.target.checked))}
                   />
                   <span>Chiedi al datore di sospenderlo, poi spunta qui</span>
                 </label>
@@ -1518,7 +1518,7 @@ export default function CalendarView({
               <p className="form-hint">
                 Il bonus spetta a chi sta sotto i 15.000 €. Se li superi, anche di 1 €, a
                 dicembre il datore si riprende
-                tutto: {euroCella(rischio.erogato || quotaPotenziale())} finora.
+                tutto: {euroCella(rischio.erogato || quotaPotenziale(dataDiRiferimento(year)))} finora.
               </p>
               {/* La tabella è un'ALTRA grandezza rispetto alla cifra qui sopra:
                   quella è cassa, questa è il saldo di un anno intero. Senza

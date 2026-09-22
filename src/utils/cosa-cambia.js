@@ -19,8 +19,8 @@ import {
   EXTRA_MONTHS,
   computeAnnualGrossFromShifts,
   projectAnnualIncome,
-  TAX_2026,
 } from './net.js';
+import { calcBonusMargin, BONUS_STATUS } from './bonus.js';
 import { getDaysInMonth } from './dates.js';
 
 export function formatDeltaCurrency(val) {
@@ -160,13 +160,20 @@ export function calcolaCosaCambia({
     const annualAfter = computeAnnualGrossFromShifts(year, shiftsAfter, settings, payMapAfter);
     const projAfter = projectAnnualIncome(annualAfter.total, annualAfter.extras, settings, year);
 
-    const soglia = TAX_2026.TI_SOGLIA_PIENO; // 15.000 €
-    margineBonusBefore = Math.max(0, soglia - projBefore.value);
-    margineBonusAfter = Math.max(0, soglia - projAfter.value);
+    // La soglia dei 15.000 vale sul REDDITO COMPLESSIVO, e la proiezione è un
+    // LORDO: confrontarli direttamente faceva gridare «supera la soglia» con
+    // ~1.500 € d'anticipo, mentre la striscia del bonus diceva ancora che
+    // c'era margine. Si chiede alla stessa funzione della striscia.
+    // → check-cosa-cambia.mjs
+    const prima = calcBonusMargin(projBefore.value, settings);
+    const dopo = calcBonusMargin(projAfter.value, settings);
+    const sotto = (b) => b.status === BONUS_STATUS.PIENO || b.status === BONUS_STATUS.ATTESA;
+    margineBonusBefore = prima.marginToFull ?? 0;
+    margineBonusAfter = dopo.marginToFull ?? 0;
     deltaMargineBonus = margineBonusAfter - margineBonusBefore;
 
-    superaSoglia = projBefore.value <= soglia && projAfter.value > soglia;
-    rientraSottoSoglia = projBefore.value > soglia && projAfter.value <= soglia;
+    superaSoglia = sotto(prima) && !sotto(dopo);
+    rientraSottoSoglia = !sotto(prima) && sotto(dopo);
   }
 
   return {

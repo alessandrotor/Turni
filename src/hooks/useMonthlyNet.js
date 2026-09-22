@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  calcNetMonthly, monthlyBaseGross, riferimentoAnnuoDelMese,
+  nettoDelMese, monthlyBaseGross, riferimentoAnnuoDelMese,
   extraMonthAccrual, EXTRA_MONTHS, TAX_2026, tiDecision, projectAnnualIncome,
 } from '../utils/net';
 import { ENABLE_NET_CALC } from '../config/features';
@@ -72,9 +72,10 @@ export default function useMonthlyNet({ year, month, settings, pay, annualGross,
     () => riferimentoAnnuoDelMese(monthGross, settings),
     [monthGross, settings],
   );
+  // Statistiche passa dalla stessa funzione: vedi `nettoDelMese`.
   const netMonth = useMemo(
-    () => (ENABLE_NET_CALC ? calcNetMonthly(monthGross, riferimento, settings, daysInMonth, extraThisMonth) : null),
-    [monthGross, riferimento, settings, daysInMonth, extraThisMonth],
+    () => (ENABLE_NET_CALC ? nettoDelMese(monthGross, settings, daysInMonth, extraThisMonth) : null),
+    [monthGross, settings, daysInMonth, extraThisMonth],
   );
   const monthNet = netMonth ? netMonth.net : 0;
   const monthTrattenute = netMonth ? netMonth.trattenute : 0;

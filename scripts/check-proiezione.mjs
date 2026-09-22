@@ -38,15 +38,18 @@ const arr = (n) => Math.round(n);
 // Part-time 60% CCNL Turismo: 24 ore su sei giorni, 10 €/h.
 const S = { hourlyRate: 10, expectedWeeklyHours: 24, workingDaysPerWeek: 6, ccnl: 'turismo' };
 const MENSILE = monthlyBaseGross(S);
-const prev = (maturato, extra = 0, s = S, anno = ANNO) =>
-  projectAnnualIncome(maturato, extra, s, anno).value;
+const prev = (maturato, extra = 0, s = S, anno = ANNO, oggi = OGGI) =>
+  projectAnnualIncome(maturato, extra, s, anno, { oggi }).value;
 
-// L'anno CORRENTE, altrimenti `monthsElapsed` vale 12 e non si prova nulla.
-const ANNO = new Date().getFullYear();
-const MESE = new Date().getMonth() + 1;          // 1-12
-const RESTANTI = Math.max(0, 12 - MESE);
+// Una data fissa, non l'orologio: il 15 settembre 2026. Il mese in corso vale
+// per i giorni che gli restano, oggi compreso (16 su 30), più i tre interi.
+const OGGI = new Date(2026, 8, 15);
+const ANNO = 2026;
+const MESE = 9;
+const QUOTA_MESE = 16 / 30;
+const RESTANTI = (12 - MESE) + QUOTA_MESE;
 
-console.log(`\nContratto: ${arr(MENSILE)} €/mese · siamo al mese ${MESE}, ne restano ${RESTANTI}\n`);
+console.log(`\nContratto: ${arr(MENSILE)} €/mese · 15 settembre, ne restano ${RESTANTI.toFixed(2)}\n`);
 
 // ── 1. La proprieta' del marginale ─────────────────────────────────────────
 console.log('Un euro in piu\' sposta la previsione di un euro\n');
@@ -78,7 +81,26 @@ verifica('maturato + resto dell anno',
 // contratto ritrova esattamente le 12 mensilita'. E' la prova che il modello
 // non sottostima chi tiene il calendario aggiornato.
 verifica('calendario completo → 12 mensilita esatte',
-  arr(prev(MENSILE * MESE)), arr(MENSILE * 12), 'maturato dei mesi passati + quelli futuri');
+  arr(prev(MENSILE * (MESE - QUOTA_MESE))), arr(MENSILE * 12), 'maturato fino a ieri + quello che resta');
+
+// IL DENTE DI SEGA, difetto trovato il 23/09/2026. Il mese in corso contava
+// come già trascorso: il 1° la previsione perdeva una mensilità intera (dentro
+// c'era un giorno di turni) e la recuperava durante il mese. Ora l'ultimo
+// giorno di un mese e il primo del successivo, a parità di maturato, danno la
+// stessa cifra a meno di un giorno di contratto.
+const fineAgosto = prev(8000, 0, S, ANNO, new Date(2026, 7, 31));
+const inizioSettembre = prev(8000, 0, S, ANNO, new Date(2026, 8, 1));
+verifica('dal 31 agosto al 1° settembre non si perde un mese',
+  Math.abs(fineAgosto - inizioSettembre) <= MENSILE / 30 + 0.01, true,
+  `${arr(fineAgosto)} → ${arr(inizioSettembre)}`);
+verifica('il 1° del mese conta il mese intero',
+  arr(prev(0, 0, S, ANNO, new Date(2026, 8, 1))), arr(4 * MENSILE), 'settembre + i tre che restano');
+
+// UN ANNO CHE NON È ANCORA COMINCIATO è tutto futuro. Contava dodici mesi
+// «trascorsi»: a dicembre, aprendo gennaio, la previsione dell'anno dopo erano
+// i soli turni segnati, e la striscia annunciava ~16.000 € di margine.
+verifica('anno futuro → maturato + dodici mensilita',
+  arr(prev(500, 0, S, ANNO + 1, new Date(2026, 11, 20))), arr(500 + 12 * MENSILE), '');
 
 // Anno passato: non c'e' futuro da prevedere, la previsione E' il maturato.
 verifica('anno passato → solo il maturato',

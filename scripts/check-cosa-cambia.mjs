@@ -2,6 +2,9 @@
 // Verifica che il calcolo del delta ore, lordo, netto e soglie sia esatto.
 
 import { calcolaCosaCambia, formatDeltaCurrency, formatDeltaMinutes } from '../src/utils/cosa-cambia.js';
+import { computePayByShift } from '../src/utils/pay.js';
+import { computeAnnualGrossFromShifts, projectAnnualIncome } from '../src/utils/net.js';
+import { calcBonusMargin } from '../src/utils/bonus.js';
 
 let falliti = 0;
 function assert(cond, msg) {
@@ -75,6 +78,43 @@ assert(formatDeltaCurrency(-32) === '−32,00 €', 'formatDeltaCurrency negativ
 assert(formatDeltaCurrency(0) === '0,00 €', 'formatDeltaCurrency zero');
 assert(formatDeltaMinutes(90) === '+1h 30m', 'formatDeltaMinutes positivo misto');
 assert(formatDeltaMinutes(-45) === '−45m', 'formatDeltaMinutes negativo solo minuti');
+
+// Scenario 6: la soglia dei 15.000 è sul REDDITO COMPLESSIVO, non sul lordo.
+// Difetto trovato il 23/09/2026: la proiezione (lordo) veniva confrontata con
+// 15.000 (imponibile), e «Supera la soglia» compariva con ~1.500 € d'anticipo
+// mentre la striscia del bonus diceva ancora che c'era margine. Anno passato e
+// modalità «ytd»: la proiezione è esattamente il lordo dei turni, niente altro.
+{
+  const S6 = { hourlyRate: 10, expectedWeeklyHours: 40, fullTimeWeeklyHours: 40, tiProjectionMode: 'ytd' };
+  const feriali = [];
+  for (let d = new Date(2025, 0, 1); d.getFullYear() === 2025; d.setDate(d.getDate() + 1)) {
+    const g = d.getDay();
+    if (g !== 0 && g !== 6) feriali.push(`2025-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+  }
+  const annoCon = (n) => feriali.slice(0, n).map((date, i) => ({ id: `a${i}`, date, startTime: '09:00', endTime: '16:00', breakMinutes: 0 }));
+  const proiezione = (turni) => projectAnnualIncome(
+    computeAnnualGrossFromShifts(2025, turni, S6, computePayByShift(turni, S6)).total, 0, S6, 2025).value;
+  const sogliaLorda = calcBonusMargin(1, S6).thresholdFullGross;
+  const candidato = { date: feriali[feriali.length - 1], startTime: '09:00', endTime: '18:00', breakMinutes: 0 };
+
+  // Da ~14.980 a ~15.070 di lordo: il lordo passa i 15.000, il reddito no.
+  const n1 = Math.round(14960 / 70);
+  const base1 = annoCon(n1);
+  const r1 = calcolaCosaCambia({ candidateShift: candidato, originalShift: null, allShifts: base1, settings: S6 });
+  assert(proiezione(base1) < 15000 && proiezione([...base1, candidato]) > 15000,
+    `scenario 6: il lordo deve scavalcare 15.000 (${proiezione(base1)} → ${proiezione([...base1, candidato])})`);
+  assert(!r1.superaSoglia, 'passare 15.000 di LORDO non è superare la soglia del bonus');
+  assert(Math.abs(r1.margineBonus - (sogliaLorda - proiezione([...base1, candidato]))) < 0.01,
+    `il margine si misura sulla soglia in lordo (${sogliaLorda}), trovato ${r1.margineBonus}`);
+
+  // A cavallo della soglia vera, tradotta in lordo: qui sì.
+  const n2 = Math.floor((sogliaLorda - 30) / 70);
+  const base2 = annoCon(n2);
+  const r2 = calcolaCosaCambia({ candidateShift: candidato, originalShift: null, allShifts: base2, settings: S6 });
+  assert(r2.superaSoglia, `scavalcare ${sogliaLorda.toFixed(0)} € di lordo supera la soglia`);
+  assert(calcBonusMargin(proiezione([...base2, candidato]), S6).status !== 'pieno',
+    'e la striscia del bonus dice la stessa cosa');
+}
 
 if (falliti === 0) {
   console.log('OK: tutti i controlli di cosa-cambia.js sono superati.');

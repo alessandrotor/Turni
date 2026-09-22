@@ -9,7 +9,7 @@ import { calcShiftMinutes, calcTotalPay, hasAnyRate, isSunday } from './pay.js';
 import { parseDate, getDaysInMonth, formatDate, dayNumber } from './dates.js';
 import { isHoliday } from './holidays.js';
 import { tipoTurno, TIPO } from './assenze.js';
-import { calcNetMonthly, monthlyBaseGross, extraMonthAccrual, EXTRA_MONTHS } from './net.js';
+import { nettoDelMese, monthlyBaseGross, extraMonthAccrual, EXTRA_MONTHS } from './net.js';
 
 // Raggruppa per MESE DI CALENDARIO, non di paga: è la vista d'insieme
 // dell'anno, e l'utente ragiona in mesi solari (stessa scelta già fatta per
@@ -22,11 +22,12 @@ import { calcNetMonthly, monthlyBaseGross, extraMonthAccrual, EXTRA_MONTHS } fro
 // @param {Array} allShifts TUTTI i turni (contesto per gli straordinari)
 // @param {object} settings
 // @param {object|null} payByShift mappa già calcolata da `computePayByShift`
-// @param {number} annualGrossRef reddito annuo di riferimento per l'aliquota
-//   IRPEF del mese — lo stesso valore che `projectAnnualIncome` calcola per
-//   l'intero anno, passato una volta sola: usare qui una proiezione diversa
-//   farebbe divergere il netto mensile da quello che Calendario mostra per lo
-//   stesso mese.
+// Il reddito di riferimento del netto è quello DEL MESE
+//   (`nettoDelMese` → lordo del mese × 12), lo stesso di Calendario
+//   (`useMonthlyNet.js`). Qui si passava la proiezione annua, rimasta indietro
+//   quando Calendario è passato alla regola del software paghe: lo stesso mese
+//   aveva due netti, con bonus in una pagina e senza nell'altra.
+//   → check-netto-coerente.mjs
 // @param {boolean} enableNetCalc gate del motore fiscale (beta)
 // @returns {Array<{monthIndex, shiftsCount, totalMinutes, ordinaryMinutes,
 //   overtimeMinutes, straordinarioMinutes, gross, net}>} un elemento per ogni
@@ -35,7 +36,7 @@ import { calcNetMonthly, monthlyBaseGross, extraMonthAccrual, EXTRA_MONTHS } fro
 //   e soglia-full-time, o l'unica fascia per chi lavora a chiamata),
 //   `straordinarioMinutes` quelle oltre il full-time — stessa distinzione a
 //   due soglie di `computePayByShift` in pay.js, non una fascia unica.
-export function monthlyBreakdown(year, allShifts, settings = {}, payByShift = null, annualGrossRef = 0, enableNetCalc = true) {
+export function monthlyBreakdown(year, allShifts, settings = {}, payByShift = null, enableNetCalc = true) {
   const shiftsByMonth = new Map();
   for (const s of allShifts || []) {
     const d = parseDate(s.date);
@@ -84,7 +85,7 @@ export function monthlyBreakdown(year, allShifts, settings = {}, payByShift = nu
 
     const gross = pay ? pay.total + extraThisMonth + fixedMonthlyTotal + perMonthBonus : 0;
     const net = (enableNetCalc && pay && gross > 0)
-      ? calcNetMonthly(gross, annualGrossRef, settings, getDaysInMonth(year, m), extraThisMonth).net
+      ? nettoDelMese(gross, settings, getDaysInMonth(year, m), extraThisMonth).net
       : 0;
 
     rows.push({
