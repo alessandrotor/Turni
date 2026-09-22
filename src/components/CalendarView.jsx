@@ -1289,10 +1289,13 @@ export default function CalendarView({
             ) : posizione === POSIZIONE.OLTRE ? (
               // Il rischio vero qui non è perdere soldi, è averli già spesi:
               // chi non sa del conguaglio tratta il bonus in busta come
-              // stipendio. Per questo il titolo dice cosa FARE, non uno stato.
+              // stipendio. Il titolo serve quindi a FERMARE, non a istruire:
+              // diceva «Non spendere il bonus in busta», che è un ordine dato a
+              // chi non ha ancora sbagliato niente. Cosa succede lo spiegano le
+              // due righe sotto, che hanno lo spazio per dirlo senza rimproveri.
               <div className={`bonus-rischio ${rischio.daRestituire > 0 ? 'bonus-rischio--anteprima' : 'bonus-rischio--ok'}`}>
                 <span className="bonus-rischio-titolo">
-                  {rischio.daRestituire > 0 ? '⚠️ Non spendere il bonus in busta' : '✓ Oltre la soglia, niente da restituire'}
+                  {rischio.daRestituire > 0 ? '⚠️ Occhio al bonus!' : '✓ Oltre la soglia, niente da restituire'}
                 </span>
                 {rischio.daRestituire > 0 && (
                   <>
@@ -1321,7 +1324,7 @@ export default function CalendarView({
               </div>
             ) : posizione === POSIZIONE.DENTRO ? (
               <div className="bonus-rischio">
-                <span className="bonus-rischio-titolo">⚠️ Non spendere il bonus in busta</span>
+                <span className="bonus-rischio-titolo">⚠️ Occhio al bonus!</span>
                 {rischio.daRestituire > 0 && (
                   <p className="bonus-spiega">
                     Supererai i 15.000 €, quindi a dicembre il datore si riprende tutto il
