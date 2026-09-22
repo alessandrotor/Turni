@@ -2374,11 +2374,14 @@ input, select, textarea { font: inherit; }
   margin-top: .5rem;
 }
 
-/* Simulazione del bonus: sta sotto la spunta del mese, da cui la domanda
-   nasce. Nota accanto al numero, non un secondo pannello — con la riga del
-   risultato che compare solo da spuntata, così da spenta costa una riga. */
+/* Simulazione del bonus mensile: chiude il riquadro del trattamento
+   integrativo, perché è a quello che la domanda si riferisce. Da spenta costa
+   una riga sola — il risultato compare solo se qualcuno chiede.
+   `.bonus-strip` è già una colonna con gap, quindi niente margine: basta il
+   filo sopra a staccarla dal reddito previsto. */
 .simula-bonus {
-  margin-top: .4rem;
+  padding-top: .5rem;
+  border-top: 1px solid var(--c-border);
 }
 
 .simula-bonus .check-row {

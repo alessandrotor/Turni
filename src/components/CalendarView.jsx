@@ -1026,34 +1026,6 @@ export default function CalendarView({
               </div>
             )}
 
-            {puoSimulareBonus && (
-              <div className="simula-bonus">
-                <label className="check-row" htmlFor="simula-bonus">
-                  <input
-                    id="simula-bonus"
-                    type="checkbox"
-                    checked={simulaBonus}
-                    onChange={e => setSimulaBonus(e.target.checked)}
-                  />
-                  <span>E se lo prendessi <strong>tutti i mesi</strong>?</span>
-                </label>
-                {simulaBonus && (
-                  <p className="simula-bonus-esito">
-                    <span className="simula-bonus-valore">{fmt0(proiezioneBonusOgniMese.value)}</span>
-                    <span className="simula-bonus-delta">+{fmt0(differenzaBonus)}</span>
-                    {esitoSimulazione && (
-                      <strong className={`simula-bonus-ti simula-bonus-ti--${esitoSimulazione.tono}`}>
-                        {esitoSimulazione.testo}
-                      </strong>
-                    )}
-                    <em>
-                      lordo sull&apos;anno — solo una simulazione: i mesi segnati restano
-                      quelli che hai spuntato
-                    </em>
-                  </p>
-                )}
-              </div>
-            )}
 
             <div className="net-strip-body">
               <span className="bonus-strip-label">
@@ -1424,6 +1396,43 @@ export default function CalendarView({
               <span className="bonus-strip-note bonus-strip-note--warn">
                 ⚠️ Il montante ({fmt0(montante)}) non torna coi turni fino a {priorMonthLabel} ({fmt0(shiftsCovered)}).
               </span>
+            )}
+
+            {/* «E se lo prendessi tutti i mesi?» sta QUI e non accanto alla
+                spunta del mese: la domanda è sul reddito previsto e sulla
+                soglia, cioè su questo riquadro. Spostarla vicino alla spunta
+                obbligava a tenere a mente una cifra mentre si scorreva fino
+                alla risposta.
+                Si dice «i 120 €» e non «il bonus» di proposito: qui dentro
+                «bonus» è già il trattamento integrativo, e due bonus diversi
+                nello stesso riquadro non si distinguono più. */}
+            {puoSimulareBonus && (
+              <div className="simula-bonus">
+                <label className="check-row" htmlFor="simula-bonus">
+                  <input
+                    id="simula-bonus"
+                    type="checkbox"
+                    checked={simulaBonus}
+                    onChange={e => setSimulaBonus(e.target.checked)}
+                  />
+                  <span>E se prendessi i {fmt0(monthlyBonusAmount)} <strong>tutti i mesi</strong>?</span>
+                </label>
+                {simulaBonus && (
+                  <p className="simula-bonus-esito">
+                    <span className="simula-bonus-valore">{fmt0(proiezioneBonusOgniMese.value)}</span>
+                    <span className="simula-bonus-delta">+{fmt0(differenzaBonus)}</span>
+                    {esitoSimulazione && (
+                      <strong className={`simula-bonus-ti simula-bonus-ti--${esitoSimulazione.tono}`}>
+                        {esitoSimulazione.testo}
+                      </strong>
+                    )}
+                    <em>
+                      previsto a fine anno — solo una simulazione: i mesi segnati restano
+                      quelli che hai spuntato
+                    </em>
+                  </p>
+                )}
+              </div>
             )}
           </div>
         )}
