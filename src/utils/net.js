@@ -561,13 +561,36 @@ export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, pay
   // Contano per il RATEO maturato, non per una mensilità piena: chi è assunto
   // da sei mesi prende mezza quattordicesima.
   const now = new Date();
+  // `extras` dichiara quante mensilità aggiuntive stanno DENTRO `total`, non
+  // quante ne somma questa funzione: le due cose divergono quando c'è un
+  // montante, e chi chiama ha bisogno della prima. `projectAnnualIncome` ci
+  // sottrae le una-tantum prima di annualizzare, e una quota dichiarata per
+  // difetto finisce moltiplicata per 12/mesi-trascorsi.
   let extras = 0;
+  let daSommare = 0;
   if (y <= now.getFullYear()) {
     const monthIndex = y < now.getFullYear() ? 11 : now.getMonth();
-    extras = monthlyBaseGross(settings) * receivedExtraMonthsCount(settings, monthIndex, y);
+    const mensile = monthlyBaseGross(settings);
+    const incassate = receivedExtraMonthsCount(settings, monthIndex, y);
+    // Il montante è il lordo già guadagnato fino a tutto il suo mese: le
+    // mensilità erogate entro quel mese ci sono già dentro, perché il
+    // progressivo del cedolino le comprende. Sommarle di nuovo le contava due
+    // volte — la 14ª di giugno con un montante fermato a luglio — e il danno
+    // peggiore non era quello: finita nel maturato senza essere dichiarata in
+    // `extras`, veniva scambiata per reddito ricorrente e annualizzata.
+    const nelMontante = useCutoff
+      ? receivedExtraMonthsCount(settings, Number(cutoffMonth.slice(5, 7)) - 1, y)
+      : 0;
+    // Il mese del montante può stare avanti a oggi: il selettore è un
+    // <input type="month"> senza tetto, e chi riporta un progressivo di
+    // dicembre a ottobre ha un montante che contiene più mensilità di quante
+    // ne risultino incassate. Vale il più alto dei due — il montante fa fede
+    // per il suo periodo.
+    extras = mensile * Math.max(incassate, nelMontante);
+    daSommare = mensile * Math.max(0, incassate - nelMontante);
   }
   const applyMontante = montante > 0 && (!cutoff || sameYear);
-  return { total: fromShifts + (applyMontante ? montante : 0) + extras, extras };
+  return { total: fromShifts + (applyMontante ? montante : 0) + daSommare, extras };
 }
 
 
