@@ -93,6 +93,24 @@ export function perche(voce) {
 }
 
 /**
+ * Due cose che non rompono il ripristino ma rompono dopo, e che si aggiustano
+ * senza perdere niente dell'utente:
+ *  · `id` diverso dalla chiave (o assente): modificare il turno scrive in
+ *    `shifts[shift.id]`, quindi creava un doppione, e cancellarlo non trovava
+ *    niente. L'archivio è indicizzato per chiave, e la chiave fa fede.
+ *  · una nota che non è testo: `{shift.note}` di un oggetto fa saltare il
+ *    render, `note.trim()` di un numero fa saltare il modulo.
+ */
+function riallinea(chiave, voce) {
+  if (voce.id === chiave && (voce.note === undefined || typeof voce.note === 'string')) return voce;
+  const aggiustata = { ...voce, id: chiave };
+  if (aggiustata.note !== undefined && typeof aggiustata.note !== 'string') {
+    aggiustata.note = typeof aggiustata.note === 'number' ? String(aggiustata.note) : '';
+  }
+  return aggiustata;
+}
+
+/**
  * Divide i turni del file in quelli che si possono ripristinare e quelli no.
  *
  * NON si rifiuta l'intero backup per tre voci storte su duecento: sarebbe
@@ -109,9 +127,17 @@ export function vagliaTurni(turni) {
   if (!turni || typeof turni !== 'object' || Array.isArray(turni)) return { buoni, scartati };
 
   for (const [chiave, voce] of Object.entries(turni)) {
+    // `JSON.parse` crea «__proto__» come chiave vera, ma assegnarla a un
+    // oggetto normale ne cambia il prototipo invece di aggiungere una voce: il
+    // turno spariva senza finire fra gli scartati. L'app non genera mai
+    // quell'id, quindi è un file scritto a mano o da altro, e lo si dice.
+    if (chiave === '__proto__') {
+      scartati.push({ chiave, perche: 'chiave non valida' });
+      continue;
+    }
     const guasto = perche(voce);
     if (guasto) scartati.push({ chiave, perche: guasto });
-    else buoni[chiave] = voce;
+    else buoni[chiave] = riallinea(chiave, voce);
   }
   return { buoni, scartati };
 }

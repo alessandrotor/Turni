@@ -11,7 +11,7 @@
 // ricreato si porta via lo scratchpad, e con esso la prova che le difese
 // funzionino ancora.
 
-import worker from '../worker/src/index.js';
+import worker, { chiaveIp } from '../worker/src/index.js';
 
 const realFetch = globalThis.fetch;
 let chiamateGemini = 0;
@@ -19,18 +19,22 @@ let ultimoBody = null;
 let turnstileOk = true;
 let rispostaGemini = null;
 let statoGemini = 200;
+let hostnameTurnstile = 'turni-9vr.pages.dev';
+let rispostaGrezza = null;
 
 globalThis.fetch = async (url, init) => {
   const u = String(url);
   if (u.includes('siteverify')) {
     return new Response(JSON.stringify({
       success: turnstileOk,
+      hostname: hostnameTurnstile,
       'error-codes': turnstileOk ? [] : ['invalid-input-response'],
     }), { headers: { 'Content-Type': 'application/json' } });
   }
   if (u.includes('generativelanguage')) {
     chiamateGemini++;
     ultimoBody = JSON.parse(init.body);
+    if (rispostaGrezza !== null) return new Response(rispostaGrezza, { status: 200 });
     if (statoGemini !== 200) {
       return new Response(JSON.stringify({ error: { message: 'models/x is not found' } }), { status: statoGemini });
     }
@@ -96,7 +100,10 @@ const check = (l, ok, extra = '') => {
   if (!ok) fail += 1;
   console.log(`${ok ? '  ok  ' : '  XX  '} ${l}${extra ? '  → ' + extra : ''}`);
 };
-const reset = () => { chiamateGemini = 0; ultimoBody = null; turnstileOk = true; rispostaGemini = null; statoGemini = 200; };
+const reset = () => {
+  chiamateGemini = 0; ultimoBody = null; turnstileOk = true; rispostaGemini = null; statoGemini = 200;
+  hostnameTurnstile = 'turni-9vr.pages.dev'; rispostaGrezza = null;
+};
 const conKv = (opts) => ({
   GEMINI_API_KEY: 'x', TURNSTILE_SECRET: 's', RATE: kvFinto(opts),
   RAFFICA_IP: raffcaFinta(), RAFFICA_INSTALL: raffcaFinta(),
@@ -281,6 +288,67 @@ console.log('\nModello ritirato\n');
   // dire che cosa cambiare.
   check('404 da Gemini -> 503 con messaggio leggibile', r.status === 503 && /non disponibile/i.test(b.error), b.error);
   check('  e il messaggio non espone dettagli tecnici', !/404|models\//.test(b.error));
+}
+
+// ── Rafforzamento del 23/09/2026 ──────────────────────────────────────────
+console.log('\nNiente eccezioni senza CORS, niente corpi enormi\n');
+{
+  // Gemini risponde con un corpo che non è JSON: prima l'eccezione usciva dal
+  // worker, Cloudflare rispondeva 1101 senza CORS e l'app diceva «controlla
+  // la connessione».
+  reset();
+  rispostaGrezza = '<html>errore</html>';
+  const r = await chiama(base(), conKv(), { origin: 'https://turni-9vr.pages.dev' });
+  check('risposta di Gemini illeggibile → 502 in JSON', r.status === 502 && !!(await r.json()).error);
+  check('  e con il permesso CORS', !!r.headers.get('Access-Control-Allow-Origin'));
+}
+{
+  // Un array malformato dentro testo libero: il secondo JSON.parse lanciava.
+  reset();
+  rispostaGemini = { candidates: [{ finishReason: 'STOP', content: { parts: [{ text: 'ecco: [ {rotto ]' }] } }], usageMetadata: {} };
+  const r = await chiama(base(), conKv());
+  check('array malformato → 422, non un\'eccezione', r.status === 422);
+}
+{
+  reset();
+  const r = await worker.fetch(new Request('https://x/parse-shifts', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': '50000000' }, body: '{}',
+  }), conKv());
+  check('Content-Length oltre misura → 413 prima di leggere', r.status === 413 && chiamateGemini === 0);
+  const t = await worker.fetch(new Request('https://x/parse-shifts', {
+    method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(base()),
+  }), conKv());
+  check('tipo diverso da JSON → 415', t.status === 415 && chiamateGemini === 0);
+}
+{
+  // Il worker stesso lanciasse: si risponde comunque in JSON col CORS.
+  reset();
+  const rotto = { ...conKv(), get RATE() { throw new Error('binding esploso'); } };
+  const r = await chiama(base(), rotto, { origin: 'https://turni-9vr.pages.dev' });
+  check('eccezione qualsiasi → 500 in JSON, con CORS',
+    r.status === 500 && !!r.headers.get('Access-Control-Allow-Origin'));
+}
+
+console.log('\nLa raffica per IPv6 guarda il /64\n');
+check('due indirizzi dello stesso /64, stessa chiave',
+  chiaveIp('2001:db8:abcd:12::1') === chiaveIp('2001:db8:abcd:12:ffff:1:2:3'), chiaveIp('2001:db8:abcd:12::1'));
+check('/64 diversi, chiavi diverse', chiaveIp('2001:db8:abcd:12::1') !== chiaveIp('2001:db8:abcd:13::1'));
+check('IPv4 invariato', chiaveIp('203.0.113.5') === 'ip:203.0.113.5');
+
+console.log('\nTurnstile guarda anche l\'host\n');
+{
+  reset();
+  hostnameTurnstile = 'localhost';
+  const env = { ...conKv(), TURNSTILE_HOSTNAMES: 'turni-9vr.pages.dev, test.turni-9vr.pages.dev' };
+  const r = await chiama(base(), env);
+  check('token risolto su un host non ammesso → 403, Gemini non chiamato', r.status === 403 && chiamateGemini === 0);
+  reset();
+  const ok = await chiama(base(), env);
+  check('host ammesso → passa', ok.status === 200);
+  reset();
+  hostnameTurnstile = 'localhost';
+  const senza = await chiama(base(), conKv());
+  check('senza TURNSTILE_HOSTNAMES resta com\'era', senza.status === 200);
 }
 
 console.log(fail === 0 ? '\n✓ difese del proxy ok\n' : `\n✗ ${fail} riscontri falliti\n`);

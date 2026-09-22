@@ -123,6 +123,23 @@ verifica('i buoni si salvano', Object.keys(misto.buoni).sort(), ['a1', 'a2'],
 verifica('gli scartati si contano', misto.scartati, [{ chiave: 'rotto', perche: 'data assente o inesistente' }],
   'e si dicono: scartare in silenzio è il difetto di prima');
 
+// Tre buchi trovati il 23/09/2026, tutti su file scritti a mano o da altro:
+// passavano il vaglio e rompevano DOPO, a ripristino fatto.
+const strani = vagliaTurni(JSON.parse(
+  '{"x1":{"id":"altro","date":"2026-09-21","note":{"a":1}},"x2":{"date":"2026-09-22","note":7},'
+  + '"__proto__":{"id":"p","date":"2026-09-23"}}',
+));
+verifica('id diverso dalla chiave: vince la chiave', strani.buoni.x1?.id, 'x1',
+  'modificare scrive in shifts[id]: con un id diverso creava un doppione');
+verifica('id assente: preso dalla chiave', strani.buoni.x2?.id, 'x2', 'cancellare non trovava niente');
+verifica('nota oggetto: vuota', strani.buoni.x1?.note, '', 'il render saltava');
+verifica('nota numero: testo', strani.buoni.x2?.note, '7', 'note.trim() lanciava');
+verifica('«__proto__» si scarta e si dice', strani.scartati, [{ chiave: '__proto__', perche: 'chiave non valida' }],
+  'assegnato cambiava il prototipo, e il turno spariva senza traccia');
+verifica('  e il prototipo resta quello di sempre', Object.getPrototypeOf(strani.buoni) === Object.prototype, true, '');
+verifica('una voce già a posto resta la stessa', vagliaTurni({ a1: TURNO }).buoni.a1 === TURNO, true,
+  'niente copie inutili sul caso di tutti i giorni');
+
 // ── 3. Il ripristino che riesce ────────────────────────────────────────────
 console.log('\nQuando va tutto bene\n');
 

@@ -217,7 +217,18 @@ async function turnstileValido(env, token, ip) {
     });
     const esito = await r.json();
     if (!esito.success) console.warn('turnstile', JSON.stringify(esito['error-codes'] || []));
-    return !!esito.success;
+    if (!esito.success) return false;
+    // Il widget ammette `localhost` perché serve all'APK, e la sitekey sta nel
+    // bundle: chiunque la metta in una pagina propria su localhost ottiene
+    // token validi. `siteverify` dice su quale host è stato risolto — se
+    // `TURNSTILE_HOSTNAMES` è impostato (elenco separato da virgole), si
+    // accettano solo quelli. Senza, resta com'era: nessun deploy si rompe.
+    const ammessi = String(env.TURNSTILE_HOSTNAMES || '').split(',').map(h => h.trim()).filter(Boolean);
+    if (ammessi.length && !ammessi.includes(esito.hostname)) {
+      console.warn('turnstile hostname', esito.hostname);
+      return false;
+    }
+    return true;
   } catch (e) {
     // Verifica non raggiungibile: si blocca. Lasciar passare qui vanificherebbe
     // il controllo proprio nel momento in cui non lo si può fare.
@@ -271,175 +282,222 @@ function outputAccettabile(items) {
   return true;
 }
 
+// Chiave della raffica per indirizzo. Per IPv6 il prefisso /64, non
+// l'indirizzo intero: chi ha un /64 — la norma per una linea di casa — ha
+// miliardi di indirizzi, e con la chiave intera la guardia non lo fermava.
+export function chiaveIp(ip) {
+  const s = String(ip || '');
+  if (!s.includes(':')) return `ip:${s}`;
+  const [testa, coda = ''] = s.split('::');
+  const a = testa ? testa.split(':') : [];
+  const b = coda ? coda.split(':') : [];
+  const gruppi = s.includes('::') ? [...a, ...Array(Math.max(0, 8 - a.length - b.length)).fill('0'), ...b] : a;
+  return `ip6:${gruppi.slice(0, 4).map(g => (g || '0').toLowerCase().replace(/^0+(?=.)/, '')).join(':')}::/64`;
+}
+
+// Oltre l'immagine massima in base64 ci stanno pochi campi: il margine è largo.
+const MAX_BODY_BYTES = MAX_IMAGE_BYTES + 64_000;
+
 export default {
+  // Un'eccezione non gestita fa rispondere a Cloudflare con un 1101 SENZA gli
+  // header CORS: il browser fa fallire la fetch e l'app dice «controlla la
+  // connessione», che è falso. Qualunque cosa succeda, si risponde in JSON.
   async fetch(request, env) {
-    const json = jsonPer(request);
-    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request) });
-
-    const url = new URL(request.url);
-    if (url.pathname !== '/parse-shifts') return json({ error: 'Not found' }, 404);
-    if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
-    if (!env.GEMINI_API_KEY) return json({ error: 'Proxy non configurato' }, 500);
-
-    let body;
     try {
-      body = await request.json();
-    } catch {
-      return json({ error: 'Body non valido' }, 400);
+      return await gestisci(request, env);
+    } catch (e) {
+      console.error('non gestito', e?.stack || e);
+      return jsonPer(request)({ error: 'Il riconoscimento non è riuscito.' }, 500);
     }
-
-    const { image, mimeType, workerName, installId, turnstileToken } = body || {};
-    const ip = request.headers.get('CF-Connecting-IP') || 'sconosciuto';
-
-    // ── Validazioni a costo zero, PRIMA di qualunque contatore o chiamata ──
-    if (typeof image !== 'string' || !image) return json({ error: 'Immagine mancante' }, 400);
-    if (image.length > MAX_IMAGE_BYTES) return json({ error: 'Immagine troppo grande' }, 413);
-    if (image.length < MIN_IMAGE_BYTES) return json({ error: 'Immagine non valida' }, 400);
-
-    const mime = MIME_AMMESSI.has(mimeType) ? mimeType : null;
-    if (!mime) return json({ error: 'Formato non supportato: usa JPEG, PNG o WebP.' }, 415);
-    // `mimeType` lo dichiara il client: senza guardare i byte, un payload
-    // qualunque verrebbe spedito a Gemini — e pagato — solo perché si dichiara PNG.
-    if (!sembraImmagine(image, mime)) return json({ error: 'Il file non è un\'immagine valida.' }, 415);
-
-    const install = String(installId || 'anonimo').slice(0, 40);
-
-    // ── Raffica ───────────────────────────────────────────────────────────
-    // Viene PRIMA di Turnstile di proposito, ed è l'ordine che conta sotto
-    // attacco: questo controllo è locale e gratuito, mentre Turnstile fa una
-    // chiamata di rete a `siteverify`. Con l'ordine inverso, un ciclo di
-    // richieste costerebbe una chiamata ciascuna prima che il limitatore
-    // intervenga. I controlli gratuiti scartano il traffico, quelli costosi
-    // vengono dopo.
-    //
-    // Due chiavi, perché coprono due aggiramenti diversi: chi si rigenera
-    // l'`installId` a ogni richiesta resta appeso all'IP, chi cambia rete resta
-    // appeso all'installazione. Nessuna delle due costa scritture KV.
-    for (const [limiter, key] of [[env.RAFFICA_IP, `ip:${ip}`], [env.RAFFICA_INSTALL, `install:${install}`]]) {
-      if (!await raffica(limiter, key)) {
-        return json({ error: 'Troppi import di fila: aspetta un minuto e riprova.' }, 429);
-      }
-    }
-
-    // ── Turnstile: prova che c'è un browser vero, prima di consumare quota ──
-    if (!await turnstileValido(env, turnstileToken, ip)) {
-      return json({ error: 'Verifica di sicurezza non superata: ricarica la pagina e riprova.' }, 403);
-    }
-
-    // ── Tetto di spesa ────────────────────────────────────────────────────
-    // Ultimo prima di Gemini: si scrive su KV solo per richieste che hanno già
-    // superato tutto il resto, così una raffica respinta non consuma né la
-    // quota giornaliera né le scritture su cui quella quota si regge.
-    const today = new Date().toISOString().slice(0, 10);
-    const globale = await conta(env.RATE, `globale:${today}`, DAILY_GLOBAL, 172800);
-    if (globale === 'oltre') {
-      return json({ error: 'Limite giornaliero del riconoscimento raggiunto: riprova domani.' }, 429);
-    }
-    if (globale === 'guasto') {
-      // 'guasto' vale quanto 'oltre': se non si può leggere quanto si è speso,
-      // non si spende.
-      return json({ error: 'Servizio momentaneamente non disponibile: riprova più tardi.' }, 503);
-    }
-
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
-    let upstream;
-    try {
-      upstream = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
-        body: JSON.stringify({
-          contents: [{
-            role: 'user',
-            parts: [
-              { text: buildPrompt(ripulisciNome(workerName), new Date().getFullYear()) },
-              { inline_data: { mime_type: mime, data: image } },
-            ],
-          }],
-          generationConfig: {
-            responseMimeType: 'application/json',
-            responseSchema,
-            maxOutputTokens: MAX_OUTPUT_TOKENS,
-            // Estrazione deterministica: stessa immagine → stesso risultato.
-            temperature: 0,
-            // LOW: sui test l'accuratezza è identica a MID/HIGH con molti meno
-            // token immagine (prompt ~600 contro ~1400).
-            mediaResolution: 'MEDIA_RESOLUTION_LOW',
-            // Verificato su due fogli reali (griglia multi-persona e chat in
-            // prosa): stessa accuratezza di prima, thinking azzerato — il
-            // costo per import scende di ~60-65%.
-            thinkingConfig: { thinkingLevel: 'MINIMAL' },
-          },
-        }),
-      });
-    } catch {
-      return json({ error: 'Il servizio di riconoscimento non risponde.' }, 502);
-    }
-
-    if (!upstream.ok) {
-      // Il messaggio di Google può contenere dettagli della chiave: non rimbalzarlo.
-      const dettaglio = await upstream.text().catch(() => '');
-      // 404 = modello inesistente. `gemini-3-flash-preview` è un PREVIEW, e i
-      // nomi preview vengono ritirati quando esce la versione stabile: da quel
-      // momento ogni import fallisce. Senza questa distinzione sembrerebbe un
-      // guasto passeggero, e si cercherebbe il problema ovunque tranne che nel
-      // nome del modello. Il messaggio all'utente resta comprensibile; è il log
-      // che deve gridare cosa fare.
-      if (upstream.status === 404) {
-        console.error(`MODELLO NON DISPONIBILE: "${MODEL}" non esiste più. `
-          + 'Se era un preview è stato ritirato: aggiorna MODEL in worker/src/index.js '
-          + 'e ridistribuisci il worker.', dettaglio);
-        return json({ error: 'Il riconoscimento è temporaneamente non disponibile. Riprova più tardi.' }, 503);
-      }
-      console.error('gemini', upstream.status, dettaglio);
-      const messaggio = upstream.status === 429
-        ? 'Quota del riconoscimento esaurita: riprova più tardi.'
-        : 'Il riconoscimento non è riuscito.';
-      return json({ error: messaggio }, upstream.status === 429 ? 429 : 502);
-    }
-
-    const data = await upstream.json();
-    const candidate = data?.candidates?.[0];
-    const finishReason = candidate?.finishReason ?? null;
-    const u = data?.usageMetadata || {};
-
-    // Troncamento esplicito: un JSON parziale perderebbe turni in silenzio.
-    if (String(finishReason) === 'MAX_TOKENS') {
-      return json({ error: 'Risposta troncata: nessun turno importato per non perdere dati.' }, 502);
-    }
-
-    const text = (candidate?.content?.parts || []).map(p => p.text || '').join('').trim();
-    if (!text) return json({ error: 'Nessuna risposta dal modello (possibile blocco o quota).' }, 502);
-
-    let items;
-    try {
-      items = JSON.parse(text);
-    } catch {
-      const m = text.match(/\[[\s\S]*\]/);
-      if (!m) return json({ error: "Nessun turno riconosciuto nell'immagine" }, 422);
-      items = JSON.parse(m[0]);
-    }
-    if (!Array.isArray(items)) return json({ error: 'Nessun turno trovato' }, 422);
-
-    // L'immagine può contenere testo che prova a pilotare il modello: lo schema
-    // ne vincola la forma, non la lunghezza. Oltre le soglie non c'è un foglio
-    // turni, c'è un tentativo di far produrre output a raffica — meglio un
-    // errore netto che turni spazzatura da ripulire a mano.
-    if (!outputAccettabile(items)) {
-      console.warn('output fuori scala', items.length, 'elementi');
-      return json({ error: "L'immagine non sembra un foglio turni: riprova con una foto della tabella." }, 422);
-    }
-
-    return json({
-      items,
-      usage: {
-        prompt: u.promptTokenCount ?? null,
-        output: u.candidatesTokenCount ?? null,
-        thinking: u.thoughtsTokenCount ?? null,
-        total: u.totalTokenCount ?? null,
-        finishReason: finishReason ? String(finishReason) : null,
-        model: MODEL,
-        resolution: 'LOW',
-      },
-    });
   },
 };
+
+async function gestisci(request, env) {
+  const json = jsonPer(request);
+  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request) });
+
+  const url = new URL(request.url);
+  if (url.pathname !== '/parse-shifts') return json({ error: 'Not found' }, 404);
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+  if (!env.GEMINI_API_KEY) return json({ error: 'Proxy non configurato' }, 500);
+
+  // Prima di leggere il corpo: `request.json()` lo carica tutto in memoria, e
+  // un corpo da decine di MB costava CPU prima di essere rifiutato per misura.
+  const lunghezza = Number(request.headers.get('Content-Length'));
+  if (Number.isFinite(lunghezza) && lunghezza > MAX_BODY_BYTES) {
+    return json({ error: 'Immagine troppo grande' }, 413);
+  }
+  if (!/^application\/json\b/i.test(request.headers.get('Content-Type') || '')) {
+    return json({ error: 'Body non valido' }, 415);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ error: 'Body non valido' }, 400);
+  }
+
+  const { image, mimeType, workerName, installId, turnstileToken } = body || {};
+  const ip = request.headers.get('CF-Connecting-IP') || 'sconosciuto';
+
+  // ── Validazioni a costo zero, PRIMA di qualunque contatore o chiamata ──
+  if (typeof image !== 'string' || !image) return json({ error: 'Immagine mancante' }, 400);
+  if (image.length > MAX_IMAGE_BYTES) return json({ error: 'Immagine troppo grande' }, 413);
+  if (image.length < MIN_IMAGE_BYTES) return json({ error: 'Immagine non valida' }, 400);
+
+  const mime = MIME_AMMESSI.has(mimeType) ? mimeType : null;
+  if (!mime) return json({ error: 'Formato non supportato: usa JPEG, PNG o WebP.' }, 415);
+  // `mimeType` lo dichiara il client: senza guardare i byte, un payload
+  // qualunque verrebbe spedito a Gemini — e pagato — solo perché si dichiara PNG.
+  if (!sembraImmagine(image, mime)) return json({ error: 'Il file non è un\'immagine valida.' }, 415);
+
+  const install = String(installId || 'anonimo').slice(0, 40);
+
+  // ── Raffica ───────────────────────────────────────────────────────────
+  // Viene PRIMA di Turnstile di proposito, ed è l'ordine che conta sotto
+  // attacco: questo controllo è locale e gratuito, mentre Turnstile fa una
+  // chiamata di rete a `siteverify`. Con l'ordine inverso, un ciclo di
+  // richieste costerebbe una chiamata ciascuna prima che il limitatore
+  // intervenga. I controlli gratuiti scartano il traffico, quelli costosi
+  // vengono dopo.
+  //
+  // Due chiavi, perché coprono due aggiramenti diversi: chi si rigenera
+  // l'`installId` a ogni richiesta resta appeso all'IP, chi cambia rete resta
+  // appeso all'installazione. Nessuna delle due costa scritture KV.
+  for (const [limiter, key] of [[env.RAFFICA_IP, chiaveIp(ip)], [env.RAFFICA_INSTALL, `install:${install}`]]) {
+    if (!await raffica(limiter, key)) {
+      return json({ error: 'Troppi import di fila: aspetta un minuto e riprova.' }, 429);
+    }
+  }
+
+  // ── Turnstile: prova che c'è un browser vero, prima di consumare quota ──
+  if (!await turnstileValido(env, turnstileToken, ip)) {
+    return json({ error: 'Verifica di sicurezza non superata: ricarica la pagina e riprova.' }, 403);
+  }
+
+  // ── Tetto di spesa ────────────────────────────────────────────────────
+  // Ultimo prima di Gemini: si scrive su KV solo per richieste che hanno già
+  // superato tutto il resto, così una raffica respinta non consuma né la
+  // quota giornaliera né le scritture su cui quella quota si regge.
+  const today = new Date().toISOString().slice(0, 10);
+  const globale = await conta(env.RATE, `globale:${today}`, DAILY_GLOBAL, 172800);
+  if (globale === 'oltre') {
+    return json({ error: 'Limite giornaliero del riconoscimento raggiunto: riprova domani.' }, 429);
+  }
+  if (globale === 'guasto') {
+    // 'guasto' vale quanto 'oltre': se non si può leggere quanto si è speso,
+    // non si spende.
+    return json({ error: 'Servizio momentaneamente non disponibile: riprova più tardi.' }, 503);
+  }
+
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+  let upstream;
+  try {
+    upstream = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
+      body: JSON.stringify({
+        contents: [{
+          role: 'user',
+          parts: [
+            { text: buildPrompt(ripulisciNome(workerName), new Date().getFullYear()) },
+            { inline_data: { mime_type: mime, data: image } },
+          ],
+        }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema,
+          maxOutputTokens: MAX_OUTPUT_TOKENS,
+          // Estrazione deterministica: stessa immagine → stesso risultato.
+          temperature: 0,
+          // LOW: sui test l'accuratezza è identica a MID/HIGH con molti meno
+          // token immagine (prompt ~600 contro ~1400).
+          mediaResolution: 'MEDIA_RESOLUTION_LOW',
+          // Verificato su due fogli reali (griglia multi-persona e chat in
+          // prosa): stessa accuratezza di prima, thinking azzerato — il
+          // costo per import scende di ~60-65%.
+          thinkingConfig: { thinkingLevel: 'MINIMAL' },
+        },
+      }),
+    });
+  } catch {
+    return json({ error: 'Il servizio di riconoscimento non risponde.' }, 502);
+  }
+
+  if (!upstream.ok) {
+    // Il messaggio di Google può contenere dettagli della chiave: non rimbalzarlo.
+    const dettaglio = await upstream.text().catch(() => '');
+    // 404 = modello inesistente. `gemini-3-flash-preview` è un PREVIEW, e i
+    // nomi preview vengono ritirati quando esce la versione stabile: da quel
+    // momento ogni import fallisce. Senza questa distinzione sembrerebbe un
+    // guasto passeggero, e si cercherebbe il problema ovunque tranne che nel
+    // nome del modello. Il messaggio all'utente resta comprensibile; è il log
+    // che deve gridare cosa fare.
+    if (upstream.status === 404) {
+      console.error(`MODELLO NON DISPONIBILE: "${MODEL}" non esiste più. `
+        + 'Se era un preview è stato ritirato: aggiorna MODEL in worker/src/index.js '
+        + 'e ridistribuisci il worker.', dettaglio);
+      return json({ error: 'Il riconoscimento è temporaneamente non disponibile. Riprova più tardi.' }, 503);
+    }
+    console.error('gemini', upstream.status, dettaglio);
+    const messaggio = upstream.status === 429
+      ? 'Quota del riconoscimento esaurita: riprova più tardi.'
+      : 'Il riconoscimento non è riuscito.';
+    return json({ error: messaggio }, upstream.status === 429 ? 429 : 502);
+  }
+
+  let data;
+  try {
+    data = await upstream.json();
+  } catch {
+    return json({ error: 'Il riconoscimento non è riuscito.' }, 502);
+  }
+  const candidate = data?.candidates?.[0];
+  const finishReason = candidate?.finishReason ?? null;
+  const u = data?.usageMetadata || {};
+
+  // Troncamento esplicito: un JSON parziale perderebbe turni in silenzio.
+  if (String(finishReason) === 'MAX_TOKENS') {
+    return json({ error: 'Risposta troncata: nessun turno importato per non perdere dati.' }, 502);
+  }
+
+  const text = (candidate?.content?.parts || []).map(p => p.text || '').join('').trim();
+  if (!text) return json({ error: 'Nessuna risposta dal modello (possibile blocco o quota).' }, 502);
+
+  let items;
+  try {
+    items = JSON.parse(text);
+  } catch {
+    const m = text.match(/\[[\s\S]*\]/);
+    if (!m) return json({ error: "Nessun turno riconosciuto nell'immagine" }, 422);
+    try {
+      items = JSON.parse(m[0]);
+    } catch {
+      return json({ error: "Nessun turno riconosciuto nell'immagine" }, 422);
+    }
+  }
+  if (!Array.isArray(items)) return json({ error: 'Nessun turno trovato' }, 422);
+
+  // L'immagine può contenere testo che prova a pilotare il modello: lo schema
+  // ne vincola la forma, non la lunghezza. Oltre le soglie non c'è un foglio
+  // turni, c'è un tentativo di far produrre output a raffica — meglio un
+  // errore netto che turni spazzatura da ripulire a mano.
+  if (!outputAccettabile(items)) {
+    console.warn('output fuori scala', items.length, 'elementi');
+    return json({ error: "L'immagine non sembra un foglio turni: riprova con una foto della tabella." }, 422);
+  }
+
+  return json({
+    items,
+    usage: {
+      prompt: u.promptTokenCount ?? null,
+      output: u.candidatesTokenCount ?? null,
+      thinking: u.thoughtsTokenCount ?? null,
+      total: u.totalTokenCount ?? null,
+      finishReason: finishReason ? String(finishReason) : null,
+      model: MODEL,
+      resolution: 'LOW',
+    },
+  });
+}

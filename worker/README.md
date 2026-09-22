@@ -87,6 +87,14 @@ ammessi deve comparire anche **`localhost`**: l'APK Capacitor gira su
 Senza `TURNSTILE_SECRET` il worker salta la verifica — comodo per `wrangler dev`,
 **da non lasciare così in rete**.
 
+Proprio perché `localhost` è fra i domini ammessi e il sitekey sta nel bundle,
+chiunque può ottenere token validi da una pagina propria su localhost. La
+variabile `TURNSTILE_HOSTNAMES` (in `[vars]`, elenco separato da virgole, es.
+`turni-9vr.pages.dev,test.turni-9vr.pages.dev,localhost`) fa accettare solo i
+token risolti su quegli host. Assente, il controllo non c'è. Lasciare
+`localhost` nell'elenco serve all'APK, ma riapre il varco: toglierlo solo con
+un sitekey separato per l'APK.
+
 ## Limiti
 
 Due livelli con scopi diversi, e solo il primo costa scritture KV.
