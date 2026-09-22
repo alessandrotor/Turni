@@ -2406,6 +2406,19 @@ input, select, textarea { font: inherit; }
   color: var(--c-success);
 }
 
+/* L'esito sul trattamento integrativo: è il motivo per cui la simulazione
+   esiste, quindi va a capo e pesa più della cifra lorda che la precede. */
+.simula-bonus-ti {
+  flex-basis: 100%;
+  font-size: .85rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.simula-bonus-ti--ok { color: var(--c-success); }
+.simula-bonus-ti--avviso { color: var(--c-danger); }
+.simula-bonus-ti--neutro { color: var(--c-text-2); }
+
 .simula-bonus-esito em {
   flex-basis: 100%;
   font-size: .75rem;

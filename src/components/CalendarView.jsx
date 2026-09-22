@@ -476,10 +476,50 @@ export default function CalendarView({
     }),
     [annualGross, annualExtras, settingsBonusOgniMese, year],
   );
-  const differenzaBonus = proiezioneBonusOgniMese.value - netBasis;
+  // Confronto sulla stessa base della striscia del trattamento integrativo
+  // (`proiezione`), non su un'altra: due numeri sotto lo stesso riquadro che
+  // partono da basi diverse sono il modo più rapido di non essere creduti.
+  const differenzaBonus = proiezioneBonusOgniMese.value - proiezione;
   // Solo se un bonus esiste E se simularlo cambierebbe qualcosa: a chi li ha
   // già spuntati tutti la domanda non ha nessuna risposta da dare.
   const puoSimulareBonus = monthlyBonusAmount > 0 && differenzaBonus >= 0.005;
+
+  // COSA FA AL TRATTAMENTO INTEGRATIVO, che è il motivo per cui la domanda
+  // viene fatta: il lordo da solo non risponde. La soglia dei 15.000 non è una
+  // linea oltre cui si perde tutto — è una buca larga un paio di centinaia di
+  // euro e profonda ~129 (vedi utils/restituzione.js) — e i tre casi vogliono
+  // tre risposte diverse, non tre intensità dello stesso allarme.
+  const posizioneSimulata = useMemo(
+    () => posizioneRispettoSoglia(proiezioneBonusOgniMese.value, settings, costo),
+    [proiezioneBonusOgniMese, settings, costo],
+  );
+  const esitoSimulazione = useMemo(() => {
+    if (posizione === POSIZIONE.SOTTO) {
+      if (posizioneSimulata === POSIZIONE.SOTTO) {
+        return { tono: 'ok', testo: 'Resteresti sotto la soglia: il trattamento integrativo non cambia.' };
+      }
+      if (posizioneSimulata === POSIZIONE.DENTRO) {
+        return {
+          tono: 'avviso',
+          testo: `Ti porterebbe oltre i ${fmt0(costo.tetto)} di lordo: il trattamento integrativo non spetta più, e nel punto peggiore ci rimetti ~${fmt0(costo.perditaMax)} l'anno.`,
+        };
+      }
+      // Oltre la buca: il TI non spetta, ma la detrazione più alta lo ha già
+      // compensato. Gridare qui è il difetto che `costoSoglia` esiste per
+      // togliere — si dice, e si dice che non costa.
+      return {
+        tono: 'neutro',
+        testo: `Ti porterebbe oltre i ${fmt0(costo.tetto)}: il trattamento integrativo non spetta più, ma saresti abbastanza oltre da non rimetterci niente.`,
+      };
+    }
+    // Già dentro la buca: prenderlo ogni mese può farne USCIRE. È l'unico caso
+    // in cui la risposta giusta è guadagnare di più, ed è anche l'unico
+    // azionabile — vale la pena dirlo.
+    if (posizione === POSIZIONE.DENTRO && posizioneSimulata === POSIZIONE.OLTRE) {
+      return { tono: 'ok', testo: 'Ti farebbe uscire dalla buca dei 15.000: torneresti in pari.' };
+    }
+    return null;
+  }, [posizione, posizioneSimulata, costo]);
 
 
   async function runImport(file, name) {
@@ -1001,6 +1041,11 @@ export default function CalendarView({
                   <p className="simula-bonus-esito">
                     <span className="simula-bonus-valore">{fmt0(proiezioneBonusOgniMese.value)}</span>
                     <span className="simula-bonus-delta">+{fmt0(differenzaBonus)}</span>
+                    {esitoSimulazione && (
+                      <strong className={`simula-bonus-ti simula-bonus-ti--${esitoSimulazione.tono}`}>
+                        {esitoSimulazione.testo}
+                      </strong>
+                    )}
                     <em>
                       lordo sull&apos;anno — solo una simulazione: i mesi segnati restano
                       quelli che hai spuntato
