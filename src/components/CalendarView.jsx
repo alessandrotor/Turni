@@ -125,6 +125,12 @@ export default function CalendarView({
   }, []);
   const fileInputRef = useRef(null);
   const nameModalRef = useRef(null);
+  // Anche queste due finestre si chiudono con Esc e tengono il Tab dentro,
+  // come tutte le altre: erano le sole rimaste senza.
+  const contiBonusRef = useRef(null);
+  const avvisoFotoRef = useRef(null);
+  useModalDismiss(contiBonusRef, () => setContiBonusAperti(false), contiBonusAperti);
+  useModalDismiss(avvisoFotoRef, () => setMostraAvvisoFoto(false), mostraAvvisoFoto);
   const focusCellRef = useRef(null);
 
   // Porta sotto gli occhi il giorno arrivato da un'altra pagina. `block:
@@ -1510,7 +1516,7 @@ export default function CalendarView({
           motore (`costoSoglia`) e non da costanti scritte qui. */}
       {contiBonusAperti && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setContiBonusAperti(false)}>
-          <div className="modal" role="dialog" aria-modal="true" aria-label="Come funziona il bonus">
+          <div ref={contiBonusRef} className="modal" role="dialog" aria-modal="true" aria-label="Come funziona il bonus">
             <div className="modal-header">
               <h2 className="modal-title">Come funziona il bonus</h2>
             </div>
@@ -1578,7 +1584,7 @@ export default function CalendarView({
 
       {mostraAvvisoFoto && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setMostraAvvisoFoto(false)}>
-          <div className="modal" role="dialog" aria-modal="true" aria-label="Prima di inviare la foto">
+          <div ref={avvisoFotoRef} className="modal" role="dialog" aria-modal="true" aria-label="Prima di inviare la foto">
             <div className="modal-header">
               <h2 className="modal-title">Prima di inviare la foto</h2>
             </div>
@@ -1677,10 +1683,29 @@ export default function CalendarView({
         </div>
       )}
 
+      {/* Durante il riconoscimento la pagina resta ferma. Senza velo la barra
+          in alto restava toccabile: passando a Statistiche il calendario si
+          smontava, la chiave `import` di `occupato` si spegneva con la
+          richiesta ancora in volo, e i turni riconosciuti — già pagati —
+          arrivavano su un componente che non c'era più. */}
+      {importLoading && (
+        <div className="modal-overlay import-velo" role="status" aria-live="polite">
+          <div className="import-velo-testo">⏳ Sto leggendo la foto…</div>
+        </div>
+      )}
+
       {showShareModal && (
         <ShareWeekModal
-          shifts={shifts}
-          initialDate={currentMonth}
+          // TUTTI i turni: la settimana scavalca il mese, e con i soli turni
+          // del mese il 31 agosto finiva nel messaggio come «Riposo».
+          shifts={allShifts || shifts}
+          // Sul mese in corso si parte dalla settimana di oggi, che è quella
+          // che si condivide; sugli altri mesi dal loro inizio.
+          initialDate={
+            currentMonth.getFullYear() === new Date().getFullYear()
+              && currentMonth.getMonth() === new Date().getMonth()
+              ? new Date() : currentMonth
+          }
           onClose={() => setShowShareModal(false)}
         />
       )}

@@ -107,7 +107,6 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
   }
 
   const dialogRef = useRef(null);
-  useModalDismiss(dialogRef, onClose);
 
   // Il tocco fuori bersaglio arrivato mentre c'era del lavoro da perdere: la
   // finestra lo segnala e torna normale da sola. Mezzo secondo è quanto dura
@@ -284,14 +283,20 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
   // chiedere «sei sicuro?» la finestra si scuote e mette in evidenza la ✕, che
   // è dove si esce. Nessun tocco in più per nessuno, e niente da leggere.
   // Il perché per esteso sta in `utils/bozza.js`.
-  const chiudiDaFuori = (e) => {
-    if (e.target !== e.currentTarget) return;
+  const esciSeNienteDaPerdere = () => {
     if (!bozzaDaSalvare({ iniziale: initial.current, form, modifiche })) {
       onClose();
       return;
     }
     setTrattieni(true);
   };
+  const chiudiDaFuori = (e) => {
+    if (e.target === e.currentTarget) esciSeNienteDaPerdere();
+  };
+  // Esc è un'uscita dello stesso genere: chiude finché non c'è niente da
+  // perdere, poi fa lo stesso cenno verso la ✕. Chiudeva sempre, e un periodo
+  // di venti righe corrette se ne andava con un tasto.
+  useModalDismiss(dialogRef, esciSeNienteDaPerdere);
 
   return (
     <div className="modal-overlay" onClick={chiudiDaFuori}>
@@ -383,7 +388,7 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
                             className="form-input periodo-giorno-ore"
                             min="0"
                             max="24"
-                            step="0.5"
+                            step="any"
                             aria-label={`Ore del ${d.getDate()}`}
                             disabled={!r.selezionato}
                             value={oreArrotondate(r.minuti / 60)}
@@ -426,7 +431,7 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
                 className="form-input"
                 min="0"
                 max="24"
-                step="0.5"
+                step="any"
                 value={form.absenceHours}
                 onChange={set('absenceHours')}
                 required
@@ -516,6 +521,12 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
             {minutesDiff(form.startTime, form.endTime) > 12 * 60 && (
               <span className="worked-preview-note">(turno notturno)</span>
             )}
+            {/* 08:00–08:00 vale zero, non ventiquattro ore: `minutesDiff` non
+                può sapere quale delle due si intendeva. Un turno di guardia da
+                un giorno intero si salvava a 0 € senza che nulla lo dicesse. */}
+            {form.startTime && form.startTime === form.endTime && (
+              <span className="worked-preview-note">(inizio e fine uguali: 0 ore)</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -546,7 +557,7 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
                   className="form-input"
                   min="0"
                   max="480"
-                  step="5"
+                  step="any"
                   placeholder="Minuti di pausa"
                   value={form.breakMinutes}
                   onChange={(e) => setForm(f => ({ ...f, breakMinutes: Number(e.target.value) }))}
@@ -592,7 +603,7 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
                       className="form-input"
                       min="0"
                       max="200"
-                      step="0.5"
+                      step="any"
                       placeholder="% maggiorazione"
                       value={form.surchargePct}
                       onChange={(e) => setForm(f => ({ ...f, surchargePct: e.target.value }))}

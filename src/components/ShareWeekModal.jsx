@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import {
   formatDate, formatDayShort, addMonths,
   getWeekStart, formatMinutes, MONTH_NAMES,
@@ -26,7 +26,14 @@ export default function ShareWeekModal({
 }) {
   const [weekOffset, setWeekOffset] = useState(0);
   const [copied, setCopied] = useState(false);
-  const modalRef = useModalDismiss(onClose);
+  // L'hook vuole il riferimento, non lo restituisce: chiamato con il solo
+  // `onClose`, Esc lanciava un TypeError e la finestra restava aperta.
+  const modalRef = useRef(null);
+  useModalDismiss(modalRef, onClose);
+  // Un timer solo per il «Copiato»: due copie di fila non si pestano i piedi,
+  // e chiudendo la finestra non resta niente in volo.
+  const timerCopiato = useRef(null);
+  useEffect(() => () => clearTimeout(timerCopiato.current), []);
 
   // Calcola i 7 giorni della settimana selezionata
   const weekData = useMemo(() => {
@@ -115,7 +122,8 @@ export default function ShareWeekModal({
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(shareText);
         setCopied(true);
-        setTimeout(() => setCopied(false), 2200);
+        clearTimeout(timerCopiato.current);
+        timerCopiato.current = setTimeout(() => setCopied(false), 2200);
       }
     } catch {
       // Ignora errori appunti

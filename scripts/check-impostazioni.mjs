@@ -70,6 +70,19 @@ verifica('nessuno `step` diverso da «any»', stretti, [],
     ? `${stretti.join(', ')} — 37,25 ore e 66,66% sono valori veri, e uno step li rifiuta`
     : `${passi.length} campi`);
 
+// Lo stesso difetto nel modulo del turno, trovato il 23/09/2026: qui il form
+// non ha nemmeno `noValidate`, quindi decide il browser. Con 24 ore su cinque
+// giorni il modulo propone 4,8 ore di ferie e poi le rifiuta con `step="0.5"`;
+// su un periodo di venti giornate, venti righe da correggere per salvare.
+const moduloTurno = readFileSync(new URL('../src/components/ShiftForm.jsx', import.meta.url), 'utf8')
+  .split('\n').filter((riga) => !/^\s*(\/\/|\*|\/\*)/.test(riga)).join('\n');
+const passiTurno = [...moduloTurno.matchAll(/step="([^"]+)"/g)].map((m) => m[1]);
+const strettiTurno = passiTurno.filter((p) => p !== 'any');
+verifica('nemmeno nel modulo del turno', strettiTurno, [],
+  strettiTurno.length
+    ? `${strettiTurno.join(', ')} — 4,8 ore è la proposta del modulo stesso`
+    : `${passiTurno.length} campi`);
+
 // ── 3. Le ore settimanali non possono valere zero ──────────────────────────
 // Lo zero non è un valore basso: è un dato mancante travestito. Manda a zero la
 // soglia dei supplementari — ogni ora lavorata diventa supplementare — e le ore

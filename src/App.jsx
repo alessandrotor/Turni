@@ -22,6 +22,8 @@ import AvvisoAnnulla from './components/AvvisoAnnulla';
 import { avvisoDaMostrare, DURATA_ANNULLA } from './utils/avvisi';
 import { iscrivitiAggiornamenti, applicaAggiornamento, primaDiRicaricare } from './services/aggiornamento';
 import useOccupato from './hooks/useOccupato';
+import { iscrivitiOccupato } from './utils/occupato';
+import { isAssenza } from './utils/assenze';
 import { haDatiMinimi, maggiorazioneDaChiedere } from './utils/configurazione';
 
 const DEFAULT_SETTINGS = {
@@ -392,6 +394,17 @@ export default function App() {
   const [aggiornamentoPronto, setAggiornamentoPronto] = useState(false);
   useEffect(() => iscrivitiAggiornamenti(setAggiornamentoPronto), []);
 
+  // Lavoro in sospeso FUORI da App — Impostazioni con modifiche non salvate,
+  // una foto in riconoscimento. «Aggiorna» ricarica la pagina e li butterebbe
+  // via, e App non li vede: si leggono dal registro. Finché ci sono, la
+  // striscia tace; la versione nuova resta pronta e parte quando si mette via
+  // l'app o appena si torna liberi. Le chiavi di App ('modale', 'annulla') le
+  // decide già `avvisoDaMostrare`.
+  const [occupatoAltrove, setOccupatoAltrove] = useState(false);
+  useEffect(() => iscrivitiOccupato((chiavi) => {
+    setOccupatoAltrove(chiavi.some(k => k !== 'modale' && k !== 'annulla'));
+  }), []);
+
   // L'ultimo turno cancellato, finché si fa in tempo a rimetterlo. Vive qui e
   // non nel modulo perché il modulo si smonta nell'istante della cancellazione.
   const [annullabile, setAnnullabile] = useState(null);
@@ -469,6 +482,19 @@ export default function App() {
   // stesso record con lo STESSO id, non una copia con un id nuovo. Non riparte
   // la domanda sulle maggiorazioni — era già nata quando il turno fu salvato la
   // prima volta, e riproporla sarebbe una domanda già chiusa che ritorna.
+  // Se nel frattempo su quel giorno è stato segnato qualcosa che non può
+  // convivere col turno cancellato — ferie dove c'era lavoro, o viceversa —
+  // l'annulla non ha più un posto dove rimetterlo: rimetterlo darebbe lavoro e
+  // ferie nello stesso giorno, la coppia che `addShifts` esiste per impedire.
+  // La striscia si ritira invece di offrire un tocco che romperebbe i conti.
+  useEffect(() => {
+    if (!annullabile) return;
+    const assenza = isAssenza(annullabile);
+    const conflitto = Object.values(shifts).some(s =>
+      s.date === annullabile.date && s.id !== annullabile.id && isAssenza(s) !== assenza);
+    if (conflitto) setAnnullabile(null);
+  }, [shifts, annullabile]);
+
   const annullaCancellazione = useCallback(() => {
     if (annullabile) updateShift(annullabile);
     setAnnullabile(null);
@@ -497,7 +523,7 @@ export default function App() {
     modaleAperto: !!modal || !!inAttesa || sistemaAperto,
     annulla: !!annullabile,
     maggiorazione: !!avviso,
-    aggiornamento: aggiornamentoPronto,
+    aggiornamento: aggiornamentoPronto && !occupatoAltrove,
   });
 
   return (

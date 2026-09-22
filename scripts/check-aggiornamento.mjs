@@ -22,7 +22,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import {
   decidiAggiornamento, ATTESA_SECONDO_PIANO, INTERVALLO_CONTROLLO,
 } from '../src/utils/aggiornamento.js';
-import { segnaOccupato, eOccupato, chiOccupa } from '../src/utils/occupato.js';
+import { segnaOccupato, eOccupato, chiOccupa, iscrivitiOccupato } from '../src/utils/occupato.js';
 import { DURATA_ANNULLA } from '../src/utils/avvisi.js';
 
 const SW = 'dist/sw.js';
@@ -188,6 +188,27 @@ segnaOccupato('annulla', false);
 check(decidiAggiornamento({
   pronto: true, occupato: eOccupato(), visibile: false, msNascosta: 5 * M, msDallUltimoControllo: 0,
 }).azione === 'applica', 'scaduta la finestra, l\'aggiornamento riparte');
+
+// IL PULSANTE, difetto trovato il 23/09/2026. «Aggiorna» ricaricava senza
+// guardare il registro, e App non vede Impostazioni né l'import: modifiche non
+// salvate e foto in riconoscimento sparivano con un tocco. Ora App si iscrive
+// al registro e la striscia tace finché c'è lavoro in sospeso altrove — il che
+// funziona solo se ogni cambio arriva agli iscritti, e SOLO i cambi.
+console.log('\nLa striscia sente il registro\n');
+const ricevuti = [];
+const disiscrivi = iscrivitiOccupato((chiavi) => ricevuti.push(chiavi.join(',')));
+segnaOccupato('impostazioni', true);
+segnaOccupato('impostazioni', true); // stessa chiave due volte: un cambio solo
+segnaOccupato('impostazioni', false);
+check(JSON.stringify(ricevuti) === JSON.stringify(['impostazioni', '']),
+  'accesa e spenta: due avvisi, non tre', JSON.stringify(ricevuti));
+disiscrivi();
+segnaOccupato('import', true);
+segnaOccupato('import', false);
+check(ricevuti.length === 2, 'dopo la disiscrizione non arriva più niente');
+const app = readFileSync(new URL('../src/App.jsx', import.meta.url), 'utf8');
+check(/aggiornamento:\s*aggiornamentoPronto\s*&&\s*!occupatoAltrove/.test(app),
+  'App non offre «Aggiorna» mentre si lavora altrove');
 
 console.log(falliti === 0
   ? '\nLa versione nuova aspetta il suo turno.\n'

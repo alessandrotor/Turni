@@ -960,6 +960,21 @@ input, select, textarea { font: inherit; }
   padding-bottom: calc(1.5rem + var(--safe-bottom));
 }
 
+/* Il fuoco entra nel contenitore all'apertura (`useModalDismiss`) perché il Tab
+   resti dentro la finestra: è un punto di partenza, non un controllo, e un
+   contorno attorno all'intero modale sembrerebbe un errore. */
+[tabindex="-1"]:focus { outline: none; }
+
+/* Il velo del riconoscimento da foto: niente da toccare, solo da aspettare. */
+.import-velo { align-items: center; cursor: progress; }
+.import-velo-testo {
+  background: var(--c-card);
+  color: var(--c-text);
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+}
+
 @media (min-width: 520px) {
   .modal-overlay { align-items: center; padding: 1rem; }
   .modal { border-radius: var(--radius-lg); max-height: 90dvh; }
