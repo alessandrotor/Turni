@@ -144,6 +144,11 @@ quanto costa scoprire a dicembre che non spettava.
   esclusione TI (override, va a conguaglio)», in gergo delle paghe. Ora si legge,
   e la casella è dentro il riquadro rosso: mandare a cercare un interruttore chi
   ha appena letto di dover restituire dei soldi significa che non lo troverà.
+  Per la stessa ragione la domanda «e se lo prendessi tutti i mesi?» è una
+  casella dentro quel riquadro, sotto il previsto di fine anno: non tocca i
+  dati salvati e non sostituisce la cifra vera, le si affianca — serve a
+  confrontare. E risponde con l'esito, non col lordo: «+1.080 €» non dice se
+  fai saltare la soglia, che è il motivo per cui te lo stai chiedendo.
 
 Tre cose che il modello NON sa, e che vanno scritte accanto alla cifra e non in
 un disclaimer generico: quanto è stato accreditato davvero (lo dice il cedolino,
@@ -213,6 +218,16 @@ nemmeno la maggiorazione domenicale lo comprendeva.
   Attenzione a non confonderla con la proiezione annua, che RESTA e serve ad
   altro: il margine del bonus e il rischio di restituzione sono domande
   sull'anno. Il pannello del netto le tiene su due righe separate apposta.
+- **Si annualizza solo ciò che ricorre davvero.** Un montante fermato a luglio
+  contiene già la 14ª erogata a giugno — il progressivo del cedolino la
+  comprende — e sommarla un'altra volta gonfiava il maturato di mezza
+  mensilità. Ma il danno grosso era il secondo: `projectAnnualIncome` sottrae
+  le una-tantum PRIMA di annualizzare, quindi una quota non dichiarata in
+  `extras` passa per reddito ricorrente e viene moltiplicata per
+  12/mesi-trascorsi. Stessa regola per il bonus spuntato mese per mese: un
+  premio di produttività non torna ogni mese, e a settembre tre bonus da 120 €
+  ne promettevano quattro. → `check-montante-mensilita.mjs`,
+  `check-proiezione.mjs`
 - **La soglia del supplementare resta MENSILE** (103,20 h = 24 × 4,3), non
   settimanale: questo lo avevano stabilito giugno e luglio, e non cambia.
   → `check-mese-paga-2026.mjs`
