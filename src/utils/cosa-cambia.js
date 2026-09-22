@@ -115,7 +115,13 @@ export function calcolaCosaCambia({
     const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
       .reduce((s, v) => s + (Number(v.amount) || 0), 0);
     const monthlyBonusAmount = Number(settings.monthlyBonusAmount) || 0;
-    const perMonthBonus = settings.monthlyBonus?.[monthKey] ? monthlyBonusAmount : 0;
+    // I valori numerici sono il formato legacy (importo diverso salvato mese
+    // per mese): vanno letti com'erano, non sostituiti con l'importo fisso di
+    // oggi. Stessa lettura di net.js, stats.js e useMonthlyNet.js — qui era
+    // rimasta indietro, e su quei mesi «cosa cambia» mostrava una cifra che il
+    // resto dell'app non mostrava.
+    const bonusEntry = settings.monthlyBonus?.[monthKey];
+    const perMonthBonus = typeof bonusEntry === 'number' ? bonusEntry : (bonusEntry ? monthlyBonusAmount : 0);
 
     const extraThisMonth = monthlyBaseGross(settings) * (
       (settings.hasQuattordicesima && month === EXTRA_MONTHS.quattordicesima

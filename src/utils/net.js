@@ -623,11 +623,6 @@ export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, pay
  * @param {boolean} [opts.enableNetCalc] gate del motore fiscale (beta): a
  *   false i termini che dipendono dal contratto restano a zero — stesso
  *   comportamento di un chiamante che tiene il motore spento.
- * @param {number|null} [opts.viewedMonth] mese (0-11) fino a cui contare il
- *   bonus "maturato finora" in modalità YTD — quello che si sta guardando in
- *   Calendario, se noto. Senza un mese specifico (es. una vista sull'intero
- *   anno) si usa lo stesso confine con cui si annualizza il maturato: oggi, o
- *   dicembre per un anno passato.
  * @returns {{ value: number, source: 'contratto'|'maturato'|'manuale' }}
  */
 // «1 mese» / «5 mesi»: compare nelle note della spiegazione, e «1 mesi» in un
@@ -636,7 +631,7 @@ const fmtMesi = (n) => `${n} mes${n === 1 ? 'e' : 'i'}`;
 
 export function projectAnnualIncome(
   annualGross, annualExtras, settings = {}, year = new Date().getFullYear(),
-  { enableNetCalc = true, viewedMonth = null } = {},
+  { enableNetCalc = true } = {},
 ) {
   const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
     .reduce((s, v) => s + (Number(v.amount) || 0), 0);
@@ -647,12 +642,8 @@ export function projectAnnualIncome(
 
   const now = new Date();
   const monthsElapsed = year === now.getFullYear() ? now.getMonth() + 1 : 12;
-  const mm = String((viewedMonth != null ? viewedMonth : monthsElapsed - 1) + 1).padStart(2, '0');
   const bonusYearAll = Object.entries(bonusMap)
     .filter(([k]) => k.slice(0, 4) === String(year))
-    .reduce((s, [, v]) => s + resolveBonusEntry(v), 0);
-  const bonusYTD = Object.entries(bonusMap)
-    .filter(([k]) => k.slice(0, 4) === String(year) && k.slice(5, 7) <= mm)
     .reduce((s, [, v]) => s + resolveBonusEntry(v), 0);
 
   // 13ª/14ª sono una tantum: annualizzarle (×12/mesi trascorsi) le
@@ -681,11 +672,23 @@ export function projectAnnualIncome(
   };
 
   if ((settings.tiProjectionMode || 'stimato') === 'ytd') {
-    const cumulativo = recurring + fixedMonthlyTotal * monthsElapsed + bonusYTD;
+    // Il BONUS non si annualizza, per la stessa ragione della 13ª/14ª: si
+    // spunta mese per mese dal calendario, quindi è un fatto già avvenuto e
+    // non una tendenza. Moltiplicarlo per 12/mesi-trascorsi prometteva a
+    // settembre un terzo di bonus in più di quelli davvero presi — e su un
+    // premio di produttività, che non torna ogni mese, è una promessa che
+    // l'app non ha nessun motivo di fare.
+    // Le voci fisse invece restano dentro l'annualizzazione: quelle sì che
+    // tornano ogni mese, ed è esattamente cosa vuol dire «fisse».
+    const cumulativo = recurring + fixedMonthlyTotal * monthsElapsed;
     aggiungi('Maturato finora, annualizzato', annualize(cumulativo),
       `${fmtMesi(monthsElapsed)} × 12 ⁄ ${monthsElapsed}`);
     aggiungi('13ª/14ª previste nell\'anno', extrasFullYear);
-    return { value: annualize(cumulativo) + extrasFullYear, source: 'maturato', voci, mesiTrascorsi: monthsElapsed };
+    aggiungi('Bonus segnati nell\'anno', bonusYearAll, 'quelli spuntati, non annualizzati');
+    return {
+      value: annualize(cumulativo) + extrasFullYear + bonusYearAll,
+      source: 'maturato', voci, mesiTrascorsi: monthsElapsed,
+    };
   }
 
   const manual = Number(settings.annualGrossManual) || 0;

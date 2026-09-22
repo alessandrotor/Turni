@@ -116,6 +116,48 @@ verifica('la 13ª che deve ancora arrivare si aggiunge',
 verifica('  e vale una mensilita intera',
   arr(prev(9000, 0, conExtra) - prev(9000, 0, S)), arr(MENSILE), 'la 14ª di giugno e gia nel maturato');
 
+// ── 5. Il bonus non si annualizza ──────────────────────────────────────────
+//
+// Il bonus si spunta mese per mese dal calendario: quando compare nella stima
+// e' perche' qualcuno ha dichiarato di averlo preso, non perche' il motore lo
+// preveda. E' un fatto, quindi vale quello che vale.
+//
+// In modalita' `ytd` finiva invece dentro il cumulativo che viene moltiplicato
+// per 12/mesi-trascorsi: a settembre tre bonus da 120 € ne promettevano
+// quattro (360 → 480). Su un premio di produttivita', che per definizione non
+// torna ogni mese, era una previsione che l'app non aveva motivo di fare — lo
+// stesso errore da cui 13ª e 14ª erano gia' protette.
+//
+// La prova sta nel confronto fra le due modalita': il bonus e' un importo
+// dichiarato, e due modi diversi di proiettare il RESTO non possono farlo
+// valere cifre diverse.
+console.log('\nIl bonus vale quello che vale, in tutte le modalita\n');
+
+const BONUS = 120;
+const conBonus = (modo, mesi) => ({
+  ...S,
+  tiProjectionMode: modo,
+  monthlyBonusAmount: BONUS,
+  monthlyBonus: Object.fromEntries(mesi.map(m => [`${ANNO}-${String(m).padStart(2, '0')}`, true])),
+});
+const stima = (s) => projectAnnualIncome(9000, 0, s, ANNO).value;
+
+for (const modo of ['stimato', 'ytd']) {
+  const senza = stima({ ...S, tiProjectionMode: modo });
+  verifica(`${modo}: tre bonus spostano la stima di 3 × 120`,
+    arr(stima(conBonus(modo, [1, 2, 3])) - senza), 3 * BONUS, 'al valore nominale');
+  verifica('  e dodici ne valgono dodici',
+    arr(stima(conBonus(modo, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])) - senza), 12 * BONUS,
+    'e la simulazione «lo prendo ogni mese»');
+}
+
+// Le due modalita' rispondono a domande diverse e danno totali diversi: quello
+// che NON puo' cambiare e' quanto pesa il bonus dentro ciascuna.
+const pesoStimato = stima(conBonus('stimato', [1, 2, 3])) - stima({ ...S, tiProjectionMode: 'stimato' });
+const pesoYtd = stima(conBonus('ytd', [1, 2, 3])) - stima({ ...S, tiProjectionMode: 'ytd' });
+verifica('le due modalita lo pesano uguale', arr(pesoStimato), arr(pesoYtd),
+  `prima ytd lo moltiplicava per 12/${MESE}`);
+
 // ── La spiegazione deve sommare alla cifra che spiega ──────────────────────
 //
 // La pagina Statistiche apre un «Come e' calcolato?» che elenca le voci della

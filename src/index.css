@@ -2374,6 +2374,47 @@ input, select, textarea { font: inherit; }
   margin-top: .5rem;
 }
 
+/* Simulazione del bonus: sta attaccata alla proiezione perché è quella cifra
+   che cambia. Riquadro leggero, non un secondo pannello — deve leggersi come
+   una nota accanto al numero, non come un'altra sezione da attraversare. */
+.stats-simula {
+  margin-top: .5rem;
+  padding-top: .5rem;
+  border-top: 1px solid var(--c-border);
+}
+
+.stats-simula .check-row {
+  padding: .25rem 0;
+  font-size: .85rem;
+}
+
+.stats-simula-esito {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .45rem;
+  margin: .2rem 0 0;
+}
+
+.stats-simula-valore {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--c-text);
+}
+
+.stats-simula-delta {
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--c-success);
+}
+
+.stats-simula-esito em {
+  flex-basis: 100%;
+  font-size: .75rem;
+  font-style: normal;
+  color: var(--c-muted);
+}
+
 /* Fatti dell'anno: griglia che si adatta, così le voci opzionali
    (supplementari/straordinarie, presenti solo se ce ne sono) non lasciano buchi. */
 .stats-facts {
