@@ -124,35 +124,6 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
     return map;
   }, [months]);
 
-  // Simulazione «e se lo prendessi ogni mese?»: vive QUI, accanto alla cifra
-  // che cambia, e non in Impostazioni. Un interruttore che modifica un numero
-  // va tenuto a portata dell'occhio che quel numero lo sta guardando —
-  // mandarlo a cercare in un'altra schermata significa che non lo troverà, ed
-  // è lo stesso motivo per cui la casella del trattamento integrativo sta
-  // dentro il riquadro rosso e non fra le impostazioni.
-  //
-  // Non tocca `settings`: è una domanda, non una scelta. Chi la spunta non si
-  // ritrova i mesi segnati al ritorno.
-  const [simulaBonus, setSimulaBonus] = useState(false);
-  const monthlyBonusAmount = Number(settings.monthlyBonusAmount) || 0;
-  const settingsBonusOgniMese = useMemo(() => {
-    const tutti = {};
-    for (let m = 0; m < 12; m += 1) tutti[`${year}-${String(m + 1).padStart(2, '0')}`] = true;
-    // I mesi già segnati vincono: possono portare un importo diverso (formato
-    // legacy), e una simulazione non deve riscriverli con quello fisso.
-    return { ...settings, monthlyBonus: { ...tutti, ...(settings.monthlyBonus || {}) } };
-  }, [settings, year]);
-  const proiezioneBonusOgniMese = useMemo(
-    () => projectAnnualIncome(annualGross.total, annualGross.extras, settingsBonusOgniMese, year, {
-      enableNetCalc: ENABLE_NET_CALC,
-    }),
-    [annualGross, settingsBonusOgniMese, year],
-  );
-  const differenzaBonus = proiezioneBonusOgniMese.value - projection.value;
-  // Si mostra solo se il bonus esiste E se simularlo cambierebbe qualcosa: a
-  // chi li ha già segnati tutti la domanda non ha risposta da dare.
-  const puoSimulareBonus = monthlyBonusAmount > 0 && differenzaBonus >= 0.005;
-
   const netCalcOn = ENABLE_NET_CALC && hasAnyRate(settings);
   const netAnnualProjected = useMemo(
     () => (netCalcOn ? calcNetAnnual(projection.value, settings) : null),
@@ -362,27 +333,6 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
             <p className="stats-projection-source">
               proiezione {PROJECTION_LABEL[projection.source] || projection.source}
             </p>
-
-            {puoSimulareBonus && (
-              <div className="stats-simula">
-                <label className="check-row" htmlFor="simula-bonus">
-                  <input
-                    id="simula-bonus"
-                    type="checkbox"
-                    checked={simulaBonus}
-                    onChange={e => setSimulaBonus(e.target.checked)}
-                  />
-                  <span>E se prendessi il bonus <strong>tutti i mesi</strong>?</span>
-                </label>
-                {simulaBonus && (
-                  <p className="stats-simula-esito">
-                    <span className="stats-simula-valore">{fmt0(proiezioneBonusOgniMese.value)}</span>
-                    <span className="stats-simula-delta">+{fmt0(differenzaBonus)}</span>
-                    <em>solo una simulazione: i mesi segnati restano quelli che hai spuntato</em>
-                  </p>
-                )}
-              </div>
-            )}
 
             <button
               type="button"

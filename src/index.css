@@ -2374,41 +2374,39 @@ input, select, textarea { font: inherit; }
   margin-top: .5rem;
 }
 
-/* Simulazione del bonus: sta attaccata alla proiezione perché è quella cifra
-   che cambia. Riquadro leggero, non un secondo pannello — deve leggersi come
-   una nota accanto al numero, non come un'altra sezione da attraversare. */
-.stats-simula {
-  margin-top: .5rem;
-  padding-top: .5rem;
-  border-top: 1px solid var(--c-border);
+/* Simulazione del bonus: sta sotto la spunta del mese, da cui la domanda
+   nasce. Nota accanto al numero, non un secondo pannello — con la riga del
+   risultato che compare solo da spuntata, così da spenta costa una riga. */
+.simula-bonus {
+  margin-top: .4rem;
 }
 
-.stats-simula .check-row {
+.simula-bonus .check-row {
   padding: .25rem 0;
-  font-size: .85rem;
+  font-size: .9rem;
 }
 
-.stats-simula-esito {
+.simula-bonus-esito {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
   gap: .45rem;
-  margin: .2rem 0 0;
+  margin: .1rem 0 0;
 }
 
-.stats-simula-valore {
+.simula-bonus-valore {
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--c-text);
 }
 
-.stats-simula-delta {
+.simula-bonus-delta {
   font-size: .85rem;
   font-weight: 600;
   color: var(--c-success);
 }
 
-.stats-simula-esito em {
+.simula-bonus-esito em {
   flex-basis: 100%;
   font-size: .75rem;
   font-style: normal;

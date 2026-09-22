@@ -14,8 +14,8 @@ import { contrattoMancante } from '../utils/configurazione';
 import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../utils/assenze';
-import { EXTRA_MONTHS, TAX_2026 } from '../utils/net';
-import { ENABLE_DEBUG } from '../config/features';
+import { EXTRA_MONTHS, TAX_2026, projectAnnualIncome } from '../utils/net';
+import { ENABLE_DEBUG, ENABLE_NET_CALC } from '../config/features';
 import useMonthlyNet from '../hooks/useMonthlyNet';
 
 // Aliquota contributiva: fino a 3 decimali, senza zeri inutili in coda
@@ -453,6 +453,33 @@ export default function CalendarView({
   const monthlyBonusEntry = settings.monthlyBonus?.[monthKey];
   const bonusTakenThisMonth = !!monthlyBonusEntry;
   const monthlyBonusAmount = Number(settings.monthlyBonusAmount) || 0;
+
+  // «E se lo prendessi tutti i mesi?» — la domanda che nasce dalla spunta qui
+  // sopra, e che sta accanto a quella e non in Impostazioni: un interruttore
+  // che muove un numero va tenuto sotto l'occhio che quel numero lo guarda.
+  //
+  // È una SIMULAZIONE: non scrive niente in `settings`, e la cifra vera resta
+  // dov'era invece di essere sostituita. Serve a confrontare — un premio di
+  // produttività non si decide, si riceve, e la domanda utile è quanto
+  // varrebbe l'anno se arrivasse sempre.
+  const [simulaBonus, setSimulaBonus] = useState(false);
+  const settingsBonusOgniMese = useMemo(() => {
+    const tutti = {};
+    for (let m = 0; m < 12; m += 1) tutti[`${year}-${String(m + 1).padStart(2, '0')}`] = true;
+    // I mesi già spuntati vincono: possono portare un importo diverso (formato
+    // legacy), e una simulazione non deve riscriverli con quello fisso di oggi.
+    return { ...settings, monthlyBonus: { ...tutti, ...(settings.monthlyBonus || {}) } };
+  }, [settings, year]);
+  const proiezioneBonusOgniMese = useMemo(
+    () => projectAnnualIncome(annualGross, annualExtras, settingsBonusOgniMese, year, {
+      enableNetCalc: ENABLE_NET_CALC,
+    }),
+    [annualGross, annualExtras, settingsBonusOgniMese, year],
+  );
+  const differenzaBonus = proiezioneBonusOgniMese.value - netBasis;
+  // Solo se un bonus esiste E se simularlo cambierebbe qualcosa: a chi li ha
+  // già spuntati tutti la domanda non ha nessuna risposta da dare.
+  const puoSimulareBonus = monthlyBonusAmount > 0 && differenzaBonus >= 0.005;
 
 
   async function runImport(file, name) {
@@ -956,6 +983,30 @@ export default function CalendarView({
                     {' '}<strong>(+{fmt0(monthlyBonusAmount)})</strong>
                   </span>
                 </label>
+              </div>
+            )}
+
+            {puoSimulareBonus && (
+              <div className="simula-bonus">
+                <label className="check-row" htmlFor="simula-bonus">
+                  <input
+                    id="simula-bonus"
+                    type="checkbox"
+                    checked={simulaBonus}
+                    onChange={e => setSimulaBonus(e.target.checked)}
+                  />
+                  <span>E se lo prendessi <strong>tutti i mesi</strong>?</span>
+                </label>
+                {simulaBonus && (
+                  <p className="simula-bonus-esito">
+                    <span className="simula-bonus-valore">{fmt0(proiezioneBonusOgniMese.value)}</span>
+                    <span className="simula-bonus-delta">+{fmt0(differenzaBonus)}</span>
+                    <em>
+                      lordo sull&apos;anno — solo una simulazione: i mesi segnati restano
+                      quelli che hai spuntato
+                    </em>
+                  </p>
+                )}
               </div>
             )}
 
