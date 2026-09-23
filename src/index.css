@@ -1390,6 +1390,18 @@ input, select, textarea { font: inherit; }
 .install-banner-close:hover { background: var(--c-bg); color: var(--c-text); }
 /* Su iOS il pulsante non c'è: la X torna a destra */
 .install-banner:not(:has(.install-banner-btn)) .install-banner-close { margin-left: auto; }
+/* L'avviso iOS parla di dati che si possono perdere, non di comodità: bordo
+   del colore degli avvisi, e la X in alto perché il testo va su più righe. */
+.install-banner--ios { align-items: flex-start; border-color: var(--c-warning); }
+.install-banner-link {
+  align-self: flex-start;
+  margin-top: .3rem;
+  padding: 0;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--c-primary);
+  text-decoration: underline;
+}
 
 /* Gruppo "Avanzate": raccoglie le sezioni fiscali/di dettaglio, separandole
    dagli essenziali per non affollare la pagina Impostazioni. */

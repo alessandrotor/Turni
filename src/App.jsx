@@ -12,7 +12,8 @@ import StatsView from './components/StatsView';
 import Settings from './components/Settings';
 import ShiftForm from './components/ShiftForm';
 import NavBar from './components/NavBar';
-import InstallPrompt from './components/InstallPrompt';
+import InstallPrompt, { isIOS, isStandalone } from './components/InstallPrompt';
+import { chiedereInstallazioneIOS, chiParlaInAlto, KEY_INSTALLA_IOS_RIFIUTATO } from './utils/installazione';
 import SetupPrompt from './components/SetupPrompt';
 import DatiMinimi from './components/DatiMinimi';
 import SistemaMancanti from './components/SistemaMancanti';
@@ -285,6 +286,25 @@ export default function App() {
     navigator.storage?.persist?.().catch(() => {});
   }, [allShifts.length]);
 
+  // Su iOS la richiesta qui sopra non basta: Safari cancella comunque lo
+  // storage dei siti non aperti per sette giorni, e l'unica esenzione è
+  // l'app aggiunta alla Home. Da qui l'avviso, e il suo «no» — una chiave
+  // NUOVA di proposito: chi chiudeva il banner di prima lo chiudeva
+  // all'apertura, su un'app vuota, per un motivo che non era questo.
+  const ambiente = useMemo(() => ({
+    nativo: Capacitor.isNativePlatform(), ios: isIOS(), standalone: isStandalone(),
+  }), []);
+  const [installaIOSRifiutato, setInstallaIOSRifiutato] = useState(() => {
+    try { return localStorage.getItem(KEY_INSTALLA_IOS_RIFIUTATO) === '1'; } catch { return false; }
+  });
+  const rifiutaInstallaIOS = useCallback(() => {
+    setInstallaIOSRifiutato(true);
+    try { localStorage.setItem(KEY_INSTALLA_IOS_RIFIUTATO, '1'); } catch { /* il no vale almeno per questa sessione */ }
+  }, []);
+  const installaIOS = chiedereInstallazioneIOS({
+    ...ambiente, turni: allShifts.length, rifiutato: installaIOSRifiutato,
+  });
+
   const monthShifts = useMemo(() => {
     const y = currentMonth.getFullYear();
     const m = currentMonth.getMonth();
@@ -525,6 +545,9 @@ export default function App() {
     maggiorazione: !!avviso,
     aggiornamento: aggiornamentoPronto && !occupatoAltrove,
   });
+  // E chi in cima: l'avviso iOS batte il promemoria, perché i turni cancellati
+  // da Safari non tornano e la configurazione sì. Vedi utils/installazione.js.
+  const inAlto = chiParlaInAlto({ strisciaInBasso: chiParla !== null, installaIOS });
 
   return (
     <div className="app">
@@ -551,11 +574,16 @@ export default function App() {
           onSistema={() => setSistemaAperto(true)}
           turniInseriti={allShifts.length}
           // Quando la striscia in fondo parla, il promemoria in alto tace —
-          // chiunque sia a parlare, non più le sole maggiorazioni. Due avvisi
-          // impilati sono un muro.
-          sospeso={chiParla !== null}
+          // chiunque sia a parlare, non più le sole maggiorazioni — e tace
+          // anche davanti all'avviso iOS. Due avvisi impilati sono un muro.
+          sospeso={inAlto !== 'promemoria'}
         />
-        <InstallPrompt />
+        <InstallPrompt
+          installaIOS={inAlto === 'installa'}
+          sospeso={inAlto === null}
+          onRifiutaIOS={rifiutaInstallaIOS}
+          onBackup={() => setView('settings')}
+        />
         {view === 'calendar' && (
           <CalendarView
             currentMonth={currentMonth}

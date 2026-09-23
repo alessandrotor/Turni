@@ -1,18 +1,23 @@
 import { useState, useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 
-// Banner "Installa app". Su Android/desktop Chromium (Chrome, Edge, Samsung
-// Internet) usa l'evento nativo `beforeinstallprompt`; su iOS Safari, che non
-// lo espone, mostra le istruzioni manuali (Condividi → Aggiungi a Home).
-// Firefox (mobile e desktop) non implementa `beforeinstallprompt` — è un'API
-// solo Chromium — quindi senza un ramo dedicato il banner resta invisibile in
-// silenzio: su Firefox per Android mostriamo le istruzioni manuali dal menu
-// del browser (l'unico che supporta "Aggiungi a schermata Home" per le PWA).
-// Firefox desktop non ha alcun modo nativo di installare una PWA (scelta di
-// prodotto di Mozilla, non un'API mancante) — lì mostriamo solo un avviso
-// generico, nessun pulsante che promette qualcosa che non può fare. Non
-// compare nell'APK Capacitor né quando l'app è già installata (avviata in
-// modalità standalone).
+// Banner "Installa app", in due nature diverse.
+//
+// SU iOS protegge i dati. Safari cancella lo storage dei siti non aperti per
+// sette giorni, e le web app aggiunte alla Home ne sono esenti: lì installare è
+// l'unica difesa dei turni (vedi utils/installazione.js). Quando e se parlare lo
+// decide App, perché deve anche zittire il promemoria in alto: qui arriva solo
+// `installaIOS`.
+//
+// ALTROVE è una comodità. Su Android/desktop Chromium (Chrome, Edge, Samsung
+// Internet) usa l'evento nativo `beforeinstallprompt`. Firefox (mobile e
+// desktop) non lo implementa — è un'API solo Chromium — quindi senza un ramo
+// dedicato il banner resterebbe invisibile in silenzio: su Firefox per Android
+// si mostrano le istruzioni dal menu del browser. Firefox desktop non ha alcun
+// modo nativo di installare una PWA (scelta di Mozilla, non un'API mancante):
+// lì solo un avviso generico, nessun pulsante che prometta ciò che non può fare.
+//
+// Non compare nell'APK Capacitor né quando l'app è già installata.
 
 const DISMISS_KEY = 'turni_install_dismissed';
 
@@ -29,11 +34,11 @@ const scriviFlag = (k, v) => {
   try { localStorage.setItem(k, v); } catch { /* senza storage il banner ricomparirà: non è un errore da mostrare */ }
 };
 
-const isStandalone = () =>
+export const isStandalone = () =>
   window.matchMedia?.('(display-mode: standalone)').matches ||
   window.navigator.standalone === true;
 
-const isIOS = () =>
+export const isIOS = () =>
   /iphone|ipad|ipod/i.test(window.navigator.userAgent) ||
   // iPadOS si presenta come Mac con touch
   (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
@@ -48,17 +53,24 @@ const isFirefoxAndroid = () => /firefox/i.test(window.navigator.userAgent)
 // testa al file). Chiamata solo dopo aver escluso iOS e Firefox Android.
 const isFirefoxDesktop = () => /firefox/i.test(window.navigator.userAgent);
 
-export default function InstallPrompt() {
+/**
+ * @param {object} props
+ * @param {boolean} props.installaIOS tocca all'avviso iOS (deciso in App)
+ * @param {boolean} props.sospeso qualcun altro sta parlando: i banner di comodità tacciono
+ * @param {() => void} props.onRifiutaIOS «no» all'avviso iOS: dura, lo registra App
+ * @param {() => void} props.onBackup porta al backup, l'alternativa per chi non installa
+ */
+export default function InstallPrompt({ installaIOS = false, sospeso = false, onRifiutaIOS, onBackup }) {
   const [deferred, setDeferred] = useState(null); // evento beforeinstallprompt
   const [show, setShow] = useState(false);
-  const [iosHint, setIosHint] = useState(false);
   const [firefoxHint, setFirefoxHint] = useState(false);
   const [firefoxDesktopHint, setFirefoxDesktopHint] = useState(false);
   const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
-    // Mai nell'app nativa, mai se già installata, mai se già rifiutato.
-    if (Capacitor.isNativePlatform() || isStandalone()) return;
+    // Mai nell'app nativa, mai se già installata, mai se già rifiutato. iOS ha
+    // il suo avviso, deciso fuori da qui.
+    if (Capacitor.isNativePlatform() || isStandalone() || isIOS()) return;
     if (leggiFlag(DISMISS_KEY) === '1') return;
 
     // Android / desktop Chromium: intercetta l'evento e mostra il nostro pulsante.
@@ -71,9 +83,8 @@ export default function InstallPrompt() {
     window.addEventListener('beforeinstallprompt', onBeforeInstall);
     window.addEventListener('appinstalled', onInstalled);
 
-    // iOS Safari e Firefox (Android/desktop): nessun evento, istruzioni manuali.
-    if (isIOS()) { setIosHint(true); setShow(true); }
-    else if (isFirefoxAndroid()) { setFirefoxHint(true); setShow(true); }
+    // Firefox (Android/desktop): nessun evento, istruzioni manuali.
+    if (isFirefoxAndroid()) { setFirefoxHint(true); setShow(true); }
     else if (isFirefoxDesktop()) { setFirefoxDesktopHint(true); setShow(true); }
 
     return () => {
@@ -82,7 +93,30 @@ export default function InstallPrompt() {
     };
   }, []);
 
-  if (!show) return null;
+  if (installaIOS) {
+    // Il motivo prima delle istruzioni: «aggiungi a Home» senza il perché è
+    // un invito come tanti, e si chiude. Il backup accanto non è un ripiego
+    // di cortesia: per chi non vuole un'icona in più è l'unica altra difesa.
+    return (
+      <div className="install-banner install-banner--ios" role="status">
+        <img className="install-banner-icon" src="/pwa-192x192.png" alt="" width="40" height="40" />
+        <div className="install-banner-text">
+          <strong>Aggiungi Turni alla Home</strong>
+          <span>
+            Su iPhone, se resta solo in Safari, dopo 7 giorni senza aprirla Safari può
+            cancellare i tuoi turni. Tocca <span aria-label="Condividi">Condividi ⬆️</span>
+            {' '}e poi «Aggiungi alla schermata Home».
+          </span>
+          <button type="button" className="install-banner-link" onClick={onBackup}>
+            Oppure fai un backup
+          </button>
+        </div>
+        <button className="install-banner-close" onClick={onRifiutaIOS} aria-label="Chiudi">✕</button>
+      </div>
+    );
+  }
+
+  if (!show || sospeso) return null;
 
   const dismiss = () => {
     scriviFlag(DISMISS_KEY, '1');
@@ -112,9 +146,7 @@ export default function InstallPrompt() {
       <img className="install-banner-icon" src="/pwa-192x192.png" alt="" width="40" height="40" />
       <div className="install-banner-text">
         <strong>Installa Turni</strong>
-        {iosHint ? (
-          <span>Tocca <span aria-label="Condividi">Condividi ⬆️</span> e poi «Aggiungi a Home».</span>
-        ) : firefoxHint ? (
+        {firefoxHint ? (
           <span>Tocca il menu ⋮ in alto e poi «Aggiungi a schermata Home» (o «Installa»).</span>
         ) : firefoxDesktopHint ? (
           <span>Se il tuo browser lo supporta, aggiungila dal menu (⋮ o ≡).</span>
@@ -122,7 +154,7 @@ export default function InstallPrompt() {
           <span>Aggiungila alla schermata home: si apre a tutto schermo, anche offline.</span>
         )}
       </div>
-      {!iosHint && !firefoxHint && !firefoxDesktopHint && (
+      {!firefoxHint && !firefoxDesktopHint && (
         <button
           className="btn btn-primary install-banner-btn"
           onClick={install}
