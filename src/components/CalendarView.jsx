@@ -40,6 +40,8 @@ import ShareWeekModal from './ShareWeekModal';
 import useOccupato from '../hooks/useOccupato';
 import { KEY_CAL_LAYOUT } from '../services/backup';
 
+import { intervalloCella } from '../utils/orario-cella';
+
 const DAY_HEADERS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
 // I minuti non sono sempre interi: le ore contrattuali mensili nascono da una
@@ -55,6 +57,17 @@ function formatMinutesShort(mins) {
 // Ore di una giornata, assenze comprese: è il totale che quel giorno vale in
 // busta, non le sole ore lavorate.
 const minutiDelGiorno = (turni) => turni.reduce((somma, s) => somma + calcShiftMinutes(s), 0);
+
+// «18–23³⁰»: inizio E fine del turno, nel formato corto di utils/orario-cella.js.
+// Prima la pill diceva la sola ora d'inizio, e un turno spezzato 10–15 + 18–23:30
+// si leggeva «10:00 / 18:00», come due turni qualunque.
+function Ora({ p }) {
+  return <>{p.ore}{p.minuti && <sup className="cal-ora-min">{p.minuti}</sup>}</>;
+}
+function IntervalloCella({ s }) {
+  const { inizio, fine } = intervalloCella(s.startTime, s.endTime);
+  return <><Ora p={inizio} />{fine && <>–<Ora p={fine} /></>}</>;
+}
 
 export default function CalendarView({
   currentMonth,
@@ -826,16 +839,14 @@ export default function CalendarView({
                           ? `Modifica ${ETICHETTA[t].toLowerCase()} del ${dayNum}/${month + 1}`
                           : `Modifica turno ${s.startTime}–${s.endTime}`}
                       >
-                        {assente ? ICONA[t] : s.startTime}
+                        {assente ? ICONA[t] : <IntervalloCella s={s} />}
                       </button>
                     );
                   })}
                 </div>
-                {/* Le pill dicono solo l'ora di INIZIO: senza il totale, per
-                    sapere quanto dura la giornata bisogna aprire i turni. Vale
-                    anche con un turno solo — la durata non è scritta da nessuna
-                    parte nella cella — e a maggior ragione con più turni, dove
-                    andrebbe pure sommata a mente. */}
+                {/* Il totale della giornata: le pill dicono quando, questo
+                    quanto. Con più turni andrebbe sommato a mente, e la pausa
+                    di un turno spezzato non si conta. */}
                 {dayShifts.length > 0 && (
                   <span
                     className="cal-day-total"

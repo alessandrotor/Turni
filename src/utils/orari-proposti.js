@@ -88,6 +88,19 @@ const quandoE = (v) => {
   return d && !Number.isNaN(d.getTime()) ? d : null;
 };
 
+// Un turno come intervallo in minuti dalla mezzanotte del suo giorno. Se la
+// fine non viene dopo l'inizio il turno scavalca la mezzanotte: 20:00–02:00
+// finisce alle 26:00, non alle 2 del mattino dello stesso giorno.
+const minuti = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
+function intervallo(inizio, fine) {
+  const a = minuti(inizio);
+  let b = minuti(fine);
+  if (b <= a) b += 24 * 60;
+  return [a, b];
+}
+// Si toccano senza accavallarsi, 10–15 e 15–18, non è una sovrapposizione.
+const siSovrappongono = ([a1, a2], [b1, b2]) => Math.max(a1, b1) < Math.min(a2, b2);
+
 /**
  * Le sagome di turno ricorrenti attorno a una data, dalla più frequente.
  *
@@ -95,6 +108,7 @@ const quandoE = (v) => {
  * dipenderebbe dall'ordine con cui i turni arrivano nell'array, cioè da come
  * `Object.values` decide di elencare la mappa. Un riscontro non ripetibile non
  * è un riscontro.
+ *   0. chi NON si accavalla a un turno già segnato quel giorno;
  *   1. chi ricorre di più;
  *   2. a pari conteggio, chi è stato usato più vicino alla data bersaglio;
  *   3. a pari distanza, ordine alfabetico della chiave «inizio|fine».
@@ -130,8 +144,21 @@ export function sagomeFrequenti(turni, data) {
     gruppi.set(chiave, g);
   }
 
+  // IL SECONDO TURNO DI UNO SPEZZATO. La moda non sa che quel giorno un turno
+  // c'è già: chi fa 10–15 + 18–23:30 apriva il modulo per la sera e si vedeva
+  // riproporre 10–15 — un turno sovrapposto a quello appena salvato, da
+  // correggere a mano ogni volta. Le sagome che si accavallano a un turno già
+  // segnato quel giorno passano in fondo, non spariscono: l'ordine resta
+  // totale, e se nessuna è libera la proposta resta comunque una coppia vera.
+  const giaNelGiorno = (Array.isArray(turni) ? turni : [])
+    .filter(t => t?.date === data && tipoTurno(t) === TIPO.LAVORO
+      && oraValida(t?.startTime) && oraValida(t?.endTime))
+    .map(t => intervallo(t.startTime, t.endTime));
+  const occupa = (g) => giaNelGiorno.some(i => siSovrappongono(i, intervallo(g.startTime, g.endTime)));
+
   return [...gruppi.values()]
-    .sort((a, b) => b.quante - a.quante
+    .sort((a, b) => occupa(a) - occupa(b)
+      || b.quante - a.quante
       || a.distanza - b.distanza
       || a.chiave.localeCompare(b.chiave))
     .map(({ startTime, endTime, quante, distanza, pause }) => ({

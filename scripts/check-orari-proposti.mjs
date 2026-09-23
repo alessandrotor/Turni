@@ -217,6 +217,47 @@ verifica('ore e minuti fuori scala', sagomeFrequenti([
   t('2026-09-01', '25:00', '30:00'), t('2026-09-02', '10:70', '12:00'),
 ], '2026-09-03').length, 0, '');
 
+// ── 7b. Il secondo turno di uno spezzato ───────────────────────────────────
+//
+// La moda non sapeva che quel giorno un turno c'era già: chi fa 10–15 +
+// 18–23:30 apriva il modulo per la sera e si vedeva riproporre 10–15, cioè un
+// turno sovrapposto a quello appena salvato. Le sagome che si accavallano a un
+// turno del giorno passano in fondo, senza sparire.
+console.log('\nIl secondo turno di uno spezzato\n');
+
+const spezzato = [
+  ...ripeti(10, i => t(giorno('2026-09-01', i), '10:00', '15:00')),
+  ...ripeti(8, i => t(giorno('2026-09-01', i), '18:00', '23:30')),
+];
+verifica('giorno vuoto: la mattina, la più frequente',
+  coppia(proponiOrari(spezzato, '2026-09-20')), '10:00–15:00', 'nulla da evitare');
+const conMattina = [...spezzato, t('2026-09-20', '10:00', '15:00')];
+verifica('mattina già segnata: propone la sera',
+  coppia(proponiOrari(conMattina, '2026-09-20')), '18:00–23:30', 'era 10:00–15:00, sovrapposto');
+verifica('  e la sagoma sovrapposta resta, in fondo',
+  sagomeFrequenti(conMattina, '2026-09-20').map(coppia), ['18:00–23:30', '10:00–15:00'], 'un tocco, se serve davvero');
+verifica('turno in un altro giorno: non conta',
+  coppia(proponiOrari([...spezzato, t('2026-09-21', '10:00', '15:00')], '2026-09-20')), '10:00–15:00', '');
+verifica('toccarsi non è sovrapporsi',
+  coppia(proponiOrari([...ripeti(5, i => t(giorno('2026-09-01', i), '15:00', '18:00')), t('2026-09-20', '10:00', '15:00')], '2026-09-20')),
+  '15:00–18:00', '10–15 e 15–18 stanno nello stesso giorno');
+
+// Oltre la mezzanotte: 20:00–02:00 occupa fino alle 26:00 del suo giorno, e
+// 23:00–03:00 gli si accavalla anche se «03» è minore di «20».
+const notte = [
+  ...ripeti(6, i => t(giorno('2026-09-01', i), '23:00', '03:00')),
+  ...ripeti(4, i => t(giorno('2026-09-01', i), '08:00', '12:00')),
+  t('2026-09-20', '20:00', '02:00'),
+];
+verifica('oltre la mezzanotte si accavalla lo stesso',
+  coppia(proponiOrari(notte, '2026-09-20')), '08:00–12:00', '23–03 dentro 20–02');
+
+// Nessuna sagoma libera: la proposta resta una coppia che esiste, non un
+// orario inventato né il default a caso.
+const tutteOccupate = [...ripeti(5, i => t(giorno('2026-09-01', i), '09:00', '17:00')), t('2026-09-20', '08:00', '18:00')];
+verifica('nessuna libera: resta una coppia vera',
+  coppia(proponiOrari(tutteOccupate, '2026-09-20')), '09:00–17:00', 'la regola «non si inventa» non si piega');
+
 // ── 8. La guardia contro il ritorno indietro ───────────────────────────────
 // Nello stile del punto 3 di `check-aggiornamento.mjs`: la regola vive nel
 // modulo, non sparsa nei componenti. Se qualcuno riscrive gli orari a mano

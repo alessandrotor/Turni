@@ -477,6 +477,19 @@ annullato.
 
 ---
 
+# I. Doppi turni e iPhone — 23/09/2026
+
+Chiusi dopo la revisione, con lo stesso criterio: ognuno ha il suo riscontro.
+
+| # | Difetto | Riscontro che lo tiene chiuso |
+|---|---|---|
+| I1 | La pill della griglia mostrava la sola ora d'**inizio**: un turno spezzato 10–15 + 18–23:30 si leggeva «10:00 / 18:00», identico a due turni qualsiasi. Ora inizio e fine, in forma corta: «10–15», «18–23³⁰» | `check-orario-cella.mjs` (nuovo): i 1.440 minuti del giorno tornano uguali dal formato corto |
+| I2 | Colonne della griglia disuguali: `1fr` più pill senza a capo allargavano la colonna del giorno pieno a spese delle altre (35 px contro 55 su 320 px), e gli orari lunghi finivano coi puntini. Ora `minmax(0, 1fr)`, e la pill va a capo dopo il trattino solo se non ci sta | provato in Chrome a 320, 360, 390 e 768 px: colonne uguali, nessuna pill tagliata, nessuno sbordo |
+| I3 | Il secondo turno di uno spezzato si vedeva riproporre il primo: la moda degli orari non guardava i turni già segnati quel giorno, e proponeva 10–15 sopra 10–15. Ora le coppie che si accavallano passano in fondo | `check-orari-proposti.mjs`, sezione «Il secondo turno di uno spezzato»; provato dalla griglia fino al modulo |
+| I4 | Su iPhone Safari cancella i dati dei siti non aperti per 7 giorni, e il banner d'installazione lo trattava da comodità: compariva all'apertura su un'app vuota, col motivo sbagliato, e una ✕ lo spegneva per sempre. Ora compare al primo turno, dice il perché vero, offre il backup, vince sul promemoria | `check-installazione.mjs` (nuovo); provato in Chrome con profilo iPhone. **Da verificare su un iPhone vero** |
+
+---
+
 ## Dove mettere questo elenco
 
 `RILASCIO.md` va lasciato com'è: sette domande sulla **pubblicazione**, con un
