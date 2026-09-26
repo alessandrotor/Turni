@@ -25,7 +25,12 @@ const toInput = (n) => {
 };
 
 // Mese di riferimento del montante, come 'YYYY-MM' per <input type="month">.
-const currentMonthValue = () => new Date().toISOString().slice(0, 7);
+// In ora LOCALE: `toISOString()` è UTC, e il 1° del mese fra mezzanotte e le
+// due restituiva il mese prima — il confine del montante cadeva un mese indietro.
+const currentMonthValue = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+};
 
 export default function Settings({ settings, onSave }) {
   const [form, setForm] = useState({

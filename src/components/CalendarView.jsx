@@ -8,14 +8,14 @@ import { calcShiftMinutes, calcTotalPay, formatCurrency, lordoTurno } from '../u
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { isMensilizzato } from '../utils/ccnl';
 import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../utils/bonus';
-import { rischioRestituzione, quotaPotenziale, CAUSA, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE } from '../utils/restituzione';
+import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, CAUSA, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE } from '../utils/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
 import { contrattoMancante } from '../utils/configurazione';
 import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../utils/assenze';
-import { EXTRA_MONTHS, TAX_2026 } from '../utils/net';
-import { ENABLE_DEBUG } from '../config/features';
+import { EXTRA_MONTHS, TAX_2026, projectAnnualIncome, tiSospeso, patchTiSospeso } from '../utils/net';
+import { ENABLE_DEBUG, ENABLE_NET_CALC } from '../config/features';
 import useMonthlyNet from '../hooks/useMonthlyNet';
 
 // Aliquota contributiva: fino a 3 decimali, senza zeri inutili in coda
@@ -40,6 +40,8 @@ import ShareWeekModal from './ShareWeekModal';
 import useOccupato from '../hooks/useOccupato';
 import { KEY_CAL_LAYOUT } from '../services/backup';
 
+import { intervalloCella } from '../utils/orario-cella';
+
 const DAY_HEADERS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
 // I minuti non sono sempre interi: le ore contrattuali mensili nascono da una
@@ -55,6 +57,17 @@ function formatMinutesShort(mins) {
 // Ore di una giornata, assenze comprese: è il totale che quel giorno vale in
 // busta, non le sole ore lavorate.
 const minutiDelGiorno = (turni) => turni.reduce((somma, s) => somma + calcShiftMinutes(s), 0);
+
+// «18–23³⁰»: inizio E fine del turno, nel formato corto di utils/orario-cella.js.
+// Prima la pill diceva la sola ora d'inizio, e un turno spezzato 10–15 + 18–23:30
+// si leggeva «10:00 / 18:00», come due turni qualunque.
+function Ora({ p }) {
+  return <>{p.ore}{p.minuti && <sup className="cal-ora-min">{p.minuti}</sup>}</>;
+}
+function IntervalloCella({ s }) {
+  const { inizio, fine } = intervalloCella(s.startTime, s.endTime);
+  return <><Ora p={inizio} />{fine && <>–<Ora p={fine} /></>}</>;
+}
 
 export default function CalendarView({
   currentMonth,
@@ -125,6 +138,12 @@ export default function CalendarView({
   }, []);
   const fileInputRef = useRef(null);
   const nameModalRef = useRef(null);
+  // Anche queste due finestre si chiudono con Esc e tengono il Tab dentro,
+  // come tutte le altre: erano le sole rimaste senza.
+  const contiBonusRef = useRef(null);
+  const avvisoFotoRef = useRef(null);
+  useModalDismiss(contiBonusRef, () => setContiBonusAperti(false), contiBonusAperti);
+  useModalDismiss(avvisoFotoRef, () => setMostraAvvisoFoto(false), mostraAvvisoFoto);
   const focusCellRef = useRef(null);
 
   // Porta sotto gli occhi il giorno arrivato da un'altra pagina. `block:
@@ -312,8 +331,8 @@ export default function CalendarView({
   // bonus spetta adesso, mai quanto costa scoprire a dicembre che non spettava.
   // Vedi utils/restituzione.js per il modello e per cosa l'app NON puo' sapere.
   const rischio = useMemo(
-    () => rischioRestituzione({ settings, proiezioneAnnua: annualProjection || annualGross }),
-    [settings, annualProjection, annualGross],
+    () => rischioRestituzione({ settings, proiezioneAnnua: annualProjection || annualGross, oggi: dataDiRiferimento(year) }),
+    [settings, annualProjection, annualGross, year],
   );
 
   // LA FORMA DELLA BUCA attorno ai 15.000, e dove ci si trova dentro.
@@ -453,6 +472,73 @@ export default function CalendarView({
   const monthlyBonusEntry = settings.monthlyBonus?.[monthKey];
   const bonusTakenThisMonth = !!monthlyBonusEntry;
   const monthlyBonusAmount = Number(settings.monthlyBonusAmount) || 0;
+
+  // «E se lo prendessi tutti i mesi?» — la domanda che nasce dalla spunta qui
+  // sopra, e che sta accanto a quella e non in Impostazioni: un interruttore
+  // che muove un numero va tenuto sotto l'occhio che quel numero lo guarda.
+  //
+  // È una SIMULAZIONE: non scrive niente in `settings`, e la cifra vera resta
+  // dov'era invece di essere sostituita. Serve a confrontare — un premio di
+  // produttività non si decide, si riceve, e la domanda utile è quanto
+  // varrebbe l'anno se arrivasse sempre.
+  const [simulaBonus, setSimulaBonus] = useState(false);
+  const settingsBonusOgniMese = useMemo(() => {
+    const tutti = {};
+    for (let m = 0; m < 12; m += 1) tutti[`${year}-${String(m + 1).padStart(2, '0')}`] = true;
+    // I mesi già spuntati vincono: possono portare un importo diverso (formato
+    // legacy), e una simulazione non deve riscriverli con quello fisso di oggi.
+    return { ...settings, monthlyBonus: { ...tutti, ...(settings.monthlyBonus || {}) } };
+  }, [settings, year]);
+  const proiezioneBonusOgniMese = useMemo(
+    () => projectAnnualIncome(annualGross, annualExtras, settingsBonusOgniMese, year, {
+      enableNetCalc: ENABLE_NET_CALC,
+    }),
+    [annualGross, annualExtras, settingsBonusOgniMese, year],
+  );
+  // Confronto sulla stessa base della striscia del trattamento integrativo
+  // (`proiezione`), non su un'altra: due numeri sotto lo stesso riquadro che
+  // partono da basi diverse sono il modo più rapido di non essere creduti.
+  const differenzaBonus = proiezioneBonusOgniMese.value - proiezione;
+  // Solo se un bonus esiste E se simularlo cambierebbe qualcosa: a chi li ha
+  // già spuntati tutti la domanda non ha nessuna risposta da dare.
+  const puoSimulareBonus = monthlyBonusAmount > 0 && differenzaBonus >= 0.005;
+
+  // COSA FA AL TRATTAMENTO INTEGRATIVO, che è il motivo per cui la domanda
+  // viene fatta: il lordo da solo non risponde. La soglia dei 15.000 non è una
+  // linea oltre cui si perde tutto — è una buca larga un paio di centinaia di
+  // euro e profonda ~129 (vedi utils/restituzione.js) — e i tre casi vogliono
+  // tre risposte diverse, non tre intensità dello stesso allarme.
+  const posizioneSimulata = useMemo(
+    () => posizioneRispettoSoglia(proiezioneBonusOgniMese.value, settings, costo),
+    [proiezioneBonusOgniMese, settings, costo],
+  );
+  const esitoSimulazione = useMemo(() => {
+    if (posizione === POSIZIONE.SOTTO) {
+      if (posizioneSimulata === POSIZIONE.SOTTO) {
+        return { tono: 'ok', testo: 'Resteresti sotto la soglia: il trattamento integrativo non cambia.' };
+      }
+      if (posizioneSimulata === POSIZIONE.DENTRO) {
+        return {
+          tono: 'avviso',
+          testo: `Ti porterebbe oltre i ${fmt0(costo.tetto)} di lordo: il trattamento integrativo non spetta più, e nel punto peggiore ci rimetti ~${fmt0(costo.perditaMax)} l'anno.`,
+        };
+      }
+      // Oltre la buca: il TI non spetta, ma la detrazione più alta lo ha già
+      // compensato. Gridare qui è il difetto che `costoSoglia` esiste per
+      // togliere — si dice, e si dice che non costa.
+      return {
+        tono: 'neutro',
+        testo: `Ti porterebbe oltre i ${fmt0(costo.tetto)}: il trattamento integrativo non spetta più, ma saresti abbastanza oltre da non rimetterci niente.`,
+      };
+    }
+    // Già dentro la buca: prenderlo ogni mese può farne USCIRE. È l'unico caso
+    // in cui la risposta giusta è guadagnare di più, ed è anche l'unico
+    // azionabile — vale la pena dirlo.
+    if (posizione === POSIZIONE.DENTRO && posizioneSimulata === POSIZIONE.OLTRE) {
+      return { tono: 'ok', testo: 'Ti farebbe uscire dalla buca dei 15.000: torneresti in pari.' };
+    }
+    return null;
+  }, [posizione, posizioneSimulata, costo]);
 
 
   async function runImport(file, name) {
@@ -753,16 +839,14 @@ export default function CalendarView({
                           ? `Modifica ${ETICHETTA[t].toLowerCase()} del ${dayNum}/${month + 1}`
                           : `Modifica turno ${s.startTime}–${s.endTime}`}
                       >
-                        {assente ? ICONA[t] : s.startTime}
+                        {assente ? ICONA[t] : <IntervalloCella s={s} />}
                       </button>
                     );
                   })}
                 </div>
-                {/* Le pill dicono solo l'ora di INIZIO: senza il totale, per
-                    sapere quanto dura la giornata bisogna aprire i turni. Vale
-                    anche con un turno solo — la durata non è scritta da nessuna
-                    parte nella cella — e a maggior ragione con più turni, dove
-                    andrebbe pure sommata a mente. */}
+                {/* Il totale della giornata: le pill dicono quando, questo
+                    quanto. Con più turni andrebbe sommato a mente, e la pausa
+                    di un turno spezzato non si conta. */}
                 {dayShifts.length > 0 && (
                   <span
                     className="cal-day-total"
@@ -958,6 +1042,7 @@ export default function CalendarView({
                 </label>
               </div>
             )}
+
 
             <div className="net-strip-body">
               <span className="bonus-strip-label">
@@ -1213,7 +1298,7 @@ export default function CalendarView({
                 <button
                   type="button"
                   className="linklike"
-                  onClick={() => onUpdateSettings({ noTrattamentoIntegrativo: false })}
+                  onClick={() => onUpdateSettings(patchTiSospeso(false))}
                 >
                   Annulla
                 </button>
@@ -1221,10 +1306,13 @@ export default function CalendarView({
             ) : posizione === POSIZIONE.OLTRE ? (
               // Il rischio vero qui non è perdere soldi, è averli già spesi:
               // chi non sa del conguaglio tratta il bonus in busta come
-              // stipendio. Per questo il titolo dice cosa FARE, non uno stato.
+              // stipendio. Il titolo serve quindi a FERMARE, non a istruire:
+              // diceva «Non spendere il bonus in busta», che è un ordine dato a
+              // chi non ha ancora sbagliato niente. Cosa succede lo spiegano le
+              // due righe sotto, che hanno lo spazio per dirlo senza rimproveri.
               <div className={`bonus-rischio ${rischio.daRestituire > 0 ? 'bonus-rischio--anteprima' : 'bonus-rischio--ok'}`}>
                 <span className="bonus-rischio-titolo">
-                  {rischio.daRestituire > 0 ? '⚠️ Non spendere il bonus in busta' : '✓ Oltre la soglia, niente da restituire'}
+                  {rischio.daRestituire > 0 ? '⚠️ Occhio al bonus!' : '✓ Oltre la soglia, niente da restituire'}
                 </span>
                 {rischio.daRestituire > 0 && (
                   <>
@@ -1243,8 +1331,8 @@ export default function CalendarView({
                     <label className="check-row bonus-rischio-scelta">
                       <input
                         type="checkbox"
-                        checked={!!settings.noTrattamentoIntegrativo}
-                        onChange={(e) => onUpdateSettings({ noTrattamentoIntegrativo: e.target.checked })}
+                        checked={tiSospeso(settings)}
+                        onChange={(e) => onUpdateSettings(patchTiSospeso(e.target.checked))}
                       />
                       <span>Chiedi al datore di sospenderlo, poi spunta qui</span>
                     </label>
@@ -1253,7 +1341,7 @@ export default function CalendarView({
               </div>
             ) : posizione === POSIZIONE.DENTRO ? (
               <div className="bonus-rischio">
-                <span className="bonus-rischio-titolo">⚠️ Non spendere il bonus in busta</span>
+                <span className="bonus-rischio-titolo">⚠️ Occhio al bonus!</span>
                 {rischio.daRestituire > 0 && (
                   <p className="bonus-spiega">
                     Supererai i 15.000 €, quindi a dicembre il datore si riprende tutto il
@@ -1270,8 +1358,8 @@ export default function CalendarView({
                   <label className="check-row bonus-rischio-scelta">
                     <input
                       type="checkbox"
-                      checked={!!settings.noTrattamentoIntegrativo}
-                      onChange={(e) => onUpdateSettings({ noTrattamentoIntegrativo: e.target.checked })}
+                      checked={tiSospeso(settings)}
+                      onChange={(e) => onUpdateSettings(patchTiSospeso(e.target.checked))}
                     />
                     <span>Chiedi al datore di sospenderlo, poi spunta qui</span>
                   </label>
@@ -1289,13 +1377,13 @@ export default function CalendarView({
                 </span>
                 <p className="bonus-spiega">
                   Se li superi, a dicembre il datore si riprende tutto il bonus che ti ha
-                  dato: finora <strong>{euroCella(quotaPotenziale())}</strong>. {spiegazione}
+                  dato: finora <strong>{euroCella(quotaPotenziale(dataDiRiferimento(year)))}</strong>. {spiegazione}
                 </p>
                 <label className="check-row bonus-rischio-scelta">
                   <input
                     type="checkbox"
-                    checked={!!settings.noTrattamentoIntegrativo}
-                    onChange={(e) => onUpdateSettings({ noTrattamentoIntegrativo: e.target.checked })}
+                    checked={tiSospeso(settings)}
+                    onChange={(e) => onUpdateSettings(patchTiSospeso(e.target.checked))}
                   />
                   <span>Chiedi al datore di sospenderlo, poi spunta qui</span>
                 </label>
@@ -1328,6 +1416,43 @@ export default function CalendarView({
               <span className="bonus-strip-note bonus-strip-note--warn">
                 ⚠️ Il montante ({fmt0(montante)}) non torna coi turni fino a {priorMonthLabel} ({fmt0(shiftsCovered)}).
               </span>
+            )}
+
+            {/* «E se lo prendessi tutti i mesi?» sta QUI e non accanto alla
+                spunta del mese: la domanda è sul reddito previsto e sulla
+                soglia, cioè su questo riquadro. Spostarla vicino alla spunta
+                obbligava a tenere a mente una cifra mentre si scorreva fino
+                alla risposta.
+                Si dice «i 120 €» e non «il bonus» di proposito: qui dentro
+                «bonus» è già il trattamento integrativo, e due bonus diversi
+                nello stesso riquadro non si distinguono più. */}
+            {puoSimulareBonus && (
+              <div className="simula-bonus">
+                <label className="check-row" htmlFor="simula-bonus">
+                  <input
+                    id="simula-bonus"
+                    type="checkbox"
+                    checked={simulaBonus}
+                    onChange={e => setSimulaBonus(e.target.checked)}
+                  />
+                  <span>E se prendessi i {fmt0(monthlyBonusAmount)} <strong>tutti i mesi</strong>?</span>
+                </label>
+                {simulaBonus && (
+                  <p className="simula-bonus-esito">
+                    <span className="simula-bonus-valore">{fmt0(proiezioneBonusOgniMese.value)}</span>
+                    <span className="simula-bonus-delta">+{fmt0(differenzaBonus)}</span>
+                    {esitoSimulazione && (
+                      <strong className={`simula-bonus-ti simula-bonus-ti--${esitoSimulazione.tono}`}>
+                        {esitoSimulazione.testo}
+                      </strong>
+                    )}
+                    <em>
+                      previsto a fine anno — solo una simulazione: i mesi segnati restano
+                      quelli che hai spuntato
+                    </em>
+                  </p>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -1389,6 +1514,7 @@ export default function CalendarView({
       {importParsed && (
         <ImportModal
           shifts={importParsed}
+          esistenti={allShifts || shifts}
           workerName={settings.workerName}
           onConfirm={handleImportConfirm}
           onClose={() => setImportParsed(null)}
@@ -1402,7 +1528,7 @@ export default function CalendarView({
           motore (`costoSoglia`) e non da costanti scritte qui. */}
       {contiBonusAperti && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setContiBonusAperti(false)}>
-          <div className="modal" role="dialog" aria-modal="true" aria-label="Come funziona il bonus">
+          <div ref={contiBonusRef} className="modal" role="dialog" aria-modal="true" aria-label="Come funziona il bonus">
             <div className="modal-header">
               <h2 className="modal-title">Come funziona il bonus</h2>
             </div>
@@ -1410,7 +1536,7 @@ export default function CalendarView({
               <p className="form-hint">
                 Il bonus spetta a chi sta sotto i 15.000 €. Se li superi, anche di 1 €, a
                 dicembre il datore si riprende
-                tutto: {euroCella(rischio.erogato || quotaPotenziale())} finora.
+                tutto: {euroCella(rischio.erogato || quotaPotenziale(dataDiRiferimento(year)))} finora.
               </p>
               {/* La tabella è un'ALTRA grandezza rispetto alla cifra qui sopra:
                   quella è cassa, questa è il saldo di un anno intero. Senza
@@ -1470,7 +1596,7 @@ export default function CalendarView({
 
       {mostraAvvisoFoto && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setMostraAvvisoFoto(false)}>
-          <div className="modal" role="dialog" aria-modal="true" aria-label="Prima di inviare la foto">
+          <div ref={avvisoFotoRef} className="modal" role="dialog" aria-modal="true" aria-label="Prima di inviare la foto">
             <div className="modal-header">
               <h2 className="modal-title">Prima di inviare la foto</h2>
             </div>
@@ -1569,10 +1695,29 @@ export default function CalendarView({
         </div>
       )}
 
+      {/* Durante il riconoscimento la pagina resta ferma. Senza velo la barra
+          in alto restava toccabile: passando a Statistiche il calendario si
+          smontava, la chiave `import` di `occupato` si spegneva con la
+          richiesta ancora in volo, e i turni riconosciuti — già pagati —
+          arrivavano su un componente che non c'era più. */}
+      {importLoading && (
+        <div className="modal-overlay import-velo" role="status" aria-live="polite">
+          <div className="import-velo-testo">⏳ Sto leggendo la foto…</div>
+        </div>
+      )}
+
       {showShareModal && (
         <ShareWeekModal
-          shifts={shifts}
-          initialDate={currentMonth}
+          // TUTTI i turni: la settimana scavalca il mese, e con i soli turni
+          // del mese il 31 agosto finiva nel messaggio come «Riposo».
+          shifts={allShifts || shifts}
+          // Sul mese in corso si parte dalla settimana di oggi, che è quella
+          // che si condivide; sugli altri mesi dal loro inizio.
+          initialDate={
+            currentMonth.getFullYear() === new Date().getFullYear()
+              && currentMonth.getMonth() === new Date().getMonth()
+              ? new Date() : currentMonth
+          }
           onClose={() => setShowShareModal(false)}
         />
       )}

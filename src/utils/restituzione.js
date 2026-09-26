@@ -54,7 +54,7 @@
 //
 // Modulo puro, senza React e senza browser: `node scripts/check-restituzione.mjs`.
 
-import { TAX_2026, tiDecision, calcNetAnnual, redditoComplessivo } from './net.js';
+import { TAX_2026, tiDecision, calcNetAnnual, redditoComplessivo, tiSospeso } from './net.js';
 
 /**
  * Soglia di legge per la rateizzazione: sopra i 60 € il datore non trattiene
@@ -86,11 +86,25 @@ const menoCent = (a, b) => (Math.round(a * 100) - Math.round(b * 100)) / 100;
  * È la stessa base dei giorni con cui la busta calcola la quota (÷365).
  */
 export function giorniTrascorsi(data) {
+  if (data == null) return 0;
   const d = data instanceof Date ? data : new Date(data);
   if (Number.isNaN(d.getTime())) return 0;
   const inizio = Date.UTC(d.getFullYear(), 0, 1);
   const oggi = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate());
   return Math.min(365, Math.max(0, Math.round((oggi - inizio) / 86400000) + 1));
+}
+
+/**
+ * Il giorno a cui misurare l'anno GUARDATO, che non è sempre quello di oggi:
+ * per un anno chiuso il 31 dicembre, per uno non ancora cominciato nessuno
+ * (`null`, zero giorni). Prima si contavano i giorni di oggi qualunque anno si
+ * aprisse: gennaio dell'anno dopo mostrava ~870 € «già erogati» su un anno in
+ * cui non era ancora arrivato un euro. → check-restituzione.mjs
+ */
+export function dataDiRiferimento(anno, oggi = new Date()) {
+  const corrente = oggi.getFullYear();
+  if (anno === corrente || anno == null) return oggi;
+  return anno < corrente ? new Date(anno, 11, 31) : null;
 }
 
 /**
@@ -129,7 +143,7 @@ export function rischioRestituzione({ settings = {}, proiezioneAnnua = 0, oggi =
 
   // Ha già chiesto di non farselo accreditare: non c'è niente da riprendere.
   // È l'unico caso in cui il rischio è ZERO per costruzione, e non per stima.
-  if (settings.noTrattamentoIntegrativo) {
+  if (tiSospeso(settings)) {
     return { ...vuoto, causa: CAUSA.RINUNCIATO };
   }
 

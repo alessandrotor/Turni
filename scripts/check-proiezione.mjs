@@ -38,15 +38,18 @@ const arr = (n) => Math.round(n);
 // Part-time 60% CCNL Turismo: 24 ore su sei giorni, 10 €/h.
 const S = { hourlyRate: 10, expectedWeeklyHours: 24, workingDaysPerWeek: 6, ccnl: 'turismo' };
 const MENSILE = monthlyBaseGross(S);
-const prev = (maturato, extra = 0, s = S, anno = ANNO) =>
-  projectAnnualIncome(maturato, extra, s, anno).value;
+const prev = (maturato, extra = 0, s = S, anno = ANNO, oggi = OGGI) =>
+  projectAnnualIncome(maturato, extra, s, anno, { oggi }).value;
 
-// L'anno CORRENTE, altrimenti `monthsElapsed` vale 12 e non si prova nulla.
-const ANNO = new Date().getFullYear();
-const MESE = new Date().getMonth() + 1;          // 1-12
-const RESTANTI = Math.max(0, 12 - MESE);
+// Una data fissa, non l'orologio: il 15 settembre 2026. Il mese in corso vale
+// per i giorni che gli restano, oggi compreso (16 su 30), più i tre interi.
+const OGGI = new Date(2026, 8, 15);
+const ANNO = 2026;
+const MESE = 9;
+const QUOTA_MESE = 16 / 30;
+const RESTANTI = (12 - MESE) + QUOTA_MESE;
 
-console.log(`\nContratto: ${arr(MENSILE)} €/mese · siamo al mese ${MESE}, ne restano ${RESTANTI}\n`);
+console.log(`\nContratto: ${arr(MENSILE)} €/mese · 15 settembre, ne restano ${RESTANTI.toFixed(2)}\n`);
 
 // ── 1. La proprieta' del marginale ─────────────────────────────────────────
 console.log('Un euro in piu\' sposta la previsione di un euro\n');
@@ -78,7 +81,26 @@ verifica('maturato + resto dell anno',
 // contratto ritrova esattamente le 12 mensilita'. E' la prova che il modello
 // non sottostima chi tiene il calendario aggiornato.
 verifica('calendario completo → 12 mensilita esatte',
-  arr(prev(MENSILE * MESE)), arr(MENSILE * 12), 'maturato dei mesi passati + quelli futuri');
+  arr(prev(MENSILE * (MESE - QUOTA_MESE))), arr(MENSILE * 12), 'maturato fino a ieri + quello che resta');
+
+// IL DENTE DI SEGA, difetto trovato il 23/09/2026. Il mese in corso contava
+// come già trascorso: il 1° la previsione perdeva una mensilità intera (dentro
+// c'era un giorno di turni) e la recuperava durante il mese. Ora l'ultimo
+// giorno di un mese e il primo del successivo, a parità di maturato, danno la
+// stessa cifra a meno di un giorno di contratto.
+const fineAgosto = prev(8000, 0, S, ANNO, new Date(2026, 7, 31));
+const inizioSettembre = prev(8000, 0, S, ANNO, new Date(2026, 8, 1));
+verifica('dal 31 agosto al 1° settembre non si perde un mese',
+  Math.abs(fineAgosto - inizioSettembre) <= MENSILE / 30 + 0.01, true,
+  `${arr(fineAgosto)} → ${arr(inizioSettembre)}`);
+verifica('il 1° del mese conta il mese intero',
+  arr(prev(0, 0, S, ANNO, new Date(2026, 8, 1))), arr(4 * MENSILE), 'settembre + i tre che restano');
+
+// UN ANNO CHE NON È ANCORA COMINCIATO è tutto futuro. Contava dodici mesi
+// «trascorsi»: a dicembre, aprendo gennaio, la previsione dell'anno dopo erano
+// i soli turni segnati, e la striscia annunciava ~16.000 € di margine.
+verifica('anno futuro → maturato + dodici mensilita',
+  arr(prev(500, 0, S, ANNO + 1, new Date(2026, 11, 20))), arr(500 + 12 * MENSILE), '');
 
 // Anno passato: non c'e' futuro da prevedere, la previsione E' il maturato.
 verifica('anno passato → solo il maturato',
@@ -115,6 +137,48 @@ verifica('la 13ª che deve ancora arrivare si aggiunge',
   prev(9000, 0, conExtra) > prev(9000, 0, S), true, '');
 verifica('  e vale una mensilita intera',
   arr(prev(9000, 0, conExtra) - prev(9000, 0, S)), arr(MENSILE), 'la 14ª di giugno e gia nel maturato');
+
+// ── 5. Il bonus non si annualizza ──────────────────────────────────────────
+//
+// Il bonus si spunta mese per mese dal calendario: quando compare nella stima
+// e' perche' qualcuno ha dichiarato di averlo preso, non perche' il motore lo
+// preveda. E' un fatto, quindi vale quello che vale.
+//
+// In modalita' `ytd` finiva invece dentro il cumulativo che viene moltiplicato
+// per 12/mesi-trascorsi: a settembre tre bonus da 120 € ne promettevano
+// quattro (360 → 480). Su un premio di produttivita', che per definizione non
+// torna ogni mese, era una previsione che l'app non aveva motivo di fare — lo
+// stesso errore da cui 13ª e 14ª erano gia' protette.
+//
+// La prova sta nel confronto fra le due modalita': il bonus e' un importo
+// dichiarato, e due modi diversi di proiettare il RESTO non possono farlo
+// valere cifre diverse.
+console.log('\nIl bonus vale quello che vale, in tutte le modalita\n');
+
+const BONUS = 120;
+const conBonus = (modo, mesi) => ({
+  ...S,
+  tiProjectionMode: modo,
+  monthlyBonusAmount: BONUS,
+  monthlyBonus: Object.fromEntries(mesi.map(m => [`${ANNO}-${String(m).padStart(2, '0')}`, true])),
+});
+const stima = (s) => projectAnnualIncome(9000, 0, s, ANNO).value;
+
+for (const modo of ['stimato', 'ytd']) {
+  const senza = stima({ ...S, tiProjectionMode: modo });
+  verifica(`${modo}: tre bonus spostano la stima di 3 × 120`,
+    arr(stima(conBonus(modo, [1, 2, 3])) - senza), 3 * BONUS, 'al valore nominale');
+  verifica('  e dodici ne valgono dodici',
+    arr(stima(conBonus(modo, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])) - senza), 12 * BONUS,
+    'e la simulazione «lo prendo ogni mese»');
+}
+
+// Le due modalita' rispondono a domande diverse e danno totali diversi: quello
+// che NON puo' cambiare e' quanto pesa il bonus dentro ciascuna.
+const pesoStimato = stima(conBonus('stimato', [1, 2, 3])) - stima({ ...S, tiProjectionMode: 'stimato' });
+const pesoYtd = stima(conBonus('ytd', [1, 2, 3])) - stima({ ...S, tiProjectionMode: 'ytd' });
+verifica('le due modalita lo pesano uguale', arr(pesoStimato), arr(pesoYtd),
+  `prima ytd lo moltiplicava per 12/${MESE}`);
 
 // ── La spiegazione deve sommare alla cifra che spiega ──────────────────────
 //

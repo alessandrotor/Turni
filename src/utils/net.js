@@ -388,10 +388,31 @@ export function tiSpettaQuestoMese(lordoMese, settings = {}) {
  * casella deve ritrovare il comportamento che aveva scelto, non un altro.
  */
 export function modoTrattamentoIntegrativo(settings = {}) {
+  // Il flag vecchio viene PRIMA di `tiModo`, non dopo: i default fondono sempre
+  // `tiModo: 'auto'` nelle impostazioni, quindi guardarlo per secondo voleva
+  // dire non guardarlo mai. Così la casella «chiedi al datore di sospenderlo»
+  // spariva dal netto del mese pur restando spuntata. Impostazioni tiene i due
+  // campi allineati (`noTrattamentoIntegrativo = tiModo === 'mai'`), quindi un
+  // flag acceso con un modo diverso l'ha scritto la casella, che è la scelta
+  // più recente. → check-ti-mensile.mjs
+  if (settings.noTrattamentoIntegrativo) return 'mai';
   if (settings.tiModo === 'sempre' || settings.tiModo === 'mai' || settings.tiModo === 'auto') {
     return settings.tiModo;
   }
-  return settings.noTrattamentoIntegrativo ? 'mai' : 'auto';
+  return 'auto';
+}
+
+/** Il bonus è stato fatto sospendere dal datore (a mano, in una delle due schermate). */
+export function tiSospeso(settings = {}) {
+  return modoTrattamentoIntegrativo(settings) === 'mai';
+}
+
+/**
+ * La modifica da scrivere per sospendere o riattivare il bonus: i due campi
+ * insieme, sempre. Scriverne uno solo è il difetto che questa funzione chiude.
+ */
+export function patchTiSospeso(sospeso) {
+  return { noTrattamentoIntegrativo: !!sospeso, tiModo: sospeso ? 'mai' : 'auto' };
 }
 
 /**
@@ -428,6 +449,16 @@ export function riferimentoAnnuoDelMese(lordoMese, settings = {}) {
   // margine non sono un numero magico — servono a stare dentro la fascia
   // 15.000-28.000 senza sporgere, ed è lì che cade la detrazione stampata.
   return taxableToGross(TAX_2026.TI_SOGLIA_PIENO + 100, settings);
+}
+
+/**
+ * Il netto di UN mese, come lo mostra l'app: lordo del mese, riferimento del
+ * mese, stessa funzione per Calendario (`useMonthlyNet`) e per Statistiche
+ * (`monthlyBreakdown`). Prima ognuna sceglieva il suo riferimento, e dal 14
+ * settembre non erano più lo stesso. → check-netto-coerente.mjs
+ */
+export function nettoDelMese(lordoMese, settings, giorniMese, extraMese = 0) {
+  return calcNetMonthly(lordoMese, riferimentoAnnuoDelMese(lordoMese, settings), settings, giorniMese, extraMese);
 }
 
 export function taxableToGross(taxable, settings = {}) {
@@ -561,13 +592,36 @@ export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, pay
   // Contano per il RATEO maturato, non per una mensilità piena: chi è assunto
   // da sei mesi prende mezza quattordicesima.
   const now = new Date();
+  // `extras` dichiara quante mensilità aggiuntive stanno DENTRO `total`, non
+  // quante ne somma questa funzione: le due cose divergono quando c'è un
+  // montante, e chi chiama ha bisogno della prima. `projectAnnualIncome` ci
+  // sottrae le una-tantum prima di annualizzare, e una quota dichiarata per
+  // difetto finisce moltiplicata per 12/mesi-trascorsi.
   let extras = 0;
+  let daSommare = 0;
   if (y <= now.getFullYear()) {
     const monthIndex = y < now.getFullYear() ? 11 : now.getMonth();
-    extras = monthlyBaseGross(settings) * receivedExtraMonthsCount(settings, monthIndex, y);
+    const mensile = monthlyBaseGross(settings);
+    const incassate = receivedExtraMonthsCount(settings, monthIndex, y);
+    // Il montante è il lordo già guadagnato fino a tutto il suo mese: le
+    // mensilità erogate entro quel mese ci sono già dentro, perché il
+    // progressivo del cedolino le comprende. Sommarle di nuovo le contava due
+    // volte — la 14ª di giugno con un montante fermato a luglio — e il danno
+    // peggiore non era quello: finita nel maturato senza essere dichiarata in
+    // `extras`, veniva scambiata per reddito ricorrente e annualizzata.
+    const nelMontante = useCutoff
+      ? receivedExtraMonthsCount(settings, Number(cutoffMonth.slice(5, 7)) - 1, y)
+      : 0;
+    // Il mese del montante può stare avanti a oggi: il selettore è un
+    // <input type="month"> senza tetto, e chi riporta un progressivo di
+    // dicembre a ottobre ha un montante che contiene più mensilità di quante
+    // ne risultino incassate. Vale il più alto dei due — il montante fa fede
+    // per il suo periodo.
+    extras = mensile * Math.max(incassate, nelMontante);
+    daSommare = mensile * Math.max(0, incassate - nelMontante);
   }
   const applyMontante = montante > 0 && (!cutoff || sameYear);
-  return { total: fromShifts + (applyMontante ? montante : 0) + extras, extras };
+  return { total: fromShifts + (applyMontante ? montante : 0) + daSommare, extras };
 }
 
 
@@ -600,11 +654,6 @@ export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, pay
  * @param {boolean} [opts.enableNetCalc] gate del motore fiscale (beta): a
  *   false i termini che dipendono dal contratto restano a zero — stesso
  *   comportamento di un chiamante che tiene il motore spento.
- * @param {number|null} [opts.viewedMonth] mese (0-11) fino a cui contare il
- *   bonus "maturato finora" in modalità YTD — quello che si sta guardando in
- *   Calendario, se noto. Senza un mese specifico (es. una vista sull'intero
- *   anno) si usa lo stesso confine con cui si annualizza il maturato: oggi, o
- *   dicembre per un anno passato.
  * @returns {{ value: number, source: 'contratto'|'maturato'|'manuale' }}
  */
 // «1 mese» / «5 mesi»: compare nelle note della spiegazione, e «1 mesi» in un
@@ -613,7 +662,7 @@ const fmtMesi = (n) => `${n} mes${n === 1 ? 'e' : 'i'}`;
 
 export function projectAnnualIncome(
   annualGross, annualExtras, settings = {}, year = new Date().getFullYear(),
-  { enableNetCalc = true, viewedMonth = null } = {},
+  { enableNetCalc = true, oggi = new Date() } = {},
 ) {
   const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
     .reduce((s, v) => s + (Number(v.amount) || 0), 0);
@@ -622,14 +671,10 @@ export function projectAnnualIncome(
   const resolveBonusEntry = (v) => (typeof v === 'number' ? v : (v ? monthlyBonusAmount : 0));
   const bonusMap = settings.monthlyBonus || {};
 
-  const now = new Date();
+  const now = oggi;
   const monthsElapsed = year === now.getFullYear() ? now.getMonth() + 1 : 12;
-  const mm = String((viewedMonth != null ? viewedMonth : monthsElapsed - 1) + 1).padStart(2, '0');
   const bonusYearAll = Object.entries(bonusMap)
     .filter(([k]) => k.slice(0, 4) === String(year))
-    .reduce((s, [, v]) => s + resolveBonusEntry(v), 0);
-  const bonusYTD = Object.entries(bonusMap)
-    .filter(([k]) => k.slice(0, 4) === String(year) && k.slice(5, 7) <= mm)
     .reduce((s, [, v]) => s + resolveBonusEntry(v), 0);
 
   // 13ª/14ª sono una tantum: annualizzarle (×12/mesi trascorsi) le
@@ -658,11 +703,23 @@ export function projectAnnualIncome(
   };
 
   if ((settings.tiProjectionMode || 'stimato') === 'ytd') {
-    const cumulativo = recurring + fixedMonthlyTotal * monthsElapsed + bonusYTD;
+    // Il BONUS non si annualizza, per la stessa ragione della 13ª/14ª: si
+    // spunta mese per mese dal calendario, quindi è un fatto già avvenuto e
+    // non una tendenza. Moltiplicarlo per 12/mesi-trascorsi prometteva a
+    // settembre un terzo di bonus in più di quelli davvero presi — e su un
+    // premio di produttività, che non torna ogni mese, è una promessa che
+    // l'app non ha nessun motivo di fare.
+    // Le voci fisse invece restano dentro l'annualizzazione: quelle sì che
+    // tornano ogni mese, ed è esattamente cosa vuol dire «fisse».
+    const cumulativo = recurring + fixedMonthlyTotal * monthsElapsed;
     aggiungi('Maturato finora, annualizzato', annualize(cumulativo),
       `${fmtMesi(monthsElapsed)} × 12 ⁄ ${monthsElapsed}`);
     aggiungi('13ª/14ª previste nell\'anno', extrasFullYear);
-    return { value: annualize(cumulativo) + extrasFullYear, source: 'maturato', voci, mesiTrascorsi: monthsElapsed };
+    aggiungi('Bonus segnati nell\'anno', bonusYearAll, 'quelli spuntati, non annualizzati');
+    return {
+      value: annualize(cumulativo) + extrasFullYear + bonusYearAll,
+      source: 'maturato', voci, mesiTrascorsi: monthsElapsed,
+    };
   }
 
   const manual = Number(settings.annualGrossManual) || 0;
@@ -702,13 +759,33 @@ export function projectAnnualIncome(
   // il maturato, per intero e senza moltiplicatori. Chi non ha ancora
   // lavorato nulla ottiene comunque 12 mensilità piene, perché il maturato è
   // zero e il resto dell'anno vale l'anno intero.
+  //
+  // IL MESE IN CORSO VALE PER I GIORNI CHE GLI RESTANO, oggi compreso. Contato
+  // come già trascorso, il primo del mese la previsione perdeva di colpo una
+  // mensilità — dentro c'era solo un giorno di turni — e la recuperava durante
+  // il mese: il margine del bonus e il caso «sotto / buca / oltre» andavano a
+  // dente di sega. Col pro rata l'ultimo giorno di un mese e il primo del
+  // successivo danno la stessa cifra, e l'euro in più sposta ancora un euro.
+  //
+  // E L'ANNO GUARDATO NON È SEMPRE QUELLO DI OGGI. Un anno chiuso non ha
+  // futuro; uno che non è ancora cominciato è tutto futuro. Prima valeva 12
+  // «trascorsi» anche per quest'ultimo: a dicembre, aprendo gennaio, la
+  // previsione dell'anno dopo erano i soli turni già segnati, e la striscia
+  // annunciava sedicimila euro di margine. → check-proiezione.mjs
+  const annoOggi = now.getFullYear();
+  const giorniMese = new Date(annoOggi, now.getMonth() + 1, 0).getDate();
+  const mesiRestanti = year < annoOggi ? 0
+    : year > annoOggi ? 12
+      : (11 - now.getMonth()) + (giorniMese - now.getDate() + 1) / giorniMese;
+  // Indice dell'ultimo mese le cui mensilità aggiuntive sono già dentro
+  // `annualGross`: -1 per un anno che non è ancora cominciato.
+  const meseIncassate = year < annoOggi ? 11 : year > annoOggi ? -1 : now.getMonth();
   const mensile = enableNetCalc ? monthlyBaseGross(settings) : 0;
-  const mesiRestanti = Math.max(0, 12 - monthsElapsed);
   // Le mensilità aggiuntive già incassate stanno dentro `annualGross`: qui si
   // aggiungono solo quelle che devono ancora arrivare, altrimenti la 14ª di
   // giugno verrebbe contata due volte.
   const extraResidue = enableNetCalc
-    ? mensile * Math.max(0, extraMonthsAccrued(settings, year) - receivedExtraMonthsCount(settings, monthsElapsed - 1, year))
+    ? mensile * Math.max(0, extraMonthsAccrued(settings, year) - receivedExtraMonthsCount(settings, meseIncassate, year))
     : 0;
   const value = annualGross + mesiRestanti * mensile + extraResidue;
 
@@ -727,14 +804,18 @@ export function projectAnnualIncome(
 
   aggiungi('Maturato finora', annualGross,
     'turni segnati, più il montante e le 13ª/14ª già incassate');
-  aggiungi(`I ${fmtMesi(mesiRestanti)} che restano`, mesiRestanti * mensile,
-    mesiRestanti > 0 ? `${mesiRestanti} × la mensilità da contratto` : null);
+  const mesiScritti = Number.isInteger(mesiRestanti)
+    ? String(mesiRestanti)
+    : mesiRestanti.toLocaleString('it-IT', { maximumFractionDigits: 1 });
+  aggiungi(Number.isInteger(mesiRestanti) ? `I ${fmtMesi(mesiRestanti)} che restano` : 'Il resto dell’anno',
+    mesiRestanti * mensile,
+    mesiRestanti > 0 ? `${mesiScritti} × la mensilità da contratto` : null);
 
   for (const kind of ['quattordicesima', 'tredicesima']) {
     const frazione = rateo(kind);
     if (frazione <= 0) continue;
     // Già incassata = sta dentro «Maturato finora», non va riaggiunta qui.
-    if (monthsElapsed - 1 >= EXTRA_MONTHS[kind]) continue;
+    if (meseIncassate >= EXTRA_MONTHS[kind]) continue;
     const nome = kind === 'tredicesima' ? 'Tredicesima' : 'Quattordicesima';
     const mese = kind === 'tredicesima' ? 'dicembre' : 'giugno';
     aggiungi(`${nome} di ${mese}`, mensile * frazione, notaRateo(frazione));
@@ -815,7 +896,7 @@ export function tiDecision(annualGrossRef, settings = {}) {
   const T = TAX_2026;
   const ann = calcNetAnnual(annualGrossRef, settings);
   const imp = ann.imponibile;
-  const override = !!settings.noTrattamentoIntegrativo;
+  const override = tiSospeso(settings);
   const incluso = !override && ann.trattamentoIntegrativo > 0;
 
   let motivo;

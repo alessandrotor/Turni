@@ -19,8 +19,8 @@ import {
   EXTRA_MONTHS,
   computeAnnualGrossFromShifts,
   projectAnnualIncome,
-  TAX_2026,
 } from './net.js';
+import { calcBonusMargin, BONUS_STATUS } from './bonus.js';
 import { getDaysInMonth } from './dates.js';
 
 export function formatDeltaCurrency(val) {
@@ -115,7 +115,13 @@ export function calcolaCosaCambia({
     const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
       .reduce((s, v) => s + (Number(v.amount) || 0), 0);
     const monthlyBonusAmount = Number(settings.monthlyBonusAmount) || 0;
-    const perMonthBonus = settings.monthlyBonus?.[monthKey] ? monthlyBonusAmount : 0;
+    // I valori numerici sono il formato legacy (importo diverso salvato mese
+    // per mese): vanno letti com'erano, non sostituiti con l'importo fisso di
+    // oggi. Stessa lettura di net.js, stats.js e useMonthlyNet.js — qui era
+    // rimasta indietro, e su quei mesi «cosa cambia» mostrava una cifra che il
+    // resto dell'app non mostrava.
+    const bonusEntry = settings.monthlyBonus?.[monthKey];
+    const perMonthBonus = typeof bonusEntry === 'number' ? bonusEntry : (bonusEntry ? monthlyBonusAmount : 0);
 
     const extraThisMonth = monthlyBaseGross(settings) * (
       (settings.hasQuattordicesima && month === EXTRA_MONTHS.quattordicesima
@@ -154,13 +160,20 @@ export function calcolaCosaCambia({
     const annualAfter = computeAnnualGrossFromShifts(year, shiftsAfter, settings, payMapAfter);
     const projAfter = projectAnnualIncome(annualAfter.total, annualAfter.extras, settings, year);
 
-    const soglia = TAX_2026.TI_SOGLIA_PIENO; // 15.000 €
-    margineBonusBefore = Math.max(0, soglia - projBefore.value);
-    margineBonusAfter = Math.max(0, soglia - projAfter.value);
+    // La soglia dei 15.000 vale sul REDDITO COMPLESSIVO, e la proiezione è un
+    // LORDO: confrontarli direttamente faceva gridare «supera la soglia» con
+    // ~1.500 € d'anticipo, mentre la striscia del bonus diceva ancora che
+    // c'era margine. Si chiede alla stessa funzione della striscia.
+    // → check-cosa-cambia.mjs
+    const prima = calcBonusMargin(projBefore.value, settings);
+    const dopo = calcBonusMargin(projAfter.value, settings);
+    const sotto = (b) => b.status === BONUS_STATUS.PIENO || b.status === BONUS_STATUS.ATTESA;
+    margineBonusBefore = prima.marginToFull ?? 0;
+    margineBonusAfter = dopo.marginToFull ?? 0;
     deltaMargineBonus = margineBonusAfter - margineBonusBefore;
 
-    superaSoglia = projBefore.value <= soglia && projAfter.value > soglia;
-    rientraSottoSoglia = projBefore.value > soglia && projAfter.value <= soglia;
+    superaSoglia = sotto(prima) && !sotto(dopo);
+    rientraSottoSoglia = !sotto(prima) && sotto(dopo);
   }
 
   return {

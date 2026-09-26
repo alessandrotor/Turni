@@ -1,4 +1,5 @@
 import { isIsoDate } from '../utils/dates';
+import { avvicinaAnno } from '../utils/import-turni';
 import { ottieniToken, turnstileAttivo } from './turnstile';
 import { ENABLE_DEBUG } from '../config/features';
 
@@ -170,7 +171,9 @@ export async function parseShiftsFromImage(imageFile, workerName = '') {
   // calendario, rendendo il turno invisibile e non modificabile.
   const shifts = raw
     .map(t => ({
-      date: toIsoDate(t.data),
+      // L'anno lo mette il modello quando il foglio non lo scrive: a cavallo
+      // di capodanno va corretto (vedi utils/import-turni.js).
+      date: avvicinaAnno(toIsoDate(t.data)),
       startTime: toHHMM(t.ora_inizio),
       endTime: toHHMM(t.ora_fine),
       breakMinutes: 0,

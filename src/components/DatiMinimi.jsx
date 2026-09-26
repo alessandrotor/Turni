@@ -28,7 +28,10 @@ import { datiMinimiMancanti } from '../utils/configurazione';
 
 export default function DatiMinimi({ settings, onSalva, onAnnulla }) {
   const dialogRef = useRef(null);
-  useModalDismiss(dialogRef, onAnnulla);
+  // Esc NON annulla: qui c'è un turno già compilato che aspetta questi due
+  // dati, e annullarlo non ha un «torna indietro». Per buttarlo c'è il
+  // pulsante, che dice cosa fa.
+  useModalDismiss(dialogRef, null);
 
   const manca = datiMinimiMancanti(settings);
   const chiedePaga = manca.includes('hourlyRate');

@@ -24,9 +24,9 @@
 //    tutto insieme.
 
 import {
-  rischioRestituzione, giorniTrascorsi, quotaPotenziale, SOGLIA_RATEIZZAZIONE, CAUSA,
+  rischioRestituzione, giorniTrascorsi, quotaPotenziale, dataDiRiferimento, SOGLIA_RATEIZZAZIONE, CAUSA,
 } from '../src/utils/restituzione.js';
-import { TAX_2026, taxableToGross } from '../src/utils/net.js';
+import { TAX_2026, taxableToGross, patchTiSospeso } from '../src/utils/net.js';
 
 let falliti = 0;
 let totale = 0;
@@ -197,6 +197,22 @@ verifica('a metà anno vale la stessa quota', quotaPotenziale(META), quota(181),
 verifica('a fine anno è il tetto', quotaPotenziale(FINE_ANNO), 1200, '');
 verifica('indipendente dal reddito', quotaPotenziale(META), quotaPotenziale(META),
   'non prende un reddito in ingresso: è sempre la stessa ipotesi a parità di data');
+
+// L'ANNO GUARDATO, difetto trovato il 23/09/2026: i giorni si contavano
+// sempre a oggi. A settembre, aprendo gennaio dell'anno dopo, «finora» valeva
+// ~870 € di bonus su un anno non ancora cominciato; aprendo l'anno prima, i
+// giorni si fermavano a settembre su un anno già chiuso.
+console.log('\nL\'anno guardato, non quello di oggi\n');
+const SETTEMBRE = new Date('2026-09-23T12:00:00');
+verifica('anno in corso: oggi', giorniTrascorsi(dataDiRiferimento(2026, SETTEMBRE)), giorniTrascorsi(SETTEMBRE), '');
+verifica('anno chiuso: tutto l\'anno', giorniTrascorsi(dataDiRiferimento(2025, SETTEMBRE)), 365, '');
+verifica('anno non cominciato: niente', quotaPotenziale(dataDiRiferimento(2027, SETTEMBRE)), 0, '');
+verifica('  e niente da restituire', r({ proiezioneAnnua: 40000, oggi: dataDiRiferimento(2027, SETTEMBRE) }).daRestituire, 0, '');
+
+// La casella «sospendi» scrive i due campi insieme; con «auto» fuso dai
+// default il flag da solo non bastava a nessuno dei due percorsi.
+verifica('bonus sospeso dalla casella: niente da restituire',
+  r({ proiezioneAnnua: 40000, settings: { ...BASE, tiModo: 'auto', ...patchTiSospeso(true) } }).causa, CAUSA.RINUNCIATO, '');
 
 console.log(falliti === 0
   ? `\n${totale} controlli: il numero che spaventa è quello giusto.\n`

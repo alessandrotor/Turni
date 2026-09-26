@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import {
-  calcNetMonthly, monthlyBaseGross, riferimentoAnnuoDelMese,
+  nettoDelMese, monthlyBaseGross, riferimentoAnnuoDelMese,
   extraMonthAccrual, EXTRA_MONTHS, TAX_2026, tiDecision, projectAnnualIncome,
 } from '../utils/net';
 import { ENABLE_NET_CALC } from '../config/features';
@@ -34,13 +34,15 @@ export default function useMonthlyNet({ year, month, settings, pay, annualGross,
   //  - 'ytd': reddito maturato (montante+turni+voci fisse+bonus finora) annualizzato sui mesi trascorsi.
   // Stessa funzione usata dalla pagina Statistiche (vedi `projectAnnualIncome`
   // in net.js): un'unica fonte evita che le due pagine mostrino cifre diverse
-  // per lo stesso anno. `viewedMonth: month` mantiene qui lo stesso confine
-  // del cedolino "maturato finora" (modalità YTD) che c'era prima dell'estrazione.
+  // per lo stesso anno. Il riferimento NON dipende dal mese che si sta
+  // sfogliando — stessa scelta già fatta per le 13ª/14ª in
+  // `computeAnnualGrossFromShifts`: aprire dicembre non deve cambiare aliquota
+  // e soglie del bonus di tutto l'anno.
   const netProjection = useMemo(
     () => projectAnnualIncome(annualGross, annualExtras, settings, year, {
-      enableNetCalc: ENABLE_NET_CALC, viewedMonth: month,
+      enableNetCalc: ENABLE_NET_CALC,
     }),
-    [annualGross, annualExtras, settings, year, month],
+    [annualGross, annualExtras, settings, year],
   );
   const netBasis = netProjection.value;
 
@@ -70,9 +72,10 @@ export default function useMonthlyNet({ year, month, settings, pay, annualGross,
     () => riferimentoAnnuoDelMese(monthGross, settings),
     [monthGross, settings],
   );
+  // Statistiche passa dalla stessa funzione: vedi `nettoDelMese`.
   const netMonth = useMemo(
-    () => (ENABLE_NET_CALC ? calcNetMonthly(monthGross, riferimento, settings, daysInMonth, extraThisMonth) : null),
-    [monthGross, riferimento, settings, daysInMonth, extraThisMonth],
+    () => (ENABLE_NET_CALC ? nettoDelMese(monthGross, settings, daysInMonth, extraThisMonth) : null),
+    [monthGross, settings, daysInMonth, extraThisMonth],
   );
   const monthNet = netMonth ? netMonth.net : 0;
   const monthTrattenute = netMonth ? netMonth.trattenute : 0;

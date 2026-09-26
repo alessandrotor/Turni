@@ -12,7 +12,8 @@ import StatsView from './components/StatsView';
 import Settings from './components/Settings';
 import ShiftForm from './components/ShiftForm';
 import NavBar from './components/NavBar';
-import InstallPrompt from './components/InstallPrompt';
+import InstallPrompt, { isIOS, isStandalone } from './components/InstallPrompt';
+import { chiedereInstallazioneIOS, chiParlaInAlto, KEY_INSTALLA_IOS_RIFIUTATO } from './utils/installazione';
 import SetupPrompt from './components/SetupPrompt';
 import DatiMinimi from './components/DatiMinimi';
 import SistemaMancanti from './components/SistemaMancanti';
@@ -22,6 +23,9 @@ import AvvisoAnnulla from './components/AvvisoAnnulla';
 import { avvisoDaMostrare, DURATA_ANNULLA } from './utils/avvisi';
 import { iscrivitiAggiornamenti, applicaAggiornamento, primaDiRicaricare } from './services/aggiornamento';
 import useOccupato from './hooks/useOccupato';
+import { iscrivitiOccupato } from './utils/occupato';
+import { isAssenza } from './utils/assenze';
+import { turniDaImportare } from './utils/import-turni';
 import { haDatiMinimi, maggiorazioneDaChiedere } from './utils/configurazione';
 
 const DEFAULT_SETTINGS = {
@@ -282,6 +286,25 @@ export default function App() {
     navigator.storage?.persist?.().catch(() => {});
   }, [allShifts.length]);
 
+  // Su iOS la richiesta qui sopra non basta: Safari cancella comunque lo
+  // storage dei siti non aperti per sette giorni, e l'unica esenzione è
+  // l'app aggiunta alla Home. Da qui l'avviso, e il suo «no» — una chiave
+  // NUOVA di proposito: chi chiudeva il banner di prima lo chiudeva
+  // all'apertura, su un'app vuota, per un motivo che non era questo.
+  const ambiente = useMemo(() => ({
+    nativo: Capacitor.isNativePlatform(), ios: isIOS(), standalone: isStandalone(),
+  }), []);
+  const [installaIOSRifiutato, setInstallaIOSRifiutato] = useState(() => {
+    try { return localStorage.getItem(KEY_INSTALLA_IOS_RIFIUTATO) === '1'; } catch { return false; }
+  });
+  const rifiutaInstallaIOS = useCallback(() => {
+    setInstallaIOSRifiutato(true);
+    try { localStorage.setItem(KEY_INSTALLA_IOS_RIFIUTATO, '1'); } catch { /* il no vale almeno per questa sessione */ }
+  }, []);
+  const installaIOS = chiedereInstallazioneIOS({
+    ...ambiente, turni: allShifts.length, rifiutato: installaIOSRifiutato,
+  });
+
   const monthShifts = useMemo(() => {
     const y = currentMonth.getFullYear();
     const m = currentMonth.getMonth();
@@ -338,19 +361,18 @@ export default function App() {
     [annualGross, settings, year],
   );
 
+  // Doppioni, giorni già di ferie o malattia e campi da tenere: la regola sta
+  // in `utils/import-turni.js`, la stessa che l'anteprima usa per dire cosa
+  // verrà saltato — così quello che si conferma è quello che si salva.
   const importShifts = useCallback((parsedShifts) => {
     setShifts(prev => {
+      const { daSalvare } = turniDaImportare(parsedShifts, Object.values(prev));
+      if (daSalvare.length === 0) return prev;
       const next = { ...prev };
-      // Deduplica su data+orari: reimportare la stessa foto (o una foto che si
-      // sovrappone a turni già inseriti) non deve creare doppioni.
-      const seen = new Set(Object.values(prev).map(s => `${s.date}|${s.startTime}|${s.endTime}`));
-      parsedShifts.forEach(shiftData => {
-        const key = `${shiftData.date}|${shiftData.startTime}|${shiftData.endTime}`;
-        if (seen.has(key)) return;
-        seen.add(key);
+      for (const dati of daSalvare) {
         const id = genId();
-        next[id] = { ...shiftData, id, breakMinutes: shiftData.breakMinutes || 0, note: shiftData.note || '' };
-      });
+        next[id] = { ...dati, id };
+      }
       return next;
     });
   }, [setShifts]);
@@ -391,6 +413,17 @@ export default function App() {
   // Vedi services/aggiornamento.js.
   const [aggiornamentoPronto, setAggiornamentoPronto] = useState(false);
   useEffect(() => iscrivitiAggiornamenti(setAggiornamentoPronto), []);
+
+  // Lavoro in sospeso FUORI da App — Impostazioni con modifiche non salvate,
+  // una foto in riconoscimento. «Aggiorna» ricarica la pagina e li butterebbe
+  // via, e App non li vede: si leggono dal registro. Finché ci sono, la
+  // striscia tace; la versione nuova resta pronta e parte quando si mette via
+  // l'app o appena si torna liberi. Le chiavi di App ('modale', 'annulla') le
+  // decide già `avvisoDaMostrare`.
+  const [occupatoAltrove, setOccupatoAltrove] = useState(false);
+  useEffect(() => iscrivitiOccupato((chiavi) => {
+    setOccupatoAltrove(chiavi.some(k => k !== 'modale' && k !== 'annulla'));
+  }), []);
 
   // L'ultimo turno cancellato, finché si fa in tempo a rimetterlo. Vive qui e
   // non nel modulo perché il modulo si smonta nell'istante della cancellazione.
@@ -469,6 +502,19 @@ export default function App() {
   // stesso record con lo STESSO id, non una copia con un id nuovo. Non riparte
   // la domanda sulle maggiorazioni — era già nata quando il turno fu salvato la
   // prima volta, e riproporla sarebbe una domanda già chiusa che ritorna.
+  // Se nel frattempo su quel giorno è stato segnato qualcosa che non può
+  // convivere col turno cancellato — ferie dove c'era lavoro, o viceversa —
+  // l'annulla non ha più un posto dove rimetterlo: rimetterlo darebbe lavoro e
+  // ferie nello stesso giorno, la coppia che `addShifts` esiste per impedire.
+  // La striscia si ritira invece di offrire un tocco che romperebbe i conti.
+  useEffect(() => {
+    if (!annullabile) return;
+    const assenza = isAssenza(annullabile);
+    const conflitto = Object.values(shifts).some(s =>
+      s.date === annullabile.date && s.id !== annullabile.id && isAssenza(s) !== assenza);
+    if (conflitto) setAnnullabile(null);
+  }, [shifts, annullabile]);
+
   const annullaCancellazione = useCallback(() => {
     if (annullabile) updateShift(annullabile);
     setAnnullabile(null);
@@ -497,8 +543,11 @@ export default function App() {
     modaleAperto: !!modal || !!inAttesa || sistemaAperto,
     annulla: !!annullabile,
     maggiorazione: !!avviso,
-    aggiornamento: aggiornamentoPronto,
+    aggiornamento: aggiornamentoPronto && !occupatoAltrove,
   });
+  // E chi in cima: l'avviso iOS batte il promemoria, perché i turni cancellati
+  // da Safari non tornano e la configurazione sì. Vedi utils/installazione.js.
+  const inAlto = chiParlaInAlto({ strisciaInBasso: chiParla !== null, installaIOS });
 
   return (
     <div className="app">
@@ -525,11 +574,16 @@ export default function App() {
           onSistema={() => setSistemaAperto(true)}
           turniInseriti={allShifts.length}
           // Quando la striscia in fondo parla, il promemoria in alto tace —
-          // chiunque sia a parlare, non più le sole maggiorazioni. Due avvisi
-          // impilati sono un muro.
-          sospeso={chiParla !== null}
+          // chiunque sia a parlare, non più le sole maggiorazioni — e tace
+          // anche davanti all'avviso iOS. Due avvisi impilati sono un muro.
+          sospeso={inAlto !== 'promemoria'}
         />
-        <InstallPrompt />
+        <InstallPrompt
+          installaIOS={inAlto === 'installa'}
+          sospeso={inAlto === null}
+          onRifiutaIOS={rifiutaInstallaIOS}
+          onBackup={() => setView('settings')}
+        />
         {view === 'calendar' && (
           <CalendarView
             currentMonth={currentMonth}

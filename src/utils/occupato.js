@@ -26,8 +26,27 @@ const inSospeso = new Set();
  * @param {boolean} occupato
  */
 export function segnaOccupato(chiave, occupato) {
+  const prima = inSospeso.has(chiave);
   if (occupato) inSospeso.add(chiave);
   else inSospeso.delete(chiave);
+  if (prima !== inSospeso.has(chiave)) {
+    for (const fn of ascoltatori) {
+      try { fn(chiOccupa()); } catch { /* un ascoltatore rotto non ferma gli altri */ }
+    }
+  }
+}
+
+const ascoltatori = new Set();
+
+/**
+ * Iscrive una funzione ai cambi del registro; riceve l'elenco delle chiavi
+ * accese. Serve alla striscia «versione nuova»: il suo pulsante ricarica, e
+ * con modifiche non salvate in Impostazioni o una foto in riconoscimento le
+ * butterebbe via. Restituisce la disiscrizione.
+ */
+export function iscrivitiOccupato(fn) {
+  ascoltatori.add(fn);
+  return () => ascoltatori.delete(fn);
 }
 
 /** C'è almeno una cosa in sospeso? */

@@ -436,6 +436,60 @@ trova nessuna opzione.
 
 ---
 
+# H. Revisione completa del 23/09/2026
+
+Una lettura di tutto il codice (motore, componenti, servizi e worker) in cerca
+di difetti che l'inventario sopra non aveva. Tutte le voci qui sotto sono
+**chiuse**: ognuna ha il suo riscontro, e il testo resta perché spiega perché
+era un difetto.
+
+| # | Difetto | Riscontro che lo tiene chiuso |
+|---|---|---|
+| H1 | La casella «chiedi al datore di sospenderlo» scriveva solo `noTrattamentoIntegrativo`, ma i default fondono sempre `tiModo: 'auto'`: il netto continuava a sommare il bonus, e un «Salva» in Impostazioni cancellava la scelta | `check-ti-mensile.mjs`, `check-restituzione.mjs` |
+| H2 | Statistiche calcolava il netto del mese sulla proiezione annua, Calendario su lordo del mese × 12: stesso mese, due netti | `check-netto-coerente.mjs` (nuovo), `nettoDelMese` |
+| H3 | «Supera la soglia» nel modulo confrontava la proiezione (lordo) con 15.000 (imponibile): avviso con ~1.500 € d'anticipo | `check-cosa-cambia.mjs` |
+| H4 | La previsione annua perdeva una mensilità il 1° di ogni mese (mese in corso contato come trascorso); ora vale per i giorni che restano | `check-proiezione.mjs` |
+| H5 | Anno guardato ≠ anno di oggi: gennaio dell'anno dopo aveva previsione = soli turni segnati e ~870 € di bonus «già erogati» | `check-proiezione.mjs`, `check-restituzione.mjs` |
+| H6 | Il modulo del turno rifiutava le ore di assenza che proponeva lui stesso (`step="0.5"` contro 4,8 h) | `check-impostazioni.mjs` |
+| H7 | Esc buttava la bozza del modulo (scavalcando `bozza.js`) e il turno in attesa di «dati minimi» | lettura del codice (`ShiftForm.jsx`, `DatiMinimi.jsx`) |
+| H8 | `useModalDismiss` si rieseguiva a ogni render di App e riportava il fuoco fuori dal modale; il fuoco non entrava mai nel dialogo | provato in Chrome |
+| H9 | Condividi settimana: Esc lanciava un TypeError, i turni oltre il mese risultavano «Riposo» | provato in Chrome |
+| H10 | Cambiare schermata durante il riconoscimento della foto perdeva i turni già pagati | velo in `CalendarView.jsx`, provato in Chrome |
+| H11 | «Aggiorna» ricaricava con modifiche non salvate in Impostazioni o un import in corso | `check-aggiornamento.mjs` |
+| H12 | L'import scriveva lavoro sopra ferie e malattia, salvava i campi grezzi del modello (anche la riga abbinata, che può essere un collega) e sbagliava l'anno a cavallo di capodanno | `check-import-turni.mjs` (nuovo), provato con un import vero |
+| H13 | Worker: eccezioni senza CORS, corpo letto prima di misurarlo, raffica IPv6 aggirabile, Turnstile senza controllo dell'host | `check-proxy-difese.mjs`. **Vale in rete solo dopo la ridistribuzione dei due worker**; il controllo dell'host resta spento finché non si imposta `TURNSTILE_HOSTNAMES` |
+| H14 | Backup: id diverso dalla chiave (doppioni alla modifica), note non testuali (render rotto), chiave `__proto__` sparita in silenzio | `check-backup.mjs` |
+
+Piccoli, chiusi insieme: mese del montante in UTC (`Settings.jsx`), due modali
+senza Esc, annulla che ricreava lavoro e ferie nello stesso giorno, turno con
+inizio uguale alla fine che valeva 0 ore senza avviso, timer del «Copiato» non
+annullato.
+
+**Aperti, da decidere:**
+
+- **H15. Domenicale e festivo nei turni a cavallo della mezzanotte** si prendono
+  dal giorno di inizio per tutte le ore (`pay.js`): il 31/12 22–06 non prende il
+  festivo di Capodanno, il sabato 22–06 non prende il domenicale. Il notturno
+  invece è minuto per minuto. Rischio reale, **non dimostrato**: nessuna busta
+  ha le timbrature, e cambiarlo senza riscontro violerebbe la regola del motore.
+- **H16. Montante senza data** vale per ogni anno (`net.js`). Riguarda solo
+  configurazioni salvate prima che la data venisse registrata.
+
+---
+
+# I. Doppi turni e iPhone — 23/09/2026
+
+Chiusi dopo la revisione, con lo stesso criterio: ognuno ha il suo riscontro.
+
+| # | Difetto | Riscontro che lo tiene chiuso |
+|---|---|---|
+| I1 | La pill della griglia mostrava la sola ora d'**inizio**: un turno spezzato 10–15 + 18–23:30 si leggeva «10:00 / 18:00», identico a due turni qualsiasi. Ora inizio e fine, in forma corta: «10–15», «18–23³⁰» | `check-orario-cella.mjs` (nuovo): i 1.440 minuti del giorno tornano uguali dal formato corto |
+| I2 | Colonne della griglia disuguali: `1fr` più pill senza a capo allargavano la colonna del giorno pieno a spese delle altre (35 px contro 55 su 320 px), e gli orari lunghi finivano coi puntini. Ora `minmax(0, 1fr)`, e la pill va a capo dopo il trattino solo se non ci sta | provato in Chrome a 320, 360, 390 e 768 px: colonne uguali, nessuna pill tagliata, nessuno sbordo |
+| I3 | Il secondo turno di uno spezzato si vedeva riproporre il primo: la moda degli orari non guardava i turni già segnati quel giorno, e proponeva 10–15 sopra 10–15. Ora le coppie che si accavallano passano in fondo | `check-orari-proposti.mjs`, sezione «Il secondo turno di uno spezzato»; provato dalla griglia fino al modulo |
+| I4 | Su iPhone Safari cancella i dati dei siti non aperti per 7 giorni, e il banner d'installazione lo trattava da comodità: compariva all'apertura su un'app vuota, col motivo sbagliato, e una ✕ lo spegneva per sempre. Ora compare al primo turno, dice il perché vero, offre il backup, vince sul promemoria | `check-installazione.mjs` (nuovo); provato in Chrome con profilo iPhone. **Da verificare su un iPhone vero** |
+
+---
+
 ## Dove mettere questo elenco
 
 `RILASCIO.md` va lasciato com'è: sette domande sulla **pubblicazione**, con un
