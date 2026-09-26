@@ -100,6 +100,13 @@ una `fetch` aggiunta in `net.js` per farlo diventare rosso. Cerca anche nel test
 ogni importo assoluto, compreso il caso subdolo già capitato: con un lato a zero,
 lo scarto È la cifra intera dell'altro lato.
 
+Quando il lordo non torna, la pagina lo **scompone nelle famiglie del cedolino**
+(ordinarie, supplementari, domenicale, notturno, festivi, 13ª/14ª, altre voci),
+in euro e in ore, con la causa probabile accanto: «Lordo +76,88 €» da solo non
+si può correggere. Le due colonne devono sommare ai due lordi al centesimo, e
+nel testo condiviso escono solo scarti — nemmeno i NOMI delle voci della busta
+(«TOP STORE» dice chi è il datore). → `check-verifica-busta.mjs`
+
 Il lettore dei PDF è uno solo, `src/utils/cedolino.js`, per Node e per il browser.
 Attenzione a `DecompressionStream`: rifiuta il ritorno a capo che il PDF lascia
 dopo il deflate, mentre `zlib` lo ignora (vedi `inflateBrowser`). Legge solo i

@@ -21,7 +21,11 @@
 
 import { calcTotalPay, calcShiftMinutes, computePayByShift, hasAnyRate } from './pay.js';
 import { nettoDelMese, lordoDelMese } from './net.js';
-import { lordoDaBusta, incoerenze } from './leggi-cedolino.js';
+import {
+  lordoDaBusta, incoerenze, ESENTE, FUORI_REDDITO, STORNO, EXTRA_MENSILITA,
+} from './leggi-cedolino.js';
+import { isHoliday } from './holidays.js';
+import { tipoTurno, TIPO } from './assenze.js';
 import { parseDate, payrollMonthKey, getDaysInMonth } from './dates.js';
 import { isMensilizzato, getCcnl } from './ccnl.js';
 
@@ -63,6 +67,186 @@ export function riga(livello, voce, app, busta, tolleranza, unita = '€') {
     pct: busta ? Math.round((scarto / Math.abs(busta)) * 1000) / 10 : null,
     ok,
   };
+}
+
+// ── Il lordo, voce per voce ─────────────────────────────────────────────────
+//
+// PERCHÉ ESISTE
+// La riga «Lordo +76,88 €» diceva che qualcosa non tornava e non diceva cosa.
+// Il primo tester che l'ha vista (agosto 2026) non poteva farci niente: i
+// motivi possibili sono cinque o sei e non si distinguono da un totale. Qui il
+// lordo si divide nelle stesse famiglie in cui lo divide il cedolino, e lo
+// scarto finisce nella riga che lo produce: ore segnate in più, un festivo che
+// la busta non conta, un bonus spuntato che in busta non c'è.
+//
+// LE FAMIGLIE sono quelle che la busta stampa su righe sue, e che il motore sa
+// già separare (`computePayByShift`). L'ordine conta: vince la prima che
+// combacia, quindi «Magg. festivo» finisce nei festivi e non nelle ore
+// ordinarie, e «Festività» (non lavorata) resta fra le ordinarie.
+//
+// DUE INVARIANTI, verificate da check-verifica-busta.mjs: le voci dell'app
+// sommano al lordo dell'app e quelle della busta al lordo della busta, al
+// centesimo. Una scomposizione che non torna col totale che spiega sarebbe
+// peggio del totale da solo.
+export const FAMIGLIE = [
+  { id: 'mensilita', voce: '13ª e 14ª', re: EXTRA_MENSILITA },
+  { id: 'supplementari', voce: 'Supplementari e straordinari', re: /Supplementar|Straordin/i },
+  { id: 'domenicale', voce: 'Maggiorazione domenicale', re: /Domenical|Magg\.?\s*dom/i },
+  { id: 'notturno', voce: 'Maggiorazione notturna', re: /Nottur|Magg\.?\s*nott/i },
+  // «Lavoro festivo ordinario» (l'ora intera) e «Magg. festivo»: la busta paga
+  // i festivi lavorati FUORI dalla retribuzione mensile.
+  { id: 'festivo', voce: 'Festivi lavorati', re: /festivo/i, ore: 'max' },
+  {
+    id: 'ordinarie', voce: 'Ore ordinarie, ferie, permessi',
+    re: /Retribuzione|Ferie|Permess|R\.?O\.?L|Ex\s*fest|Festivit|Malattia|Paga base|Conting|Terzo el/i,
+  },
+  // Tutto il resto: nell'app bonus e voci fisse, in busta le voci che non
+  // nascono dai turni (premi, indennità). Qui è normale che i NOMI non
+  // coincidano, ed è per questo che la pagina mostra quelli della busta.
+  { id: 'altre', voce: 'Bonus e altre voci', re: null },
+  // Solo dell'app: la maggiorazione scritta a mano nel modulo del turno. In
+  // busta ha il nome di quello che rappresenta, e finisce nella sua famiglia.
+  { id: 'manuali', voce: 'Maggiorazioni scritte a mano', re: null },
+];
+
+const famigliaDi = (etichetta) =>
+  FAMIGLIE.find((f) => f.re && f.re.test(etichetta || ''))?.id || 'altre';
+
+// Le ore di una voce, solo se la voce le dichiara E tornano con l'importo:
+// tariffa × ore = importo. Quando non tornano, il numero in penultima posizione
+// non sono ore (una percentuale, una base) e dirlo ore sarebbe inventarlo.
+function oreDellaVoce(v) {
+  const n = v.numeri || [];
+  if (v.unita !== 'ORE' || n.length < 3) return null;
+  const [tariffa, ore, importo] = n.slice(-3);
+  return Math.abs(tariffa * ore - importo) <= 0.05 ? ore : null;
+}
+
+const vuote = () => Object.fromEntries(FAMIGLIE.map((f) => [f.id, { euro: 0, ore: 0, voci: [] }]));
+
+/** Il lordo della busta nelle famiglie di `FAMIGLIE`. Somma = `lordoDaBusta(fx).lordo`. */
+export function lordoBustaPerVoce(fx) {
+  const per = vuote();
+  const competenze = fx.voci.filter((v) => v.sezione === 'competenza'
+    && !ESENTE.test(v.etichetta || '') && !FUORI_REDDITO.test(v.etichetta || ''));
+  for (const v of competenze) {
+    const id = famigliaDi(v.etichetta);
+    const f = FAMIGLIE.find((x) => x.id === id);
+    per[id].euro += v.importo || 0;
+    per[id].voci.push(v.etichetta);
+    const ore = oreDellaVoce(v);
+    // «Lavoro festivo ordinario» e «Magg. festivo» sono le STESSE ore scritte
+    // due volte: sommarle le raddoppierebbe.
+    if (ore != null) per[id].ore = f.ore === 'max' ? Math.max(per[id].ore, ore) : per[id].ore + ore;
+  }
+  // La malattia in busta è uno storno fra le trattenute: toglie dalla
+  // retribuzione quello che paga l'INPS. `lordoDaBusta` lo sottrae, e qui pure.
+  for (const v of fx.voci.filter((x) => x.sezione === 'trattenuta' && STORNO.test(x.etichetta || ''))) {
+    per.ordinarie.euro -= v.importo || 0;
+  }
+  return per;
+}
+
+/** Il lordo dell'app nelle stesse famiglie. Somma = `lordoDelMese(...).lordo`. */
+export function lordoAppPerVoce(delMese, settings, payMap, anno, mese, pagaTotale) {
+  const per = vuote();
+  for (const s of delMese) {
+    const p = payMap[s.id];
+    if (!p) continue;
+    const ore = calcShiftMinutes(s) / 60;
+    // Stessa regola del motore (`pay.js`): il festivo lavorato sta fuori dal
+    // monte ore, e la busta lo paga su una riga sua.
+    const festivo = tipoTurno(s) === TIPO.LAVORO && isHoliday(s.date, settings);
+    const suppl = p.overtimeBase + p.surchargeOvertime + p.straordinarioBase + p.surchargeStraordinario;
+    const oreSuppl = (p.overtimeMinutes + p.straordinarioMinutes) / 60;
+
+    per.supplementari.euro += suppl;
+    per.supplementari.ore += oreSuppl;
+    per.domenicale.euro += p.surchargeSunday;
+    if (p.surchargeSunday > 0) per.domenicale.ore += ore;
+    per.notturno.euro += p.surchargeNight;
+    per.notturno.ore += p.nightMinutes / 60;
+    per.manuali.euro += p.surchargeManual;
+    if (festivo) {
+      per.festivo.euro += p.base + p.surchargeHoliday;
+      per.festivo.ore += ore;
+    } else {
+      per.festivo.euro += p.surchargeHoliday;
+      per.ordinarie.euro += p.base - p.overtimeBase - p.straordinarioBase;
+      per.ordinarie.ore += ore - oreSuppl;
+    }
+  }
+  const { lordo, extraMese } = lordoDelMese(pagaTotale, anno, mese, settings);
+  per.mensilita.euro += extraMese;
+  // Bonus spuntato e voci fisse: quello che resta del lordo dopo turni e
+  // mensilità. Per differenza, così la somma torna per costruzione.
+  per.altre.euro += lordo - (Number(pagaTotale) || 0) - extraMese;
+  return per;
+}
+
+/**
+ * Le righe della scomposizione, pronte per la tabella e per il testo. Solo le
+ * famiglie che esistono da almeno un lato: una fila di zeri è rumore.
+ */
+export function scomponiLordo(app, busta) {
+  return FAMIGLIE
+    .filter((f) => Math.abs(app[f.id].euro) >= 0.005 || Math.abs(busta[f.id].euro) >= 0.005)
+    .map((f) => ({
+      ...riga('lordo', f.voce, app[f.id].euro, busta[f.id].euro, TOLLERANZA.lordo),
+      id: f.id,
+      oreApp: Math.round(app[f.id].ore * 100) / 100,
+      // Zero ore in busta su una voce in euro vuol dire «non dichiarate», non
+      // «nessuna ora»: si mostra il vuoto, non uno zero che sembra un dato.
+      oreBusta: busta[f.id].ore ? Math.round(busta[f.id].ore * 100) / 100 : null,
+      vociBusta: busta[f.id].voci,
+    }));
+}
+
+const oreScritte = (n) => `${n.toLocaleString('it-IT', { maximumFractionDigits: 2 })} h`;
+
+/**
+ * Cosa vuol dire, in una frase, lo scarto di una famiglia. Resta sul telefono:
+ * nomina ore e voci della busta, che nel testo da condividere non vanno.
+ *
+ * Le frasi dicono la causa PIÙ PROBABILE, non quella certa: l'app non vede il
+ * cartellino del datore. Per questo la prima distinzione è sempre fra ore ed
+ * euro — ore diverse vuol dire turni segnati diversamente, ore uguali con euro
+ * diversi vuol dire una tariffa o una percentuale diversa.
+ */
+export function spiegaScarto(r) {
+  if (r.ok) return null;
+  const oreDiverse = r.oreBusta != null && Math.abs((r.oreApp || 0) - r.oreBusta) >= 0.25;
+  const ore = r.oreBusta != null ? ` L'app conta ${oreScritte(r.oreApp || 0)}, la busta ${oreScritte(r.oreBusta)}.` : '';
+  switch (r.id) {
+    case 'supplementari':
+      return oreDiverse
+        ? `Ore oltre il monte ore del contratto.${ore} Di solito è un turno segnato in più o in meno, o un orario diverso da quello timbrato.`
+        : `Le ore tornano, l'importo no: la percentuale del supplementare o la paga oraria sono diverse da quelle della busta.`;
+    case 'domenicale':
+      return oreDiverse
+        ? `Ore lavorate di domenica.${ore} Un turno di domenica segnato in più o in meno, o un orario diverso da quello timbrato.`
+        : 'Le ore tornano, l\'importo no: la percentuale domenicale in Impostazioni è diversa da quella della busta.';
+    case 'notturno':
+      return oreDiverse
+        ? `Ore in fascia notturna.${ore} Un turno di notte in più o in meno, o una fascia notturna diversa da quella del contratto (Impostazioni).`
+        : 'Le ore tornano, l\'importo no: la percentuale notturna in Impostazioni è diversa da quella della busta.';
+    case 'festivo':
+      if (r.soloDa === 'app') return 'L\'app conta un festivo lavorato che in busta non c\'è. Se quel giorno non hai lavorato, segnalo come festività, non come turno.';
+      if (r.soloDa === 'busta') return 'La busta paga un festivo lavorato che l\'app non vede: controlla il turno di quel giorno, e il santo patrono in Impostazioni.';
+      return `Festivi lavorati.${ore} La busta li paga fuori dalla retribuzione del mese: controlla quali giorni sono segnati come festivi.`;
+    case 'ordinarie':
+      return `Retribuzione del mese, ferie e permessi.${ore} Di solito sono ferie, permessi o malattia segnati diversamente, o una paga oraria diversa.`;
+    case 'mensilita':
+      return 'La 13ª o la 14ª: l\'app la conta in un mese diverso, o con un rateo diverso. Controlla la data di assunzione in Impostazioni.';
+    case 'altre': {
+      const inBusta = r.vociBusta?.length ? ` In busta: ${r.vociBusta.join(', ')}.` : ' In busta non ce ne sono.';
+      return `Nell'app: bonus spuntato questo mese e voci fisse.${inBusta} Se il bonus di questo mese in busta non c'era, togli la spunta dal calendario — o mettila, se c'era.`;
+    }
+    case 'manuali':
+      return 'Maggiorazioni scritte a mano nel modulo del turno. In busta hanno il nome di quello che rappresentano, quindi compaiono in un\'altra riga.';
+    default:
+      return null;
+  }
 }
 
 /** I turni che l'app conta per quel mese: stessa regola di `App.jsx` (mese di paga o di calendario). */
@@ -133,10 +317,20 @@ export function confronta(fx, { allShifts = [], settings = {} } = {}) {
 
   // ── Turni: dal calendario dell'app ─────────────────────────────────────
   const delMese = turniDelMese(allShifts, anno, mese, settings);
+  let scomposizione = [];
   if (delMese.length && hasAnyRate(settings)) {
-    const paga = calcTotalPay(delMese, settings, allShifts, computePayByShift(allShifts, settings));
+    const payMap = computePayByShift(allShifts, settings);
+    const paga = calcTotalPay(delMese, settings, allShifts, payMap);
     const { lordo } = lordoDelMese(paga?.total, anno, mese, settings);
-    righe.push(riga('turni', 'Lordo', lordo, b.lordo, TOLLERANZA.lordo));
+    const rigaLordo = riga('turni', 'Lordo', lordo, b.lordo, TOLLERANZA.lordo);
+    righe.push(rigaLordo);
+    // Solo quando il lordo non torna: se torna, sei righe di ✓ non dicono niente.
+    if (!rigaLordo.ok) {
+      scomposizione = scomponiLordo(
+        lordoAppPerVoce(delMese, settings, payMap, anno, mese, paga?.total),
+        lordoBustaPerVoce(fx),
+      );
+    }
     if (fx.presenze?.ordinarie != null && paga) {
       const oreBusta = fx.presenze.ordinarie + (fx.presenze.supplementari || 0);
       const oreApp = delMese.reduce((m, s) => m + calcShiftMinutes(s), 0) / 60;
@@ -148,7 +342,7 @@ export function confronta(fx, { allShifts = [], settings = {} } = {}) {
     avvisi.push('paga oraria non impostata: confronto solo sul calcolo');
   }
 
-  return { periodo: { anno, mese }, righe, turniNelMese: delMese.length, avvisi };
+  return { periodo: { anno, mese }, righe, scomposizione, turniNelMese: delMese.length, avvisi };
 }
 
 /**
@@ -215,6 +409,23 @@ export function testoDaCondividere(esito, { versione = '', settings = {}, partTi
       }
       const pct = r.ok || r.pct == null ? '' : `  (${segno(r.pct, 1)}%)`;
       linee.push(`  ${r.voce.padEnd(24)} ${scartoScritto(r).padStart(10)}${r.ok ? '  ✓' : pct}`);
+    }
+  }
+  // La scomposizione esce con le stesse regole delle righe: scarti, mai cifre.
+  // Vale anche per le ORE: con un lato a zero lo scarto sarebbe il totale di
+  // ore dell'altro lato, e si dice solo da che parte. Le voci che tornano non
+  // si elencano — chi legge cerca dove sta lo scarto, non dove non sta.
+  const fuori = (esito.scomposizione || []).filter((r) => !r.ok);
+  if (fuori.length) {
+    linee.push('Lordo, voce per voce');
+    for (const r of fuori) {
+      if (r.soloDa) {
+        linee.push(`  ${r.voce.padEnd(30)} ${r.soloDa === 'app' ? 'solo nell’app' : 'solo in busta'}`);
+        continue;
+      }
+      const ore = r.oreBusta != null && r.oreApp && Math.abs(r.oreApp - r.oreBusta) >= 0.01
+        ? `  (${segno(Math.round((r.oreApp - r.oreBusta) * 100) / 100, 2)} h)` : '';
+      linee.push(`  ${r.voce.padEnd(30)} ${scartoScritto(r).padStart(10)}${ore}`);
     }
   }
   for (const a of esito.avvisi) linee.push(`Nota: ${a}`);

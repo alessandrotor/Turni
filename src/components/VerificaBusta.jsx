@@ -1,7 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { righeDaByte, inflateBrowser } from '../utils/cedolino';
 import { leggiCedolinoDaRighe } from '../utils/leggi-cedolino';
-import { confronta, confrontaAMano, testoDaCondividere, scartoScritto } from '../utils/verifica-busta';
+import {
+  confronta, confrontaAMano, testoDaCondividere, scartoScritto, spiegaScarto,
+} from '../utils/verifica-busta';
+import { formatCurrency } from '../utils/pay';
+
+const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
+  'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+const oreDi = (n) => `${n.toLocaleString('it-IT', { maximumFractionDigits: 2 })} h`;
 
 // «Confronta con la busta»: il tester controlla da solo l'app contro il suo
 // cedolino, e manda a chi sviluppa solo gli scarti.
@@ -121,6 +128,36 @@ export default function VerificaBusta({ allShifts, settings, onChiudi }) {
               ))}
             </tbody>
           </table>
+          {/* Da dove viene lo scarto del lordo. Un totale che non torna senza
+              dire cosa lo compone non si può correggere: i motivi possibili
+              sono sei, e dal totale non si distinguono. Qui le cifre ci sono
+              tutte — restano sul telefono, nel testo da condividere no. */}
+          {esito.scomposizione?.length > 0 && (() => {
+            const lordo = esito.righe.find((r) => r.voce === 'Lordo');
+            return (
+              <section className="verifica-scomposizione">
+                <h2>Da dove vengono i {scartoScritto(lordo)} di lordo</h2>
+                <p className="form-hint">
+                  È il lordo che l&apos;app ricava dai turni segnati {/^[aeiou]/.test(MESI[esito.periodo.mese]) ? 'ad' : 'a'} {MESI[esito.periodo.mese]}, contro
+                  quello stampato in busta, diviso come lo divide il cedolino. «+» vuol dire che
+                  l&apos;app conta di più.
+                </p>
+                {esito.scomposizione.map((r) => (
+                  <div key={r.id} className={`verifica-voce ${r.ok ? 'is-ok' : 'is-scarto'}`}>
+                    <div className="verifica-voce-testa">
+                      <span>{r.voce}</span>
+                      <span className="verifica-scarto">{scartoScritto(r)} {r.ok ? '✓' : '⚠️'}</span>
+                    </div>
+                    <div className="verifica-voce-cifre">
+                      app {formatCurrency(r.app)}{r.oreApp ? ` (${oreDi(r.oreApp)})` : ''}
+                      {' · '}busta {formatCurrency(r.busta)}{r.oreBusta != null ? ` (${oreDi(r.oreBusta)})` : ''}
+                    </div>
+                    {spiegaScarto(r) && <p className="verifica-voce-perche">{spiegaScarto(r)}</p>}
+                  </div>
+                ))}
+              </section>
+            );
+          })()}
           {esito.avvisi.map((a) => <p key={a} className="form-hint">{a}</p>)}
           <div className="verifica-azioni">
             <button type="button" className="btn btn-primary" onClick={copia}>

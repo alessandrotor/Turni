@@ -3392,3 +3392,14 @@ input, select, textarea { font: inherit; }
 .verifica-mano-campi { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: .5rem; }
 .verifica-mano-campi label { display: flex; flex-direction: column; font-size: .85rem; gap: .2rem; }
 .verifica-chiudi { align-self: center; }
+/* Lo scarto del lordo voce per voce: una scheda per famiglia, perché su un
+   telefono quattro colonne (voce, app, busta, scarto) non ci stanno. */
+.verifica-scomposizione { display: flex; flex-direction: column; gap: .5rem; }
+.verifica-scomposizione h2 { font-size: 1rem; margin: .25rem 0 0; }
+.verifica-scomposizione .form-hint { margin: 0; }
+.verifica-voce { padding: .5rem .6rem; border-radius: var(--radius-sm); background: var(--c-card); border: 1px solid var(--c-border); }
+.verifica-voce.is-scarto { border-color: var(--c-warning); background: var(--c-warning-light); }
+.verifica-voce-testa { display: flex; justify-content: space-between; gap: .5rem; font-weight: 600; }
+.verifica-voce.is-scarto .verifica-voce-testa { color: #b45309; }
+.verifica-voce-cifre { font-size: .8rem; color: var(--c-text-2); font-variant-numeric: tabular-nums; margin-top: .15rem; }
+.verifica-voce-perche { font-size: .82rem; margin: .3rem 0 0; line-height: 1.4; color: var(--c-text); }

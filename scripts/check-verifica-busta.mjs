@@ -23,8 +23,10 @@ import { join, dirname, resolve } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import { inflateBrowser, righeDaByte } from '../src/utils/cedolino.js';
 import { righeDi } from './lib/cedolino.mjs';
-import { leggiCedolinoDaRighe } from '../src/utils/leggi-cedolino.js';
-import { confronta, testoDaCondividere, riga } from '../src/utils/verifica-busta.js';
+import { leggiCedolinoDaRighe, lordoDaBusta } from '../src/utils/leggi-cedolino.js';
+import {
+  confronta, testoDaCondividere, riga, lordoBustaPerVoce, spiegaScarto,
+} from '../src/utils/verifica-busta.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {
@@ -95,6 +97,90 @@ esito(trovati.length === 0, 'nessun importo di app o busta nel testo', trovati.j
 esito(testo.includes('+0,41 €') && testo.includes('+5,97 €'), 'gli scarti ci sono');
 esito(/Addizionali\s+solo nell.app/.test(testo) && /Trattamento integrativo\s+solo in busta/.test(testo),
   'un lato a zero dice solo da che parte, senza cifra');
+
+// ── 2b. Il lordo, voce per voce ────────────────────────────────────────────
+//
+// «Lordo +76,88 €» non diceva cosa non tornava. La scomposizione lo dice, e
+// deve reggere due cose: sommare ai due totali che spiega, e non far uscire
+// nel testo né euro né ORE intere — con un lato a zero, lo scarto in ore è il
+// totale delle ore dell'altro lato.
+//
+// La busta è quella di agosto 2026, ricostruita dalle cifre di
+// check-busta-agosto-2026.mjs: 99,20 h di retribuzione, 4 di ferie, 17,50 di
+// supplementare al 130%, 7,75 domenicali al 10%, più 130 € di voci che non
+// nascono dai turni.
+console.log('\nLo scarto del lordo, voce per voce\n');
+
+const R = 9.21802;
+const vc = (etichetta, numeri, unita = null, sezione = 'competenza') =>
+  ({ codice: null, etichetta, numeri, importo: numeri.at(-1), sezione, unita });
+const agosto = {
+  periodo: { anno: 2026, mese: 8 }, netto: null,
+  voci: [
+    vc('Retribuzione', [R, 99.20, 914.43], 'ORE'),
+    vc('Ferie godute', [R, 4.00, 36.87], 'ORE'),
+    vc('Lavoro supplementare 30%', [R * 1.3, 17.50, 209.71], 'ORE'),
+    vc('Magg.Lavoro Domenicale 10%', [R * 0.1, 7.75, 7.14], 'ORE'),
+    vc('TOP STORE', [120.00]),
+    vc('Ind. Flessibilità', [10.00]),
+    vc('Indennità L.207/24', [56.32]),
+  ],
+};
+const perBusta = lordoBustaPerVoce(agosto);
+const c2 = (n) => Math.round(n * 100) / 100;
+esito(c2(Object.values(perBusta).reduce((s, f) => s + f.euro, 0)) === lordoDaBusta(agosto).lordo,
+  'le voci della busta sommano al lordo della busta', `${lordoDaBusta(agosto).lordo}`);
+esito(perBusta.ordinarie.ore === 103.2 && perBusta.supplementari.ore === 17.5,
+  'le ore si leggono solo dove tariffa × ore = importo', 'retribuzione + ferie = monte ore');
+esito(perBusta.ordinarie.euro > 0 && perBusta.altre.voci.join() === 'TOP STORE,Ind. Flessibilità',
+  'L.207 esente fuori, premi e indennità fra le «altre»', perBusta.altre.voci.join(', '));
+
+// I turni: un mese «giusto» più un festivo segnato il 15, che la busta non ha.
+const S = {
+  hourlyRate: R, expectedWeeklyHours: 24, fullTimeWeeklyHours: 40, ccnl: 'turismo',
+  sundaySurchargePct: 10, overtimeSurchargePct: 30, holidaySurchargePct: 20,
+  monthlyBonusAmount: 120, monthlyBonus: { '2026-08': true }, fixedMonthlyItems: [{ amount: 10 }],
+};
+const turniAgosto = [];
+const tt = (d, s, e, extra = {}) => turniAgosto.push({
+  id: `${d}-${s}`, date: `2026-08-${String(d).padStart(2, '0')}`, startTime: s, endTime: e, ...extra,
+});
+for (let d = 1; d <= 30; d += 1) if (d !== 15) tt(d, '10:00', '14:00');
+tt(15, '10:00', '16:00');
+tt(31, '09:00', '13:00', { type: 'ferie' });
+const conf = confronta(agosto, { allShifts: turniAgosto, settings: S });
+const lordoRiga = conf.righe.find((r) => r.voce === 'Lordo');
+esito(conf.scomposizione.length > 0, 'con il lordo fuori tolleranza la scomposizione c\'è');
+esito(c2(conf.scomposizione.reduce((s, r) => s + r.app, 0)) === lordoRiga.app
+  && c2(conf.scomposizione.reduce((s, r) => s + r.busta, 0)) === lordoRiga.busta,
+  'le due colonne sommano ai due lordi', `${lordoRiga.app} · ${lordoRiga.busta}`);
+const fest = conf.scomposizione.find((r) => r.id === 'festivo');
+esito(fest?.soloDa === 'app' && /festività/.test(spiegaScarto(fest)),
+  'il festivo segnato che la busta non ha finisce nella sua riga', 'e la frase dice cosa fare');
+esito(conf.scomposizione.find((r) => r.id === 'altre')?.ok === true,
+  'bonus e voce fissa tornano con TOP STORE e Ind. Flessibilità');
+
+const testoScomp = testoDaCondividere(conf, { versione: '0.9.5', settings: S });
+// Sotto 100 la forma arrotondata all'intero («7» per 7,14) combacia per caso
+// con l'inizio di uno scarto («+7,61»): per quelle cifre si cercano le sole
+// forme coi decimali, che una fuga vera porterebbe con sé.
+const formeStrette = (n) => (Math.abs(n) < 100 ? forme(n).slice(0, 3) : forme(n));
+const cifreScomp = conf.scomposizione
+  .flatMap((r) => [r.app, r.busta, r.oreApp, r.oreBusta])
+  .filter((n) => n != null && Math.abs(n) >= 1)
+  .filter((n) => formeStrette(n).some((f) => compare(testoScomp, f)));
+esito(cifreScomp.length === 0, 'nel testo nessun importo né ore intere della scomposizione',
+  cifreScomp.join(', ') || 'solo scarti');
+esito(/Festivi lavorati\s+solo nell.app/.test(testoScomp), 'lato a zero: solo da che parte, anche qui');
+esito(!/TOP STORE|Flessibilit/.test(testoScomp), 'i nomi delle voci della busta non escono',
+  'possono dire chi è il datore');
+
+// Senza scarto la scomposizione non si mostra: sei righe di ✓ sono rumore.
+const giusto = confronta(agosto, {
+  allShifts: turniAgosto.filter((s) => s.date !== '2026-08-15'), settings: { ...S, monthlyBonus: {} },
+});
+esito(giusto.righe.find((r) => r.voce === 'Lordo').ok || giusto.scomposizione.length > 0,
+  'la scomposizione compare solo se il lordo non torna');
 
 // ── 3. Lo stesso lettore in Node e nel browser ─────────────────────────────
 console.log('\nIl browser legge come Node\n');
