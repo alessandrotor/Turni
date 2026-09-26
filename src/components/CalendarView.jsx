@@ -41,6 +41,13 @@ import useOccupato from '../hooks/useOccupato';
 import { KEY_CAL_LAYOUT } from '../services/backup';
 
 import { intervalloCella } from '../utils/orario-cella';
+import { stimaConguaglio } from '../utils/conguaglio';
+import { SOGLIA_RATEIZZAZIONE } from '../utils/restituzione';
+
+// La forchetta a dieci euro: una cifra al centesimo prometterebbe una
+// precisione che la stima non ha.
+const giù10 = (n) => Math.floor(n / 10) * 10;
+const su10 = (n) => Math.ceil(n / 10) * 10;
 
 const DAY_HEADERS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
@@ -481,6 +488,16 @@ export default function CalendarView({
   // dov'era invece di essere sostituita. Serve a confrontare — un premio di
   // produttività non si decide, si riceve, e la domanda utile è quanto
   // varrebbe l'anno se arrivasse sempre.
+  // Il conguaglio di dicembre, come forchetta (utils/conguaglio.js). Solo per
+  // l'anno in corso: per un anno chiuso il conguaglio è già in busta, e la busta
+  // lo sa meglio dell'app. Dal primo momento in cui c'è un reddito da stimare.
+  const oggiAnno = new Date().getFullYear();
+  const conguaglio = useMemo(
+    () => (year === oggiAnno ? stimaConguaglio({ anno: year, allShifts, settings, payMap: payByShift || {} }) : null),
+    [year, oggiAnno, allShifts, settings, payByShift],
+  );
+  const [perchéConguaglio, setPerchéConguaglio] = useState(false);
+
   const [simulaBonus, setSimulaBonus] = useState(false);
   const settingsBonusOgniMese = useMemo(() => {
     const tutti = {};
@@ -1416,6 +1433,55 @@ export default function CalendarView({
               <span className="bonus-strip-note bonus-strip-note--warn">
                 ⚠️ Il montante ({fmt0(montante)}) non torna coi turni fino a {priorMonthLabel} ({fmt0(shiftsCovered)}).
               </span>
+            )}
+
+            {/* Il conguaglio di dicembre. Tre registri, mai mescolati: il
+                meccanismo si dice all'indicativo, la cifra è sempre una
+                forchetta «di questo passo», e quello che l'app non sa sta
+                scritto accanto — non in un disclaimer in fondo. */}
+            {conguaglio && (
+              <div className="conguaglio">
+                <div className="conguaglio-testa">
+                  <span>Conguaglio di dicembre</span>
+                  <strong>
+                    {conguaglio.direzione === 'pari' && 'circa in pari'}
+                    {conguaglio.direzione === 'debito' && `ti riprendono ${euroCella(giù10(conguaglio.min))}–${euroCella(su10(conguaglio.max))}`}
+                    {conguaglio.direzione === 'credito' && `ti ridanno ${euroCella(giù10(-conguaglio.max))}–${euroCella(su10(-conguaglio.min))}`}
+                    {conguaglio.direzione === 'incerta' && `da ${euroCella(su10(-conguaglio.min))} a credito a ${euroCella(su10(conguaglio.max))} a debito`}
+                  </strong>
+                </div>
+                <button type="button" className="linklike conguaglio-perche" onClick={() => setPerchéConguaglio(v => !v)} aria-expanded={perchéConguaglio}>
+                  di questo passo, stima · {perchéConguaglio ? 'chiudi' : 'perché?'}
+                </button>
+                {perchéConguaglio && (
+                  <div className="conguaglio-dettaglio">
+                    <p>A dicembre il datore rifà i conti sul reddito vero dell&apos;anno.</p>
+                    <ul>
+                      {[['IRPEF', conguaglio.centrale.voci.irpef],
+                        ['Trattamento integrativo', conguaglio.centrale.voci.trattamentoIntegrativo],
+                        ['Indennità L. 207/24', conguaglio.centrale.voci.indennita]]
+                        .filter(([, v]) => Math.abs(v) >= 1)
+                        .map(([nome, v]) => (
+                          <li key={nome}>{nome}: {v > 0 ? 'ti riprendono' : 'ti ridanno'} ~{euroCella(Math.abs(v))}</li>
+                        ))}
+                    </ul>
+                    <p>
+                      Non sappiamo quanto ti hanno accreditato davvero, se hai altri redditi
+                      quest&apos;anno, né altre detrazioni (figli, spese).
+                      {conguaglio.mesiVuoti > 0 && ` ${conguaglio.mesiVuoti} ${conguaglio.mesiVuoti === 1 ? 'mese senza turni conta' : 'mesi senza turni contano'} come non lavorat${conguaglio.mesiVuoti === 1 ? 'o' : 'i'}.`}
+                    </p>
+                    {conguaglio.centrale.voci.trattamentoIntegrativo > SOGLIA_RATEIZZAZIONE && (
+                      <p>Il bonus da restituire, oltre i 60 €, si paga a rate.</p>
+                    )}
+                    <p>Contratto a termine: il conguaglio arriva con l&apos;ultima busta.</p>
+                    <p>
+                      Più datori o altri redditi: ognuno fa il suo conguaglio, il conto finale
+                      lo fa il 730 dell&apos;anno dopo. Rimborso o trattenuta arrivano in busta, d&apos;estate.
+                    </p>
+                    <p>Le addizionali regionali e comunali di quest&apos;anno si pagano l&apos;anno dopo, a rate da gennaio.</p>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* «E se lo prendessi tutti i mesi?» sta QUI e non accanto alla

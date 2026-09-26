@@ -2420,6 +2420,15 @@ input, select, textarea { font: inherit; }
   margin-top: .5rem;
 }
 
+/* Il conguaglio di dicembre: una riga, il resto dietro «perché?». */
+.conguaglio { padding-top: .5rem; border-top: 1px solid var(--c-border); }
+.conguaglio-testa { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; flex-wrap: wrap; font-size: .9rem; }
+.conguaglio-testa strong { font-variant-numeric: tabular-nums; }
+.conguaglio-perche { font-size: .78rem; padding: 0; margin-top: .1rem; }
+.conguaglio-dettaglio { font-size: .82rem; line-height: 1.4; color: var(--c-text-2); margin-top: .35rem; }
+.conguaglio-dettaglio p { margin: .3rem 0; }
+.conguaglio-dettaglio ul { margin: .3rem 0; padding-left: 1.1rem; }
+
 /* Simulazione del bonus mensile: chiude il riquadro del trattamento
    integrativo, perché è a quello che la domanda si riferisce. Da spenta costa
    una riga sola — il risultato compare solo se qualcuno chiede.

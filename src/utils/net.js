@@ -267,7 +267,7 @@ function bonusCuneo(redditoComplessivo, redditoLavoro) {
 // lorda supera la detrazione da lavoro di più di quanto il cuneo possa
 // aggiungere. Si tiene lo stesso, perché è la norma, e perché un domani in cui
 // le due cose si avvicinano arriva senza avvisare.
-function trattamentoIntegrativo(reddito, irpef, detLavoro) {
+export function trattamentoIntegrativo(reddito, irpef, detLavoro) {
   const T = TAX_2026;
   if (reddito > T.TI_SOGLIA_MAX) return 0;
   if (reddito <= T.TI_SOGLIA_PIENO) {
