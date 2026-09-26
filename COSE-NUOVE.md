@@ -457,7 +457,7 @@ era un difetto.
 | H10 | Cambiare schermata durante il riconoscimento della foto perdeva i turni già pagati | velo in `CalendarView.jsx`, provato in Chrome |
 | H11 | «Aggiorna» ricaricava con modifiche non salvate in Impostazioni o un import in corso | `check-aggiornamento.mjs` |
 | H12 | L'import scriveva lavoro sopra ferie e malattia, salvava i campi grezzi del modello (anche la riga abbinata, che può essere un collega) e sbagliava l'anno a cavallo di capodanno | `check-import-turni.mjs` (nuovo), provato con un import vero |
-| H13 | Worker: eccezioni senza CORS, corpo letto prima di misurarlo, raffica IPv6 aggirabile, Turnstile senza controllo dell'host | `check-proxy-difese.mjs`. **Vale in rete solo dopo la ridistribuzione dei due worker**; il controllo dell'host resta spento finché non si imposta `TURNSTILE_HOSTNAMES` |
+| H13 | Worker: eccezioni senza CORS, corpo letto prima di misurarlo, raffica IPv6 aggirabile, Turnstile senza controllo dell'host | `check-proxy-difese.mjs`. In rete su entrambi i worker dal 26/09/2026 (riscontrato con un POST non JSON → 415); il controllo dell'host resta spento finché non si imposta `TURNSTILE_HOSTNAMES` |
 | H14 | Backup: id diverso dalla chiave (doppioni alla modifica), note non testuali (render rotto), chiave `__proto__` sparita in silenzio | `check-backup.mjs` |
 
 Piccoli, chiusi insieme: mese del montante in UTC (`Settings.jsx`), due modali

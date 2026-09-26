@@ -452,6 +452,39 @@ export function riferimentoAnnuoDelMese(lordoMese, settings = {}) {
 }
 
 /**
+ * Il lordo di UN mese, come lo mostra l'app: la paga dei turni (già sommata da
+ * `calcTotalPay` sull'insieme di turni che il chiamante sceglie), più la 13ª o
+ * la 14ª che matura in quel mese, le voci fisse mensili e il bonus spuntato.
+ *
+ * Era scritto tre volte — Calendario (`useMonthlyNet`), Statistiche
+ * (`monthlyBreakdown`) e «cosa cambia» — e la terza copia era già rimasta
+ * indietro una volta sul formato del bonus. Ora serve anche al confronto con la
+ * busta, che senza questa funzione avrebbe misurato la busta contro una cifra
+ * che l'app non mostra da nessuna parte.
+ *
+ * @returns {{ lordo: number, extraMese: number }} `extraMese` è la quota di
+ *   mensilità aggiuntiva dentro `lordo` (serve a `nettoDelMese`, che la tassa a
+ *   parte).
+ */
+export function lordoDelMese(pagaTurni, anno, mese, settings = {}, { enableNetCalc = true } = {}) {
+  const vociFisse = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
+    .reduce((s, v) => s + (Number(v.amount) || 0), 0);
+  // Il bonus del mese è un importo fisso spuntato mese per mese (`true`); i
+  // valori numerici sono il formato di prima, e restano quelli.
+  const voce = settings.monthlyBonus?.[`${anno}-${String(mese + 1).padStart(2, '0')}`];
+  const bonus = typeof voce === 'number' ? voce : (voce ? Number(settings.monthlyBonusAmount) || 0 : 0);
+  const extraMese = enableNetCalc
+    ? monthlyBaseGross(settings) * (
+        (settings.hasQuattordicesima && mese === EXTRA_MONTHS.quattordicesima
+          ? extraMonthAccrual('quattordicesima', anno, settings) : 0)
+        + (settings.hasTredicesima && mese === EXTRA_MONTHS.tredicesima
+          ? extraMonthAccrual('tredicesima', anno, settings) : 0)
+      )
+    : 0;
+  return { lordo: (Number(pagaTurni) || 0) + extraMese + vociFisse + bonus, extraMese };
+}
+
+/**
  * Il netto di UN mese, come lo mostra l'app: lordo del mese, riferimento del
  * mese, stessa funzione per Calendario (`useMonthlyNet`) e per Statistiche
  * (`monthlyBreakdown`). Prima ognuna sceglieva il suo riferimento, e dal 14

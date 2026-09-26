@@ -12,11 +12,8 @@
 
 import { calcShiftMinutes, calcTotalPay, computePayByShift, hasAnyRate } from './pay.js';
 import {
-  calcNetMonthly,
-  riferimentoAnnuoDelMese,
-  monthlyBaseGross,
-  extraMonthAccrual,
-  EXTRA_MONTHS,
+  nettoDelMese,
+  lordoDelMese,
   computeAnnualGrossFromShifts,
   projectAnnualIncome,
 } from './net.js';
@@ -110,33 +107,13 @@ export function calcolaCosaCambia({
 
   if (rateAvailable && payBefore && payAfter) {
     const daysInMonth = getDaysInMonth(year, month);
-    const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
-
-    const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
-      .reduce((s, v) => s + (Number(v.amount) || 0), 0);
-    const monthlyBonusAmount = Number(settings.monthlyBonusAmount) || 0;
-    // I valori numerici sono il formato legacy (importo diverso salvato mese
-    // per mese): vanno letti com'erano, non sostituiti con l'importo fisso di
-    // oggi. Stessa lettura di net.js, stats.js e useMonthlyNet.js — qui era
-    // rimasta indietro, e su quei mesi «cosa cambia» mostrava una cifra che il
-    // resto dell'app non mostrava.
-    const bonusEntry = settings.monthlyBonus?.[monthKey];
-    const perMonthBonus = typeof bonusEntry === 'number' ? bonusEntry : (bonusEntry ? monthlyBonusAmount : 0);
-
-    const extraThisMonth = monthlyBaseGross(settings) * (
-      (settings.hasQuattordicesima && month === EXTRA_MONTHS.quattordicesima
-        ? extraMonthAccrual('quattordicesima', year, settings) : 0)
-      + (settings.hasTredicesima && month === EXTRA_MONTHS.tredicesima
-        ? extraMonthAccrual('tredicesima', year, settings) : 0)
-    );
-
-    const grossBefore = (payBefore.total || 0) + extraThisMonth + fixedMonthlyTotal + perMonthBonus;
-    const refBefore = riferimentoAnnuoDelMese(grossBefore, settings);
-    netBefore = calcNetMonthly(grossBefore, refBefore, settings, daysInMonth, extraThisMonth);
-
-    const grossAfter = (payAfter.total || 0) + extraThisMonth + fixedMonthlyTotal + perMonthBonus;
-    const refAfter = riferimentoAnnuoDelMese(grossAfter, settings);
-    netAfter = calcNetMonthly(grossAfter, refAfter, settings, daysInMonth, extraThisMonth);
+    // Stessa composizione e stesso netto del pannello di Calendario: vedi
+    // `lordoDelMese` e `nettoDelMese` in net.js. Qui ce n'era una copia, ed era
+    // già rimasta indietro una volta sul formato del bonus.
+    const prima = lordoDelMese(payBefore.total, year, month, settings);
+    const dopo = lordoDelMese(payAfter.total, year, month, settings);
+    netBefore = nettoDelMese(prima.lordo, settings, daysInMonth, prima.extraMese);
+    netAfter = nettoDelMese(dopo.lordo, settings, daysInMonth, dopo.extraMese);
 
     if (netBefore && netAfter) {
       deltaNetto = netAfter.net - netBefore.net;

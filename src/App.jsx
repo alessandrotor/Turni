@@ -10,6 +10,7 @@ import { genId } from './utils/id';
 import CalendarView from './components/CalendarView';
 import StatsView from './components/StatsView';
 import Settings from './components/Settings';
+import VerificaBusta from './components/VerificaBusta';
 import ShiftForm from './components/ShiftForm';
 import NavBar from './components/NavBar';
 import InstallPrompt, { isIOS, isStandalone } from './components/InstallPrompt';
@@ -165,6 +166,14 @@ const SCORCIATOIA = (() => {
   }
 })();
 
+// `?verifica` apre «Confronta con la busta», lo strumento che chi sviluppa
+// manda ai tester (vedi VerificaBusta.jsx). L'indirizzo NON si pulisce subito,
+// a differenza della scorciatoia qui sopra: chi ricarica la pagina mentre
+// cerca il PDF deve ritrovarla, non il calendario.
+const VERIFICA = (() => {
+  try { return new URLSearchParams(window.location.search).has('verifica'); } catch { return false; }
+})();
+
 export default function App() {
   const [shifts, setShifts, erroreTurni] = useLocalStorage('turni_shifts', {});
   const [storedSettings, setSettings, erroreImpostazioni] = useLocalStorage('turni_settings', DEFAULT_SETTINGS);
@@ -176,7 +185,8 @@ export default function App() {
   // `stats` passa dal flag anche in ripresa: la pagina può essere stata spenta
   // nel frattempo, e una vista che non esiste più lascerebbe lo schermo vuoto.
   const [view, setView] = useState(
-    RIPRESA?.view === 'stats' && !ENABLE_STATS ? 'calendar' : (RIPRESA?.view || 'calendar'),
+    VERIFICA ? 'verifica'
+      : (RIPRESA?.view === 'stats' && !ENABLE_STATS ? 'calendar' : (RIPRESA?.view || 'calendar')),
   );
   const [currentMonth, setCurrentMonth] = useState(() => (
     RIPRESA?.mese ? getMonthStart(new Date(RIPRESA.mese)) : getMonthStart(new Date())
@@ -568,22 +578,28 @@ export default function App() {
             </button>
           </div>
         )}
-        <SetupPrompt
-          settings={settings}
-          onNavigate={setView}
-          onSistema={() => setSistemaAperto(true)}
-          turniInseriti={allShifts.length}
-          // Quando la striscia in fondo parla, il promemoria in alto tace —
-          // chiunque sia a parlare, non più le sole maggiorazioni — e tace
-          // anche davanti all'avviso iOS. Due avvisi impilati sono un muro.
-          sospeso={inAlto !== 'promemoria'}
-        />
-        <InstallPrompt
-          installaIOS={inAlto === 'installa'}
-          sospeso={inAlto === null}
-          onRifiutaIOS={rifiutaInstallaIOS}
-          onBackup={() => setView('settings')}
-        />
+        {/* Sulla verifica della busta niente promemoria in alto: la prima cosa
+            che il tester deve vedere è che la busta resta sul telefono. */}
+        {view !== 'verifica' && (
+          <>
+            <SetupPrompt
+              settings={settings}
+              onNavigate={setView}
+              onSistema={() => setSistemaAperto(true)}
+              turniInseriti={allShifts.length}
+              // Quando la striscia in fondo parla, il promemoria in alto tace —
+              // chiunque sia a parlare, non più le sole maggiorazioni — e tace
+              // anche davanti all'avviso iOS. Due avvisi impilati sono un muro.
+              sospeso={inAlto !== 'promemoria'}
+            />
+            <InstallPrompt
+              installaIOS={inAlto === 'installa'}
+              sospeso={inAlto === null}
+              onRifiutaIOS={rifiutaInstallaIOS}
+              onBackup={() => setView('settings')}
+            />
+          </>
+        )}
         {view === 'calendar' && (
           <CalendarView
             currentMonth={currentMonth}
@@ -633,6 +649,17 @@ export default function App() {
             una scelta fatta dal calendario. */}
         {view === 'settings' && (
           <Settings settings={settings} onSave={updateSettings} />
+        )}
+
+        {view === 'verifica' && (
+          <VerificaBusta
+            allShifts={allShifts}
+            settings={settings}
+            onChiudi={() => {
+              try { window.history.replaceState({}, '', window.location.pathname); } catch { /* niente */ }
+              setView('calendar');
+            }}
+          />
         )}
 
         <footer className="app-footer">v{__APP_VERSION__}</footer>
