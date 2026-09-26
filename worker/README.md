@@ -95,6 +95,19 @@ token risolti su quegli host. Assente, il controllo non c'è. Lasciare
 `localhost` nell'elenco serve all'APK, ma riapre il varco: toglierlo solo con
 un sitekey separato per l'APK.
 
+### «Verifica di sicurezza non superata (codice: …)»
+
+Il codice fra parentesi dice dove si ripara. Si legge sul telefono; lo stesso
+motivo sta nei log del worker (`npx wrangler tail`, o Workers → Logs).
+
+| Codice | Cosa vuol dire | Dove si ripara |
+|---|---|---|
+| `token-assente` | l'app non ha mandato il token | build senza `VITE_TURNSTILE_SITEKEY` (variabile GitHub per il sito di prova, `.env.local` per la produzione) |
+| `invalid-input-secret` | il `TURNSTILE_SECRET` di QUESTO worker non è quello del widget | pannello Cloudflare → il worker → Variables and Secrets: rimettere lo stesso segreto del worker di produzione |
+| `invalid-input-response`, `timeout-or-duplicate` | token scaduto, già usato o di un altro widget | ricaricare la pagina; se ricapita, sitekey e segreto sono di widget diversi |
+| `host …` | il token viene da un host che `TURNSTILE_HOSTNAMES` non elenca | aggiungere l'host alla variabile, oppure toglierla |
+| `siteverify-irraggiungibile` | Cloudflare non ha risposto alla verifica | niente da fare: si riprova più tardi |
+
 ## Limiti
 
 Due livelli con scopi diversi, e solo il primo costa scritture KV.

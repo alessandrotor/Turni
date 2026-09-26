@@ -204,9 +204,17 @@ async function conta(kv, key, max, ttlSeconds) {
 // difesa seria contro uno script che conosce l'URL. Senza il secret la verifica
 // si salta, così `wrangler dev` funziona a mani nude — ma IN RETE il secret è
 // obbligatorio, altrimenti l'endpoint resta aperto agli automatismi.
-async function turnstileValido(env, token, ip) {
-  if (!env.TURNSTILE_SECRET) return true;
-  if (!token || typeof token !== 'string') return false;
+//
+// Restituisce PERCHÉ la verifica è fallita, non un sì/no: `null` se passa,
+// altrimenti un codice breve che finisce nel messaggio mostrato sul telefono.
+// Il 26/09/2026 l'import del sito di prova rispondeva «verifica non superata»
+// e basta: i motivi possibili sono quattro — token assente, segreto sbagliato,
+// token scaduto, host non ammesso — e ognuno si ripara in un posto diverso,
+// ma distinguerli voleva dire aprire i log di Cloudflare. I codici sono quelli
+// pubblici di `siteverify` e l'host da cui arriva il token: niente di segreto.
+async function motivoTurnstile(env, token, ip) {
+  if (!env.TURNSTILE_SECRET) return null;
+  if (!token || typeof token !== 'string') return 'token-assente';
   try {
     const form = new FormData();
     form.append('secret', env.TURNSTILE_SECRET);
@@ -216,8 +224,11 @@ async function turnstileValido(env, token, ip) {
       method: 'POST', body: form,
     });
     const esito = await r.json();
-    if (!esito.success) console.warn('turnstile', JSON.stringify(esito['error-codes'] || []));
-    if (!esito.success) return false;
+    if (!esito.success) {
+      const codici = (esito['error-codes'] || []).map(String).join(',') || 'rifiutato';
+      console.warn('turnstile', codici);
+      return codici.slice(0, 80);
+    }
     // Il widget ammette `localhost` perché serve all'APK, e la sitekey sta nel
     // bundle: chiunque la metta in una pagina propria su localhost ottiene
     // token validi. `siteverify` dice su quale host è stato risolto — se
@@ -226,14 +237,14 @@ async function turnstileValido(env, token, ip) {
     const ammessi = String(env.TURNSTILE_HOSTNAMES || '').split(',').map(h => h.trim()).filter(Boolean);
     if (ammessi.length && !ammessi.includes(esito.hostname)) {
       console.warn('turnstile hostname', esito.hostname);
-      return false;
+      return `host ${String(esito.hostname || '?').slice(0, 60)}`;
     }
-    return true;
+    return null;
   } catch (e) {
     // Verifica non raggiungibile: si blocca. Lasciar passare qui vanificherebbe
     // il controllo proprio nel momento in cui non lo si può fare.
     console.error('turnstile', e?.message || e);
-    return false;
+    return 'siteverify-irraggiungibile';
   }
 }
 
@@ -372,8 +383,9 @@ async function gestisci(request, env) {
   }
 
   // ── Turnstile: prova che c'è un browser vero, prima di consumare quota ──
-  if (!await turnstileValido(env, turnstileToken, ip)) {
-    return json({ error: 'Verifica di sicurezza non superata: ricarica la pagina e riprova.' }, 403);
+  const motivo = await motivoTurnstile(env, turnstileToken, ip);
+  if (motivo) {
+    return json({ error: `Verifica di sicurezza non superata: ricarica la pagina e riprova. (codice: ${motivo})` }, 403);
   }
 
   // ── Tetto di spesa ────────────────────────────────────────────────────

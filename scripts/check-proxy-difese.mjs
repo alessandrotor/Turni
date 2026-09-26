@@ -351,5 +351,26 @@ console.log('\nTurnstile guarda anche l\'host\n');
   check('senza TURNSTILE_HOSTNAMES resta com\'era', senza.status === 200);
 }
 
+// Il MOTIVO del rifiuto arriva sul telefono. Il 26/09/2026 il sito di prova
+// diceva «verifica non superata» e basta: quattro cause possibili, quattro
+// posti diversi dove ripararle, e per distinguerle servivano i log di
+// Cloudflare. Ogni rifiuto ora porta il suo codice — e nessuno porta il segreto.
+console.log('\nIl rifiuto dice perché\n');
+{
+  const errore = async (r) => (await r.json()).error || '';
+  reset(); turnstileOk = false;
+  check('token rifiutato → il codice di siteverify',
+    /\(codice: invalid-input-response\)/.test(await errore(await chiama(base(), conKv()))));
+  reset();
+  check('token assente → «token-assente»',
+    /\(codice: token-assente\)/.test(await errore(await chiama(base({ turnstileToken: undefined }), conKv()))));
+  reset(); hostnameTurnstile = 'test.turni-9vr.pages.dev';
+  // Un segreto riconoscibile: quello di `conKv` è «s», che compare in ogni frase.
+  const env = { ...conKv(), TURNSTILE_SECRET: '0xSEGRETO_DI_PROVA', TURNSTILE_HOSTNAMES: 'turni-9vr.pages.dev' };
+  const soloProd = await errore(await chiama(base(), env));
+  check('host non in elenco → dice quale host', /\(codice: host test\.turni-9vr\.pages\.dev\)/.test(soloProd), soloProd);
+  check('  e il segreto non compare mai', !soloProd.includes(env.TURNSTILE_SECRET) && !/secret/i.test(soloProd));
+}
+
 console.log(fail === 0 ? '\n✓ difese del proxy ok\n' : `\n✗ ${fail} riscontri falliti\n`);
 process.exit(fail === 0 ? 0 : 1);
