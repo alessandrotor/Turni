@@ -9,7 +9,7 @@ import { calcShiftMinutes, calcTotalPay, hasAnyRate, isSunday } from './pay.js';
 import { parseDate, getDaysInMonth, formatDate, dayNumber } from './dates.js';
 import { isHoliday } from './holidays.js';
 import { tipoTurno, TIPO } from './assenze.js';
-import { nettoDelMese, monthlyBaseGross, extraMonthAccrual, EXTRA_MONTHS } from './net.js';
+import { nettoDelMese, lordoDelMese } from './net.js';
 
 // Raggruppa per MESE DI CALENDARIO, non di paga: è la vista d'insieme
 // dell'anno, e l'utente ragiona in mesi solari (stessa scelta già fatta per
@@ -47,9 +47,6 @@ export function monthlyBreakdown(year, allShifts, settings = {}, payByShift = nu
   }
 
   const canPay = hasAnyRate(settings);
-  const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
-    .reduce((s, v) => s + (Number(v.amount) || 0), 0);
-  const monthlyBonusAmount = Number(settings.monthlyBonusAmount) || 0;
 
   const rows = [];
   for (let m = 0; m < 12; m += 1) {
@@ -68,22 +65,9 @@ export function monthlyBreakdown(year, allShifts, settings = {}, payByShift = nu
     const straordinarioMinutes = pay ? pay.straordinarioMinutes : 0;
     const ordinaryMinutes = Math.max(0, totalMinutes - overtimeMinutes - straordinarioMinutes);
 
-    // 13ª/14ª maturata in questo mese: stesso rateo del pannello mensile di
-    // Calendario (`useMonthlyNet.js`), non un calcolo diverso.
-    const extraThisMonth = enableNetCalc
-      ? monthlyBaseGross(settings) * (
-          (settings.hasQuattordicesima && m === EXTRA_MONTHS.quattordicesima
-            ? extraMonthAccrual('quattordicesima', year, settings) : 0)
-          + (settings.hasTredicesima && m === EXTRA_MONTHS.tredicesima
-            ? extraMonthAccrual('tredicesima', year, settings) : 0)
-        )
-      : 0;
-
-    const monthKey = `${year}-${String(m + 1).padStart(2, '0')}`;
-    const bonusEntry = settings.monthlyBonus?.[monthKey];
-    const perMonthBonus = typeof bonusEntry === 'number' ? bonusEntry : (bonusEntry ? monthlyBonusAmount : 0);
-
-    const gross = pay ? pay.total + extraThisMonth + fixedMonthlyTotal + perMonthBonus : 0;
+    // Stessa composizione del pannello di Calendario: vedi `lordoDelMese`.
+    const { lordo, extraMese: extraThisMonth } = lordoDelMese(pay?.total, year, m, settings, { enableNetCalc });
+    const gross = pay ? lordo : 0;
     const net = (enableNetCalc && pay && gross > 0)
       ? nettoDelMese(gross, settings, getDaysInMonth(year, m), extraThisMonth).net
       : 0;

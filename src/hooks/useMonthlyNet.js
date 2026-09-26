@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import {
-  nettoDelMese, monthlyBaseGross, riferimentoAnnuoDelMese,
-  extraMonthAccrual, EXTRA_MONTHS, TAX_2026, tiDecision, projectAnnualIncome,
+  nettoDelMese, lordoDelMese, riferimentoAnnuoDelMese, TAX_2026, tiDecision, projectAnnualIncome,
 } from '../utils/net';
 import { ENABLE_NET_CALC } from '../config/features';
 
@@ -46,17 +45,13 @@ export default function useMonthlyNet({ year, month, settings, pay, annualGross,
   );
   const netBasis = netProjection.value;
 
-  // Mensilità aggiuntiva che cade in questo mese (quattordicesima a giu, tredicesima a dic),
-  // ridotta al rateo effettivamente maturato in base alla data di assunzione.
-  const extraThisMonth = ENABLE_NET_CALC
-    ? monthlyBaseGross(settings) * (
-        (settings.hasQuattordicesima && month === EXTRA_MONTHS.quattordicesima
-          ? extraMonthAccrual('quattordicesima', year, settings) : 0)
-        + (settings.hasTredicesima && month === EXTRA_MONTHS.tredicesima
-          ? extraMonthAccrual('tredicesima', year, settings) : 0)
-      )
-    : 0;
-  const monthGross = (pay ? pay.total : 0) + extraThisMonth + fixedMonthlyTotal + perMonthBonus;
+  // Paga dei turni + 13ª/14ª del mese + voci fisse + bonus: la composizione sta
+  // in `lordoDelMese`, la stessa di Statistiche, di «cosa cambia» e del
+  // confronto con la busta. Voci fisse e bonus restano calcolati qui sopra
+  // perché il riepilogo li mostra uno per uno.
+  const { lordo: monthGross, extraMese: extraThisMonth } = lordoDelMese(
+    pay?.total, year, month, settings, { enableNetCalc: ENABLE_NET_CALC },
+  );
   // IL RIFERIMENTO DEL MESE, non quello dell'anno.
   //
   // Il software paghe non proietta l'anno: prende il lordo del mese, lo

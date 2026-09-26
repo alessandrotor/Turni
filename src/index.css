@@ -3367,3 +3367,28 @@ input, select, textarea { font: inherit; }
   line-height: 1.6;
   color: var(--c-text-2);
 }
+
+/* ── Confronta con la busta (?verifica) ────────────────────────────────────
+   La promessa sulla privacy sta in cima e si vede: è la ragione per cui un
+   tester accetta di scegliere il PDF della sua busta. Una schermata sola. */
+.verifica { max-width: 480px; margin: 0 auto; padding: 1rem; display: flex; flex-direction: column; gap: .75rem; }
+.verifica-privacy {
+  display: flex; flex-direction: column; gap: .25rem;
+  padding: .85rem 1rem; border-radius: var(--radius-lg);
+  background: #ecfdf5; border: 2px solid #10b981; color: #064e3b;
+}
+.verifica-privacy strong { font-size: 1.05rem; line-height: 1.3; }
+.verifica-privacy span { font-size: .85rem; }
+.verifica-titolo { font-size: 1.2rem; margin: 0; }
+.verifica-scegli { text-align: center; cursor: pointer; }
+.verifica-scegli.is-busy { opacity: .7; cursor: progress; }
+.verifica-tabella { width: 100%; border-collapse: collapse; font-size: .95rem; }
+.verifica-tabella td { padding: .4rem .25rem; border-bottom: 1px solid var(--c-border, #e2e8f0); }
+.verifica-tabella tr.is-scarto td { color: #b45309; font-weight: 600; }
+.verifica-scarto { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.verifica-azioni { display: flex; gap: .5rem; }
+.verifica-azioni .btn { flex: 1; }
+.verifica-mano { display: flex; flex-direction: column; gap: .5rem; }
+.verifica-mano-campi { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: .5rem; }
+.verifica-mano-campi label { display: flex; flex-direction: column; font-size: .85rem; gap: .2rem; }
+.verifica-chiudi { align-self: center; }

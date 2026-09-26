@@ -88,6 +88,23 @@ la cosa che nessun occhio umano controlla: che ogni avviso abbia almeno una
 schermata in cui compare, cioè che il prossimo aggiunto in cima non ne seppellisca
 un altro per sempre.
 
+## I tester si verificano da soli: `?verifica`
+
+Il link `…/?verifica` apre «Confronta con la busta» (`VerificaBusta.jsx`). Il
+tester sceglie il PDF del cedolino e l'app lo confronta coi propri conti. A chi
+sviluppa arriva solo il testo di `testoDaCondividere`, cioè **gli scarti, mai le
+cifre intere**. La pagina promette in grande che la busta non viene inviata a
+nessun servizio esterno, e **quella frase deve restare vera**.
+`check-verifica-busta.mjs` segue gli import della pagina fino in fondo, e basta
+una `fetch` aggiunta in `net.js` per farlo diventare rosso. Cerca anche nel testo
+ogni importo assoluto, compreso il caso subdolo già capitato: con un lato a zero,
+lo scarto È la cifra intera dell'altro lato.
+
+Il lettore dei PDF è uno solo, `src/utils/cedolino.js`, per Node e per il browser.
+Attenzione a `DecompressionStream`: rifiuta il ritorno a capo che il PDF lascia
+dopo il deflate, mentre `zlib` lo ignora (vedi `inflateBrowser`). Legge solo i
+cedolini Zucchetti con lo strato di testo; per il resto c'è l'inserimento a mano.
+
 ## Comandi
 
 ```sh

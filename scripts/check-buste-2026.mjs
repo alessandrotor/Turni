@@ -76,6 +76,7 @@ import { join } from 'node:path';
 import {
   calcNetMonthly, taxableToGross, round2, TAX_2026,
 } from '../src/utils/net.js';
+import { lordoDaBusta } from '../src/utils/leggi-cedolino.js';
 
 const CARTELLA = 'dati-buste';
 const ANNO = 2026;
@@ -100,19 +101,10 @@ if (buste.length === 0) {
 }
 
 // ── Classificazione delle voci ──────────────────────────────────────────────
-// Le etichette arrivano da un PDF con font CID: gli accenti si perdono
-// («Indennit L.207/24»), quindi si riconoscono per sottostringa e non per
-// uguaglianza. Una regex troppo stretta qui non fallisce: ignora la voce, e lo
-// scarto salta fuori altrove senza dire da dove viene.
-const ESENTE = /Trattamento integrativo|L\.207/i;   // competenze non imponibili
-const FUORI_REDDITO = /Rimborsi da 730|Buoni Acquisto|art\. ?51/i;
-const STORNO = /Assenza per (malattia|infortunio)/i;
-const EXTRA_MENSILITA = /1[34](ma|ª) ?Mensilit/i;
-
-const sez = (b, s) => b.voci.filter((v) => v.sezione === s);
+// Le regole (esenti, fuori reddito, storni, mensilità aggiuntive) stanno in
+// `src/utils/leggi-cedolino.js`, condivise con la pagina «Confronta con la
+// busta» dell'app: il tester deve vedere lo stesso lordo che vede questo script.
 const trova = (b, re) => b.voci.find((v) => re.test(v.etichetta || ''));
-const sommaSe = (voci, re) => voci.filter((v) => re.test(v.etichetta || ''))
-  .reduce((s, v) => s + (v.importo || 0), 0);
 
 /**
  * Imponibile annuo che il sostituto d'imposta sta usando, ricavato invertendo
@@ -153,14 +145,7 @@ for (const b of buste) {
   const pt = (c.partTimePct || 100) / 100;
   const giorni = new Date(ANNO, b.periodo.mese, 0).getDate();
 
-  const competenze = sez(b, 'competenza');
-  const esenti = sommaSe(competenze, ESENTE);
-  const fuoriReddito = sommaSe(competenze, FUORI_REDDITO);
-  const storni = sommaSe(sez(b, 'trattenuta'), STORNO);
-  const lordo = round2(
-    competenze.reduce((s, v) => s + (v.importo || 0), 0) - esenti - fuoriReddito - storni,
-  );
-  const extra = sommaSe(competenze, EXTRA_MENSILITA);
+  const { lordo, extra, fuoriReddito } = lordoDaBusta(b);
 
   const detrStampata = trova(b, /Detrazioni lav\.dip\./)?.importo;
   const impAnnuo = detrStampata != null
