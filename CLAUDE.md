@@ -177,8 +177,10 @@ quanto costa scoprire a dicembre che non spettava.
 - **Il conguaglio di dicembre è una forchetta, mai una cifra** (`utils/conguaglio.js`).
   È la differenza fra quanto il datore trattiene mese per mese (lordo × 12) e
   quanto è dovuto sull'anno vero: stesso motore, nessuna regola nuova. Gli
-  estremi variano i mesi che restano (contratto o media) e il bonus già
-  accreditato (regola mensile o quota piena). Il meccanismo si dice
+  estremi variano i mesi che restano (contratto o media) e come erano i mesi
+  del montante (uguali o alterni). **Non** si varia il solo bonus accreditato:
+  bonus dei mesi bassi con l'IRPEF dei mesi alti è una combinazione che non
+  esiste, e allargava la forchetta da 190 a 960 €. Il meccanismo si dice
   all'indicativo, la cifra con «di questo passo», le incognite accanto.
   Detrazioni e bonus si rapportano ai giorni lavorati: senza, chi è assunto a
   luglio si vedeva inventare 500 € da restituire. → `check-conguaglio.mjs`

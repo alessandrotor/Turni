@@ -76,8 +76,31 @@ const payMap = computePayByShift(turni, S);
 const st = stimaConguaglio({ anno: 2026, allShifts: turni, settings: S, payMap, oggi });
 esito(st && st.min <= st.centrale.saldo && st.centrale.saldo <= st.max, 'la stima centrale sta dentro la forchetta',
   st ? `${st.min} ≤ ${st.centrale.saldo} ≤ ${st.max}` : 'nessuna stima');
-esito(st && st.max - st.min > 0, 'mesi che restano e bonus accreditato la allargano davvero',
-  st ? `larga ${Math.round(st.max - st.min)} €` : '');
+// Un reddito stabile resta stabile qualunque cosa succeda dopo: la forchetta
+// si chiude. È giusto — il conguaglio nasce dai mesi diversi, non dal livello.
+esito(st && st.max - st.min < 5, 'reddito stabile → forchetta stretta', st ? `larga ${Math.round(st.max - st.min)} €` : '');
+
+// Un profilo come quello da cui è nata la correzione: montante fino a luglio,
+// agosto e settembre segnati. La prima versione variava il SOLO bonus già
+// accreditato — bonus dei mesi bassi con l'IRPEF dei mesi alti, una
+// combinazione che non esiste — e dava una forchetta larga 960 €.
+const conMontante = {
+  ...S, hasTredicesima: true, hasQuattordicesima: true, hireDate: '2025-12-29',
+  priorTaxableIncome: 9060, priorIncomeDate: '2026-07-01',
+};
+const turniAS = [];
+for (const [m, n] of [['08', 26], ['09', 22]]) {
+  for (let g = 1; g <= n; g += 1) {
+    const d = `2026-${m}-${String(g).padStart(2, '0')}`;
+    turniAS.push({ id: d, date: d, startTime: '10:00', endTime: '15:30' });
+  }
+}
+const sm = stimaConguaglio({
+  anno: 2026, allShifts: turniAS, settings: conMontante, payMap: computePayByShift(turniAS, conMontante),
+  oggi: new Date(2026, 8, 27),
+});
+esito(sm && sm.max - sm.min < 300, 'montante: la distribuzione dei mesi muove bonus e IRPEF insieme',
+  sm ? `da ${Math.round(sm.min)} a ${Math.round(sm.max)} €, era larga 960` : '');
 const { mesi } = mesiDellAnno({ anno: 2026, allShifts: turni, settings: S, payMap, oggi, scenario: 'contratto' });
 esito(mesi[11].extra === 0 || mesi[11].lordo > mesi[10].lordo, 'dicembre porta la 13ª se è impostata', '');
 esito(stimaConguaglio({ anno: 2026, allShifts: [], settings: S, payMap: {}, oggi }).min !== undefined,

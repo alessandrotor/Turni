@@ -19,9 +19,17 @@
 // Non si dà una cifra: si fanno variare le due incognite che si possono
 // misurare, e si mostra dove cadono gli estremi.
 //  · I MESI CHE RESTANO: come da contratto, o come la media di quelli passati.
-//  · IL BONUS GIÀ ACCREDITATO: quello che dà la regola mensile, o la quota
-//    piena di legge sui mesi passati (il caso peggiore, come `restituzione.js`).
-//    Il cedolino sa la cifra vera; l'app no.
+//  · COME ERANO I MESI DEL MONTANTE: tutti uguali, o alterni del 20% sopra e
+//    sotto (le buste 2026 vanno da 1.099 a 2.048 €). A parità di somma
+//    cambia chi ha preso il bonus, e con lui le tasse trattenute.
+//
+// Una prima versione variava il solo bonus già accreditato, «pieno» contro
+// «regola mensile», e dava a un profilo reale da 170 € a credito a 790 € a
+// debito. Era una combinazione che non esiste: bonus accreditato come nei mesi
+// bassi, IRPEF trattenuta come nei mesi alti. Fatta variare la distribuzione
+// dei mesi, che muove bonus e IRPEF insieme, lo stesso profilo sta fra 170 e
+// 105 € a credito — bonus e detrazione si compensano, come in `costoSoglia`.
+// Il caso peggiore sul SOLO bonus resta dove serve: nell'avviso di cassa.
 //
 // COSA NON SA (e la pagina lo dice): altri datori o redditi, detrazioni che
 // non sono da lavoro (figli, spese), la fine del contratto. Queste NON
@@ -31,7 +39,7 @@
 
 import { calcTotalPay } from './pay.js';
 import {
-  nettoDelMese, lordoDelMese, calcNetAnnual, monthlyBaseGross, tiSospeso, trattamentoIntegrativo, TAX_2026,
+  nettoDelMese, lordoDelMese, calcNetAnnual, monthlyBaseGross, trattamentoIntegrativo, TAX_2026,
 } from './net.js';
 import { getDaysInMonth, parseDate } from './dates.js';
 
@@ -47,19 +55,15 @@ const r2 = (n) => Math.round(n * 100) / 100;
  * @param {Array<{lordo:number, extra:number, giorni:number}>} mesi dodici voci;
  *   `lordo` 0 fuori dal rapporto di lavoro.
  * @param {object} settings
- * @param {{ tiPienoFinoA?: number }} [opt] mesi (indice ≤) per cui si assume il
- *   bonus accreditato pieno invece che secondo la regola mensile.
  */
-export function saldoConguaglio(mesi, settings = {}, { tiPienoFinoA = -1 } = {}) {
+export function saldoConguaglio(mesi, settings = {}) {
   let irpef = 0, ti = 0, cuneo = 0, lordoAnno = 0, giorni = 0;
-  mesi.forEach((m, i) => {
+  mesi.forEach((m) => {
     if (!(m.lordo > 0)) return;
     const n = nettoDelMese(m.lordo, settings, m.giorni, m.extra || 0);
     irpef += n.irpefNetta;
     cuneo += n.bonusCuneo;
-    ti += (i <= tiPienoFinoA && !tiSospeso(settings))
-      ? (TAX_2026.TI_MASSIMO * m.giorni) / 365
-      : n.trattamentoIntegrativo;
+    ti += n.trattamentoIntegrativo;
     lordoAnno += m.lordo;
     giorni += m.giorni;
   });
@@ -114,7 +118,9 @@ function inizioRapporto(anno, settings) {
  *
  * @returns {{ mesi: Array, meseOggi: number, mesiVuoti: number }}
  */
-export function mesiDellAnno({ anno, allShifts = [], settings = {}, payMap, oggi = new Date(), scenario = 'contratto' }) {
+export function mesiDellAnno({
+  anno, allShifts = [], settings = {}, payMap, oggi = new Date(), scenario = 'contratto', montanteAlterno = false,
+}) {
   const meseOggi = anno === oggi.getFullYear() ? oggi.getMonth() : (anno < oggi.getFullYear() ? 12 : 0);
   const inizio = inizioRapporto(anno, settings);
 
@@ -146,7 +152,16 @@ export function mesiDellAnno({ anno, allShifts = [], settings = {}, payMap, oggi
     const giorniMese = getDaysInMonth(anno, m);
     if (m < inizio.mese) { mesi.push({ lordo: 0, extra: 0, giorni: 0 }); continue; }
     const giorni = m === inizio.mese ? giorniMese - inizio.giorno + 1 : giorniMese;
-    if (m <= cutoffIdx) { mesi.push({ lordo: montante / mesiMontante, extra: 0, giorni }); continue; }
+    if (m <= cutoffIdx) {
+      // Alterni: +20% e −20% a coppie, e l'ultimo mese dispari pareggia la
+      // somma. Il montante resta esatto: cambia solo come si distribuisce.
+      const quota = montante / mesiMontante;
+      const k = m - inizio.mese;
+      const ultimoDispari = mesiMontante % 2 === 1 && k === mesiMontante - 1;
+      const fattore = !montanteAlterno || ultimoDispari ? 1 : (k % 2 === 0 ? 0.8 : 1.2);
+      mesi.push({ lordo: quota * fattore, extra: 0, giorni });
+      continue;
+    }
     const paga = pagaDi(m);
     const effettiva = m < meseOggi ? paga : Math.max(paga, futuro);
     if (m < meseOggi && paga === 0) mesiVuoti += 1;
@@ -165,13 +180,15 @@ export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi = new 
   let centrale = null;
   let mesiVuoti = 0;
   for (const scenario of ['contratto', 'media']) {
-    const { mesi, meseOggi, mesiVuoti: vuoti } = mesiDellAnno({ anno, allShifts, settings, payMap, oggi, scenario });
-    mesiVuoti = vuoti;
-    for (const tiPienoFinoA of [-1, meseOggi - 1]) {
-      const s = saldoConguaglio(mesi, settings, { tiPienoFinoA });
+    for (const montanteAlterno of [false, true]) {
+      const { mesi, mesiVuoti: vuoti } = mesiDellAnno({
+        anno, allShifts, settings, payMap, oggi, scenario, montanteAlterno,
+      });
+      mesiVuoti = vuoti;
+      const s = saldoConguaglio(mesi, settings);
       if (s.lordoAnno <= 0) return null;
       casi.push(s.saldo);
-      if (scenario === 'contratto' && tiPienoFinoA === -1) centrale = s;
+      if (scenario === 'contratto' && !montanteAlterno) centrale = s;
     }
   }
   const min = Math.min(...casi);
