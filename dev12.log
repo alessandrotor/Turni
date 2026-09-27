@@ -11,3 +11,6 @@
 8:42:31 AM [vite] hmr update /src/index.css
 8:42:51 AM [vite] hmr update /src/index.css
 8:43:20 AM [vite] page reload public/privacy/index.html
+8:46:30 AM [vite] hmr update /src/components/CalendarView.jsx
+8:46:30 AM [vite] hmr update /src/App.jsx, /src/components/CalendarView.jsx, /src/components/StatsView.jsx, /src/components/Settings.jsx, /src/components/ShiftForm.jsx, /src/components/VerificaBusta.jsx
+8:46:47 AM [vite] page reload public/privacy/index.html

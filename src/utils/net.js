@@ -863,8 +863,16 @@ export function projectAnnualIncome(
  * Calcola la stima del netto annuo.
  * @param {number} grossAnnual reddito lordo annuo da lavoro dipendente
  * @param {object} settings può contenere addRegionalePct / addComunalePct
+ * @param {object} [opts]
+ * @param {number} [opts.giorni=365] giorni del rapporto di lavoro nell'anno.
+ *   Detrazioni e trattamento integrativo pieno (sotto i 15.000) spettano in
+ *   proporzione (art. 13 TUIR): chi è assunto a luglio ne matura metà. Senza,
+ *   il conguaglio di un assunto a luglio misurava la capienza con la
+ *   detrazione di un anno intero e inventava 500 € di bonus da restituire.
+ *   L'indennità L. 207/24 è una percentuale del reddito e non si rapporta.
+ *   Con 365 (il default) il conto è identico a prima. → check-conguaglio.mjs
  */
-export function calcNetAnnual(grossAnnual, settings = {}) {
+export function calcNetAnnual(grossAnnual, settings = {}, { giorni = 365 } = {}) {
   const T = TAX_2026;
   const gross = Math.max(0, Number(grossAnnual) || 0);
 
@@ -882,8 +890,9 @@ export function calcNetAnnual(grossAnnual, settings = {}) {
   const imponibile = redditoComplessivo(gross, settings, cont);
 
   const lorda = irpefLorda(imponibile);
-  const detLav = detrazioneLavoro(imponibile);
-  const detCuneo = detrazioneCuneo(imponibile);
+  const quota = Math.min(1, Math.max(0, Number(giorni) || 0) / 365);
+  const detLav = detrazioneLavoro(imponibile) * quota;
+  const detCuneo = detrazioneCuneo(imponibile) * quota;
   const detrTotali = detLav + detCuneo;
 
   const irpefNetta = Math.max(0, lorda - detrTotali);
@@ -898,7 +907,11 @@ export function calcNetAnnual(grossAnnual, settings = {}) {
   const addRegionale = addDovute ? imponibile * aliqReg : 0;
   const addComunale = addDovute ? imponibile * aliqCom : 0;
 
-  const ti = trattamentoIntegrativo(imponibile, lorda, detLav);
+  // La capienza si misura con la detrazione dei giorni lavorati. Sotto i
+  // 15.000 il bonus è 1.200 € rapportati al periodo; sopra, la norma lo lega
+  // alla differenza fra detrazione e imposta, che è già dei giorni.
+  const tiPieno = trattamentoIntegrativo(imponibile, lorda, detLav);
+  const ti = imponibile <= T.TI_SOGLIA_PIENO ? tiPieno * quota : tiPieno;
   const cuneo = bonusCuneo(imponibile, imponibile);
 
   const net = gross - contributi - irpefNetta - addRegionale - addComunale + ti + cuneo;

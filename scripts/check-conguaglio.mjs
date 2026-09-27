@@ -9,7 +9,7 @@
 // che descrive. Il riscontro sulle buste vere arriverà con dicembre 2026.
 
 import { saldoConguaglio, stimaConguaglio, mesiDellAnno, SOGLIA_PARI } from '../src/utils/conguaglio.js';
-import { nettoDelMese } from '../src/utils/net.js';
+import { nettoDelMese, calcNetAnnual } from '../src/utils/net.js';
 import { rischioRestituzione } from '../src/utils/restituzione.js';
 import { calcBonusMargin } from '../src/utils/bonus.js';
 import { computePayByShift } from '../src/utils/pay.js';
@@ -52,6 +52,16 @@ const luglio = saldoConguaglio(anno([0, 0, 0, 0, 0, 0, 1100, 1100, 1100, 1100, 1
 esito(Math.abs(luglio.voci.irpef + luglio.voci.trattamentoIntegrativo) < 5,
   'assunto a luglio → IRPEF e bonus in pari, niente di inventato', `${luglio.voci.irpef + luglio.voci.trattamentoIntegrativo} €`);
 esito(luglio.voci.indennita < 0, '  e l\'indennità L. 207/24 a credito: fascia dell\'anno più bassa', `${luglio.voci.indennita} €`);
+
+// Il rapporto ai giorni sta nel MOTORE (`calcNetAnnual`, opzione `giorni`),
+// non qui: con l'anno intero il conto dev'essere identico a prima, a ogni
+// reddito, perché è quello che usa tutto il resto dell'app.
+esito([3000, 9000, 14800, 15500, 22000, 35000].every((g) =>
+  JSON.stringify(calcNetAnnual(g, S, { giorni: 365 })) === JSON.stringify(calcNetAnnual(g, S))),
+  'motore: con 365 giorni il netto annuo non cambia');
+const meta = calcNetAnnual(6600, S, { giorni: 184 });
+esito(Math.abs(meta.detrazioneLavoro - calcNetAnnual(6600, S).detrazioneLavoro * 184 / 365) < 0.01,
+  'motore: assunto a luglio → detrazione rapportata ai giorni', `${Math.round(meta.detrazioneLavoro)} €`);
 
 // Il bonus a zero per reddito BASSO non è mai stato accreditato: niente da ridare.
 const poco = saldoConguaglio(anno([180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180]), S);

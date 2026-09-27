@@ -50,7 +50,7 @@
 
 import { calcTotalPay } from './pay.js';
 import {
-  nettoDelMese, lordoDelMese, calcNetAnnual, monthlyBaseGross, trattamentoIntegrativo, TAX_2026,
+  nettoDelMese, lordoDelMese, calcNetAnnual, monthlyBaseGross, TAX_2026,
   tiSpettaQuestoMese, modoTrattamentoIntegrativo,
 } from './net.js';
 import { getDaysInMonth, parseDate } from './dates.js';
@@ -91,20 +91,11 @@ export function saldoConguaglio(mesi, settings = {}, { tiMontanteNoto = null } =
   }
   const ti = tiMesi.reduce((s, v) => s + v, 0);
 
-  // Il dovuto dell'anno. Detrazioni e bonus sono RAPPORTATI AL PERIODO DI
-  // LAVORO: il calcolo annuo li dà per 365 giorni, e chi è stato assunto a
-  // luglio si vedrebbe accreditare a dicembre detrazioni che non ha maturato.
-  const a = calcNetAnnual(lordoAnno, settings);
-  const quota = Math.min(1, giorni / 365);
-  const detLavoro = a.detrazioneLavoro * quota;
-  const irpefDovuta = Math.max(0, a.irpefLorda - detLavoro - a.detrazioneCuneo * quota);
-  // La capienza si misura con la detrazione dei giorni lavorati, non con quella
-  // di un anno intero: con questa, chi è assunto a luglio con 6.600 € risultava
-  // incapiente e il modello gli inventava 500 € di bonus da restituire.
-  // Sotto i 15.000 il bonus è 1.200 € rapportati al periodo; sopra, la norma
-  // lo lega alla differenza fra detrazione e imposta, che è già dei giorni.
-  const tiAnno = trattamentoIntegrativo(a.imponibile, a.irpefLorda, detLavoro);
-  const tiDovuto = a.imponibile <= TAX_2026.TI_SOGLIA_PIENO ? tiAnno * quota : tiAnno;
+  // Il dovuto dell'anno, dal motore: detrazioni e bonus rapportati ai giorni
+  // del rapporto di lavoro li fa `calcNetAnnual` (opzione `giorni`).
+  const a = calcNetAnnual(lordoAnno, settings, { giorni });
+  const irpefDovuta = a.irpefNetta;
+  const tiDovuto = a.trattamentoIntegrativo;
 
   const voci = {
     irpef: r2(irpefDovuta - irpef),
