@@ -6,3 +6,8 @@
   VITE v5.4.21  ready in 220 ms
 
   ➜  Local:   http://127.0.0.1:5189/
+8:42:12 AM [vite] hmr update /src/components/CalendarView.jsx
+8:42:31 AM [vite] hmr update /src/components/CalendarView.jsx
+8:42:31 AM [vite] hmr update /src/index.css
+8:42:51 AM [vite] hmr update /src/index.css
+8:43:20 AM [vite] page reload public/privacy/index.html

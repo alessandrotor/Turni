@@ -1620,17 +1620,20 @@ export default function CalendarView({
             </div>
             <div className="modal-form conti-bonus">
               <p className="form-hint">
-                A dicembre il datore rifà sull&apos;anno vero i conti fatti mese per
-                mese. Di questo passo: <strong>{forchettaScritta}</strong>.
+                Il datore calcola tasse e bonus mese per mese, e a dicembre fa il conto
+                finale sull&apos;anno. Di questo passo: <strong>{forchettaScritta}</strong>.
               </p>
               {/* LE DUE COLONNE da cui nasce ogni voce. «IRPEF −317 €» da solo
-                  non si capiva: di cosa è la differenza? Qui si legge. */}
+                  non si capiva: di cosa è la differenza? Qui si legge. Le
+                  intestazioni ripetono le parole della frase sopra, e il bonus
+                  si chiama «bonus» come nel resto del popup: due nomi per la
+                  stessa cosa sembravano due cose. */}
               <table className="conguaglio-tabella">
                 <thead>
-                  <tr><th /><th>Nelle buste</th><th>Sull&apos;anno</th><th>Dicembre</th></tr>
+                  <tr><th /><th>Mese per mese</th><th>Conto finale</th><th>Differenza</th></tr>
                 </thead>
                 <tbody>
-                  {[['IRPEF', 'irpef', 1], ['Tratt. integrativo', 'trattamentoIntegrativo', -1],
+                  {[['IRPEF', 'irpef', 1], ['Bonus', 'trattamentoIntegrativo', -1],
                     ['Indennità L. 207/24', 'indennita', -1]]
                     .map(([nome, k, verso]) => ({ nome, k, verso, d: conguaglio.centrale.dettaglio[k], v: -conguaglio.centrale.voci[k] }))
                     .filter(({ d, v }) => Math.abs(v) >= 1 || d.mesi >= 1)

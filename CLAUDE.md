@@ -191,8 +191,8 @@ quanto costa scoprire a dicembre che non spettava.
   mese del montante. **L'anno è la proiezione del motore** (`projectAnnualIncome`,
   la stessa del riquadro del bonus): i mesi che restano si scalano fino a
   quella cifra. Sommati per conto loro, il riquadro diceva «superi i 15.000» e
-  il popup «resti sotto». Ogni voce si mostra come «nelle buste» contro
-  «sull'anno». → `check-conguaglio.mjs`
+  il popup «resti sotto». Ogni voce si mostra come «mese per mese» contro
+  «conto finale». → `check-conguaglio.mjs`
 
 Tre cose che il modello NON sa, e che vanno scritte accanto alla cifra e non in
 un disclaimer generico: quanto è stato accreditato davvero (lo dice il cedolino,
@@ -205,6 +205,23 @@ Attenzione al difetto che è già capitato: **il TI può essere zero per due mot
 opposti** — reddito troppo alto (rischio vero) o troppo basso, sotto la no tax
 area (nessuna imposta da compensare, e il datore non l'ha mai accreditato).
 Confonderli faceva dire «devi restituire 805 €» a chi guadagna 2.150 € l'anno.
+
+## Il motore è il cuore: i numeri escono da lì
+
+**Ogni cifra a schermo viene da una funzione del motore** (`utils/net.js`,
+`utils/pay.js` e i moduli che li usano), mai da un conto rifatto dentro un
+componente o un modulo nuovo. È così apposta: due schermate che fanno lo stesso
+conto per strade diverse prima o poi dicono cifre diverse, e allora nessuna delle
+due è più credibile. Già capitato: il conguaglio sommava l'anno per conto suo,
+il riquadro del bonus usava `projectAnnualIncome`, e sugli stessi dati uno
+diceva «superi i 15.000» e l'altro «resti sotto».
+
+- Serve un dato che il motore già produce? Si chiama la funzione che lo
+  produce, anche se costa un parametro in più da passare.
+- Il motore non lo produce? Si aggiunge al motore, col suo riscontro, e da lì
+  lo usano tutti.
+- **Se sembra necessario fare altrimenti, si chiede prima a chi mantiene il
+  progetto.** Non si decide da soli.
 
 ## La regola che conta più di tutte
 
@@ -344,6 +361,10 @@ Discendono tutte dalla parola d'ordine qui sopra.
   arrivare al pulsante che la chiude è una finestra scritta troppo lunga, e la
   risposta giusta è tagliare il testo, non allungare il contenitore. Il
   calendario e la pagina scorrono, quello è il loro mestiere; un popup no.
+- **Una cosa, un nome.** Il trattamento integrativo a schermo è «il bonus»,
+  presentato una volta sola come «Trattamento integrativo (ex bonus Renzi)» nel
+  titolo del suo riquadro. Dentro lo stesso popup, «bonus» in una riga e
+  «Tratt. integrativo» in quella sotto sembravano due cose diverse.
 - Le voci che esistono anche **sul cedolino si chiamano come lì** («Indennità
   L. 207/24», non «sconto sui contributi»): la prima cosa che si fa con una
   cifra dell'app è cercarla in busta, e un nome inventato la rende
