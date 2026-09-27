@@ -348,8 +348,10 @@ export default function CalendarView({
   // lo sa meglio dell'app. Dal primo momento in cui c'è un reddito da stimare.
   const oggiAnno = new Date().getFullYear();
   const conguaglio = useMemo(
-    () => (year === oggiAnno ? stimaConguaglio({ anno: year, allShifts, settings, payMap: payByShift || {} }) : null),
-    [year, oggiAnno, allShifts, settings, payByShift],
+    () => (year === oggiAnno ? stimaConguaglio({
+      anno: year, allShifts, settings, payMap: payByShift || {}, proiezioneAnnua: (annualProjection || annualGross) || null,
+    }) : null),
+    [year, oggiAnno, allShifts, settings, payByShift, annualProjection, annualGross],
   );
   // Il bonus preso finora è UNO per tutte le schermate: quello mese per mese
   // del conguaglio. Per un anno chiuso, la quota piena come prima.
@@ -1642,7 +1644,7 @@ export default function CalendarView({
                     ))}
                   <tr className="conguaglio-tabella-saldo">
                     <td colSpan={3}>
-                      {conguaglio.centrale.saldo > 0 ? 'Ti riprendono' : 'Ti ridanno'}, al centro della stima
+                      Saldo: {conguaglio.centrale.saldo > 0 ? 'te li riprendono' : 'te li ridanno'}
                     </td>
                     <td><strong>{conguaglio.centrale.saldo > 0 ? '−' : '+'}{euroCella(Math.abs(conguaglio.centrale.saldo))}</strong></td>
                   </tr>

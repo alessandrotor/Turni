@@ -188,7 +188,11 @@ quanto costa scoprire a dicembre che non spettava.
   popup prometteva «+999 € te li ridanno» accanto al riquadro che diceva «888 €
   presi». Il bonus preso finora è UNO per le due schermate (`tiFinora`), e chi
   lo copia dalle buste nel popup lo fa valere al posto della stima, legato al
-  mese del montante. → `check-conguaglio.mjs`
+  mese del montante. **L'anno è la proiezione del motore** (`projectAnnualIncome`,
+  la stessa del riquadro del bonus): i mesi che restano si scalano fino a
+  quella cifra. Sommati per conto loro, il riquadro diceva «superi i 15.000» e
+  il popup «resti sotto». Ogni voce si mostra come «nelle buste» contro
+  «sull'anno». → `check-conguaglio.mjs`
 
 Tre cose che il modello NON sa, e che vanno scritte accanto alla cifra e non in
 un disclaimer generico: quanto è stato accreditato davvero (lo dice il cedolino,

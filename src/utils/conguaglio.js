@@ -154,6 +154,7 @@ function inizioRapporto(anno, settings) {
  */
 export function mesiDellAnno({
   anno, allShifts = [], settings = {}, payMap, oggi = new Date(), scenario = 'contratto', montanteAlterno = false,
+  totaleAnno = null,
 }) {
   const meseOggi = anno === oggi.getFullYear() ? oggi.getMonth() : (anno < oggi.getFullYear() ? 12 : 0);
   const inizio = inizioRapporto(anno, settings);
@@ -209,6 +210,24 @@ export function mesiDellAnno({
     const { lordo, extraMese } = lordoDelMese(effettiva, anno, m, settings);
     mesi.push({ lordo, extra: extraMese, giorni: lordo > 0 ? giorni : 0 });
   }
+  // LA PROIEZIONE DEL MOTORE, non una somma rifatta qui. Con `totaleAnno` (il
+  // valore di `projectAnnualIncome`, lo stesso del riquadro del bonus) i mesi
+  // che restano si scalano finché l'anno fa esattamente quella cifra. Prima il
+  // conguaglio sommava i mesi per conto suo: il riquadro diceva «superi i
+  // 15.000» e il popup, sugli stessi dati, «resti sotto». I mesi passati non
+  // si toccano: sono fatti, e il bonus già preso viene da lì.
+  if (Number.isFinite(totaleAnno) && totaleAnno > 0) {
+    const futuri = mesi.map((m, i) => (i >= meseOggi && m.lordo > 0 ? i : -1)).filter((i) => i >= 0);
+    const fermo = mesi.reduce((t, m, i) => t + (futuri.includes(i) ? m.extra : m.lordo), 0);
+    const mobile = futuri.reduce((t, i) => t + mesi[i].lordo - mesi[i].extra, 0);
+    if (mobile > 0) {
+      const k = Math.max(0, totaleAnno - fermo) / mobile;
+      futuri.forEach((i) => {
+        const m = mesi[i];
+        mesi[i] = { ...m, lordo: m.extra + (m.lordo - m.extra) * k };
+      });
+    }
+  }
   return { mesi, meseOggi, mesiVuoti, cutoffIdx };
 }
 
@@ -230,7 +249,7 @@ export function tiMontanteNoto(settings = {}) {
  * La stima da mostrare: forchetta, stima centrale per voce, e cosa non si sa.
  * `null` se non c'è niente su cui stimare (nessun reddito nell'anno).
  */
-export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi = new Date() }) {
+export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi = new Date(), proiezioneAnnua = null }) {
   const casi = [];
   let centrale = null;
   let mesiVuoti = 0;
@@ -238,18 +257,23 @@ export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi = new 
   let cutoffIdx = -1;
   let mesiCentrale = [];
   const noto = tiMontanteNoto(settings);
-  for (const scenario of ['contratto', 'media']) {
+  // Il centro è la proiezione del motore quando c'è; contratto e media dei
+  // mesi passati fanno gli estremi.
+  const centro = Number.isFinite(proiezioneAnnua) && proiezioneAnnua > 0 ? 'proiezione' : 'contratto';
+  for (const scenario of centro === 'proiezione' ? ['proiezione', 'contratto', 'media'] : ['contratto', 'media']) {
     // Col bonus delle buste la distribuzione non si fa più variare: moverebbe
     // l'IRPEF lasciando fermo il bonus, la combinazione che non esiste.
     for (const montanteAlterno of noto == null ? [false, true] : [false]) {
       const esito = mesiDellAnno({
-        anno, allShifts, settings, payMap, oggi, scenario, montanteAlterno,
+        anno, allShifts, settings, payMap, oggi, montanteAlterno,
+        scenario: scenario === 'proiezione' ? 'contratto' : scenario,
+        totaleAnno: scenario === 'proiezione' ? proiezioneAnnua : null,
       });
       ({ mesiVuoti, meseOggi, cutoffIdx } = esito);
       const s = saldoConguaglio(esito.mesi, settings, { tiMontanteNoto: noto });
       if (s.lordoAnno <= 0) return null;
       casi.push(s.saldo);
-      if (scenario === 'contratto' && !montanteAlterno) { centrale = s; mesiCentrale = esito.mesi; }
+      if (scenario === centro && !montanteAlterno) { centrale = s; mesiCentrale = esito.mesi; }
     }
   }
   const min = Math.min(...casi);

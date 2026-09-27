@@ -11,6 +11,7 @@
 import { saldoConguaglio, stimaConguaglio, mesiDellAnno, SOGLIA_PARI } from '../src/utils/conguaglio.js';
 import { nettoDelMese } from '../src/utils/net.js';
 import { rischioRestituzione } from '../src/utils/restituzione.js';
+import { calcBonusMargin } from '../src/utils/bonus.js';
 import { computePayByShift } from '../src/utils/pay.js';
 
 let falliti = 0;
@@ -145,6 +146,21 @@ esito(sr.centrale.annoSottoSoglia && sr.mesiSopraSoglia.includes(5) && !sr.mesiS
 esito(stimaConguaglio({ anno: 2026, allShifts: turniAS, payMap: pmReale, oggi: new Date(2026, 8, 27),
   settings: { ...reale, tiModo: 'mai', noTrattamentoIntegrativo: true } }).mesiSopraSoglia === null,
   'bonus deciso a mano → nessun perché mensile');
+
+// UNA proiezione per tutta l'app. Il conguaglio sommava i mesi per conto suo,
+// e il riquadro del bonus (che usa `projectAnnualIncome`) diceva «superi i
+// 15.000» mentre il popup diceva «resti sotto». Con la proiezione del motore
+// l'anno del conguaglio È quella cifra, e il lato della soglia è lo stesso.
+for (const proiezione of [14000, 16237.49, 17500]) {
+  const sp = stimaConguaglio({
+    anno: 2026, allShifts: turniAS, settings: reale, payMap: pmReale, oggi: new Date(2026, 8, 27), proiezioneAnnua: proiezione,
+  });
+  const bm = calcBonusMargin(proiezione, reale);
+  esito(Math.abs(sp.centrale.lordoAnno - proiezione) < 0.02 && sp.centrale.annoSottoSoglia === (bm.taxable <= 15000),
+    `proiezione ${proiezione} € → stesso anno e stesso lato della soglia del riquadro`,
+    `${sp.centrale.annoSottoSoglia ? 'sotto' : 'sopra'}, bonus ${sp.centrale.voci.trattamentoIntegrativo > 0 ? 'da ridare' : 'a credito'}`);
+  esito(sp.min <= sp.centrale.saldo && sp.centrale.saldo <= sp.max, '  e il saldo sta nella forchetta', `${Math.round(sp.min)} ≤ ${Math.round(sp.centrale.saldo)} ≤ ${Math.round(sp.max)}`);
+}
 
 // Il bonus copiato dalle buste vale al posto del modello, ma solo per il
 // montante a cui si riferisce: spostato il montante, torna il modello.
