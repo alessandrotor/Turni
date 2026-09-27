@@ -38,21 +38,56 @@ function caricaScript() {
   return caricamento;
 }
 
+// Quanto si aspetta chi deve toccare la casella: una persona che guarda il
+// telefono ci mette più dei 20 secondi di una verifica silenziosa.
+const TIMEOUT_INTERAZIONE_MS = 120000;
+
+// La casella da toccare, quando Cloudflare la chiede. Fuori schermo finché non
+// serve; al centro, SOPRA il velo del riconoscimento (z-index 200), quando serve.
+const FUORI = 'position:fixed;left:-9999px;top:-9999px;';
+const IN_VISTA = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:1000;'
+  + 'background:#fff;padding:16px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.3);'
+  + 'display:flex;flex-direction:column;align-items:center;gap:10px;font:600 15px system-ui,sans-serif;color:#0f172a;';
+
 // Un solo giro di giostra: disegna il widget, aspetta il token, pulisce.
+//
+// LA CASELLA DEVE POTERSI TOCCARE. Con `interaction-only` il widget resta
+// invisibile finché Cloudflare non decide che serve un tocco — e su telefono,
+// reti mobili e browser che bloccano i tracciatori succede spesso. Il riquadro
+// stava fisso a -9999px: la casella compariva dove nessuno poteva vederla,
+// scadeva due volte e l'import falliva con «verifica non superata». Chi
+// provava da un computer passava in silenzio e non se ne accorgeva.
+// → check-proxy-difese.mjs
 async function unTentativo() {
   const box = document.createElement('div');
-  box.style.cssText = 'position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;';
+  box.style.cssText = FUORI;
+  const spiega = document.createElement('div');
+  spiega.textContent = 'Tocca la casella per continuare';
+  spiega.style.display = 'none';
+  const widget = document.createElement('div');
+  box.append(spiega, widget);
   document.body.appendChild(box);
-
   let widgetId;
   try {
     return await new Promise((resolve, reject) => {
-      const scaduto = setTimeout(() => reject(new Error('verifica scaduta')), TIMEOUT_MS);
+      let scaduto = setTimeout(() => reject(new Error('verifica scaduta')), TIMEOUT_MS);
       const chiudi = (fn) => (arg) => { clearTimeout(scaduto); fn(arg); };
-      widgetId = window.turnstile.render(box, {
+      widgetId = window.turnstile.render(widget, {
         sitekey: SITEKEY,
         appearance: 'interaction-only',
         callback: chiudi(resolve),
+        // Cloudflare chiede un tocco: la casella viene davanti, e si aspetta
+        // la persona invece dell'orologio della verifica silenziosa.
+        'before-interactive-callback': () => {
+          box.style.cssText = IN_VISTA;
+          spiega.style.display = '';
+          clearTimeout(scaduto);
+          scaduto = setTimeout(() => reject(new Error('verifica scaduta')), TIMEOUT_INTERAZIONE_MS);
+        },
+        'after-interactive-callback': () => {
+          box.style.cssText = FUORI;
+          spiega.style.display = 'none';
+        },
         // Il CODICE d'errore va conservato, non buttato. Il 18 agosto un
         // «110200» (dominio non in elenco) è costato un'ora di diagnosi
         // perché a video arrivava solo «verifica non riuscita»: il codice

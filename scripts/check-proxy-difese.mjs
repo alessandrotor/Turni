@@ -372,5 +372,24 @@ console.log('\nIl rifiuto dice perché\n');
   check('  e il segreto non compare mai', !soloProd.includes(env.TURNSTILE_SECRET) && !/secret/i.test(soloProd));
 }
 
+// La CASELLA di Turnstile si deve poter toccare. Con `interaction-only` il
+// widget compare solo quando Cloudflare chiede un tocco — frequente su
+// telefono — e il riquadro stava fisso a -9999px: la casella appariva fuori
+// schermo, la verifica scadeva e l'import falliva. Sul computer di chi
+// sviluppa passava in silenzio, ed è per questo che serve un controllo scritto.
+console.log('\nLa casella di Turnstile si può toccare\n');
+{
+  const { readFileSync } = await import('node:fs');
+  const client = readFileSync(new URL('../src/services/turnstile.js', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../src/index.css', import.meta.url), 'utf8');
+  check('quando serve un tocco, la casella viene in vista',
+    /'before-interactive-callback'[\s\S]{0,120}IN_VISTA/.test(client));
+  const zCasella = Number(/IN_VISTA = [^;]*?[\s\S]*?z-index:(\d+)/.exec(client)?.[1] || 0);
+  const zVelo = Number(/\.modal-overlay \{[^}]*z-index:\s*(\d+)/.exec(css)?.[1] || 0);
+  check('  sopra il velo del riconoscimento', zCasella > zVelo && zVelo > 0, `${zCasella} contro ${zVelo}`);
+  check('  e con il tempo di una persona, non della verifica silenziosa',
+    /TIMEOUT_INTERAZIONE_MS = (\d+)/.exec(client)?.[1] >= 60000);
+}
+
 console.log(fail === 0 ? '\n✓ difese del proxy ok\n' : `\n✗ ${fail} riscontri falliti\n`);
 process.exit(fail === 0 ? 0 : 1);
