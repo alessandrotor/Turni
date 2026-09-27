@@ -131,9 +131,11 @@ export function quotaPotenziale(oggi = new Date()) {
  * @param {object} opts.settings impostazioni dell'app
  * @param {number} opts.proiezioneAnnua reddito annuo LORDO previsto a fine anno
  * @param {Date}   [opts.oggi] per i riscontri; di default la data corrente
+ * @param {number} [opts.erogatoStimato] il bonus accreditato finora secondo la
+ *   regola mensile (`stimaConguaglio().tiFinora`). Senza, la quota piena.
  * @returns {{erogato, spettante, daRestituire, rateizzabile, causa, giorni, unSoloDatore}}
  */
-export function rischioRestituzione({ settings = {}, proiezioneAnnua = 0, oggi = new Date() } = {}) {
+export function rischioRestituzione({ settings = {}, proiezioneAnnua = 0, oggi = new Date(), erogatoStimato = null } = {}) {
   const T = TAX_2026;
   const giorni = giorniTrascorsi(oggi);
   const vuoto = {
@@ -169,11 +171,15 @@ export function rischioRestituzione({ settings = {}, proiezioneAnnua = 0, oggi =
     return { ...vuoto, spettante, causa: CAUSA.NESSUNA };
   }
 
-  // Quanto il datore ha verosimilmente accreditato finora: la quota piena di
-  // legge sui giorni trascorsi. È il caso peggiore, ed è quello giusto da
-  // mostrare in un avviso — ma va detto che è un'ipotesi, perché chi guarda il
-  // cedolino sa la cifra vera e noi no.
-  const erogato = trunc2((T.TI_MASSIMO * giorni) / 365);
+  // Quanto il datore ha verosimilmente accreditato finora. Senza altro, la
+  // quota piena di legge sui giorni trascorsi: il caso peggiore. Quando c'è,
+  // la stima mese per mese del conguaglio, che sa quali mesi erano sopra i
+  // 1.250 €: con la quota piena il riquadro del bonus diceva «888 € presi» e
+  // il popup del conguaglio, sugli stessi dati, «+999 € te li ridanno».
+  // È comunque un'ipotesi: la cifra vera la sa il cedolino.
+  const erogato = Number.isFinite(erogatoStimato) && erogatoStimato >= 0
+    ? trunc2(erogatoStimato)
+    : trunc2((T.TI_MASSIMO * giorni) / 365);
   const daRestituire = Math.max(0, menoCent(erogato, spettante));
 
   let causa = CAUSA.NESSUNA;

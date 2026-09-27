@@ -9,6 +9,8 @@
 // che descrive. Il riscontro sulle buste vere arriverà con dicembre 2026.
 
 import { saldoConguaglio, stimaConguaglio, mesiDellAnno, SOGLIA_PARI } from '../src/utils/conguaglio.js';
+import { nettoDelMese } from '../src/utils/net.js';
+import { rischioRestituzione } from '../src/utils/restituzione.js';
 import { computePayByShift } from '../src/utils/pay.js';
 
 let falliti = 0;
@@ -101,6 +103,50 @@ const sm = stimaConguaglio({
 });
 esito(sm && sm.max - sm.min < 300, 'montante: la distribuzione dei mesi muove bonus e IRPEF insieme',
   sm ? `da ${Math.round(sm.min)} a ${Math.round(sm.max)} €, era larga 960` : '');
+
+console.log('\nIl montante e il bonus già preso\n');
+// Il profilo da cui è nato il difetto: montante 9.060 € fino a luglio, 14ª a
+// 6/12 pagata a giugno. Diviso in sette parti uguali faceva 1.294 € al mese,
+// sopra i 1.250: nessun mese col bonus, e il popup diceva «+999 € te li
+// ridanno» mentre il riquadro del bonus diceva «888 € presi finora». Le buste
+// 2026 (`check-ti-mensile.mjs`) hanno il bonus a febbraio, maggio e luglio e
+// non a giugno: è quello che deve uscire togliendo la 14ª prima di dividere.
+const reale = { ...conMontante, fixedMonthlyItems: [{ amount: 10 }] };
+const pmReale = computePayByShift(turniAS, reale);
+const { mesi: mesiReale } = mesiDellAnno({
+  anno: 2026, allShifts: turniAS, settings: reale, payMap: pmReale, oggi: new Date(2026, 8, 27),
+});
+const tiDi = (m) => nettoDelMese(m.lordo, reale, m.giorni, m.extra).trattamentoIntegrativo;
+const conBonus = [1, 4, 6].filter((m) => tiDi(mesiReale[m]) > 0).length;
+esito(conBonus === 3, 'febbraio, maggio e luglio col bonus, come in busta', `${conBonus} su 3`);
+esito(tiDi(mesiReale[5]) === 0 && mesiReale[5].extra > 0, 'giugno senza: porta la 14ª, nel suo mese',
+  `lordo ${Math.round(mesiReale[5].lordo)}, di cui 14ª ${Math.round(mesiReale[5].extra)}`);
+esito(Math.abs(mesiReale.slice(0, 7).reduce((t, m) => t + m.lordo, 0) - 9060) < 0.01, 'il montante resta esatto');
+
+const sr = stimaConguaglio({ anno: 2026, allShifts: turniAS, settings: reale, payMap: pmReale, oggi: new Date(2026, 8, 27) });
+esito(sr.centrale.voci.trattamentoIntegrativo > -600, 'non promette più il bonus di un anno intero',
+  `${sr.centrale.voci.trattamentoIntegrativo} €, era −901`);
+// Il riquadro del bonus riceve la STESSA cifra: due schermate, un'ipotesi.
+const rr = rischioRestituzione({ settings: reale, proiezioneAnnua: 20000, oggi: new Date(2026, 8, 27), erogatoStimato: sr.tiFinora });
+esito(rr.erogato === Math.trunc(sr.tiFinora * 100) / 100, 'il riquadro del bonus usa il «finora» del conguaglio',
+  `${sr.tiFinora} €, era la quota piena 888`);
+
+// Il bonus copiato dalle buste vale al posto del modello, ma solo per il
+// montante a cui si riferisce: spostato il montante, torna il modello.
+const noto = stimaConguaglio({
+  anno: 2026, allShifts: turniAS, payMap: pmReale, oggi: new Date(2026, 8, 27),
+  settings: { ...reale, tiAccreditatoMontante: { importo: 300, fino: '2026-07' } },
+});
+const modelloMontante = sr.centrale.tiMesi.slice(0, 7).reduce((t, v) => t + v, 0);
+esito(Math.abs(noto.centrale.tiAccreditato - (sr.centrale.tiAccreditato - modelloMontante + 300)) < 0.02,
+  'il bonus delle buste sostituisce quello stimato', `${Math.round(modelloMontante)} → 300 €`);
+const vecchio = stimaConguaglio({
+  anno: 2026, allShifts: turniAS, payMap: pmReale, oggi: new Date(2026, 8, 27),
+  settings: { ...reale, tiAccreditatoMontante: { importo: 300, fino: '2026-05' } },
+});
+esito(vecchio.tiMontanteNoto === null && vecchio.centrale.tiAccreditato === sr.centrale.tiAccreditato,
+  'riferito a un altro montante → ignorato');
+
 const { mesi } = mesiDellAnno({ anno: 2026, allShifts: turni, settings: S, payMap, oggi, scenario: 'contratto' });
 esito(mesi[11].extra === 0 || mesi[11].lordo > mesi[10].lordo, 'dicembre porta la 13ª se è impostata', '');
 esito(stimaConguaglio({ anno: 2026, allShifts: [], settings: S, payMap: {}, oggi }).min !== undefined,

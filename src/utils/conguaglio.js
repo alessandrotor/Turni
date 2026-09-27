@@ -29,7 +29,18 @@
 // bassi, IRPEF trattenuta come nei mesi alti. Fatta variare la distribuzione
 // dei mesi, che muove bonus e IRPEF insieme, lo stesso profilo sta fra 170 e
 // 105 € a credito — bonus e detrazione si compensano, come in `costoSoglia`.
-// Il caso peggiore sul SOLO bonus resta dove serve: nell'avviso di cassa.
+//
+// LA 14ª NEL SUO MESE, non spalmata. Il montante fino a luglio contiene la 14ª
+// di giugno: diviso in sette parti uguali dava 1.294 € al mese, appena sopra i
+// 1.250, e nessun mese col bonus. Il popup del bonus diceva «888 € presi
+// finora», questo «+999 € te li ridanno»: due schermate, due anni diversi. Le
+// buste dicono il contrario del modello — bonus a febbraio, maggio e luglio,
+// niente a giugno — ed è quello che esce togliendo la 14ª prima di dividere.
+// Resta un'ipotesi: il bonus vero lo scrive il cedolino, e chi lo copia nel
+// popup (`tiAccreditatoMontante`) lo fa valere al posto del modello.
+//
+// Il bonus accreditato finora (`tiFinora`) esce da qui ed è lo stesso che
+// mostra il riquadro del bonus: una sola ipotesi per le due schermate.
 //
 // COSA NON SA (e la pagina lo dice): altri datori o redditi, detrazioni che
 // non sono da lavoro (figli, spese), la fine del contratto. Queste NON
@@ -56,17 +67,28 @@ const r2 = (n) => Math.round(n * 100) / 100;
  *   `lordo` 0 fuori dal rapporto di lavoro.
  * @param {object} settings
  */
-export function saldoConguaglio(mesi, settings = {}) {
-  let irpef = 0, ti = 0, cuneo = 0, lordoAnno = 0, giorni = 0;
-  mesi.forEach((m) => {
-    if (!(m.lordo > 0)) return;
+export function saldoConguaglio(mesi, settings = {}, { tiMontanteNoto = null } = {}) {
+  let irpef = 0, cuneo = 0, lordoAnno = 0, giorni = 0;
+  const tiMesi = mesi.map((m) => {
+    if (!(m.lordo > 0)) return 0;
     const n = nettoDelMese(m.lordo, settings, m.giorni, m.extra || 0);
     irpef += n.irpefNetta;
     cuneo += n.bonusCuneo;
-    ti += n.trattamentoIntegrativo;
     lordoAnno += m.lordo;
     giorni += m.giorni;
+    return n.trattamentoIntegrativo;
   });
+  // Il bonus dei mesi del montante, se lo ha copiato dalle buste, vale quello:
+  // ripartito come il modello lo aveva ripartito, o in parti uguali se il
+  // modello non ne vedeva. Così anche `tiFinora` a metà montante resta sensato.
+  if (tiMontanteNoto != null) {
+    const idx = mesi.map((m, i) => (m.montante && m.lordo > 0 ? i : -1)).filter((i) => i >= 0);
+    const modello = idx.reduce((s, i) => s + tiMesi[i], 0);
+    idx.forEach((i) => {
+      tiMesi[i] = modello > 0 ? tiMontanteNoto * (tiMesi[i] / modello) : tiMontanteNoto / idx.length;
+    });
+  }
+  const ti = tiMesi.reduce((s, v) => s + v, 0);
 
   // Il dovuto dell'anno. Detrazioni e bonus sono RAPPORTATI AL PERIODO DI
   // LAVORO: il calcolo annuo li dà per 365 giorni, e chi è stato assunto a
@@ -93,6 +115,7 @@ export function saldoConguaglio(mesi, settings = {}) {
     saldo: r2(voci.irpef + voci.trattamentoIntegrativo + voci.indennita),
     lordoAnno: r2(lordoAnno),
     tiAccreditato: r2(ti),
+    tiMesi,
   };
 }
 
@@ -110,8 +133,8 @@ function inizioRapporto(anno, settings) {
  * I dodici mesi dell'anno come li vede l'app, in uno dei due scenari per i
  * mesi che restano.
  *
- *  · passati, coperti dal montante: il montante diviso sui mesi che copre —
- *    come il datore l'abbia distribuito davvero l'app non lo sa;
+ *  · passati, coperti dal montante: 13ª/14ª nel loro mese, il resto diviso
+ *    sui mesi che copre — come sia andato davvero l'app non lo sa;
  *  · passati, con turni: il lordo dei turni, come nel resto dell'app;
  *  · questo mese e i prossimi: `contratto` o `media` dei mesi passati, mai
  *    meno di quanto già segnato.
@@ -128,6 +151,12 @@ export function mesiDellAnno({
   const cutoff = String(settings.priorIncomeDate || '');
   const cutoffIdx = montante > 0 && Number(cutoff.slice(0, 4)) === anno ? Number(cutoff.slice(5, 7)) - 1 : -1;
   const mesiMontante = Math.max(1, cutoffIdx - inizio.mese + 1);
+  // La 14ª (e la 13ª, per un montante fermato a dicembre) sta nel suo mese:
+  // si toglie prima di dividere, e si rimette lì con il suo binario fiscale.
+  const extraDi = (m) => lordoDelMese(0, anno, m, settings).extraMese;
+  let extraMontante = 0;
+  for (let m = inizio.mese; m <= cutoffIdx; m += 1) extraMontante += extraDi(m);
+  const ordinarioMontante = Math.max(0, montante - extraMontante);
 
   const turniDi = (m) => allShifts.filter((s) => {
     const d = parseDate(s.date);
@@ -155,11 +184,12 @@ export function mesiDellAnno({
     if (m <= cutoffIdx) {
       // Alterni: +20% e −20% a coppie, e l'ultimo mese dispari pareggia la
       // somma. Il montante resta esatto: cambia solo come si distribuisce.
-      const quota = montante / mesiMontante;
+      const quota = ordinarioMontante / mesiMontante;
       const k = m - inizio.mese;
       const ultimoDispari = mesiMontante % 2 === 1 && k === mesiMontante - 1;
       const fattore = !montanteAlterno || ultimoDispari ? 1 : (k % 2 === 0 ? 0.8 : 1.2);
-      mesi.push({ lordo: quota * fattore, extra: 0, giorni });
+      const extra = Math.min(extraDi(m), montante);
+      mesi.push({ lordo: quota * fattore + extra, extra, giorni, montante: true });
       continue;
     }
     const paga = pagaDi(m);
@@ -168,7 +198,21 @@ export function mesiDellAnno({
     const { lordo, extraMese } = lordoDelMese(effettiva, anno, m, settings);
     mesi.push({ lordo, extra: extraMese, giorni: lordo > 0 ? giorni : 0 });
   }
-  return { mesi, meseOggi, mesiVuoti };
+  return { mesi, meseOggi, mesiVuoti, cutoffIdx };
+}
+
+/**
+ * Il bonus dei mesi del montante copiato dalle buste, se vale ancora: è legato
+ * al mese del montante, e un montante spostato lo rende vecchio. Meglio
+ * tornare al modello che usare in silenzio la cifra di un altro periodo.
+ */
+export function tiMontanteNoto(settings = {}) {
+  const v = settings.tiAccreditatoMontante;
+  if (!v || typeof v !== 'object') return null;
+  const importo = Number(v.importo);
+  if (!Number.isFinite(importo) || importo < 0) return null;
+  if (!(Number(settings.priorTaxableIncome) > 0)) return null;
+  return v.fino === String(settings.priorIncomeDate || '').slice(0, 7) ? importo : null;
 }
 
 /**
@@ -179,13 +223,18 @@ export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi = new 
   const casi = [];
   let centrale = null;
   let mesiVuoti = 0;
+  let meseOggi = 0;
+  let cutoffIdx = -1;
+  const noto = tiMontanteNoto(settings);
   for (const scenario of ['contratto', 'media']) {
-    for (const montanteAlterno of [false, true]) {
-      const { mesi, mesiVuoti: vuoti } = mesiDellAnno({
+    // Col bonus delle buste la distribuzione non si fa più variare: moverebbe
+    // l'IRPEF lasciando fermo il bonus, la combinazione che non esiste.
+    for (const montanteAlterno of noto == null ? [false, true] : [false]) {
+      const esito = mesiDellAnno({
         anno, allShifts, settings, payMap, oggi, scenario, montanteAlterno,
       });
-      mesiVuoti = vuoti;
-      const s = saldoConguaglio(mesi, settings);
+      ({ mesiVuoti, meseOggi, cutoffIdx } = esito);
+      const s = saldoConguaglio(esito.mesi, settings, { tiMontanteNoto: noto });
       if (s.lordoAnno <= 0) return null;
       casi.push(s.saldo);
       if (scenario === 'contratto' && !montanteAlterno) centrale = s;
@@ -198,5 +247,11 @@ export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi = new 
     direzione: Math.max(Math.abs(min), Math.abs(max)) < SOGLIA_PARI ? 'pari'
       : (min >= 0 ? 'debito' : (max <= 0 ? 'credito' : 'incerta')),
     mesiVuoti,
+    // Le buste già arrivate: quelle dei mesi prima di questo.
+    tiFinora: r2(centrale.tiMesi.slice(0, meseOggi).reduce((t, v) => t + v, 0)),
+    // Il mese a cui si ferma il montante (0-11), -1 senza montante nell'anno:
+    // è il periodo di cui l'interfaccia può chiedere il bonus vero.
+    meseMontante: cutoffIdx,
+    tiMontanteNoto: noto,
   };
 }

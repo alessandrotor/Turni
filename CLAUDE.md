@@ -183,7 +183,12 @@ quanto costa scoprire a dicembre che non spettava.
   esiste, e allargava la forchetta da 190 a 960 €. Il meccanismo si dice
   all'indicativo, la cifra con «di questo passo», le incognite accanto.
   Detrazioni e bonus si rapportano ai giorni lavorati: senza, chi è assunto a
-  luglio si vedeva inventare 500 € da restituire. → `check-conguaglio.mjs`
+  luglio si vedeva inventare 500 € da restituire. Il montante si divide coi
+  13ª/14ª nel loro mese: spalmata, la 14ª portava ogni mese sopra i 1.250 e il
+  popup prometteva «+999 € te li ridanno» accanto al riquadro che diceva «888 €
+  presi». Il bonus preso finora è UNO per le due schermate (`tiFinora`), e chi
+  lo copia dalle buste nel popup lo fa valere al posto della stima, legato al
+  mese del montante. → `check-conguaglio.mjs`
 
 Tre cose che il modello NON sa, e che vanno scritte accanto alla cifra e non in
 un disclaimer generico: quanto è stato accreditato davvero (lo dice il cedolino,

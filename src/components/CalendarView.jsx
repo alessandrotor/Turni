@@ -41,7 +41,7 @@ import useOccupato from '../hooks/useOccupato';
 import { KEY_CAL_LAYOUT } from '../services/backup';
 
 import { intervalloCella } from '../utils/orario-cella';
-import { stimaConguaglio } from '../utils/conguaglio';
+import { stimaConguaglio, tiMontanteNoto } from '../utils/conguaglio';
 import { SOGLIA_RATEIZZAZIONE } from '../utils/restituzione';
 
 // La forchetta a dieci euro: una cifra al centesimo prometterebbe una
@@ -137,6 +137,9 @@ export default function CalendarView({
   const [showShareModal, setShowShareModal] = useState(false);
   const [contiBonusAperti, setContiBonusAperti] = useState(false);
   const [conguaglioAperto, setConguaglioAperto] = useState(false);
+  // Il bonus dei mesi del montante copiato dalle buste: campo facoltativo nel
+  // popup, scritto in `settings` solo quando si lascia il campo.
+  const [tiBusteBozza, setTiBusteBozza] = useState(null);
   const [calLayout, setCalLayout] = useState(() => {
     try { return localStorage.getItem(KEY_CAL_LAYOUT) || 'grid'; } catch { return 'grid'; }
   });
@@ -340,9 +343,23 @@ export default function CalendarView({
   // davvero, e fino a settembre 2026 l'app non la sfiorava: sapeva dire se il
   // bonus spetta adesso, mai quanto costa scoprire a dicembre che non spettava.
   // Vedi utils/restituzione.js per il modello e per cosa l'app NON puo' sapere.
+  // Il conguaglio di dicembre, come forchetta (utils/conguaglio.js). Solo per
+  // l'anno in corso: per un anno chiuso il conguaglio è già in busta, e la busta
+  // lo sa meglio dell'app. Dal primo momento in cui c'è un reddito da stimare.
+  const oggiAnno = new Date().getFullYear();
+  const conguaglio = useMemo(
+    () => (year === oggiAnno ? stimaConguaglio({ anno: year, allShifts, settings, payMap: payByShift || {} }) : null),
+    [year, oggiAnno, allShifts, settings, payByShift],
+  );
+  // Il bonus preso finora è UNO per tutte le schermate: quello mese per mese
+  // del conguaglio. Per un anno chiuso, la quota piena come prima.
+  const tiFinora = conguaglio ? conguaglio.tiFinora : quotaPotenziale(dataDiRiferimento(year));
   const rischio = useMemo(
-    () => rischioRestituzione({ settings, proiezioneAnnua: annualProjection || annualGross, oggi: dataDiRiferimento(year) }),
-    [settings, annualProjection, annualGross, year],
+    () => rischioRestituzione({
+      settings, proiezioneAnnua: annualProjection || annualGross, oggi: dataDiRiferimento(year),
+      erogatoStimato: conguaglio ? conguaglio.tiFinora : null,
+    }),
+    [settings, annualProjection, annualGross, year, conguaglio],
   );
 
   // LA FORMA DELLA BUCA attorno ai 15.000, e dove ci si trova dentro.
@@ -491,14 +508,16 @@ export default function CalendarView({
   // dov'era invece di essere sostituita. Serve a confrontare — un premio di
   // produttività non si decide, si riceve, e la domanda utile è quanto
   // varrebbe l'anno se arrivasse sempre.
-  // Il conguaglio di dicembre, come forchetta (utils/conguaglio.js). Solo per
-  // l'anno in corso: per un anno chiuso il conguaglio è già in busta, e la busta
-  // lo sa meglio dell'app. Dal primo momento in cui c'è un reddito da stimare.
-  const oggiAnno = new Date().getFullYear();
-  const conguaglio = useMemo(
-    () => (year === oggiAnno ? stimaConguaglio({ anno: year, allShifts, settings, payMap: payByShift || {} }) : null),
-    [year, oggiAnno, allShifts, settings, payByShift],
-  );
+  const nomeMese = (m) => new Date(year, m, 1).toLocaleDateString('it-IT', { month: 'long' });
+  const salvaTiBuste = () => {
+    if (tiBusteBozza == null || !conguaglio) return;
+    const v = Number(String(tiBusteBozza).replace(',', '.'));
+    const fino = String(settings.priorIncomeDate || '').slice(0, 7);
+    onUpdateSettings?.({
+      tiAccreditatoMontante: String(tiBusteBozza).trim() === '' || !(v >= 0) ? null : { importo: v, fino },
+    });
+    setTiBusteBozza(null);
+  };
   const forchettaScritta = !conguaglio ? ''
     : conguaglio.direzione === 'pari' ? 'circa in pari'
       : conguaglio.direzione === 'debito' ? `ti riprendono ${euroCella(giù10(conguaglio.min))}–${euroCella(su10(conguaglio.max))}`
@@ -1401,7 +1420,7 @@ export default function CalendarView({
                 </span>
                 <p className="bonus-spiega">
                   Se li superi, a dicembre il datore si riprende tutto il bonus che ti ha
-                  dato: finora <strong>{euroCella(quotaPotenziale(dataDiRiferimento(year)))}</strong>. {spiegazione}
+                  dato: finora <strong>{euroCella(tiFinora)}</strong>. {spiegazione}
                 </p>
                 <label className="check-row bonus-rischio-scelta">
                   <input
@@ -1591,14 +1610,37 @@ export default function CalendarView({
               {/* Stessa ragione della tabella del bonus: senza questa riga il
                   «ti riprendono tutto» del riquadro sopra e il saldo qui
                   sembrano lo stesso conto fatto male. */}
-              {conguaglio.centrale.voci.irpef * conguaglio.centrale.voci.trattamentoIntegrativo < 0 && (
+              {conguaglio.centrale.voci.irpef * conguaglio.centrale.voci.trattamentoIntegrativo < 0
+                && Math.abs(conguaglio.centrale.voci.irpef + conguaglio.centrale.voci.trattamentoIntegrativo)
+                  < 0.3 * Math.max(Math.abs(conguaglio.centrale.voci.irpef), Math.abs(conguaglio.centrale.voci.trattamentoIntegrativo)) && (
                 <p className="form-hint">Bonus e tasse si compensano quasi del tutto: conta il saldo.</p>
               )}
               {conguaglio.centrale.voci.trattamentoIntegrativo > SOGLIA_RATEIZZAZIONE && (
                 <p className="form-hint">Il bonus da restituire, oltre i 60 €, si paga a rate.</p>
               )}
+              {/* IL BONUS VERO, dove il modello non può saperlo: i mesi del
+                  montante li conosce solo come totale. Facoltativo, dentro il
+                  popup e mai altrove — chi non lo scrive ha la stima di prima. */}
+              {conguaglio.meseMontante >= 0 && (
+                <label className="bonus-cifre conguaglio-ti">
+                  <span>Bonus in busta fino a {nomeMese(conguaglio.meseMontante)}, se lo sai</span>
+                  <span className="conguaglio-ti-campo">
+                    <input
+                      type="number" inputMode="decimal" min="0" step="any"
+                      value={tiBusteBozza ?? (tiMontanteNoto(settings) ?? '')}
+                      placeholder={numeroIt(Math.round(conguaglio.centrale.tiMesi
+                        .slice(0, conguaglio.meseMontante + 1).reduce((t, v) => t + v, 0)))}
+                      onChange={(e) => setTiBusteBozza(e.target.value)}
+                      onBlur={salvaTiBuste}
+                      onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                    /> €
+                  </span>
+                </label>
+              )}
               <p className="form-hint">
-                Non sappiamo quanto ti hanno accreditato davvero, altri redditi, figli e spese.
+                {conguaglio.meseMontante < 0
+                  ? 'Non sappiamo quanto ti hanno accreditato davvero, altri redditi, figli e spese.'
+                  : 'Non sappiamo altri redditi, figli e spese.'}
                 {conguaglio.mesiVuoti > 0 && ` ${conguaglio.mesiVuoti} ${conguaglio.mesiVuoti === 1 ? 'mese senza turni conta' : 'mesi senza turni contano'} come non lavorat${conguaglio.mesiVuoti === 1 ? 'o' : 'i'}.`}
               </p>
               <p className="form-hint">
@@ -1631,7 +1673,7 @@ export default function CalendarView({
               <p className="form-hint">
                 Il bonus spetta a chi sta sotto i 15.000 €. Se li superi, anche di 1 €, a
                 dicembre il datore si riprende
-                tutto: {euroCella(rischio.erogato || quotaPotenziale(dataDiRiferimento(year)))} finora.
+                tutto: {euroCella(rischio.erogato || tiFinora)} finora.
               </p>
               {/* La tabella è un'ALTRA grandezza rispetto alla cifra qui sopra:
                   quella è cassa, questa è il saldo di un anno intero. Senza
