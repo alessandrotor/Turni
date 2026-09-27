@@ -51,6 +51,7 @@
 import { calcTotalPay } from './pay.js';
 import {
   nettoDelMese, lordoDelMese, calcNetAnnual, monthlyBaseGross, trattamentoIntegrativo, TAX_2026,
+  tiSpettaQuestoMese, modoTrattamentoIntegrativo,
 } from './net.js';
 import { getDaysInMonth, parseDate } from './dates.js';
 
@@ -110,8 +111,18 @@ export function saldoConguaglio(mesi, settings = {}, { tiMontanteNoto = null } =
     trattamentoIntegrativo: r2(ti - tiDovuto),
     indennita: r2(cuneo - a.bonusCuneo),
   };
+  // Le due colonne da cui nascono le voci: quanto è passato in busta mese per
+  // mese, e quanto è dovuto sull'anno. «IRPEF −317 €» da solo non si capisce;
+  // «trattenute 900, dovute 1.217» sì.
+  const dettaglio = {
+    irpef: { mesi: r2(irpef), anno: r2(irpefDovuta) },
+    trattamentoIntegrativo: { mesi: r2(ti), anno: r2(tiDovuto) },
+    indennita: { mesi: r2(cuneo), anno: r2(a.bonusCuneo) },
+  };
   return {
     voci,
+    dettaglio,
+    annoSottoSoglia: a.imponibile <= TAX_2026.TI_SOGLIA_PIENO,
     saldo: r2(voci.irpef + voci.trattamentoIntegrativo + voci.indennita),
     lordoAnno: r2(lordoAnno),
     tiAccreditato: r2(ti),
@@ -225,6 +236,7 @@ export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi = new 
   let mesiVuoti = 0;
   let meseOggi = 0;
   let cutoffIdx = -1;
+  let mesiCentrale = [];
   const noto = tiMontanteNoto(settings);
   for (const scenario of ['contratto', 'media']) {
     // Col bonus delle buste la distribuzione non si fa più variare: moverebbe
@@ -237,7 +249,7 @@ export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi = new 
       const s = saldoConguaglio(esito.mesi, settings, { tiMontanteNoto: noto });
       if (s.lordoAnno <= 0) return null;
       casi.push(s.saldo);
-      if (scenario === 'contratto' && !montanteAlterno) centrale = s;
+      if (scenario === 'contratto' && !montanteAlterno) { centrale = s; mesiCentrale = esito.mesi; }
     }
   }
   const min = Math.min(...casi);
@@ -253,5 +265,15 @@ export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi = new 
     // è il periodo di cui l'interfaccia può chiedere il bonus vero.
     meseMontante: cutoffIdx,
     tiMontanteNoto: noto,
+    // PERCHÉ bonus e IRPEF si muovono: i mesi in cui la regola mensile ha
+    // deciso diversamente dall'anno. Sopra 1.250 € il datore non dà il bonus
+    // ma applica la detrazione più alta; sotto, il contrario. Solo con la
+    // decisione automatica: a mano, la ragione è la scelta, non il mese.
+    mesiSopraSoglia: modoTrattamentoIntegrativo(settings) === 'auto'
+      ? mesiCentrale.map((m, i) => (m.lordo > 0 && !tiSpettaQuestoMese(m.lordo, settings).spetta ? i : -1)).filter((i) => i >= 0)
+      : null,
+    mesiSottoSoglia: modoTrattamentoIntegrativo(settings) === 'auto'
+      ? mesiCentrale.map((m, i) => (m.lordo > 0 && tiSpettaQuestoMese(m.lordo, settings).spetta ? i : -1)).filter((i) => i >= 0)
+      : null,
   };
 }

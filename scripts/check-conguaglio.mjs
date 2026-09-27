@@ -131,6 +131,21 @@ const rr = rischioRestituzione({ settings: reale, proiezioneAnnua: 20000, oggi: 
 esito(rr.erogato === Math.trunc(sr.tiFinora * 100) / 100, 'il riquadro del bonus usa il «finora» del conguaglio',
   `${sr.tiFinora} €, era la quota piena 888`);
 
+// Le colonne del popup: «IRPEF −317 €» da solo non si capiva. Ogni voce è la
+// differenza fra quanto è passato nelle buste e quanto è dovuto sull'anno, e
+// il perché sta nei mesi che la regola mensile ha deciso diversamente.
+const d = sr.centrale.dettaglio;
+esito(Math.abs(d.irpef.anno - d.irpef.mesi - sr.centrale.voci.irpef) < 0.02
+  && Math.abs(d.trattamentoIntegrativo.mesi - d.trattamentoIntegrativo.anno - sr.centrale.voci.trattamentoIntegrativo) < 0.02
+  && Math.abs(d.indennita.mesi - d.indennita.anno - sr.centrale.voci.indennita) < 0.02,
+  'ogni voce è «nelle buste» contro «sull\'anno»',
+  `IRPEF ${d.irpef.mesi} → ${d.irpef.anno}, bonus ${d.trattamentoIntegrativo.mesi} → ${d.trattamentoIntegrativo.anno}`);
+esito(sr.centrale.annoSottoSoglia && sr.mesiSopraSoglia.includes(5) && !sr.mesiSopraSoglia.includes(1),
+  'il perché: giugno sopra 1.250, febbraio no, anno sotto i 15.000', `mesi sopra: ${sr.mesiSopraSoglia.join(', ')}`);
+esito(stimaConguaglio({ anno: 2026, allShifts: turniAS, payMap: pmReale, oggi: new Date(2026, 8, 27),
+  settings: { ...reale, tiModo: 'mai', noTrattamentoIntegrativo: true } }).mesiSopraSoglia === null,
+  'bonus deciso a mano → nessun perché mensile');
+
 // Il bonus copiato dalle buste vale al posto del modello, ma solo per il
 // montante a cui si riferisce: spostato il montante, torna il modello.
 const noto = stimaConguaglio({

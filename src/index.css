@@ -3424,3 +3424,36 @@ input, select, textarea { font: inherit; }
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+
+/* Il conguaglio voce per voce: nelle buste, sull'anno, la differenza. */
+.conguaglio-tabella {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.conguaglio-tabella th {
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--c-text-2);
+  text-align: right;
+  padding: 0 0 .25rem .4rem;
+}
+
+.conguaglio-tabella td {
+  text-align: right;
+  white-space: nowrap;
+  padding: .2rem 0 .2rem .4rem;
+}
+
+.conguaglio-tabella td:first-child {
+  text-align: left;
+  white-space: normal;
+  padding-left: 0;
+}
+
+.conguaglio-tabella-saldo td {
+  border-top: 1px solid var(--c-border);
+  padding-top: .4rem;
+}

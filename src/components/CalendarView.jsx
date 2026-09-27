@@ -518,6 +518,32 @@ export default function CalendarView({
     });
     setTiBusteBozza(null);
   };
+  // IL PERCHÉ di IRPEF e bonus, coi mesi che lo causano. Nei mesi sopra 1.250 €
+  // il datore non dà il bonus ma applica la detrazione più alta, che lo
+  // sostituisce; sotto, il contrario. Se l'anno finisce dall'altra parte della
+  // soglia, a dicembre lo scambio si rovescia — ed è per questo che le due voci
+  // hanno segni opposti e si compensano.
+  const elencoMesi = (idx) => {
+    const nomi = idx.map(nomeMese);
+    const testo = nomi.length > 4 ? `${nomi.length} mesi`
+      : nomi.length === 1 ? nomi[0] : `${nomi.slice(0, -1).join(', ')} e ${nomi[nomi.length - 1]}`;
+    return testo.charAt(0).toUpperCase() + testo.slice(1);
+  };
+  const perchéConguaglio = (() => {
+    if (!conguaglio) return null;
+    const c = conguaglio.centrale;
+    const sopra = conguaglio.mesiSopraSoglia;
+    const sotto = conguaglio.mesiSottoSoglia;
+    if (c.annoSottoSoglia && c.voci.trattamentoIntegrativo <= -1 && sopra?.length) {
+      return `${elencoMesi(sopra)} ${sopra.length === 1 ? 'supera' : 'superano'} 1.250 €: lì niente bonus, ma meno IRPEF. `
+        + "Sull'anno resti sotto i 15.000, e si inverte.";
+    }
+    if (!c.annoSottoSoglia && c.voci.trattamentoIntegrativo >= 1 && sotto?.length) {
+      return `${elencoMesi(sotto)} ${sotto.length === 1 ? 'resta' : 'restano'} sotto 1.250 €: lì il bonus, ma più IRPEF. `
+        + "Sull'anno superi i 15.000, e si inverte.";
+    }
+    return null;
+  })();
   const forchettaScritta = !conguaglio ? ''
     : conguaglio.direzione === 'pari' ? 'circa in pari'
       : conguaglio.direzione === 'debito' ? `ti riprendono ${euroCella(giù10(conguaglio.min))}–${euroCella(su10(conguaglio.max))}`
@@ -1592,29 +1618,37 @@ export default function CalendarView({
             </div>
             <div className="modal-form conti-bonus">
               <p className="form-hint">
-                A dicembre il datore rifà i conti sull&apos;anno vero. Di questo
-                passo: <strong>{forchettaScritta}</strong>. Al centro della stima:
+                A dicembre il datore rifà sull&apos;anno vero i conti fatti mese per
+                mese. Di questo passo: <strong>{forchettaScritta}</strong>.
               </p>
-              <div className="conti-bonus-righe">
-                {[['IRPEF', conguaglio.centrale.voci.irpef],
-                  ['Trattamento integrativo', conguaglio.centrale.voci.trattamentoIntegrativo],
-                  ['Indennità L. 207/24', conguaglio.centrale.voci.indennita]]
-                  .filter(([, v]) => Math.abs(v) >= 1)
-                  .map(([nome, v]) => (
-                    <div key={nome} className="bonus-cifre">
-                      <span>{nome}</span>
-                      <strong>{v > 0 ? '−' : '+'}{euroCella(Math.abs(v))}</strong>
-                    </div>
-                  ))}
-              </div>
-              {/* Stessa ragione della tabella del bonus: senza questa riga il
-                  «ti riprendono tutto» del riquadro sopra e il saldo qui
-                  sembrano lo stesso conto fatto male. */}
-              {conguaglio.centrale.voci.irpef * conguaglio.centrale.voci.trattamentoIntegrativo < 0
-                && Math.abs(conguaglio.centrale.voci.irpef + conguaglio.centrale.voci.trattamentoIntegrativo)
-                  < 0.3 * Math.max(Math.abs(conguaglio.centrale.voci.irpef), Math.abs(conguaglio.centrale.voci.trattamentoIntegrativo)) && (
-                <p className="form-hint">Bonus e tasse si compensano quasi del tutto: conta il saldo.</p>
-              )}
+              {/* LE DUE COLONNE da cui nasce ogni voce. «IRPEF −317 €» da solo
+                  non si capiva: di cosa è la differenza? Qui si legge. */}
+              <table className="conguaglio-tabella">
+                <thead>
+                  <tr><th /><th>Nelle buste</th><th>Sull&apos;anno</th><th>Dicembre</th></tr>
+                </thead>
+                <tbody>
+                  {[['IRPEF', 'irpef', 1], ['Tratt. integrativo', 'trattamentoIntegrativo', -1],
+                    ['Indennità L. 207/24', 'indennita', -1]]
+                    .map(([nome, k, verso]) => ({ nome, k, verso, d: conguaglio.centrale.dettaglio[k], v: -conguaglio.centrale.voci[k] }))
+                    .filter(({ d, v }) => Math.abs(v) >= 1 || d.mesi >= 1)
+                    .map(({ nome, k, d, v }) => (
+                      <tr key={k}>
+                        <td>{nome}</td>
+                        <td>{euroCella(d.mesi)}</td>
+                        <td>{euroCella(d.anno)}</td>
+                        <td><strong>{Math.abs(v) < 1 ? '0 €' : `${v > 0 ? '+' : '−'}${euroCella(Math.abs(v))}`}</strong></td>
+                      </tr>
+                    ))}
+                  <tr className="conguaglio-tabella-saldo">
+                    <td colSpan={3}>
+                      {conguaglio.centrale.saldo > 0 ? 'Ti riprendono' : 'Ti ridanno'}, al centro della stima
+                    </td>
+                    <td><strong>{conguaglio.centrale.saldo > 0 ? '−' : '+'}{euroCella(Math.abs(conguaglio.centrale.saldo))}</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+              {perchéConguaglio && <p className="form-hint">{perchéConguaglio}</p>}
               {conguaglio.centrale.voci.trattamentoIntegrativo > SOGLIA_RATEIZZAZIONE && (
                 <p className="form-hint">Il bonus da restituire, oltre i 60 €, si paga a rate.</p>
               )}
@@ -1623,7 +1657,7 @@ export default function CalendarView({
                   popup e mai altrove — chi non lo scrive ha la stima di prima. */}
               {conguaglio.meseMontante >= 0 && (
                 <label className="bonus-cifre conguaglio-ti">
-                  <span>Bonus in busta fino a {nomeMese(conguaglio.meseMontante)}, se lo sai</span>
+                  <span>Bonus in busta fino a {nomeMese(conguaglio.meseMontante)}</span>
                   <span className="conguaglio-ti-campo">
                     <input
                       type="number" inputMode="decimal" min="0" step="any"
@@ -1642,11 +1676,8 @@ export default function CalendarView({
                   ? 'Non sappiamo quanto ti hanno accreditato davvero, altri redditi, figli e spese.'
                   : 'Non sappiamo altri redditi, figli e spese.'}
                 {conguaglio.mesiVuoti > 0 && ` ${conguaglio.mesiVuoti} ${conguaglio.mesiVuoti === 1 ? 'mese senza turni conta' : 'mesi senza turni contano'} come non lavorat${conguaglio.mesiVuoti === 1 ? 'o' : 'i'}.`}
-              </p>
-              <p className="form-hint">
-                Contratto a termine: arriva con l&apos;ultima busta. Più datori: il conto
-                finale lo fa il 730 dell&apos;anno dopo, d&apos;estate. Le addizionali di
-                quest&apos;anno si pagano l&apos;anno dopo, a rate da gennaio.
+                {' '}Contratto a termine: con l&apos;ultima busta. Più datori: col 730,
+                l&apos;estate dopo. Addizionali: a rate, l&apos;anno dopo.
               </p>
               <div className="modal-footer">
                 <button type="button" className="btn btn-primary" onClick={() => setConguaglioAperto(false)}>
