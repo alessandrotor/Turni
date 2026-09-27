@@ -537,12 +537,12 @@ export default function CalendarView({
     const sopra = conguaglio.mesiSopraSoglia;
     const sotto = conguaglio.mesiSottoSoglia;
     if (c.annoSottoSoglia && c.voci.trattamentoIntegrativo <= -1 && sopra?.length) {
-      return `${elencoMesi(sopra)} ${sopra.length === 1 ? 'supera' : 'superano'} 1.250 €: lì niente bonus, ma meno IRPEF. `
-        + "Sull'anno resti sotto i 15.000, e si inverte.";
+      return `${elencoMesi(sopra)} ${sopra.length === 1 ? 'supera' : 'superano'} 1.250 €: niente trattamento integrativo, ma meno IRPEF. `
+        + "Sull'anno resti sotto i 15.000: si inverte.";
     }
     if (!c.annoSottoSoglia && c.voci.trattamentoIntegrativo >= 1 && sotto?.length) {
-      return `${elencoMesi(sotto)} ${sotto.length === 1 ? 'resta' : 'restano'} sotto 1.250 €: lì il bonus, ma più IRPEF. `
-        + "Sull'anno superi i 15.000, e si inverte.";
+      return `${elencoMesi(sotto)} ${sotto.length === 1 ? 'resta' : 'restano'} sotto 1.250 €: trattamento integrativo, ma più IRPEF. `
+        + "Sull'anno superi i 15.000: si inverte.";
     }
     return null;
   })();
@@ -1620,20 +1620,22 @@ export default function CalendarView({
             </div>
             <div className="modal-form conti-bonus">
               <p className="form-hint">
-                Il datore calcola tasse e bonus mese per mese, e a dicembre fa il conto
-                finale sull&apos;anno. Di questo passo: <strong>{forchettaScritta}</strong>.
+                Nelle buste queste voci si calcolano mese per mese. A dicembre il datore
+                le ricalcola sull&apos;anno e sistema la differenza. Di questo
+                passo: <strong>{forchettaScritta}</strong>.
               </p>
               {/* LE DUE COLONNE da cui nasce ogni voce. «IRPEF −317 €» da solo
                   non si capiva: di cosa è la differenza? Qui si legge. Le
-                  intestazioni ripetono le parole della frase sopra, e il bonus
-                  si chiama «bonus» come nel resto del popup: due nomi per la
-                  stessa cosa sembravano due cose. */}
+                  intestazioni ripetono le parole della frase sopra: «conto
+                  finale» si leggeva come «quello che pago a fine anno», che è
+                  invece la terza colonna. E mai «bonus» da solo: per chi ha un
+                  premio in busta, il bonus è quello. */}
               <table className="conguaglio-tabella">
                 <thead>
-                  <tr><th /><th>Mese per mese</th><th>Conto finale</th><th>Differenza</th></tr>
+                  <tr><th /><th>Nelle buste</th><th>Ricalcolato</th><th>A dicembre</th></tr>
                 </thead>
                 <tbody>
-                  {[['IRPEF', 'irpef', 1], ['Bonus', 'trattamentoIntegrativo', -1],
+                  {[['IRPEF', 'irpef', 1], ['Tratt. integrativo', 'trattamentoIntegrativo', -1],
                     ['Indennità L. 207/24', 'indennita', -1]]
                     .map(([nome, k, verso]) => ({ nome, k, verso, d: conguaglio.centrale.dettaglio[k], v: -conguaglio.centrale.voci[k] }))
                     .filter(({ d, v }) => Math.abs(v) >= 1 || d.mesi >= 1)
@@ -1655,14 +1657,14 @@ export default function CalendarView({
               </table>
               {perchéConguaglio && <p className="form-hint">{perchéConguaglio}</p>}
               {conguaglio.centrale.voci.trattamentoIntegrativo > SOGLIA_RATEIZZAZIONE && (
-                <p className="form-hint">Il bonus da restituire, oltre i 60 €, si paga a rate.</p>
+                <p className="form-hint">Il trattamento integrativo da restituire, oltre i 60 €, si paga a rate.</p>
               )}
               {/* IL BONUS VERO, dove il modello non può saperlo: i mesi del
                   montante li conosce solo come totale. Facoltativo, dentro il
                   popup e mai altrove — chi non lo scrive ha la stima di prima. */}
               {conguaglio.meseMontante >= 0 && (
                 <label className="bonus-cifre conguaglio-ti">
-                  <span>Bonus in busta fino a {nomeMese(conguaglio.meseMontante)}</span>
+                  <span>Tratt. integrativo fino a {nomeMese(conguaglio.meseMontante)}</span>
                   <span className="conguaglio-ti-campo">
                     <input
                       type="number" inputMode="decimal" min="0" step="any"
@@ -1682,7 +1684,7 @@ export default function CalendarView({
                   : 'Non sappiamo altri redditi, figli e spese.'}
                 {conguaglio.mesiVuoti > 0 && ` ${conguaglio.mesiVuoti} ${conguaglio.mesiVuoti === 1 ? 'mese senza turni conta' : 'mesi senza turni contano'} come non lavorat${conguaglio.mesiVuoti === 1 ? 'o' : 'i'}.`}
                 {' '}Contratto a termine: con l&apos;ultima busta. Più datori: col 730,
-                l&apos;estate dopo. Addizionali: a rate, l&apos;anno dopo.
+                l&apos;estate dopo.
               </p>
               <div className="modal-footer">
                 <button type="button" className="btn btn-primary" onClick={() => setConguaglioAperto(false)}>

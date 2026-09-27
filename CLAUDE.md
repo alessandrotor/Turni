@@ -191,8 +191,10 @@ quanto costa scoprire a dicembre che non spettava.
   mese del montante. **L'anno è la proiezione del motore** (`projectAnnualIncome`,
   la stessa del riquadro del bonus): i mesi che restano si scalano fino a
   quella cifra. Sommati per conto loro, il riquadro diceva «superi i 15.000» e
-  il popup «resti sotto». Ogni voce si mostra come «mese per mese» contro
-  «conto finale». → `check-conguaglio.mjs`
+  il popup «resti sotto». Ogni voce si mostra come «nelle buste», «ricalcolato»
+  sull'anno e «a dicembre», la differenza. «Conto finale» si leggeva come
+  quello che si paga a fine anno, che invece è la terza colonna.
+  → `check-conguaglio.mjs`
 
 Tre cose che il modello NON sa, e che vanno scritte accanto alla cifra e non in
 un disclaimer generico: quanto è stato accreditato davvero (lo dice il cedolino,
@@ -361,10 +363,12 @@ Discendono tutte dalla parola d'ordine qui sopra.
   arrivare al pulsante che la chiude è una finestra scritta troppo lunga, e la
   risposta giusta è tagliare il testo, non allungare il contenitore. Il
   calendario e la pagina scorrono, quello è il loro mestiere; un popup no.
-- **Una cosa, un nome.** Il trattamento integrativo a schermo è «il bonus»,
-  presentato una volta sola come «Trattamento integrativo (ex bonus Renzi)» nel
-  titolo del suo riquadro. Dentro lo stesso popup, «bonus» in una riga e
-  «Tratt. integrativo» in quella sotto sembravano due cose diverse.
+- **Una cosa, un nome, e mai uno che ne indica un'altra.** Il trattamento
+  integrativo non si chiama «bonus» da solo: per chi ha un premio in busta
+  (`monthlyBonus`), «il bonus» è quello, e «+401 € di bonus» si legge come il
+  premio. Si scrive «trattamento integrativo», «Tratt. integrativo» dove manca
+  spazio (è anche il nome sul cedolino). E dentro lo stesso popup un nome solo:
+  «bonus» in una riga e «Tratt. integrativo» in quella sotto sembravano due cose.
 - Le voci che esistono anche **sul cedolino si chiamano come lì** («Indennità
   L. 207/24», non «sconto sui contributi»): la prima cosa che si fa con una
   cifra dell'app è cercarla in busta, e un nome inventato la rende

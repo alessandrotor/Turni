@@ -3445,7 +3445,7 @@ input, select, textarea { font: inherit; }
 .conguaglio-tabella td {
   text-align: right;
   white-space: nowrap;
-  padding: .2rem 0 .2rem .3rem;
+  padding: .15rem 0 .15rem .3rem;
 }
 
 .conguaglio-tabella td:first-child {
