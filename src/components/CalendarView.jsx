@@ -138,6 +138,7 @@ export default function CalendarView({
   const [showShareModal, setShowShareModal] = useState(false);
   const [contiBonusAperti, setContiBonusAperti] = useState(false);
   const [conguaglioAperto, setConguaglioAperto] = useState(false);
+  const [meseSpiegato, setMeseSpiegato] = useState(false);
   // Il bonus dei mesi del montante copiato dalle buste: campo facoltativo nel
   // popup, scritto in `settings` solo quando si lascia il campo.
   const [busteBozza, setBusteBozza] = useState({});
@@ -157,6 +158,8 @@ export default function CalendarView({
   useModalDismiss(contiBonusRef, () => setContiBonusAperti(false), contiBonusAperti);
   const conguaglioRef = useRef(null);
   useModalDismiss(conguaglioRef, () => setConguaglioAperto(false), conguaglioAperto);
+  const meseSpiegatoRef = useRef(null);
+  useModalDismiss(meseSpiegatoRef, () => setMeseSpiegato(false), meseSpiegato);
   useModalDismiss(avvisoFotoRef, () => setMostraAvvisoFoto(false), mostraAvvisoFoto);
   const focusCellRef = useRef(null);
 
@@ -391,7 +394,9 @@ export default function CalendarView({
       perché?
     </button>
   );
-  const fmt0 = (n) => formatCurrency(Math.round(n));
+  // Coi centesimi del motore: arrotondare all'euro e poi scrivere «,00»
+  // (1156,00 per 1.155,86) fingeva una precisione che la cifra non aveva.
+  const fmt0 = (n) => formatCurrency(n);
 
   // Gli euro sul singolo turno sono un'OPZIONE, spenta di default: chi non
   // l'accende trova la griglia e l'agenda identiche a prima. Il totale del mese
@@ -1161,6 +1166,20 @@ export default function CalendarView({
                 {netMonth?.bonusCuneo > 0 && <> + indennità L. 207/24 {formatCurrency(netMonth.bonusCuneo)}</>}
                 {monthTfr > 0 && <> + TFR {formatCurrency(monthTfr)}</>}
               </span>
+              {/* LA REGOLA DEL MESE, dove si vede il suo effetto. Ad agosto la
+                  busta tratteneva 8,38 € di IRPEF e nessuno capiva perché: il
+                  lordo × 12 superava i 15.000, e il programma paghe aveva
+                  tolto il tratt. integrativo e messo la detrazione alta. La
+                  spiegazione stava in «Come è calcolato?», chiusa. */}
+              {netMonth?.esitoTi?.proiezione != null && (
+                <span className="bonus-strip-note">
+                  {numeroIt(netMonth.esitoTi.baseMese)} × 12 = {numeroIt(netMonth.esitoTi.proiezione)} €:{' '}
+                  {netMonth.esitoTi.spetta
+                    ? 'sotto i 15.000, c\'è il tratt. integrativo.'
+                    : 'sopra i 15.000, niente tratt. integrativo ma meno IRPEF.'}{' '}
+                  <button type="button" className="linklike" onClick={() => setMeseSpiegato(true)}>perché?</button>
+                </span>
+              )}
             </div>
 
             <p className="net-disclaimer--prominent">
@@ -1288,48 +1307,8 @@ export default function CalendarView({
                   </>
                 )}
 
-                {/* La decisione sul TI è MENSILE e segue quella del software
-                    paghe. Va spiegata dove compare il numero, perché altrimenti
-                    un bonus che sparisce da un mese all'altro sembra un
-                    capriccio dell'app — e invece dipende da quanto si è
-                    lavorato in quel mese. */}
-                {netMonth?.esitoTi && (
-                  <div className="net-subnote">
-                    {netMonth.esitoTi.spetta ? (
-                      <>
-                        <strong>Trattamento integrativo incluso.</strong> Il tuo datore lo eroga
-                        nei mesi in cui il lordo sta sotto i <strong>1.250 €</strong>: questo mese
-                        sei a {fmt0(netMonth.esitoTi.baseMese)} €.
-                      </>
-                    ) : (
-                      <>
-                        <strong>Trattamento integrativo non incluso questo mese.</strong> Il tuo
-                        datore lo toglie quando il lordo del mese supera i <strong>1.250 €</strong>
-                        {' '}(qui {fmt0(netMonth.esitoTi.baseMese)} €): moltiplicato per dodici
-                        supererebbe i 15.000 € oltre i quali non spetta. Se a fine anno hai
-                        guadagnato meno, te lo restituisce il conguaglio di dicembre.
-                      </>
-                    )}
-                  </div>
-                )}
-                {/* QUALE numero ha prodotto questo netto. Prima qui c'era
-                    scritto «proiezione annua usata», e dal 14 settembre 2026 non
-                    è più vero: il netto del mese esce dal lordo del mese × 12,
-                    come fa il software paghe. La proiezione dell'anno resta
-                    sotto, dove serve ancora — il bonus e il rischio di
-                    restituzione sono domande annuali. Tenerle separate è l'unico
-                    modo perché un utente possa ritrovare i propri numeri. */}
-                <div className="net-subnote">
-                  Questo netto esce da <strong>{fmt0(netMonth?.esitoTi?.baseMese ?? monthGross)} €</strong>
-                  {' '}di lordo del mese: il tuo datore calcola tasse e bonus mese per mese,
-                  moltiplicando per dodici quello che hai guadagnato.
-                  {riferimento > 0 && netMonth?.esitoTi && !netMonth.esitoTi.spetta && (
-                    <> Un mese pieno come questo ti colloca nella fascia sopra i 15.000, dove la
-                    detrazione è più alta e il bonus non spetta.</>
-                  )}
-                  {' '}A dicembre il conguaglio rifà il conto sull'anno vero e rimette a posto
-                  la differenza.
-                </div>
+                {/* La regola del mese (lordo × 12) non sta più qui: ha la sua
+                    riga nel riquadro del netto e il suo popup, «perché?». */}
                 <div className="net-subnote">
                   Sull'anno, la stima è {fmt0(netBasis)} € lordi ({PROJECTION_LABEL[netProjection.source]}):
                   serve per il bonus e per il rischio di restituzione qui sotto, non per questo netto.
@@ -1634,6 +1613,50 @@ export default function CalendarView({
           onConfirm={handleImportConfirm}
           onClose={() => setImportParsed(null)}
         />
+      )}
+
+      {/* PERCHÉ OGNI MESE È DIVERSO. La regola del programma paghe (lordo del
+          mese × 12, `tiSpettaQuestoMese`) e il suo effetto su QUESTO mese, con
+          le righe e i nomi della busta. Le cifre sono quelle di `nettoDelMese`:
+          le stesse del riquadro da cui si apre. Verificata su buste Zucchetti
+          (check-ti-mensile.mjs): lo si dice, senza promettere che ogni
+          programma paghe faccia uguale. */}
+      {meseSpiegato && netMonth?.esitoTi?.proiezione != null && (
+        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setMeseSpiegato(false)}>
+          <div ref={meseSpiegatoRef} className="modal" role="dialog" aria-modal="true" aria-label="Perché ogni mese è diverso">
+            <div className="modal-header">
+              <h2 className="modal-title">Perché ogni mese è diverso</h2>
+            </div>
+            <div className="modal-form conti-bonus">
+              <p className="form-hint">
+                Il datore non sa quanto guadagnerai quest&apos;anno: ogni mese fa i conti come
+                se l&apos;anno fosse uguale a quel mese, lordo × 12. Sotto 1.250 € al mese ti
+                dà il tratt. integrativo; sopra lo toglie, ma alza la detrazione, che vicino
+                ai 15.000 vale quasi uguale.
+              </p>
+              <div className="net-group-label">
+                {formatMonthYear(currentMonth)}: {numeroIt(netMonth.esitoTi.baseMese)} × 12
+                = {numeroIt(netMonth.esitoTi.proiezione)} €, {netMonth.esitoTi.spetta ? 'sotto' : 'sopra'} i 15.000
+              </div>
+              <div className="conti-bonus-righe">
+                <div className="bonus-cifre"><span>IRPEF lorda</span><strong>{formatCurrency(netMonth.irpefLorda)}</strong></div>
+                <div className="bonus-cifre"><span>Detrazioni lav. dip.</span><strong>−{formatCurrency(netMonth.detrazioniApplicate)}</strong></div>
+                <div className="bonus-cifre bonus-cifre--totale"><span>Ritenute IRPEF</span><strong>{formatCurrency(netMonth.irpefNetta)}</strong></div>
+                <div className="bonus-cifre"><span>Tratt. integrativo</span><strong>+{formatCurrency(netMonth.trattamentoIntegrativo)}</strong></div>
+              </div>
+              <p className="form-hint">
+                A dicembre rifà i conti sull&apos;anno vero e sistema la differenza: è il
+                conguaglio. Verificato sulle buste Zucchetti; con altri programmi paghe i
+                mesi possono andare diversamente.
+              </p>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-primary" onClick={() => setMeseSpiegato(false)}>
+                  Ho capito
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* IL CONGUAGLIO, per chi tocca «perché?». Tre registri, mai mescolati:

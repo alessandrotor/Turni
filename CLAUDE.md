@@ -285,6 +285,12 @@ nemmeno la maggiorazione domenicale lo comprendeva.
   febbraio e maggio e luglio sotto soglia col bonus, agosto sopra senza. Per chi
   legge, la soglia si dice in una cifra sola: **1.250 € di lordo al mese**
   (15.000 ÷ 12). → `check-ti-mensile.mjs`
+  **La regola si spiega dove si vede il suo effetto**: il riquadro del netto ha
+  una riga «1.298 × 12 = 15.576 €: sopra i 15.000…» e un «perché?» con IRPEF
+  lorda, detrazioni, ritenute e trattamento integrativo del mese, coi nomi
+  della busta. Ad agosto 2026 la busta tratteneva 8,38 € di IRPEF e non si
+  capiva perché: la spiegazione stava in «Come è calcolato?», chiusa. Si dice
+  «verificato sulle buste Zucchetti», non «lo fanno tutti i datori».
   Attenzione a non confonderla con la proiezione annua, che RESTA e serve ad
   altro: il margine del bonus e il rischio di restituzione sono domande
   sull'anno. Il pannello del netto le tiene su due righe separate apposta.
