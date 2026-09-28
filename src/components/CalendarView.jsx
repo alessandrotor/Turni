@@ -459,7 +459,7 @@ export default function CalendarView({
   const {
     monthKey, perMonthBonus, fixedMonthlyTotal,
     netProjection, netBasis, extraThisMonth, monthGross,
-    netMonth, monthNet, monthTrattenute, monthBonus, monthTfr,
+    netMonth, monthNet, monthTrattenute, monthTfr,
     tiInfo, effectiveRatePct, addizionaliPct, showNetPanel: showNetPanelRaw,
     riferimento,
   } = useMonthlyNet({ year, month, settings, pay, annualGross, annualExtras, daysInMonth });
@@ -1126,21 +1126,33 @@ export default function CalendarView({
               <span className="bonus-strip-label">
                 Netto stimato del mese <span className="beta-tag">beta</span>
               </span>
-              <span className="net-strip-value">{fmt0(monthNet)}</span>
+              {/* IL PASSAGGIO DAL LORDO AL NETTO, coi centesimi del motore.
+                  Prima: «1.200» in barra, «1199,86» nel riepilogo, «1156,00»
+                  qui, e niente che le legasse. Il netto partiva da un lordo
+                  che non compariva da nessuna parte (turni + voci fisse), e
+                  «1156,00» era arrotondato all'euro ma scritto coi centesimi.
+                  «Bonus +157» sommava trattamento integrativo e indennità
+                  L. 207/24, proprio sotto la casella del premio chiamato
+                  «bonus»: tre cose con un nome solo. */}
+              <span className="net-strip-value">{formatCurrency(monthNet)}</span>
               <span className="bonus-strip-note">
-                trattenute {fmt0(monthTrattenute)} ({effectiveRatePct.toFixed(1)}% del lordo)
-                {monthBonus > 0 && <> · bonus +{fmt0(monthBonus)}</>}
-                {monthTfr > 0 && <> · TFR +{fmt0(monthTfr)}</>}
+                lordo {formatCurrency(monthGross)}
+                {(extraThisMonth > 0 || fixedMonthlyTotal > 0 || perMonthBonus > 0) && (
+                  <> = turni {formatCurrency(pay?.total || 0)}
+                    {[
+                      extraThisMonth > 0 && ` + ${month === EXTRA_MONTHS.tredicesima ? '13ª' : '14ª'} ${formatCurrency(extraThisMonth)}`,
+                      fixedMonthlyTotal > 0 && ` + voci fisse ${formatCurrency(fixedMonthlyTotal)}`,
+                      perMonthBonus > 0 && ` + bonus ${formatCurrency(perMonthBonus)}`,
+                    ].filter(Boolean).join('')}
+                  </>
+                )}
               </span>
-              {(extraThisMonth > 0 || fixedMonthlyTotal > 0 || perMonthBonus > 0) && (
-                <span className="bonus-strip-note">
-                  include {[
-                    extraThisMonth > 0 && `${month === EXTRA_MONTHS.tredicesima ? '13ª' : '14ª'} +${fmt0(extraThisMonth)}`,
-                    fixedMonthlyTotal > 0 && `voci fisse +${fmt0(fixedMonthlyTotal)}`,
-                    perMonthBonus > 0 && `bonus +${fmt0(perMonthBonus)}`,
-                  ].filter(Boolean).join(' · ')}
-                </span>
-              )}
+              <span className="bonus-strip-note">
+                − trattenute {formatCurrency(monthTrattenute)} ({effectiveRatePct.toFixed(1)}% del lordo)
+                {netMonth?.trattamentoIntegrativo > 0 && <> + tratt. integrativo {formatCurrency(netMonth.trattamentoIntegrativo)}</>}
+                {netMonth?.bonusCuneo > 0 && <> + indennità L. 207/24 {formatCurrency(netMonth.bonusCuneo)}</>}
+                {monthTfr > 0 && <> + TFR {formatCurrency(monthTfr)}</>}
+              </span>
             </div>
 
             <p className="net-disclaimer--prominent">

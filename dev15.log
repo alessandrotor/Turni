@@ -1,0 +1,10 @@
+
+> turni@0.9.5 dev
+> vite --port 5189 --host 127.0.0.1
+
+Re-optimizing dependencies because lockfile has changed
+
+  VITE v5.4.21  ready in 4597 ms
+
+  ➜  Local:   http://127.0.0.1:5189/
+2:14:21 PM [vite] page reload public/privacy/index.html
