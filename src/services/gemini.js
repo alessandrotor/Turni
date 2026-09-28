@@ -1,3 +1,4 @@
+import { erroreImport, tipoDaRisposta, TIPO_ERRORE } from '../utils/errore-import';
 import { isIsoDate } from '../utils/dates';
 import { avvicinaAnno } from '../utils/import-turni';
 import { ottieniToken, turnstileAttivo } from './turnstile';
@@ -67,7 +68,7 @@ function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error('Impossibile leggere il file selezionato'));
+    reader.onerror = () => reject(erroreImport(TIPO_ERRORE.CARICAMENTO, 'Impossibile leggere il file selezionato.'));
     reader.readAsDataURL(file);
   });
 }
@@ -105,7 +106,7 @@ async function prepareImage(file) {
 
 export async function parseShiftsFromImage(imageFile, workerName = '') {
   if (!PROXY_URL) {
-    throw new Error('Servizio di riconoscimento non configurato: manca VITE_AI_PROXY_URL.');
+    throw erroreImport(TIPO_ERRORE.CARICAMENTO, 'Servizio di riconoscimento non configurato: manca VITE_AI_PROXY_URL.');
   }
   const image = await prepareImage(imageFile);
 
@@ -121,7 +122,7 @@ export async function parseShiftsFromImage(imageFile, workerName = '') {
       // guasto è persistito, quindi il consiglio non può più essere «riprova».
       // Il motivo tecnico resta in console, dove serve a chi ripara.
       console.warn('turnstile: nessun token dopo i tentativi —', e?.message);
-      throw new Error('Verifica di sicurezza non riuscita. Ricarica la pagina e riprova; se continua, potrebbe essere un blocco del browser.');
+      throw erroreImport(TIPO_ERRORE.CARICAMENTO, 'Verifica di sicurezza non riuscita. Ricarica la pagina e riprova; se continua, potrebbe essere un blocco del browser.');
     }
   }
 
@@ -143,17 +144,18 @@ export async function parseShiftsFromImage(imageFile, workerName = '') {
     });
   } catch (err) {
     if (controller.signal.aborted) {
-      throw new Error(`Tempo scaduto (${REQUEST_TIMEOUT_MS / 1000}s): riprova con un'immagine più piccola o una connessione migliore.`);
+      throw erroreImport(TIPO_ERRORE.CARICAMENTO, `Tempo scaduto (${REQUEST_TIMEOUT_MS / 1000}s): riprova con un'immagine più piccola o una connessione migliore.`);
     }
-    throw new Error('Impossibile contattare il servizio di riconoscimento: controlla la connessione.');
+    throw erroreImport(TIPO_ERRORE.CARICAMENTO, 'Impossibile contattare il servizio di riconoscimento: controlla la connessione.');
   } finally {
     clearTimeout(timer);
   }
 
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
-    // Il proxy manda messaggi già scritti per chi usa l'app: si mostrano così.
-    throw new Error(payload?.error || 'Il riconoscimento non è riuscito.');
+    // Il proxy manda messaggi già scritti per chi usa l'app: si mostrano così,
+    // con la famiglia decisa dallo stato (utils/errore-import.js).
+    throw erroreImport(tipoDaRisposta(response.status, payload), payload?.error || 'Il riconoscimento non è riuscito.');
   }
 
   const raw = payload?.items;
@@ -163,7 +165,13 @@ export async function parseShiftsFromImage(imageFile, workerName = '') {
   // produzione. Il `console.warn` di Turnstile qui sopra resta invece sempre
   // acceso di proposito — quello è un guasto, e serve a chi ripara.
   if (ENABLE_DEBUG) console.log('[gemini-usage]', JSON.stringify(usage));
-  if (!Array.isArray(raw) || raw.length === 0) throw new Error('Nessun turno trovato');
+  if (payload == null) {
+    // Risposta «riuscita» ma illeggibile: si è rotto il ritorno, non la foto.
+    throw erroreImport(TIPO_ERRORE.CARICAMENTO, 'La risposta del riconoscimento è arrivata incompleta: riprova.');
+  }
+  if (!Array.isArray(raw) || raw.length === 0) {
+    throw erroreImport(TIPO_ERRORE.LETTURA, 'Nessun turno trovato nell\'immagine.');
+  }
 
   // Mappa allo schema turni dell'app; conserva i campi di provenienza.
   // Data e orari vengono NORMALIZZATI e validati: un valore fuori formato
@@ -184,6 +192,11 @@ export async function parseShiftsFromImage(imageFile, workerName = '') {
       _colonna: t.intestazione_colonna,
     }))
     .filter(s => s.date && s.startTime && s.endTime);
+  // Righe lette, ma nessuna con data e orari validi: prima arrivava al modale
+  // una lista vuota, senza dire niente. È un fallimento di LETTURA.
+  if (shifts.length === 0) {
+    throw erroreImport(TIPO_ERRORE.LETTURA, `Trovate ${raw.length} righe, ma nessuna con data e orari leggibili.`);
+  }
 
   return { shifts, usage };
 }

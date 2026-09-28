@@ -42,6 +42,7 @@ import { KEY_CAL_LAYOUT } from '../services/backup';
 
 import { intervalloCella } from '../utils/orario-cella';
 import { stimaConguaglio, tiMontanteNoto } from '../utils/conguaglio';
+import { tipoDiErrore, TITOLO_ERRORE } from '../utils/errore-import';
 import { SOGLIA_RATEIZZAZIONE } from '../utils/restituzione';
 
 // La forchetta a dieci euro: una cifra al centesimo prometterebbe una
@@ -625,8 +626,10 @@ export default function CalendarView({
       setImportParsed(parsed);
       sendImportTelemetry({ ok: true, ...usage, shifts: parsed.length, ...meta });
     } catch (err) {
-      setImportError(err.message || 'Errore durante l\'analisi dell\'immagine');
-      sendImportTelemetry({ ok: false, error: String(err.message || err), ...meta });
+      // Due famiglie, due gesti: rifare la foto o controllare la rete.
+      const tipo = tipoDiErrore(err);
+      setImportError({ tipo, messaggio: err.message || 'Il riconoscimento non è riuscito.' });
+      sendImportTelemetry({ ok: false, error: String(err.message || err), tipo, ...meta });
     } finally {
       setImportLoading(false);
     }
@@ -819,7 +822,11 @@ export default function CalendarView({
               </button>
             </span>
           )}
-          {importError && <span className="import-error">{importError}</span>}
+          {importError && (
+            <span className="import-error" role="alert">
+              <strong>{TITOLO_ERRORE[importError.tipo]}</strong> {importError.messaggio}
+            </span>
+          )}
           {ENABLE_DEBUG && importUsage && (
             <div className="debug-usage">
               <span className="debug-usage-tag">🐛 DEBUG token</span>

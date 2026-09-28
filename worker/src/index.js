@@ -470,8 +470,14 @@ async function gestisci(request, env) {
   const u = data?.usageMetadata || {};
 
   // Troncamento esplicito: un JSON parziale perderebbe turni in silenzio.
+  // L'immagine è arrivata ed è stata letta, ma i turni sono troppi per una
+  // risposta: è un fallimento di LETTURA (`tipo`), non di rete — il gesto
+  // giusto è rifare la foto più piccola, non riprovare la stessa.
   if (String(finishReason) === 'MAX_TOKENS') {
-    return json({ error: 'Risposta troncata: nessun turno importato per non perdere dati.' }, 502);
+    return json({
+      error: 'Troppi turni in una foto: nessuno importato per non perderne. Fotografa la tabella in due parti.',
+      tipo: 'lettura',
+    }, 502);
   }
 
   const text = (candidate?.content?.parts || []).map(p => p.text || '').join('').trim();
