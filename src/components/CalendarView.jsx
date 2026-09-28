@@ -468,6 +468,13 @@ export default function CalendarView({
   // farebbero comunque comparire trattamento integrativo/cuneo, dando
   // l'impressione di un netto "inventato" per un mese ancora vuoto.
   const showNetPanel = showNetPanelRaw && counted.length > 0;
+  // Quello che la busta aggiunge ai turni, dal motore (`lordoDelMese`): con
+  // le competenze dei turni somma al lordo mostrato in barra e nel riepilogo.
+  const vociOltreTurni = [
+    extraThisMonth > 0 && { label: month === EXTRA_MONTHS.tredicesima ? 'Tredicesima' : 'Quattordicesima', value: extraThisMonth },
+    fixedMonthlyTotal > 0 && { label: 'Voci fisse', value: fixedMonthlyTotal },
+    perMonthBonus > 0 && { label: `Bonus di ${formatMonthYear(currentMonth)}`, value: perMonthBonus },
+  ].filter(Boolean);
 
   // Quanto è "coperta" la proiezione dal maturato: i mesi dell'anno in cui ci
   // sono turni, contro quelli già trascorsi. Se chi usa l'app ha cominciato a
@@ -784,8 +791,13 @@ export default function CalendarView({
             risposta, quello è il perché. */}
         {pay !== null && (
           <div className="cal-header-soldi">
-            <span className="cal-header-soldi-val" title={`${formatCurrency(pay.total)} lordi in ${formatMonthYear(currentMonth)}`}>
-              {euroCella(pay.total)}
+            {/* UN SOLO LORDO in tutta la schermata: quello del mese come lo
+                compone il motore (`lordoDelMese`: turni + voci fisse + bonus
+                spuntato + 13ª/14ª), coi centesimi. La barra diceva 1.200 (i
+                soli turni, arrotondati), il riepilogo 1199,86 e il netto
+                partiva da 1329,86: tre cifre per la stessa domanda. */}
+            <span className="cal-header-soldi-val" title={`${formatCurrency(monthGross)} lordi in ${formatMonthYear(currentMonth)}`}>
+              {formatCurrency(monthGross)}
             </span>
             <span className="cal-header-soldi-ore">{formatMinutesShort(totalMins)}</span>
             <span className="cal-header-soldi-eti">lordo stimato</span>
@@ -1042,9 +1054,11 @@ export default function CalendarView({
           {pay !== null && (
             <div className="summary-item">
               <span className="summary-label">Retribuzione stimata</span>
-              <span className="summary-value diff-positive">{formatCurrency(pay.total)}</span>
-              {/* Con una sola voce la scomposizione ripeterebbe il totale. */}
-              {competenze.length > 1 && competenze.map(v => (
+              <span className="summary-value diff-positive">{formatCurrency(monthGross)}</span>
+              {/* Con una sola voce la scomposizione ripeterebbe il totale.
+                  Le voci sommano al lordo della barra: prima i turni, poi
+                  quello che la busta aggiunge ogni mese. */}
+              {vociOltreTurni.length + competenze.length > 1 && competenze.map(v => (
                 <span className="summary-sublabel" key={v.label}>
                   {v.tag === 'overtime' ? (
                     <span className="tooltip-wrap">
@@ -1061,6 +1075,9 @@ export default function CalendarView({
                   {' '}{formatCurrency(v.value)}
                   {v.nota && <em className="summary-sublabel-nota"> di cui {v.nota}</em>}
                 </span>
+              ))}
+              {vociOltreTurni.map(v => (
+                <span className="summary-sublabel" key={v.label}>{v.label} {formatCurrency(v.value)}</span>
               ))}
               {pay.shiftsWithoutRate > 0 && (
                 <span className="summary-sublabel summary-sublabel--warn">
@@ -1136,19 +1153,7 @@ export default function CalendarView({
                   «bonus»: tre cose con un nome solo. */}
               <span className="net-strip-value">{formatCurrency(monthNet)}</span>
               <span className="bonus-strip-note">
-                lordo {formatCurrency(monthGross)}
-                {(extraThisMonth > 0 || fixedMonthlyTotal > 0 || perMonthBonus > 0) && (
-                  <> = turni {formatCurrency(pay?.total || 0)}
-                    {[
-                      extraThisMonth > 0 && ` + ${month === EXTRA_MONTHS.tredicesima ? '13ª' : '14ª'} ${formatCurrency(extraThisMonth)}`,
-                      fixedMonthlyTotal > 0 && ` + voci fisse ${formatCurrency(fixedMonthlyTotal)}`,
-                      perMonthBonus > 0 && ` + bonus ${formatCurrency(perMonthBonus)}`,
-                    ].filter(Boolean).join('')}
-                  </>
-                )}
-              </span>
-              <span className="bonus-strip-note">
-                − trattenute {formatCurrency(monthTrattenute)} ({effectiveRatePct.toFixed(1)}% del lordo)
+                lordo {formatCurrency(monthGross)} − trattenute {formatCurrency(monthTrattenute)} ({effectiveRatePct.toFixed(1)}% del lordo)
                 {netMonth?.trattamentoIntegrativo > 0 && <> + tratt. integrativo {formatCurrency(netMonth.trattamentoIntegrativo)}</>}
                 {netMonth?.bonusCuneo > 0 && <> + indennità L. 207/24 {formatCurrency(netMonth.bonusCuneo)}</>}
                 {monthTfr > 0 && <> + TFR {formatCurrency(monthTfr)}</>}

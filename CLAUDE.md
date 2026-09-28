@@ -144,7 +144,11 @@ sotto tutta la griglia. E `tiDecision` sapeva dire se il bonus spetta ADESSO, ma
 quanto costa scoprire a dicembre che non spettava.
 
 - **Il totale del mese sta nella barra flottante**, sempre, perché è la risposta
-  alla prima domanda. Gli euro sul singolo turno sono un'opzione
+  alla prima domanda. È il lordo del mese del motore (`lordoDelMese`: turni +
+  voci fisse + bonus spuntato + 13ª/14ª), coi centesimi, e lo stesso numero
+  apre il riepilogo e il passaggio al netto. Prima la barra diceva i soli
+  turni arrotondati (1.200), il riepilogo 1199,86 e il netto partiva da
+  1329,86: tre cifre per una domanda. Gli euro sul singolo turno sono un'opzione
   (`mostraEuroPerTurno`), spenta di default: chi non l'accende trova il
   calendario di prima.
 - **Il lordo di un turno si chiede a `lordoTurno`** (`utils/pay.js`), mai
