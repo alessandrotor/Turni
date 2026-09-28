@@ -188,6 +188,37 @@ const vecchio = stimaConguaglio({
 esito(vecchio.tiMontanteNoto === null && vecchio.centrale.tiAccreditato === sr.centrale.tiAccreditato,
   'riferito a un altro montante → ignorato');
 
+// L'IRPEF PAGATA delle buste del montante. Busta di agosto 2026 (LUL
+// Zucchetti, Turismo liv. 5, part-time 60%), riquadro dei progressivi:
+// «Imp. INPS 10.358,00 … IRPEF pagata 590,70». Col montante diviso in parti
+// uguali (~1.235 € al mese, appena sotto 1.250) ogni mese risultava col
+// trattamento integrativo e la detrazione bassa, e l'IRPEF di gennaio–agosto
+// veniva ~170 € sopra la busta: giugno e agosto, sopra 1.250, hanno la
+// detrazione alta e un'IRPEF quasi nulla (agosto: 8,38 €).
+const agosto = { ...reale, priorTaxableIncome: 10358, priorIncomeDate: '2026-08-01' };
+const turniSet = turniAS.filter((t) => t.date.startsWith('2026-09'));
+const pmSet = computePayByShift(turniSet, agosto);
+const senza = stimaConguaglio({ anno: 2026, allShifts: turniSet, settings: agosto, payMap: pmSet, oggi: new Date(2026, 8, 28) });
+const irpefStimata = senza.centrale.irpefMesi.slice(0, 8).reduce((t, v) => t + v, 0);
+esito(irpefStimata > 590.70 + 100, 'senza la cifra delle buste la stima di gen–ago è troppo alta (il difetto)',
+  `${Math.round(irpefStimata)} € contro 590,70 in busta`);
+const con = stimaConguaglio({
+  anno: 2026, allShifts: turniSet, payMap: pmSet, oggi: new Date(2026, 8, 28),
+  settings: { ...agosto, irpefPagataMontante: { importo: 590.70, fino: '2026-08' } },
+});
+const irpefBuste = con.centrale.irpefMesi.slice(0, 8).reduce((t, v) => t + v, 0);
+esito(Math.abs(irpefBuste - 590.70) < 0.01, 'con «IRPEF pagata» gen–ago è la busta, al centesimo', `${irpefBuste.toFixed(2)} €`);
+esito(Math.abs(con.centrale.dettaglio.irpef.mesi - (senza.centrale.dettaglio.irpef.mesi - irpefStimata + 590.70)) < 0.02,
+  '  e settembre–dicembre restano quelli stimati');
+esito(con.min <= con.centrale.saldo && con.centrale.saldo <= con.max, '  e il saldo sta nella forchetta',
+  `${Math.round(con.min)} ≤ ${Math.round(con.centrale.saldo)} ≤ ${Math.round(con.max)}`);
+const vecchia = stimaConguaglio({
+  anno: 2026, allShifts: turniSet, payMap: pmSet, oggi: new Date(2026, 8, 28),
+  settings: { ...agosto, irpefPagataMontante: { importo: 590.70, fino: '2026-07' } },
+});
+esito(vecchia.irpefMontanteNota === null, 'IRPEF di un altro montante → ignorata');
+esito(senza.busteAnno === 12, 'l\'intestazione conta le buste dell\'anno', `${senza.busteAnno}`);
+
 const { mesi } = mesiDellAnno({ anno: 2026, allShifts: turni, settings: S, payMap, oggi, scenario: 'contratto' });
 esito(mesi[11].extra === 0 || mesi[11].lordo > mesi[10].lordo, 'dicembre porta la 13ª se è impostata', '');
 esito(stimaConguaglio({ anno: 2026, allShifts: [], settings: S, payMap: {}, oggi }).min !== undefined,

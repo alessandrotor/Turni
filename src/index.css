@@ -3457,3 +3457,9 @@ input, select, textarea { font: inherit; }
   border-top: 1px solid var(--c-border);
   padding-top: .4rem;
 }
+
+.conguaglio-buste {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}

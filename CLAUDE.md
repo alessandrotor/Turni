@@ -192,10 +192,13 @@ quanto costa scoprire a dicembre che non spettava.
   popup prometteva «+999 € te li ridanno» accanto al riquadro che diceva «888 €
   presi». Il bonus preso finora è UNO per le due schermate (`tiFinora`), e chi
   lo copia dalle buste nel popup lo fa valere al posto della stima, legato al
-  mese del montante. **L'anno è la proiezione del motore** (`projectAnnualIncome`,
+  mese del montante. Lo stesso per l'IRPEF: il progressivo «IRPEF pagata» della
+  busta del montante sostituisce la stima dei mesi coperti, che col montante
+  diviso in parti uguali veniva ~170 € sopra la busta di agosto 2026. **L'anno è la proiezione del motore** (`projectAnnualIncome`,
   la stessa del riquadro del bonus): i mesi che restano si scalano fino a
   quella cifra. Sommati per conto loro, il riquadro diceva «superi i 15.000» e
-  il popup «resti sotto». Ogni voce si mostra come «nelle buste», «ricalcolato»
+  il popup «resti sotto». Ogni voce si mostra come «nelle N buste» (tutto
+  l'anno, non solo quelle arrivate), «ricalcolato»
   sull'anno e «a dicembre», la differenza. «Conto finale» si leggeva come
   quello che si paga a fine anno, che invece è la terza colonna.
   → `check-conguaglio.mjs`

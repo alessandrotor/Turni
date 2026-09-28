@@ -41,7 +41,7 @@ import useOccupato from '../hooks/useOccupato';
 import { KEY_CAL_LAYOUT } from '../services/backup';
 
 import { intervalloCella } from '../utils/orario-cella';
-import { stimaConguaglio, tiMontanteNoto } from '../utils/conguaglio';
+import { stimaConguaglio, tiMontanteNoto, irpefMontanteNota } from '../utils/conguaglio';
 import { tipoDiErrore, TITOLO_ERRORE } from '../utils/errore-import';
 import { SOGLIA_RATEIZZAZIONE } from '../utils/restituzione';
 
@@ -140,7 +140,7 @@ export default function CalendarView({
   const [conguaglioAperto, setConguaglioAperto] = useState(false);
   // Il bonus dei mesi del montante copiato dalle buste: campo facoltativo nel
   // popup, scritto in `settings` solo quando si lascia il campo.
-  const [tiBusteBozza, setTiBusteBozza] = useState(null);
+  const [busteBozza, setBusteBozza] = useState({});
   const [calLayout, setCalLayout] = useState(() => {
     try { return localStorage.getItem(KEY_CAL_LAYOUT) || 'grid'; } catch { return 'grid'; }
   });
@@ -519,14 +519,17 @@ export default function CalendarView({
   // produttività non si decide, si riceve, e la domanda utile è quanto
   // varrebbe l'anno se arrivasse sempre.
   const nomeMese = (m) => new Date(year, m, 1).toLocaleDateString('it-IT', { month: 'long' });
-  const salvaTiBuste = () => {
-    if (tiBusteBozza == null || !conguaglio) return;
-    const v = Number(String(tiBusteBozza).replace(',', '.'));
+  // «fino ad agosto», «fino a luglio»: la d eufonica davanti ad a-.
+  const finoA = (m) => { const n = nomeMese(m); return `fino ${/^a/i.test(n) ? 'ad' : 'a'} ${n}`; };
+  // Le cifre delle buste del montante: scritte in `settings` solo quando si
+  // lascia il campo, legate al mese del montante (utils/conguaglio.js).
+  const salvaBuste = (chiave) => {
+    const bozza = busteBozza[chiave];
+    if (bozza == null || !conguaglio) return;
+    const v = Number(String(bozza).replace(',', '.'));
     const fino = String(settings.priorIncomeDate || '').slice(0, 7);
-    onUpdateSettings?.({
-      tiAccreditatoMontante: String(tiBusteBozza).trim() === '' || !(v >= 0) ? null : { importo: v, fino },
-    });
-    setTiBusteBozza(null);
+    onUpdateSettings?.({ [chiave]: String(bozza).trim() === '' || !(v >= 0) ? null : { importo: v, fino } });
+    setBusteBozza((b) => ({ ...b, [chiave]: null }));
   };
   // IL PERCHÉ di IRPEF e bonus, coi mesi che lo causano. Nei mesi sopra 1.250 €
   // il datore non dà il bonus ma applica la detrazione più alta, che lo
@@ -545,11 +548,11 @@ export default function CalendarView({
     const sopra = conguaglio.mesiSopraSoglia;
     const sotto = conguaglio.mesiSottoSoglia;
     if (c.annoSottoSoglia && c.voci.trattamentoIntegrativo <= -1 && sopra?.length) {
-      return `${elencoMesi(sopra)} ${sopra.length === 1 ? 'supera' : 'superano'} 1.250 €: niente trattamento integrativo, ma meno IRPEF. `
+      return `${elencoMesi(sopra)} ${sopra.length === 1 ? 'supera' : 'superano'} 1.250 €: niente tratt. integrativo, ma meno IRPEF. `
         + "Sull'anno resti sotto i 15.000: si inverte.";
     }
     if (!c.annoSottoSoglia && c.voci.trattamentoIntegrativo >= 1 && sotto?.length) {
-      return `${elencoMesi(sotto)} ${sotto.length === 1 ? 'resta' : 'restano'} sotto 1.250 €: trattamento integrativo, ma più IRPEF. `
+      return `${elencoMesi(sotto)} ${sotto.length === 1 ? 'resta' : 'restano'} sotto 1.250 €: tratt. integrativo, ma più IRPEF. `
         + "Sull'anno superi i 15.000: si inverte.";
     }
     return null;
@@ -1644,9 +1647,8 @@ export default function CalendarView({
             </div>
             <div className="modal-form conti-bonus">
               <p className="form-hint">
-                Nelle buste queste voci si calcolano mese per mese. A dicembre il datore
-                le ricalcola sull&apos;anno e sistema la differenza. Di questo
-                passo: <strong>{forchettaScritta}</strong>.
+                A dicembre il datore ricalcola queste voci sull&apos;anno e sistema la
+                differenza. Di questo passo: <strong>{forchettaScritta}</strong>.
               </p>
               {/* LE DUE COLONNE da cui nasce ogni voce. «IRPEF −317 €» da solo
                   non si capiva: di cosa è la differenza? Qui si legge. Le
@@ -1656,7 +1658,7 @@ export default function CalendarView({
                   premio in busta, il bonus è quello. */}
               <table className="conguaglio-tabella">
                 <thead>
-                  <tr><th /><th>Nelle buste</th><th>Ricalcolato</th><th>A dicembre</th></tr>
+                  <tr><th /><th>Nelle {conguaglio.busteAnno} buste</th><th>Ricalcolato</th><th>A dicembre</th></tr>
                 </thead>
                 <tbody>
                   {[['IRPEF', 'irpef', 1], ['Tratt. integrativo', 'trattamentoIntegrativo', -1],
@@ -1683,32 +1685,37 @@ export default function CalendarView({
               {conguaglio.centrale.voci.trattamentoIntegrativo > SOGLIA_RATEIZZAZIONE && (
                 <p className="form-hint">Il trattamento integrativo da restituire, oltre i 60 €, si paga a rate.</p>
               )}
-              {/* IL BONUS VERO, dove il modello non può saperlo: i mesi del
-                  montante li conosce solo come totale. Facoltativo, dentro il
-                  popup e mai altrove — chi non lo scrive ha la stima di prima. */}
-              {conguaglio.meseMontante >= 0 && (
-                <label className="bonus-cifre conguaglio-ti">
-                  <span>Tratt. integrativo fino a {nomeMese(conguaglio.meseMontante)}</span>
+              {/* LE CIFRE VERE, dove il modello non può saperle: i mesi del
+                  montante li conosce solo come totale. Facoltative, dentro il
+                  popup e mai altrove — chi non le scrive ha la stima. Stanno
+                  sulla stessa busta da cui viene il montante: «IRPEF pagata»
+                  fra i progressivi, il trattamento integrativo sommando le
+                  voci del mese. */}
+              {conguaglio.meseMontante >= 0 && <div className="conguaglio-buste">{[
+                ['irpefPagataMontante', `IRPEF pagata ${finoA(conguaglio.meseMontante)}`, irpefMontanteNota, conguaglio.centrale.irpefMesi],
+                ['tiAccreditatoMontante', `Tratt. integrativo ${finoA(conguaglio.meseMontante)}`, tiMontanteNoto, conguaglio.centrale.tiMesi],
+              ].map(([chiave, etichetta, noto, perMese]) => (
+                <label key={chiave} className="bonus-cifre conguaglio-ti">
+                  <span>{etichetta}</span>
                   <span className="conguaglio-ti-campo">
                     <input
                       type="number" inputMode="decimal" min="0" step="any"
-                      value={tiBusteBozza ?? (tiMontanteNoto(settings) ?? '')}
-                      placeholder={numeroIt(Math.round(conguaglio.centrale.tiMesi
+                      value={busteBozza[chiave] ?? (noto(settings) ?? '')}
+                      placeholder={numeroIt(Math.round(perMese
                         .slice(0, conguaglio.meseMontante + 1).reduce((t, v) => t + v, 0)))}
-                      onChange={(e) => setTiBusteBozza(e.target.value)}
-                      onBlur={salvaTiBuste}
+                      onChange={(e) => setBusteBozza((bz) => ({ ...bz, [chiave]: e.target.value }))}
+                      onBlur={() => salvaBuste(chiave)}
                       onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
                     /> €
                   </span>
                 </label>
-              )}
+              ))}</div>}
               <p className="form-hint">
                 {conguaglio.meseMontante < 0
                   ? 'Non sappiamo quanto ti hanno accreditato davvero, altri redditi, figli e spese.'
                   : 'Non sappiamo altri redditi, figli e spese.'}
                 {conguaglio.mesiVuoti > 0 && ` ${conguaglio.mesiVuoti} ${conguaglio.mesiVuoti === 1 ? 'mese senza turni conta' : 'mesi senza turni contano'} come non lavorat${conguaglio.mesiVuoti === 1 ? 'o' : 'i'}.`}
-                {' '}Contratto a termine: con l&apos;ultima busta. Più datori: col 730,
-                l&apos;estate dopo.
+                {' '}Più datori: col 730, l&apos;estate dopo.
               </p>
               <div className="modal-footer">
                 <button type="button" className="btn btn-primary" onClick={() => setConguaglioAperto(false)}>

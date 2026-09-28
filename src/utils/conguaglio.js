@@ -68,28 +68,36 @@ const r2 = (n) => Math.round(n * 100) / 100;
  *   `lordo` 0 fuori dal rapporto di lavoro.
  * @param {object} settings
  */
-export function saldoConguaglio(mesi, settings = {}, { tiMontanteNoto = null } = {}) {
-  let irpef = 0, cuneo = 0, lordoAnno = 0, giorni = 0;
-  const tiMesi = mesi.map((m) => {
+export function saldoConguaglio(mesi, settings = {}, { tiMontanteNoto = null, irpefMontanteNota = null } = {}) {
+  let cuneo = 0, lordoAnno = 0, giorni = 0;
+  const irpefMesi = [];
+  const tiMesi = mesi.map((m, i) => {
+    irpefMesi[i] = 0;
     if (!(m.lordo > 0)) return 0;
     const n = nettoDelMese(m.lordo, settings, m.giorni, m.extra || 0);
-    irpef += n.irpefNetta;
+    irpefMesi[i] = n.irpefNetta;
     cuneo += n.bonusCuneo;
     lordoAnno += m.lordo;
     giorni += m.giorni;
     return n.trattamentoIntegrativo;
   });
-  // Il bonus dei mesi del montante, se lo ha copiato dalle buste, vale quello:
-  // ripartito come il modello lo aveva ripartito, o in parti uguali se il
-  // modello non ne vedeva. Così anche `tiFinora` a metà montante resta sensato.
-  if (tiMontanteNoto != null) {
+  // Quello che le buste del montante hanno fatto davvero, se lo ha copiato:
+  // vale al posto della stima, ripartito sui mesi come li ripartiva il
+  // modello (o in parti uguali se il modello non ne vedeva). Il montante è
+  // un totale, e diviso in parti uguali sbagliava di 170 € l'IRPEF di
+  // gennaio–agosto contro il progressivo stampato in busta.
+  const sostituisci = (perMese, noto) => {
+    if (noto == null) return;
     const idx = mesi.map((m, i) => (m.montante && m.lordo > 0 ? i : -1)).filter((i) => i >= 0);
-    const modello = idx.reduce((s, i) => s + tiMesi[i], 0);
+    const modello = idx.reduce((t, i) => t + perMese[i], 0);
     idx.forEach((i) => {
-      tiMesi[i] = modello > 0 ? tiMontanteNoto * (tiMesi[i] / modello) : tiMontanteNoto / idx.length;
+      perMese[i] = modello > 0 ? noto * (perMese[i] / modello) : noto / idx.length;
     });
-  }
-  const ti = tiMesi.reduce((s, v) => s + v, 0);
+  };
+  sostituisci(tiMesi, tiMontanteNoto);
+  sostituisci(irpefMesi, irpefMontanteNota);
+  const ti = tiMesi.reduce((t, v) => t + v, 0);
+  const irpef = irpefMesi.reduce((t, v) => t + v, 0);
 
   // Il dovuto dell'anno, dal motore: detrazioni e bonus rapportati ai giorni
   // del rapporto di lavoro li fa `calcNetAnnual` (opzione `giorni`).
@@ -118,6 +126,7 @@ export function saldoConguaglio(mesi, settings = {}, { tiMontanteNoto = null } =
     lordoAnno: r2(lordoAnno),
     tiAccreditato: r2(ti),
     tiMesi,
+    irpefMesi,
   };
 }
 
@@ -223,18 +232,23 @@ export function mesiDellAnno({
 }
 
 /**
- * Il bonus dei mesi del montante copiato dalle buste, se vale ancora: è legato
- * al mese del montante, e un montante spostato lo rende vecchio. Meglio
+ * Una cifra dei mesi del montante copiata dalle buste, se vale ancora: è
+ * legata al mese del montante, e un montante spostato la rende vecchia. Meglio
  * tornare al modello che usare in silenzio la cifra di un altro periodo.
  */
-export function tiMontanteNoto(settings = {}) {
-  const v = settings.tiAccreditatoMontante;
+function notoDelMontante(settings, chiave) {
+  const v = settings[chiave];
   if (!v || typeof v !== 'object') return null;
   const importo = Number(v.importo);
   if (!Number.isFinite(importo) || importo < 0) return null;
   if (!(Number(settings.priorTaxableIncome) > 0)) return null;
   return v.fino === String(settings.priorIncomeDate || '').slice(0, 7) ? importo : null;
 }
+
+/** Il trattamento integrativo delle buste del montante (somma delle voci). */
+export const tiMontanteNoto = (settings = {}) => notoDelMontante(settings, 'tiAccreditatoMontante');
+/** L'IRPEF pagata fino al mese del montante: il progressivo «IRPEF pagata». */
+export const irpefMontanteNota = (settings = {}) => notoDelMontante(settings, 'irpefPagataMontante');
 
 /**
  * La stima da mostrare: forchetta, stima centrale per voce, e cosa non si sa.
@@ -248,20 +262,22 @@ export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi = new 
   let cutoffIdx = -1;
   let mesiCentrale = [];
   const noto = tiMontanteNoto(settings);
+  const irpefNota = irpefMontanteNota(settings);
   // Il centro è la proiezione del motore quando c'è; contratto e media dei
   // mesi passati fanno gli estremi.
   const centro = Number.isFinite(proiezioneAnnua) && proiezioneAnnua > 0 ? 'proiezione' : 'contratto';
   for (const scenario of centro === 'proiezione' ? ['proiezione', 'contratto', 'media'] : ['contratto', 'media']) {
-    // Col bonus delle buste la distribuzione non si fa più variare: moverebbe
-    // l'IRPEF lasciando fermo il bonus, la combinazione che non esiste.
-    for (const montanteAlterno of noto == null ? [false, true] : [false]) {
+    // Con una cifra delle buste la distribuzione non si fa più variare:
+    // moverebbe l'altra voce lasciando ferma questa, la combinazione che non
+    // esiste (vedi l'intestazione).
+    for (const montanteAlterno of noto == null && irpefNota == null ? [false, true] : [false]) {
       const esito = mesiDellAnno({
         anno, allShifts, settings, payMap, oggi, montanteAlterno,
         scenario: scenario === 'proiezione' ? 'contratto' : scenario,
         totaleAnno: scenario === 'proiezione' ? proiezioneAnnua : null,
       });
       ({ mesiVuoti, meseOggi, cutoffIdx } = esito);
-      const s = saldoConguaglio(esito.mesi, settings, { tiMontanteNoto: noto });
+      const s = saldoConguaglio(esito.mesi, settings, { tiMontanteNoto: noto, irpefMontanteNota: irpefNota });
       if (s.lordoAnno <= 0) return null;
       casi.push(s.saldo);
       if (scenario === centro && !montanteAlterno) { centrale = s; mesiCentrale = esito.mesi; }
@@ -280,6 +296,9 @@ export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi = new 
     // è il periodo di cui l'interfaccia può chiedere il bonus vero.
     meseMontante: cutoffIdx,
     tiMontanteNoto: noto,
+    irpefMontanteNota: irpefNota,
+    // Le buste dell'anno, per l'intestazione: chi è assunto a luglio ne ha sei.
+    busteAnno: mesiCentrale.filter((m) => m.lordo > 0).length,
     // PERCHÉ bonus e IRPEF si muovono: i mesi in cui la regola mensile ha
     // deciso diversamente dall'anno. Sopra 1.250 € il datore non dà il bonus
     // ma applica la detrazione più alta; sotto, il contrario. Solo con la
