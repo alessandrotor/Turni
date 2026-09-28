@@ -16,8 +16,9 @@
 // l'ha quasi sempre.
 //
 // LA FORCHETTA (probabile)
-// Non si dà una cifra: si fanno variare le due incognite che si possono
-// misurare, e si mostra dove cadono gli estremi.
+// Non si dà una cifra: si fanno variare le incognite che si possono misurare,
+// e si mostra dove cadono gli estremi. L'anno è la proiezione del motore
+// (vedi `stimaConguaglio`); senza proiezione, anche:
 //  · I MESI CHE RESTANO: come da contratto, o come la media di quelli passati.
 //  · COME ERANO I MESI DEL MONTANTE: tutti uguali, o alterni del 20% sopra e
 //    sotto (le buste 2026 vanno da 1.099 a 2.048 €). A parità di somma
@@ -267,10 +268,16 @@ export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi = new 
   let mesiCentrale = [];
   const noto = tiMontanteNoto(settings);
   const irpefNota = irpefMontanteNota(settings);
-  // Il centro è la proiezione del motore quando c'è; contratto e media dei
-  // mesi passati fanno gli estremi.
+  // L'ANNO È LA PROIEZIONE DEL MOTORE, anche agli estremi. Prima gli estremi
+  // rifacevano l'anno coi mesi che restano da contratto o in media: con una
+  // proiezione di 17.341 € il riquadro diceva «superi i 15.000» e la forchetta
+  // andava «da 140 € a credito a 130 € a debito», perché il lato a credito era
+  // un anno da 15.568, sotto la soglia. Due anni diversi nella stessa riga.
+  // Ora la forchetta fa variare solo quello che la proiezione non decide: come
+  // erano i mesi del montante. Contratto e media restano per chi non ha una
+  // proiezione da passare.
   const centro = Number.isFinite(proiezioneAnnua) && proiezioneAnnua > 0 ? 'proiezione' : 'contratto';
-  for (const scenario of centro === 'proiezione' ? ['proiezione', 'contratto', 'media'] : ['contratto', 'media']) {
+  for (const scenario of centro === 'proiezione' ? ['proiezione'] : ['contratto', 'media']) {
     // Con una cifra delle buste la distribuzione non si fa più variare:
     // moverebbe l'altra voce lasciando ferma questa, la combinazione che non
     // esiste (vedi l'intestazione).

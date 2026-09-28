@@ -1,0 +1,8 @@
+
+> turni@0.9.5 dev
+> vite --port 5189 --host 127.0.0.1
+
+
+  VITE v5.4.21  ready in 341 ms
+
+  ➜  Local:   http://127.0.0.1:5189/

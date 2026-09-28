@@ -170,6 +170,11 @@ for (const proiezione of [14000, 16237.49, 17500]) {
     `proiezione ${proiezione} € → stesso anno e stesso lato della soglia del riquadro`,
     `${sp.centrale.annoSottoSoglia ? 'sotto' : 'sopra'}, bonus ${sp.centrale.voci.trattamentoIntegrativo > 0 ? 'da ridare' : 'a credito'}`);
   esito(sp.min <= sp.centrale.saldo && sp.centrale.saldo <= sp.max, '  e il saldo sta nella forchetta', `${Math.round(sp.min)} ≤ ${Math.round(sp.centrale.saldo)} ≤ ${Math.round(sp.max)}`);
+  // Gli estremi usano la stessa proiezione: la forchetta non mette più un
+  // anno sopra i 15.000 e uno sotto nella stessa riga («da 140 € a credito a
+  // 130 € a debito» con una proiezione di 17.341 €).
+  esito(Math.abs(sp.centrale.saldo) < 50 || Math.sign(sp.min) === Math.sign(sp.max),
+    '  e gli estremi stanno dallo stesso lato', sp.centrale.annoSottoSoglia ? 'a credito' : 'a debito');
 }
 
 // Il bonus copiato dalle buste vale al posto del modello, ma solo per il

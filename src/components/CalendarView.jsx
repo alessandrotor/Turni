@@ -42,6 +42,7 @@ import { KEY_CAL_LAYOUT } from '../services/backup';
 
 import { intervalloCella } from '../utils/orario-cella';
 import { stimaConguaglio, tiMontanteNoto, irpefMontanteNota } from '../utils/conguaglio';
+import { confrontoMontante } from '../utils/confronto-montante';
 import { tipoDiErrore, TITOLO_ERRORE } from '../utils/errore-import';
 import { SOGLIA_RATEIZZAZIONE } from '../utils/restituzione';
 
@@ -447,17 +448,14 @@ export default function CalendarView({
   const priorMonthLabel = priorMonth
     ? formatMonthYear(new Date(Number(priorMonth.slice(0, 4)), Number(priorMonth.slice(5, 7)) - 1, 1))
     : '';
-  const shiftsCovered = useMemo(() => {
-    if (!(montante > 0 && priorMonth && priorMonth.slice(0, 4) === String(year))) return 0;
-    const covered = (allShifts || []).filter(
-      s => s.date.slice(0, 4) === String(year) && s.date.slice(0, 7) <= priorMonth);
-    // Contesto straordinari = tutti i turni (le settimane a cavallo d'anno
-    // devono restare intere), come in App.annualGross.
-    const p = calcTotalPay(covered, settings, allShifts || covered, payByShift);
-    return p ? p.total : 0;
-  }, [montante, priorMonth, year, allShifts, settings, payByShift]);
-  const montanteMismatch = montante > 0 && shiftsCovered > 0
-    && Math.abs(montante - shiftsCovered) > Math.max(500, 0.30 * shiftsCovered);
+  // Il confronto col montante ha senso solo se ogni mese coperto ha turni, e
+  // si fa sul lordo del mese del motore: vedi utils/confronto-montante.js.
+  const confronto = useMemo(
+    () => confrontoMontante({ anno: year, settings, allShifts: allShifts || [], payMap: payByShift }),
+    [year, settings, allShifts, payByShift],
+  );
+  const montanteMismatch = !!confronto?.avvisa;
+  const shiftsCovered = confronto?.lordoTurni ?? 0;
 
   // Netto stimato del mese (beta): calcolo estratto in useMonthlyNet per
   // leggibilità (logica invariata). Riceve pay del mese e reddito annuo.
@@ -1499,7 +1497,7 @@ export default function CalendarView({
             </span>
             {montanteMismatch && (
               <span className="bonus-strip-note bonus-strip-note--warn">
-                ⚠️ Il montante ({fmt0(montante)}) non torna coi turni fino a {priorMonthLabel} ({fmt0(shiftsCovered)}).
+                ⚠️ Il montante ({fmt0(montante)}) non torna coi mesi segnati {priorMonthLabel ? `fino ${/^a/i.test(priorMonthLabel) ? 'ad' : 'a'} ${priorMonthLabel.toLowerCase()}` : ''} ({fmt0(shiftsCovered)}).
               </span>
             )}
 
