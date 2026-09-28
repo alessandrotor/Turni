@@ -122,6 +122,10 @@ export function saldoConguaglio(mesi, settings = {}, { tiMontanteNoto = null, ir
     voci,
     dettaglio,
     annoSottoSoglia: a.imponibile <= TAX_2026.TI_SOGLIA_PIENO,
+    // Il reddito su cui si misurano i 15.000 (lordo meno contributi): a
+    // schermo va questo accanto alla soglia, non il lordo, o «16.000 €,
+    // sotto i 15.000» sembrerebbe un errore.
+    redditoAnno: r2(a.imponibile),
     saldo: r2(voci.irpef + voci.trattamentoIntegrativo + voci.indennita),
     lordoAnno: r2(lordoAnno),
     tiAccreditato: r2(ti),

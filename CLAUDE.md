@@ -291,6 +291,12 @@ nemmeno la maggiorazione domenicale lo comprendeva.
   della busta. Ad agosto 2026 la busta tratteneva 8,38 € di IRPEF e non si
   capiva perché: la spiegazione stava in «Come è calcolato?», chiusa. Si dice
   «verificato sulle buste Zucchetti», non «lo fanno tutti i datori».
+  **E si dice che il mese non è cosa fatta.** Quando l'anno, di questo passo,
+  finisce dall'altra parte dei 15.000, la riga aggiunge «A dicembre si
+  inverte» e il popup dice cosa succede a QUESTO mese al conguaglio, col saldo
+  dell'anno di `stimaConguaglio`. L'anno si confronta coi 15.000 sul reddito
+  (`redditoAnno`, lordo meno contributi), il mese sul lordo × 12: sono le due
+  regole vere, e ognuna ha la sua grandezza accanto.
   Attenzione a non confonderla con la proiezione annua, che RESTA e serve ad
   altro: il margine del bonus e il rischio di restituzione sono domande
   sull'anno. Il pannello del netto le tiene su due righe separate apposta.

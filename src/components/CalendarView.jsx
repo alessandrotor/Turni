@@ -562,6 +562,13 @@ export default function CalendarView({
     }
     return null;
   })();
+  // IL MESE NON È COSA FATTA. La riga del netto dice cosa ha deciso il
+  // programma paghe su QUESTO mese; se l'anno, di questo passo, finisce
+  // dall'altra parte dei 15.000, a dicembre la decisione si rovescia. Il lato
+  // del mese e quello dell'anno vengono entrambi dal motore
+  // (`tiSpettaQuestoMese`, `stimaConguaglio` sulla proiezione dell'anno).
+  const meseSiInverte = !!(conguaglio && netMonth?.esitoTi?.proiezione != null
+    && conguaglio.centrale.annoSottoSoglia !== netMonth.esitoTi.spetta);
   const forchettaScritta = !conguaglio ? ''
     : conguaglio.direzione === 'pari' ? 'circa in pari'
       : conguaglio.direzione === 'debito' ? `ti riprendono ${euroCella(giù10(conguaglio.min))}–${euroCella(su10(conguaglio.max))}`
@@ -1176,7 +1183,8 @@ export default function CalendarView({
                   {numeroIt(netMonth.esitoTi.baseMese)} × 12 = {numeroIt(netMonth.esitoTi.proiezione)} €:{' '}
                   {netMonth.esitoTi.spetta
                     ? 'sotto i 15.000, c\'è il tratt. integrativo.'
-                    : 'sopra i 15.000, niente tratt. integrativo ma meno IRPEF.'}{' '}
+                    : 'sopra i 15.000, niente tratt. integrativo ma meno IRPEF.'}
+                  {meseSiInverte && <strong> A dicembre si inverte.</strong>}{' '}
                   <button type="button" className="linklike" onClick={() => setMeseSpiegato(true)}>perché?</button>
                 </span>
               )}
@@ -1629,14 +1637,13 @@ export default function CalendarView({
             </div>
             <div className="modal-form conti-bonus">
               <p className="form-hint">
-                Il datore non sa quanto guadagnerai quest&apos;anno: ogni mese fa i conti come
-                se l&apos;anno fosse uguale a quel mese, lordo × 12. Sotto 1.250 € al mese ti
-                dà il tratt. integrativo; sopra lo toglie, ma alza la detrazione, che vicino
-                ai 15.000 vale quasi uguale.
+                Il datore non sa quanto guadagnerai: ogni mese fa i conti su lordo × 12
+                (verificato sulle buste Zucchetti). Sotto 1.250 € al mese ti dà il tratt.
+                integrativo; sopra lo toglie, ma alza la detrazione.
               </p>
               <div className="net-group-label">
                 {formatMonthYear(currentMonth)}: {numeroIt(netMonth.esitoTi.baseMese)} × 12
-                = {numeroIt(netMonth.esitoTi.proiezione)} €, {netMonth.esitoTi.spetta ? 'sotto' : 'sopra'} i 15.000
+                = {numeroIt(netMonth.esitoTi.proiezione)} €
               </div>
               <div className="conti-bonus-righe">
                 <div className="bonus-cifre"><span>IRPEF lorda</span><strong>{formatCurrency(netMonth.irpefLorda)}</strong></div>
@@ -1644,11 +1651,27 @@ export default function CalendarView({
                 <div className="bonus-cifre bonus-cifre--totale"><span>Ritenute IRPEF</span><strong>{formatCurrency(netMonth.irpefNetta)}</strong></div>
                 <div className="bonus-cifre"><span>Tratt. integrativo</span><strong>+{formatCurrency(netMonth.trattamentoIntegrativo)}</strong></div>
               </div>
-              <p className="form-hint">
-                A dicembre rifà i conti sull&apos;anno vero e sistema la differenza: è il
-                conguaglio. Verificato sulle buste Zucchetti; con altri programmi paghe i
-                mesi possono andare diversamente.
-              </p>
+              {/* DICEMBRE, di questo passo: quello che la tabella sopra mostra
+                  non è cosa fatta. Proiezione e saldo sono quelli del
+                  conguaglio (`stimaConguaglio`), non un conto rifatto qui. */}
+              {conguaglio ? (
+                <p className="form-hint">
+                  <strong>A dicembre, di questo passo</strong> il reddito dell&apos;anno
+                  fa {euroCella(conguaglio.centrale.redditoAnno)}, {conguaglio.centrale.annoSottoSoglia ? 'sotto' : 'sopra'} i
+                  15.000:{' '}
+                  {!meseSiInverte ? 'per questo mese niente da sistemare.'
+                    : netMonth.esitoTi.spetta
+                      ? 'il tratt. integrativo di questo mese te lo riprendono, l\'IRPEF in più te la ridanno.'
+                      : 'il tratt. integrativo di questo mese te lo ridanno, l\'IRPEF in meno se la riprendono.'}
+                  {' '}Sull&apos;anno {forchettaScritta}:{' '}
+                  <button type="button" className="linklike" onClick={() => { setMeseSpiegato(false); setConguaglioAperto(true); }}>vedi il conguaglio</button>.
+                </p>
+              ) : (
+                <p className="form-hint">
+                  A dicembre il datore rifà i conti sull&apos;anno vero e sistema la
+                  differenza: è il conguaglio.
+                </p>
+              )}
               <div className="modal-footer">
                 <button type="button" className="btn btn-primary" onClick={() => setMeseSpiegato(false)}>
                   Ho capito

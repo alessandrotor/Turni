@@ -217,6 +217,11 @@ const vecchia = stimaConguaglio({
   settings: { ...agosto, irpefPagataMontante: { importo: 590.70, fino: '2026-07' } },
 });
 esito(vecchia.irpefMontanteNota === null, 'IRPEF di un altro montante → ignorata');
+// La soglia dei 15.000 è sul REDDITO (lordo meno contributi): il popup del
+// mese la confronta con `redditoAnno`, che deve essere quello del motore.
+esito(Math.abs(senza.centrale.redditoAnno - calcNetAnnual(senza.centrale.lordoAnno, agosto).imponibile) < 0.01
+  && senza.centrale.annoSottoSoglia === (senza.centrale.redditoAnno <= 15000),
+  'il reddito dell\'anno accanto alla soglia è quello del motore', `${senza.centrale.redditoAnno} €`);
 esito(senza.busteAnno === 12, 'l\'intestazione conta le buste dell\'anno', `${senza.busteAnno}`);
 
 const { mesi } = mesiDellAnno({ anno: 2026, allShifts: turni, settings: S, payMap, oggi, scenario: 'contratto' });
