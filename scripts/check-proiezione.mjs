@@ -209,6 +209,32 @@ for (const [nome, ag, ae, st] of casiVoci) {
 const senzaEtichetta = projectAnnualIncome(13000, 900, S, ANNO).voci.filter(v => !v.label).length;
 verifica('tutte le voci hanno un nome', senzaEtichetta, 0, '');
 
+// ── Il montante contiene già voci fisse e premi dei suoi mesi ─────────────
+//
+// Il montante è l'imponibile dei progressivi della busta: tutto il lordo fino
+// al suo mese, voci fisse e premi compresi. La proiezione ci sommava sopra le
+// voci fisse × 12 e ogni bonus spuntato dell'anno, anche quelli dei mesi del
+// montante: con un montante fermato ad agosto, otto mesi di voci fisse e i
+// premi spuntati di gennaio–agosto contati due volte.
+console.log('\nIl montante non si somma due volte\n');
+const conMontante = (extra = {}) => ({
+  ...S, fixedMonthlyItems: [{ amount: 10 }], monthlyBonusAmount: 120,
+  priorTaxableIncome: 9000, priorIncomeDate: `${ANNO}-08-01`, ...extra,
+});
+for (const modo of ['stimato', 'ytd']) {
+  const base = projectAnnualIncome(9000, 0, conMontante({ tiProjectionMode: modo, fixedMonthlyItems: [] }), ANNO).value;
+  const conFisse = projectAnnualIncome(9000, 0, conMontante({ tiProjectionMode: modo }), ANNO).value;
+  // stimato: le si aggiunge per i 4 mesi che restano. ytd: le si annualizza
+  // col maturato, e quelle del montante ci sono già — resta il solo settembre,
+  // × 12/9. In entrambi i casi l'anno ne conta dodici, non venti.
+  verifica(`${modo}: voci fisse solo nei mesi dopo il montante`, arr(conFisse - base),
+    modo === 'ytd' ? arr(10 * 12 / MESE) : 4 * 10, 'non × 12 sopra il montante');
+  const spunte = { [`${ANNO}-02`]: true, [`${ANNO}-07`]: true, [`${ANNO}-09`]: true };
+  const conPremi = projectAnnualIncome(9000, 0, conMontante({ tiProjectionMode: modo, monthlyBonus: spunte }), ANNO).value;
+  verifica('  e i premi spuntati solo dopo il montante', arr(conPremi - conFisse), 120,
+    'febbraio e luglio sono già nel montante');
+}
+
 console.log();
 if (falliti) {
   console.error(`${falliti} caso/i su ${totale} non tornano.`);

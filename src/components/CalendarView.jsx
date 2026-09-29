@@ -567,20 +567,25 @@ export default function CalendarView({
   // (`tiSpettaQuestoMese`, `stimaConguaglio` sulla proiezione dell'anno).
   const meseSiInverte = !!(conguaglio && netMonth?.esitoTi?.proiezione != null
     && conguaglio.centrale.annoSottoSoglia !== netMonth.esitoTi.spetta);
-  const forchettaScritta = !conguaglio ? ''
-    : conguaglio.direzione === 'pari' ? 'circa in pari'
-      : conguaglio.direzione === 'debito' ? `ti riprendono ${euroCella(giù10(conguaglio.min))}–${euroCella(su10(conguaglio.max))}`
-        : conguaglio.direzione === 'credito' ? `ti ridanno ${euroCella(giù10(-conguaglio.max))}–${euroCella(su10(-conguaglio.min))}`
-          : `da ${euroCella(su10(-conguaglio.min))} a credito a ${euroCella(su10(conguaglio.max))} a debito`;
+  const scriviForchetta = (c) => (!c ? ''
+    : c.direzione === 'pari' ? 'circa in pari'
+      : c.direzione === 'debito' ? `ti riprendono ${euroCella(giù10(c.min))}–${euroCella(su10(c.max))}`
+        : c.direzione === 'credito' ? `ti ridanno ${euroCella(giù10(-c.max))}–${euroCella(su10(-c.min))}`
+          : `da ${euroCella(su10(-c.min))} a credito a ${euroCella(su10(c.max))} a debito`);
+  const forchettaScritta = scriviForchetta(conguaglio);
 
   const [simulaBonus, setSimulaBonus] = useState(false);
   const settingsBonusOgniMese = useMemo(() => {
+    // Da questo mese a dicembre: i mesi passati sono andati come sono andati
+    // (spuntati o no, o dentro il montante), e simulare un premio preso a
+    // febbraio non risponde a nessuna domanda che si possa ancora decidere.
     const tutti = {};
-    for (let m = 0; m < 12; m += 1) tutti[`${year}-${String(m + 1).padStart(2, '0')}`] = true;
+    const primo = year === oggiAnno ? new Date().getMonth() : (year > oggiAnno ? 0 : 12);
+    for (let m = primo; m < 12; m += 1) tutti[`${year}-${String(m + 1).padStart(2, '0')}`] = true;
     // I mesi già spuntati vincono: possono portare un importo diverso (formato
     // legacy), e una simulazione non deve riscriverli con quello fisso di oggi.
     return { ...settings, monthlyBonus: { ...tutti, ...(settings.monthlyBonus || {}) } };
-  }, [settings, year]);
+  }, [settings, year, oggiAnno]);
   const proiezioneBonusOgniMese = useMemo(
     () => projectAnnualIncome(annualGross, annualExtras, settingsBonusOgniMese, year, {
       enableNetCalc: ENABLE_NET_CALC,
@@ -591,6 +596,17 @@ export default function CalendarView({
   // (`proiezione`), non su un'altra: due numeri sotto lo stesso riquadro che
   // partono da basi diverse sono il modo più rapido di non essere creduti.
   const differenzaBonus = proiezioneBonusOgniMese.value - proiezione;
+  // IL CONGUAGLIO DELLA SIMULAZIONE. La casella cambiava il previsto di fine
+  // anno ma non il conguaglio, che è la domanda vera: «se lo prendessi sempre,
+  // a dicembre cosa succede?». Stesso motore, stesse impostazioni simulate,
+  // stessa proiezione simulata; la cifra vera sopra non si tocca.
+  const conguaglioSimulato = useMemo(
+    () => (simulaBonus && year === oggiAnno ? stimaConguaglio({
+      anno: year, allShifts, settings: settingsBonusOgniMese, payMap: payByShift || {},
+      proiezioneAnnua: proiezioneBonusOgniMese.value,
+    }) : null),
+    [simulaBonus, year, oggiAnno, allShifts, settingsBonusOgniMese, payByShift, proiezioneBonusOgniMese],
+  );
   // Solo se un bonus esiste E se simularlo cambierebbe qualcosa: a chi li ha
   // già spuntati tutti la domanda non ha nessuna risposta da dare.
   const puoSimulareBonus = monthlyBonusAmount > 0 && differenzaBonus >= 0.005;
@@ -1535,7 +1551,7 @@ export default function CalendarView({
                     checked={simulaBonus}
                     onChange={e => setSimulaBonus(e.target.checked)}
                   />
-                  <span>E se prendessi i {fmt0(monthlyBonusAmount)} <strong>tutti i mesi</strong>?</span>
+                  <span>E se prendessi i {fmt0(monthlyBonusAmount)} <strong>tutti i mesi</strong> da qui a dicembre?</span>
                 </label>
                 {simulaBonus && (
                   <p className="simula-bonus-esito">
@@ -1545,6 +1561,12 @@ export default function CalendarView({
                       <strong className={`simula-bonus-ti simula-bonus-ti--${esitoSimulazione.tono}`}>
                         {esitoSimulazione.testo}
                       </strong>
+                    )}
+                    {conguaglioSimulato && (
+                      <span className="simula-bonus-conguaglio">
+                        Conguaglio di dicembre: <strong>{scriviForchetta(conguaglioSimulato)}</strong>
+                        {' '}(adesso: {forchettaScritta})
+                      </span>
                     )}
                     <em>
                       previsto a fine anno — solo una simulazione: i mesi segnati restano

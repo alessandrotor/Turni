@@ -176,7 +176,11 @@ quanto costa scoprire a dicembre che non spettava.
   casella dentro quel riquadro, sotto il previsto di fine anno: non tocca i
   dati salvati e non sostituisce la cifra vera, le si affianca — serve a
   confrontare. E risponde con l'esito, non col lordo: «+1.080 €» non dice se
-  fai saltare la soglia, che è il motivo per cui te lo stai chiedendo.
+  fai saltare la soglia, che è il motivo per cui te lo stai chiedendo. Risponde
+  anche col conguaglio simulato (stesso `stimaConguaglio`, impostazioni e
+  proiezione simulate), accanto a quello vero: la casella cambiava il previsto
+  di fine anno e lasciava fermo dicembre. Simula solo da questo mese a
+  dicembre: i mesi passati sono andati come sono andati.
 
 - **Il conguaglio di dicembre è una forchetta, mai una cifra** (`utils/conguaglio.js`).
   È la differenza fra quanto il datore trattiene mese per mese (lordo × 12) e
@@ -311,7 +315,9 @@ nemmeno la maggiorazione domenicale lo comprendeva.
   `extras` passa per reddito ricorrente e viene moltiplicata per
   12/mesi-trascorsi. Stessa regola per il bonus spuntato mese per mese: un
   premio di produttività non torna ogni mese, e a settembre tre bonus da 120 €
-  ne promettevano quattro. → `check-montante-mensilita.mjs`,
+  ne promettevano quattro. E il montante contiene già voci fisse e premi dei
+  suoi mesi: sommarci sopra le voci fisse × 12 e i bonus spuntati di
+  gennaio–agosto li contava due volte. → `check-montante-mensilita.mjs`,
   `check-proiezione.mjs`
 - **La soglia del supplementare resta MENSILE** (103,20 h = 24 × 4,3), non
   settimanale: questo lo avevano stabilito giugno e luglio, e non cambia.

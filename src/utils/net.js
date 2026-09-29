@@ -699,7 +699,16 @@ export function projectAnnualIncome(
 ) {
   const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
     .reduce((s, v) => s + (Number(v.amount) || 0), 0);
-  const fixedAnnual = fixedMonthlyTotal * 12;
+  // IL MONTANTE CONTIENE GIÀ voci fisse e premi dei suoi mesi: è l'imponibile
+  // dei progressivi, tutto il lordo fino a quel mese. Sommarci sopra le voci
+  // fisse × 12 e ogni bonus spuntato dell'anno li contava due volte — con un
+  // montante fermato ad agosto, otto mesi di voci fisse e i premi spuntati di
+  // gennaio–agosto in più nella proiezione. Stessa regola già data a 13ª/14ª
+  // in `computeAnnualGrossFromShifts`. → check-proiezione.mjs
+  const priorDate = String(settings.priorIncomeDate || '');
+  const mesiNelMontante = Number(settings.priorTaxableIncome) > 0 && Number(priorDate.slice(0, 4)) === year
+    ? Math.min(12, Math.max(0, Number(priorDate.slice(5, 7)) || 0)) : 0;
+  const fixedAnnual = fixedMonthlyTotal * (12 - mesiNelMontante);
   const monthlyBonusAmount = Number(settings.monthlyBonusAmount) || 0;
   const resolveBonusEntry = (v) => (typeof v === 'number' ? v : (v ? monthlyBonusAmount : 0));
   const bonusMap = settings.monthlyBonus || {};
@@ -707,7 +716,7 @@ export function projectAnnualIncome(
   const now = oggi;
   const monthsElapsed = year === now.getFullYear() ? now.getMonth() + 1 : 12;
   const bonusYearAll = Object.entries(bonusMap)
-    .filter(([k]) => k.slice(0, 4) === String(year))
+    .filter(([k]) => k.slice(0, 4) === String(year) && Number(k.slice(5, 7)) > mesiNelMontante)
     .reduce((s, [, v]) => s + resolveBonusEntry(v), 0);
 
   // 13ª/14ª sono una tantum: annualizzarle (×12/mesi trascorsi) le
@@ -731,7 +740,7 @@ export function projectAnnualIncome(
     if (Math.abs(valore) >= 0.005) voci.push({ label, valore, nota });
   };
   const conVociFisse = () => {
-    aggiungi('Voci fisse mensili × 12', fixedAnnual);
+    aggiungi(mesiNelMontante ? `Voci fisse × ${12 - mesiNelMontante} mesi dopo il montante` : 'Voci fisse mensili × 12', fixedAnnual);
     aggiungi('Bonus segnati nell\'anno', bonusYearAll);
   };
 
@@ -744,7 +753,8 @@ export function projectAnnualIncome(
     // l'app non ha nessun motivo di fare.
     // Le voci fisse invece restano dentro l'annualizzazione: quelle sì che
     // tornano ogni mese, ed è esattamente cosa vuol dire «fisse».
-    const cumulativo = recurring + fixedMonthlyTotal * monthsElapsed;
+    // Quelle dei mesi del montante sono già dentro `recurring`.
+    const cumulativo = recurring + fixedMonthlyTotal * Math.max(0, monthsElapsed - mesiNelMontante);
     aggiungi('Maturato finora, annualizzato', annualize(cumulativo),
       `${fmtMesi(monthsElapsed)} × 12 ⁄ ${monthsElapsed}`);
     aggiungi('13ª/14ª previste nell\'anno', extrasFullYear);

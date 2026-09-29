@@ -3463,3 +3463,8 @@ input, select, textarea { font: inherit; }
   flex-direction: column;
   gap: .35rem;
 }
+
+.simula-bonus-conguaglio {
+  flex-basis: 100%;
+  font-size: .88rem;
+}
