@@ -1928,9 +1928,8 @@ export default function CalendarView({
             </div>
             <div className="modal-form conti-bonus">
               <p className="form-hint">
-                Il bonus spetta a chi sta sotto i 15.000 €. Se li superi, anche di 1 €, a
-                dicembre il datore si riprende
-                tutto: {euroCella(rischio.erogato || tiFinora)} finora.
+                Il bonus spetta sotto i 15.000 €. Se li superi, a dicembre il datore si
+                riprende tutto: {euroCella(rischio.erogato || tiFinora)} finora.
               </p>
               {/* La tabella è un'ALTRA grandezza rispetto alla cifra qui sopra:
                   quella è cassa, questa è il saldo di un anno intero. Senza
@@ -1968,11 +1967,18 @@ export default function CalendarView({
                   («se ti fossi fermato») che nessuno si fa. La domanda vera è
                   «mi conviene lavorare di più?», e la risposta è che per due
                   soli centoni la risposta è no, dopo torna sì. */}
+              {/* DOVE SEI TU nella fascia sta nello stesso paragrafo, dalla stessa
+                  posizione del riquadro rosso (`posizioneRispettoSoglia`): la
+                  fascia in astratto non dice se ti riguarda. */}
               {costo.larghezzaBuca > 0 && (
                 <p className="form-hint">
-                  Ma solo qui in mezzo: fra {euroCella(costo.tetto)}
-                  {' '}e {euroCella(costo.pareggio)} lordi l'anno il netto non cresce.
-                  Sopra, riprende a salire.
+                  Solo in una fascia di lordo annuo: da {euroCella(costo.tetto)} perdi{' '}
+                  {euroCella(costo.perditaMax)}, poi risali e a {euroCella(costo.pareggio)} sei come
+                  prima. Lì in mezzo guadagnare di più non conviene.
+                {' '}<strong>Tu, di questo passo ({euroCella(proiezione)}):</strong>{' '}
+                  {posizione === POSIZIONE.SOTTO && 'sotto la fascia.'}
+                  {posizione === POSIZIONE.DENTRO && `dentro; per tornare in pari mancano circa ${euroCella(mancaPareggio)} lordi.`}
+                  {posizione === POSIZIONE.OLTRE && 'oltre la fascia, non perdi niente.'}
                 </p>
               )}
               <p className="form-hint form-hint--warn">

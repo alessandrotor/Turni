@@ -1,0 +1,855 @@
+
+> turni@0.9.6 dev
+> vite --port 5189 --host 127.0.0.1
+
+Re-optimizing dependencies because lockfile has changed
+
+  VITE v5.4.21  ready in 3817 ms
+
+  ➜  Local:   http://127.0.0.1:5189/
+Error:   Failed to scan for dependencies from entries:
+  /home/user/Turni/index.html
+/home/user/Turni/public/privacy/index.html
+
+  [31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mExpected ")" but found "{"[0m
+
+    src/components/CalendarView.jsx:1856:16:
+[37m      1856 │                 [32m{[37m/* DOVE SEI TU nella fascia, dalla stessa posiz...
+           │                 [32m^[37m
+           ╵                 [32m)[0m
+
+
+    at failureErrorWithLog (/home/user/Turni/node_modules/esbuild/lib/main.js:1472:15)
+    at /home/user/Turni/node_modules/esbuild/lib/main.js:945:25
+    at runOnEndCallbacks (/home/user/Turni/node_modules/esbuild/lib/main.js:1315:45)
+    at buildResponseToResult (/home/user/Turni/node_modules/esbuild/lib/main.js:943:7)
+    at /home/user/Turni/node_modules/esbuild/lib/main.js:955:9
+    at new Promise (<anonymous>)
+    at requestCallbacks.on-end (/home/user/Turni/node_modules/esbuild/lib/main.js:954:54)
+    at handleRequest (/home/user/Turni/node_modules/esbuild/lib/main.js:647:17)
+    at handleIncomingPacket (/home/user/Turni/node_modules/esbuild/lib/main.js:672:7)
+    at Socket.readFromStdout (/home/user/Turni/node_modules/esbuild/lib/main.js:600:7)
+11:27:21 PM [vite] Pre-transform error: /home/user/Turni/src/components/CalendarView.jsx: Unexpected token, expected "," (1856:16)
+
+  1854 |                   Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855 |                 </p>
+> 1856 |                 {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+       |                 ^
+  1857 |                     rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858 |                     dice se la riguarda. */}
+  1859 |                 <p className="form-hint">
+11:27:21 PM [vite] Internal server error: /home/user/Turni/src/components/CalendarView.jsx: Unexpected token, expected "," (1856:16)
+
+  1854 |                   Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855 |                 </p>
+> 1856 |                 {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+       |                 ^
+  1857 |                     rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858 |                     dice se la riguarda. */}
+  1859 |                 <p className="form-hint">
+  Plugin: vite:react-babel
+  File: /home/user/Turni/src/components/CalendarView.jsx:1856:16
+  1854|                    Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855|                  </p>
+  1856|                  {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+     |                  ^
+  1857|                      rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858|                      dice se la riguarda. */}
+      at constructor (/home/user/Turni/node_modules/@babel/parser/lib/index.js:369:19)
+      at JSXParserMixin.raise (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6620:19)
+      at JSXParserMixin.unexpected (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6640:16)
+      at JSXParserMixin.expect (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6920:12)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11687:14)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10974:21)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at JSXParserMixin.parseExpressionBase (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10805:23)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:17)
+      at JSXParserMixin.jsxParseExpressionContainer (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4648:31)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4727:36)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElement (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4765:17)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4775:19)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10925:23)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12522:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11701:28)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+11:27:22 PM [vite] Internal server error: /home/user/Turni/src/components/CalendarView.jsx: Unexpected token, expected "," (1856:16)
+
+  1854 |                   Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855 |                 </p>
+> 1856 |                 {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+       |                 ^
+  1857 |                     rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858 |                     dice se la riguarda. */}
+  1859 |                 <p className="form-hint">
+  Plugin: vite:react-babel
+  File: /home/user/Turni/src/components/CalendarView.jsx:1856:16
+  1854|                    Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855|                  </p>
+  1856|                  {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+     |                  ^
+  1857|                      rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858|                      dice se la riguarda. */}
+      at constructor (/home/user/Turni/node_modules/@babel/parser/lib/index.js:369:19)
+      at JSXParserMixin.raise (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6620:19)
+      at JSXParserMixin.unexpected (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6640:16)
+      at JSXParserMixin.expect (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6920:12)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11687:14)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10974:21)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at JSXParserMixin.parseExpressionBase (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10805:23)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:17)
+      at JSXParserMixin.jsxParseExpressionContainer (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4648:31)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4727:36)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElement (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4765:17)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4775:19)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10925:23)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12522:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11701:28)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+11:27:23 PM [vite] Internal server error: /home/user/Turni/src/components/CalendarView.jsx: Unexpected token, expected "," (1856:16)
+
+  1854 |                   Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855 |                 </p>
+> 1856 |                 {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+       |                 ^
+  1857 |                     rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858 |                     dice se la riguarda. */}
+  1859 |                 <p className="form-hint">
+  Plugin: vite:react-babel
+  File: /home/user/Turni/src/components/CalendarView.jsx:1856:16
+  1854|                    Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855|                  </p>
+  1856|                  {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+     |                  ^
+  1857|                      rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858|                      dice se la riguarda. */}
+      at constructor (/home/user/Turni/node_modules/@babel/parser/lib/index.js:369:19)
+      at JSXParserMixin.raise (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6620:19)
+      at JSXParserMixin.unexpected (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6640:16)
+      at JSXParserMixin.expect (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6920:12)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11687:14)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10974:21)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at JSXParserMixin.parseExpressionBase (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10805:23)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:17)
+      at JSXParserMixin.jsxParseExpressionContainer (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4648:31)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4727:36)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElement (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4765:17)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4775:19)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10925:23)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12522:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11701:28)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+11:27:24 PM [vite] Internal server error: /home/user/Turni/src/components/CalendarView.jsx: Unexpected token, expected "," (1856:16)
+
+  1854 |                   Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855 |                 </p>
+> 1856 |                 {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+       |                 ^
+  1857 |                     rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858 |                     dice se la riguarda. */}
+  1859 |                 <p className="form-hint">
+  Plugin: vite:react-babel
+  File: /home/user/Turni/src/components/CalendarView.jsx:1856:16
+  1854|                    Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855|                  </p>
+  1856|                  {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+     |                  ^
+  1857|                      rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858|                      dice se la riguarda. */}
+      at constructor (/home/user/Turni/node_modules/@babel/parser/lib/index.js:369:19)
+      at JSXParserMixin.raise (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6620:19)
+      at JSXParserMixin.unexpected (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6640:16)
+      at JSXParserMixin.expect (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6920:12)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11687:14)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10974:21)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at JSXParserMixin.parseExpressionBase (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10805:23)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:17)
+      at JSXParserMixin.jsxParseExpressionContainer (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4648:31)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4727:36)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElement (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4765:17)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4775:19)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10925:23)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12522:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11701:28)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+11:27:25 PM [vite] Internal server error: /home/user/Turni/src/components/CalendarView.jsx: Unexpected token, expected "," (1856:16)
+
+  1854 |                   Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855 |                 </p>
+> 1856 |                 {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+       |                 ^
+  1857 |                     rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858 |                     dice se la riguarda. */}
+  1859 |                 <p className="form-hint">
+  Plugin: vite:react-babel
+  File: /home/user/Turni/src/components/CalendarView.jsx:1856:16
+  1854|                    Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855|                  </p>
+  1856|                  {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+     |                  ^
+  1857|                      rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858|                      dice se la riguarda. */}
+      at constructor (/home/user/Turni/node_modules/@babel/parser/lib/index.js:369:19)
+      at JSXParserMixin.raise (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6620:19)
+      at JSXParserMixin.unexpected (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6640:16)
+      at JSXParserMixin.expect (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6920:12)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11687:14)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10974:21)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at JSXParserMixin.parseExpressionBase (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10805:23)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:17)
+      at JSXParserMixin.jsxParseExpressionContainer (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4648:31)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4727:36)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElement (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4765:17)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4775:19)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10925:23)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12522:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11701:28)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+11:27:26 PM [vite] Internal server error: /home/user/Turni/src/components/CalendarView.jsx: Unexpected token, expected "," (1856:16)
+
+  1854 |                   Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855 |                 </p>
+> 1856 |                 {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+       |                 ^
+  1857 |                     rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858 |                     dice se la riguarda. */}
+  1859 |                 <p className="form-hint">
+  Plugin: vite:react-babel
+  File: /home/user/Turni/src/components/CalendarView.jsx:1856:16
+  1854|                    Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855|                  </p>
+  1856|                  {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+     |                  ^
+  1857|                      rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858|                      dice se la riguarda. */}
+      at constructor (/home/user/Turni/node_modules/@babel/parser/lib/index.js:369:19)
+      at JSXParserMixin.raise (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6620:19)
+      at JSXParserMixin.unexpected (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6640:16)
+      at JSXParserMixin.expect (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6920:12)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11687:14)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10974:21)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at JSXParserMixin.parseExpressionBase (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10805:23)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:17)
+      at JSXParserMixin.jsxParseExpressionContainer (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4648:31)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4727:36)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElement (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4765:17)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4775:19)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10925:23)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12522:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11701:28)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+11:27:36 PM [vite] Internal server error: /home/user/Turni/src/components/CalendarView.jsx: Unexpected token, expected "," (1856:16)
+
+  1854 |                   Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855 |                 </p>
+> 1856 |                 {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+       |                 ^
+  1857 |                     rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858 |                     dice se la riguarda. */}
+  1859 |                 <p className="form-hint">
+  Plugin: vite:react-babel
+  File: /home/user/Turni/src/components/CalendarView.jsx:1856:16
+  1854|                    Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855|                  </p>
+  1856|                  {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+     |                  ^
+  1857|                      rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858|                      dice se la riguarda. */}
+      at constructor (/home/user/Turni/node_modules/@babel/parser/lib/index.js:369:19)
+      at JSXParserMixin.raise (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6620:19)
+      at JSXParserMixin.unexpected (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6640:16)
+      at JSXParserMixin.expect (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6920:12)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11687:14)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10974:21)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at JSXParserMixin.parseExpressionBase (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10805:23)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:17)
+      at JSXParserMixin.jsxParseExpressionContainer (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4648:31)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4727:36)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElement (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4765:17)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4775:19)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10925:23)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12522:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11701:28)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+11:27:37 PM [vite] Internal server error: /home/user/Turni/src/components/CalendarView.jsx: Unexpected token, expected "," (1856:16)
+
+  1854 |                   Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855 |                 </p>
+> 1856 |                 {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+       |                 ^
+  1857 |                     rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858 |                     dice se la riguarda. */}
+  1859 |                 <p className="form-hint">
+  Plugin: vite:react-babel
+  File: /home/user/Turni/src/components/CalendarView.jsx:1856:16
+  1854|                    Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855|                  </p>
+  1856|                  {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+     |                  ^
+  1857|                      rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858|                      dice se la riguarda. */}
+      at constructor (/home/user/Turni/node_modules/@babel/parser/lib/index.js:369:19)
+      at JSXParserMixin.raise (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6620:19)
+      at JSXParserMixin.unexpected (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6640:16)
+      at JSXParserMixin.expect (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6920:12)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11687:14)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10974:21)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at JSXParserMixin.parseExpressionBase (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10805:23)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:17)
+      at JSXParserMixin.jsxParseExpressionContainer (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4648:31)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4727:36)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElement (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4765:17)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4775:19)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10925:23)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12522:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11701:28)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+11:27:38 PM [vite] Internal server error: /home/user/Turni/src/components/CalendarView.jsx: Unexpected token, expected "," (1856:16)
+
+  1854 |                   Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855 |                 </p>
+> 1856 |                 {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+       |                 ^
+  1857 |                     rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858 |                     dice se la riguarda. */}
+  1859 |                 <p className="form-hint">
+  Plugin: vite:react-babel
+  File: /home/user/Turni/src/components/CalendarView.jsx:1856:16
+  1854|                    Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855|                  </p>
+  1856|                  {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+     |                  ^
+  1857|                      rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858|                      dice se la riguarda. */}
+      at constructor (/home/user/Turni/node_modules/@babel/parser/lib/index.js:369:19)
+      at JSXParserMixin.raise (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6620:19)
+      at JSXParserMixin.unexpected (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6640:16)
+      at JSXParserMixin.expect (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6920:12)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11687:14)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10974:21)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at JSXParserMixin.parseExpressionBase (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10805:23)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:17)
+      at JSXParserMixin.jsxParseExpressionContainer (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4648:31)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4727:36)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElement (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4765:17)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4775:19)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10925:23)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12522:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11701:28)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+11:27:38 PM [vite] Internal server error: /home/user/Turni/src/components/CalendarView.jsx: Unexpected token, expected "," (1856:16)
+
+  1854 |                   Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855 |                 </p>
+> 1856 |                 {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+       |                 ^
+  1857 |                     rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858 |                     dice se la riguarda. */}
+  1859 |                 <p className="form-hint">
+  Plugin: vite:react-babel
+  File: /home/user/Turni/src/components/CalendarView.jsx:1856:16
+  1854|                    Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855|                  </p>
+  1856|                  {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+     |                  ^
+  1857|                      rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858|                      dice se la riguarda. */}
+      at constructor (/home/user/Turni/node_modules/@babel/parser/lib/index.js:369:19)
+      at JSXParserMixin.raise (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6620:19)
+      at JSXParserMixin.unexpected (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6640:16)
+      at JSXParserMixin.expect (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6920:12)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11687:14)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10974:21)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at JSXParserMixin.parseExpressionBase (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10805:23)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:17)
+      at JSXParserMixin.jsxParseExpressionContainer (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4648:31)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4727:36)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElement (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4765:17)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4775:19)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10925:23)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12522:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11701:28)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+11:27:40 PM [vite] Internal server error: /home/user/Turni/src/components/CalendarView.jsx: Unexpected token, expected "," (1856:16)
+
+  1854 |                   Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855 |                 </p>
+> 1856 |                 {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+       |                 ^
+  1857 |                     rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858 |                     dice se la riguarda. */}
+  1859 |                 <p className="form-hint">
+  Plugin: vite:react-babel
+  File: /home/user/Turni/src/components/CalendarView.jsx:1856:16
+  1854|                    Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855|                  </p>
+  1856|                  {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+     |                  ^
+  1857|                      rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858|                      dice se la riguarda. */}
+      at constructor (/home/user/Turni/node_modules/@babel/parser/lib/index.js:369:19)
+      at JSXParserMixin.raise (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6620:19)
+      at JSXParserMixin.unexpected (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6640:16)
+      at JSXParserMixin.expect (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6920:12)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11687:14)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10974:21)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at JSXParserMixin.parseExpressionBase (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10805:23)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:17)
+      at JSXParserMixin.jsxParseExpressionContainer (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4648:31)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4727:36)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElement (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4765:17)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4775:19)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10925:23)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12522:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11701:28)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+11:27:40 PM [vite] Internal server error: /home/user/Turni/src/components/CalendarView.jsx: Unexpected token, expected "," (1856:16)
+
+  1854 |                   Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855 |                 </p>
+> 1856 |                 {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+       |                 ^
+  1857 |                     rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858 |                     dice se la riguarda. */}
+  1859 |                 <p className="form-hint">
+  Plugin: vite:react-babel
+  File: /home/user/Turni/src/components/CalendarView.jsx:1856:16
+  1854|                    Dentro la fascia, guadagnare di più non conviene; fuori sì.
+  1855|                  </p>
+  1856|                  {/* DOVE SEI TU nella fascia, dalla stessa posizione del riquadro
+     |                  ^
+  1857|                      rosso (`posizioneRispettoSoglia`): la fascia in astratto non
+  1858|                      dice se la riguarda. */}
+      at constructor (/home/user/Turni/node_modules/@babel/parser/lib/index.js:369:19)
+      at JSXParserMixin.raise (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6620:19)
+      at JSXParserMixin.unexpected (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6640:16)
+      at JSXParserMixin.expect (/home/user/Turni/node_modules/@babel/parser/lib/index.js:6920:12)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11687:14)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10974:21)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at JSXParserMixin.parseExpressionBase (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10805:23)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10801:17)
+      at JSXParserMixin.jsxParseExpressionContainer (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4648:31)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4727:36)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElementAt (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4714:32)
+      at JSXParserMixin.jsxParseElement (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4765:17)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4775:19)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10925:23)
+      at JSXParserMixin.parseMaybeConditional (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10902:23)
+      at JSXParserMixin.parseMaybeAssign (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10852:21)
+      at /home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:39
+      at JSXParserMixin.allowInAnd (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12455:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10821:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/home/user/Turni/node_modules/@babel/parser/lib/index.js:12522:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11701:28)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11357:23)
+      at JSXParserMixin.parseExprAtom (/home/user/Turni/node_modules/@babel/parser/lib/index.js:4780:20)
+      at JSXParserMixin.parseExprSubscripts (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11102:23)
+      at JSXParserMixin.parseUpdate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11087:21)
+      at JSXParserMixin.parseMaybeUnary (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11067:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10920:61)
+      at JSXParserMixin.parseExprOpBaseRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11007:34)
+      at JSXParserMixin.parseExprOpRightExpr (/home/user/Turni/node_modules/@babel/parser/lib/index.js:11002:21)
+      at JSXParserMixin.parseExprOp (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10968:27)
+      at JSXParserMixin.parseExprOps (/home/user/Turni/node_modules/@babel/parser/lib/index.js:10929:17)
+11:27:47 PM [vite] page reload public/privacy/index.html
+11:27:53 PM [vite] page reload public/privacy/index.html
+11:29:11 PM [vite] hmr update /src/components/CalendarView.jsx
+11:29:34 PM [vite] hmr update /src/components/CalendarView.jsx
+11:29:45 PM [vite] page reload public/privacy/index.html
+11:30:13 PM [vite] hmr update /src/components/CalendarView.jsx
+11:30:24 PM [vite] hmr update /src/components/CalendarView.jsx
+11:30:31 PM [vite] hmr update /src/components/CalendarView.jsx
+11:30:35 PM [vite] hmr update /src/components/CalendarView.jsx
+11:30:53 PM [vite] hmr update /src/components/CalendarView.jsx
+11:31:15 PM [vite] page reload public/privacy/index.html
