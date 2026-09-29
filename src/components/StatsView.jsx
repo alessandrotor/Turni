@@ -398,9 +398,8 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
             )}
 
             {ENABLE_NET_CALC && (
-              <p className="net-disclaimer--prominent">
-                ⚠️ Funzione beta: i calcoli possono contenere errori. Fai sempre controllare
-                questi dati a un professionista prima di usarli.
+              <p className="net-disclaimer--discreto">
+                Stima beta: può contenere errori, fatti controllare da un professionista.
               </p>
             )}
           </div>

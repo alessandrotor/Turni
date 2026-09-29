@@ -2218,14 +2218,127 @@ input, select, textarea { font: inherit; }
   margin-top: .1rem;
 }
 
-/* Come .net-disclaimer ma pensato per restare a vista senza aprire il
-   dettaglio: colore di avviso invece di grigio muto, niente corsivo. Resta
-   una singola riga di testo, non un box, per non appesantire il pannello. */
-.net-disclaimer--prominent {
-  font-size: .78rem;
-  color: var(--c-warning);
-  font-weight: 600;
-  line-height: 1.4;
+/* L'avviso beta a voce bassa: c'è sempre, ma non grida più del netto. */
+.net-disclaimer--discreto {
+  font-size: .72rem;
+  color: var(--c-text-2);
+  line-height: 1.35;
+  text-align: center;
+}
+
+/* Il passaggio dal lordo al netto a pillole: una voce, un nome di busta. */
+.net-pillole {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .35rem;
+  margin: .35rem 0 .2rem;
+}
+.net-pillola {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: .3rem .6rem;
+  border-radius: var(--radius-sm);
+  background: var(--c-card);
+  border: 1px solid var(--c-border);
+  min-width: 5.5rem;
+}
+.net-pillola-nome {
+  font-size: .68rem;
+  color: var(--c-text-2);
+}
+.net-pillola-cifra {
+  font-size: .85rem;
+  font-weight: 700;
+  color: var(--c-text);
+}
+.net-pillola--piu .net-pillola-cifra { color: var(--c-success); }
+
+/* I tre passi: prima di «voce per voce». */
+.net-passi {
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+.net-passo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .75rem;
+  padding: .55rem .8rem;
+  border-radius: var(--radius-sm);
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+}
+.net-passo-nome {
+  display: flex;
+  flex-direction: column;
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--c-text);
+}
+.net-passo-sotto {
+  font-size: .74rem;
+  font-weight: 400;
+  color: var(--c-text-2);
+}
+.net-passo-cifra {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--c-text);
+  white-space: nowrap;
+}
+.net-passo--piu .net-passo-cifra { color: var(--c-success); }
+.net-passo--totale {
+  background: var(--c-success-light);
+  border-color: var(--c-success);
+}
+.net-passo--totale .net-passo-nome,
+.net-passo--totale .net-passo-cifra {
+  font-size: 1.05rem;
+  color: var(--c-success);
+}
+
+/* La barra del trattamento integrativo: maturato pieno, previsto chiaro,
+   tacca alla soglia in lordo. Il colore segue la posizione dei testi. */
+.ti-barra {
+  position: relative;
+  margin: .5rem 0 1.3rem;
+  --ti-colore: var(--c-success);
+}
+.ti-barra--vicino { --ti-colore: var(--c-warning); }
+.ti-barra--oltre { --ti-colore: var(--c-primary); }
+.ti-barra-binario {
+  position: relative;
+  height: .6rem;
+  border-radius: 99px;
+  background: var(--c-border);
+  overflow: hidden;
+}
+.ti-barra-previsto,
+.ti-barra-maturato {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 99px;
+  background: var(--ti-colore);
+}
+.ti-barra-previsto { opacity: .35; }
+.ti-barra-soglia {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--c-text);
+}
+.ti-barra-etichetta {
+  position: absolute;
+  top: .75rem;
+  transform: translateX(-100%);
+  font-size: .68rem;
+  color: var(--c-text-2);
+  white-space: nowrap;
 }
 
 .debug-usage {

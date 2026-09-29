@@ -112,6 +112,7 @@ export default function CalendarView({
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState(null);
   const [showNetDetail, setShowNetDetail] = useState(false);
+  const [showNetBusta, setShowNetBusta] = useState(false);
   const [pendingImportFile, setPendingImportFile] = useState(null);
   const [nameInput, setNameInput] = useState('');
   // Modifica del nome fuori dall'import (nessun file in attesa): riusa la stessa modale.
@@ -1181,32 +1182,61 @@ export default function CalendarView({
                   L. 207/24, proprio sotto la casella del premio chiamato
                   «bonus»: tre cose con un nome solo. */}
               <span className="net-strip-value">{formatCurrency(monthNet)}</span>
-              <span className="bonus-strip-note">
-                lordo {formatCurrency(monthGross)} − trattenute {formatCurrency(monthTrattenute)} ({effectiveRatePct.toFixed(1)}% del lordo)
-                {netMonth?.trattamentoIntegrativo > 0 && <> + tratt. integrativo {formatCurrency(netMonth.trattamentoIntegrativo)}</>}
-                {netMonth?.bonusCuneo > 0 && <> + indennità L. 207/24 {formatCurrency(netMonth.bonusCuneo)}</>}
-                {monthTfr > 0 && <> + TFR {formatCurrency(monthTfr)}</>}
-              </span>
+              {/* Il passaggio a pillole, una per voce e ognuna col nome della
+                  busta: Gemini proponeva «Bonus +101» per tratt. integrativo
+                  e indennità insieme, cioè la stessa confusione già tolta
+                  una volta (tre cose con un nome solo). */}
+              <div className="net-pillole">
+                <span className="net-pillola">
+                  <span className="net-pillola-nome">Lordo</span>
+                  <span className="net-pillola-cifra">{formatCurrency(monthGross)}</span>
+                </span>
+                <span className="net-pillola" title={`${effectiveRatePct.toFixed(1)}% del lordo`}>
+                  <span className="net-pillola-nome">Trattenute</span>
+                  <span className="net-pillola-cifra">−{formatCurrency(monthTrattenute)}</span>
+                </span>
+                {netMonth?.trattamentoIntegrativo > 0 && (
+                  <span className="net-pillola net-pillola--piu">
+                    <span className="net-pillola-nome">Tratt. integrativo</span>
+                    <span className="net-pillola-cifra">+{formatCurrency(netMonth.trattamentoIntegrativo)}</span>
+                  </span>
+                )}
+                {netMonth?.bonusCuneo > 0 && (
+                  <span className="net-pillola net-pillola--piu">
+                    <span className="net-pillola-nome">Indennità L. 207/24</span>
+                    <span className="net-pillola-cifra">+{formatCurrency(netMonth.bonusCuneo)}</span>
+                  </span>
+                )}
+                {monthTfr > 0 && (
+                  <span className="net-pillola net-pillola--piu">
+                    <span className="net-pillola-nome">TFR</span>
+                    <span className="net-pillola-cifra">+{formatCurrency(monthTfr)}</span>
+                  </span>
+                )}
+              </div>
               {/* LA REGOLA DEL MESE, dove si vede il suo effetto. Ad agosto la
                   busta tratteneva 8,38 € di IRPEF e nessuno capiva perché: il
                   lordo × 12 superava i 15.000, e il programma paghe aveva
                   tolto il tratt. integrativo e messo la detrazione alta. La
                   spiegazione stava in «Come è calcolato?», chiusa. */}
+              {/* Si dice con la cifra unica, 1.250 € al mese, non con la
+                  moltiplicazione: «1.298 × 12 = 15.576» è il conto, e resta
+                  nel popup di «perché?» per chi lo vuole vedere. */}
               {netMonth?.esitoTi?.proiezione != null && (
                 <span className="bonus-strip-note">
-                  {numeroIt(netMonth.esitoTi.baseMese)} × 12 = {numeroIt(netMonth.esitoTi.proiezione)} €:{' '}
                   {netMonth.esitoTi.spetta
-                    ? 'sotto i 15.000, c\'è il tratt. integrativo.'
-                    : 'sopra i 15.000, niente tratt. integrativo ma meno IRPEF.'}
+                    ? <>Questo mese resti sotto i {numeroIt(TAX_2026.TI_SOGLIA_PIENO / 12)} € lordi: c'è il tratt. integrativo.</>
+                    : <>Questo mese superi i {numeroIt(TAX_2026.TI_SOGLIA_PIENO / 12)} € lordi: niente tratt. integrativo, ma meno IRPEF.</>}
                   {meseSiInverte && <strong> A dicembre si inverte.</strong>}{' '}
                   <button type="button" className="linklike" onClick={() => setMeseSpiegato(true)}>perché?</button>
                 </span>
               )}
             </div>
 
-            <p className="net-disclaimer--prominent">
-              ⚠️ Funzione beta: i calcoli possono contenere errori. Fai sempre controllare
-              questi dati a un professionista prima di usarli.
+            {/* L'avviso BETA resta (CLAUDE.md), ma a voce bassa: il riquadro
+                giallo gridava più forte del netto che accompagnava. */}
+            <p className="net-disclaimer--discreto">
+              Stima beta: può contenere errori, fatti controllare da un professionista.
             </p>
 
             <button
@@ -1215,10 +1245,71 @@ export default function CalendarView({
               onClick={() => setShowNetDetail(v => !v)}
               aria-expanded={showNetDetail}
             >
-              {showNetDetail ? 'Nascondi dettaglio ▲' : 'Come è calcolato? ▼'}
+              {showNetDetail ? 'Chiudi ▲' : 'Vedi i passaggi ▼'}
             </button>
 
+            {/* TRE PASSI prima, la busta voce per voce dopo, a richiesta. Il
+                dettaglio completo non sparisce: è quello che serve a chi
+                confronta con il cedolino, ma non deve essere la prima cosa. */}
             {showNetDetail && (
+              <div className="net-passi">
+                <div className="net-passo">
+                  <span className="net-passo-nome">
+                    1. Turni
+                    <span className="net-passo-sotto">
+                      {counted.length - assenze.giorni} {counted.length - assenze.giorni === 1 ? 'turno' : 'turni'}, {formatMinutesShort(totalMins - assenze.minuti)}
+                      {assenze.giorni > 0 && `, ${assenze.dettaglioGiorni}`}
+                      {vociOltreTurni.length > 0 && ' e voci fisse'}
+                    </span>
+                  </span>
+                  <span className="net-passo-cifra">{fmt0(netMonth.gross)}</span>
+                </div>
+                <div className="net-passo">
+                  <span className="net-passo-nome">
+                    2. Trattenute
+                    <span className="net-passo-sotto">contributi INPS e tasse</span>
+                  </span>
+                  <span className="net-passo-cifra">−{fmt0(netMonth.trattenute)}</span>
+                </div>
+                {netMonth.bonus > 0 || netMonth.tfr > 0 ? (
+                  <div className="net-passo net-passo--piu">
+                    <span className="net-passo-nome">
+                      3. In più in busta
+                      <span className="net-passo-sotto">
+                        {[
+                          netMonth.trattamentoIntegrativo > 0 && 'tratt. integrativo',
+                          netMonth.bonusCuneo > 0 && 'indennità L. 207/24',
+                          netMonth.tfr > 0 && 'anticipo TFR',
+                        ].filter(Boolean).join(', ')}
+                      </span>
+                    </span>
+                    <span className="net-passo-cifra">
+                      +{fmt0(netMonth.bonus + netMonth.tfr)}
+                    </span>
+                  </div>
+                ) : null}
+                <div className="net-passo net-passo--totale">
+                  <span className="net-passo-nome">Netto stimato</span>
+                  <span className="net-passo-cifra">{fmt0(netMonth.net)}</span>
+                </div>
+                {proiezioneParziale && !showNetBusta && (
+                  <div className="net-subnote net-subnote--warn">
+                    ⚠️ Nel {year} hai turni in {mesiConTurni} mes{mesiConTurni === 1 ? 'e' : 'i'} su{' '}
+                    {mesiTrascorsi}: i mesi vuoti contano zero e possono cambiare questi numeri.
+                  </div>
+                )}
+                <button
+                  type="button"
+                  className="net-toggle"
+                  onClick={() => setShowNetBusta(v => !v)}
+                  aria-expanded={showNetBusta}
+                >
+                  {showNetBusta ? 'Nascondi le voci ▲' : 'Voce per voce, come in busta ▼'}
+                </button>
+              </div>
+            )}
+
+            {showNetDetail && showNetBusta && (
               <div className="net-detail">
                 {/* Stile busta paga: un solo lordo in cima */}
                 <div className="net-line net-line--head">
@@ -1506,6 +1597,37 @@ export default function CalendarView({
                 sottrarre montante ed extra da un numero proiettato darebbe una
                 voce «turni» che non corrisponde a nessun turno inserito. Il
                 margine non si ripete qui: lo dice già il riquadro sopra. */}
+            {/* LA BARRA, l'unica cosa presa dal «semaforo» di Gemini: i suoi
+                testi toglievano la restituzione a chi ce l'ha. È in LORDO,
+                come le cifre della riga sotto che le fa da legenda: la soglia
+                dei 15.000 è di reddito, e «8.819 / 15.000» avrebbe messo
+                insieme due grandezze diverse. Il colore segue la stessa
+                `posizione` dei testi: oltre la buca non si perde più niente,
+                quindi niente rosso. */}
+            {bonus.thresholdFullGross > 0 && (() => {
+              const soglia = bonus.thresholdFullGross;
+              const scala = Math.max(soglia * 1.15, bonus.income, annualGross);
+              const pct = (v) => `${Math.min(100, Math.max(0, v / scala * 100))}%`;
+              const tono = posizione === POSIZIONE.OLTRE ? 'oltre'
+                : (posizione === POSIZIONE.DENTRO || bonus.nearThreshold) ? 'vicino'
+                  : 'sotto';
+              return (
+                <div
+                  className={`ti-barra ti-barra--${tono}`}
+                  role="img"
+                  aria-label={`Maturato ${euroCella(annualGross)}, previsto a fine anno ${euroCella(bonus.income)}, soglia ${euroCella(soglia)} lordi`}
+                >
+                  <div className="ti-barra-binario">
+                    <span className="ti-barra-previsto" style={{ width: pct(Math.max(bonus.income, annualGross)) }} />
+                    <span className="ti-barra-maturato" style={{ width: pct(annualGross) }} />
+                    <span className="ti-barra-soglia" style={{ left: pct(soglia) }} />
+                  </div>
+                  <span className="ti-barra-etichetta" style={{ left: pct(soglia) }}>
+                    soglia ~{euroCella(soglia)} lordi
+                  </span>
+                </div>
+              );
+            })()}
             <span className="bonus-strip-income">
               Previsto a fine anno <strong>{euroCella(bonus.income)}</strong>
               {' · '}maturato {euroCella(annualGross)}
