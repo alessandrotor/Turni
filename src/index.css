@@ -238,6 +238,27 @@ input, select, textarea { font: inherit; }
    verticale e lo zoom, l'orizzontale lo decide `utils/swipe.js`. */
 .cal-sfoglia {
   touch-action: pan-y pinch-zoom;
+  /* Il mese che entra parte spostato di lato: senza, per un istante la
+     pagina scorrerebbe in orizzontale. `clip` e non `hidden`: non crea un
+     contenitore di scorrimento, e il margine salva le ombre della griglia. */
+  overflow-x: clip;
+  overflow-clip-margin: 12px;
+}
+
+/* Il mese nuovo scivola dentro dal lato verso cui si va, con una dissolvenza.
+   Breve apposta: accompagna il gesto, non lo fa aspettare. */
+.cal-mese--avanti   { animation: mese-da-destra .24s cubic-bezier(.2, .7, .3, 1); }
+.cal-mese--indietro { animation: mese-da-sinistra .24s cubic-bezier(.2, .7, .3, 1); }
+@keyframes mese-da-destra {
+  from { transform: translateX(40px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+@keyframes mese-da-sinistra {
+  from { transform: translateX(-40px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cal-mese--avanti, .cal-mese--indietro { animation: none; }
 }
 
 .cal-month-name {
