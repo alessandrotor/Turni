@@ -27,6 +27,13 @@
   --c-warning:        #d97706;
   --c-warning-light:  #fef3c7;
   --c-muted:          #94a3b8;
+  /* Varianti PER IL TESTO dei colori semantici. Quelli sopra sono per
+     riempimenti, bordi e cifre grandi: come testo piccolo su bianco stanno
+     fra 2,6 e 3,8:1, sotto il 4,5:1 di WCAG 1.4.3 — e gli avvisi in arancio
+     erano proprio i più difficili da leggere. → scripts/check-leggibilita.mjs */
+  --c-success-text:   #047857;
+  --c-warning-text:   #b45309;
+  --c-muted-text:     #5b6b80;
   --c-bg:             #f1f5f9;
   --c-card:           #ffffff;
   --c-text:           #0f172a;
@@ -338,7 +345,7 @@ input, select, textarea { font: inherit; }
   font-size: .55rem;
   font-weight: 700;
   background: var(--c-warning-light);
-  color: var(--c-warning);
+  color: var(--c-warning-text);
   padding: 1px 3px;
   border-radius: 3px;
   text-transform: uppercase;
@@ -461,7 +468,7 @@ input, select, textarea { font: inherit; }
   margin-right: .4rem;
   font-size: .95rem;
   font-weight: 700;
-  color: var(--c-success);
+  color: var(--c-success-text);
   white-space: nowrap;
 }
 
@@ -478,7 +485,7 @@ input, select, textarea { font: inherit; }
 
 .timeline-card-edit-btn {
   font-size: .85rem;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   padding: 2px 4px;
   border-radius: 4px;
   line-height: 1;
@@ -514,7 +521,7 @@ input, select, textarea { font: inherit; }
 
 .timeline-badge--surcharge {
   background: var(--c-warning-light);
-  color: var(--c-warning);
+  color: var(--c-warning-text);
 }
 
 /* La nota è testo libero dell'utente e può essere lunga quanto vuole: senza un
@@ -569,16 +576,16 @@ input, select, textarea { font: inherit; }
 .timeline-rest-label {
   font-size: .82rem;
   font-weight: 600;
-  color: var(--c-success);
+  color: var(--c-success-text);
 }
 
 .timeline-rest-action {
   font-size: .75rem;
   font-weight: 500;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
 }
 .timeline-rest-card:hover .timeline-rest-action {
-  color: var(--c-success);
+  color: var(--c-success-text);
   font-weight: 600;
 }
 
@@ -761,7 +768,7 @@ input, select, textarea { font: inherit; }
 /* Sotto-nota di una voce delle competenze («di cui 4h di ferie»). */
 .summary-sublabel-nota {
   display: block;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   font-size: .68rem;
   font-style: italic;
 }
@@ -851,7 +858,7 @@ input, select, textarea { font: inherit; }
 }
 
 .import-match--warn {
-  color: var(--c-warning);
+  color: var(--c-warning-text);
   background: var(--c-warning-light);
   border-left: 3px solid var(--c-warning);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
@@ -886,7 +893,7 @@ input, select, textarea { font: inherit; }
 
 .import-row-break {
   font-size: .78rem;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
 }
 
 .import-row-hours {
@@ -950,7 +957,7 @@ input, select, textarea { font: inherit; }
   color: var(--c-text);
 }
 
-.diff-positive { color: var(--c-success); }
+.diff-positive { color: var(--c-success-text); }
 
 /* ── Modal ──────────────────────────────────────────────────────── */
 .modal-overlay {
@@ -1145,7 +1152,7 @@ input, select, textarea { font: inherit; }
 }
 
 .share-day-rest {
-  color: var(--c-success);
+  color: var(--c-success-text);
   font-weight: 600;
   font-size: .82rem;
 }
@@ -1177,7 +1184,7 @@ input, select, textarea { font: inherit; }
 
 .share-copied-toast {
   background: var(--c-success-light);
-  color: var(--c-success);
+  color: var(--c-success-text);
   padding: .4rem .65rem;
   border-radius: var(--radius-sm);
   font-size: .82rem;
@@ -1401,7 +1408,7 @@ input, select, textarea { font: inherit; }
 .install-banner-btn { margin-left: auto; flex-shrink: 0; padding: .45rem .9rem; }
 .install-banner-close {
   flex-shrink: 0;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   font-size: .95rem;
   padding: .2rem .35rem;
   border-radius: var(--radius-sm);
@@ -1479,7 +1486,7 @@ input, select, textarea { font: inherit; }
 }
 .worked-preview-label { color: var(--c-text-2); }
 .worked-preview-value { font-weight: 700; color: var(--c-primary-dark); }
-.worked-preview-note { font-size: .75rem; color: var(--c-warning); margin-left: auto; }
+.worked-preview-note { font-size: .75rem; color: var(--c-warning-text); margin-left: auto; }
 
 /* Break presets */
 .break-presets {
@@ -1591,7 +1598,7 @@ input, select, textarea { font: inherit; }
 .settings-section-title::-webkit-details-marker { display: none; }
 .settings-section-title::after {
   content: '▾';
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   font-weight: 400;
   transition: transform .15s ease;
 }
@@ -1637,7 +1644,7 @@ input, select, textarea { font: inherit; }
 }
 
 .summary-sublabel--warn {
-  color: var(--c-warning);
+  color: var(--c-warning-text);
   font-weight: 600;
 }
 
@@ -1688,7 +1695,7 @@ input, select, textarea { font: inherit; }
 /* Avvertenza su parametri NON riscontrati su busta reale: va distinta dai
    suggerimenti normali, altrimenti si legge come una nota qualsiasi. */
 .form-hint--warn {
-  color: var(--c-warning);
+  color: var(--c-warning-text);
   font-style: normal;
   background: var(--c-warning-light);
   border-radius: var(--radius-sm);
@@ -1860,7 +1867,7 @@ input, select, textarea { font: inherit; }
 }
 
 .bonus-strip-body--warn .bonus-strip-value {
-  color: var(--c-warning);
+  color: var(--c-warning-text);
 }
 
 .bonus-strip-note {
@@ -1875,7 +1882,7 @@ input, select, textarea { font: inherit; }
 }
 
 .bonus-strip-note--warn {
-  color: var(--c-warning);
+  color: var(--c-warning-text);
 }
 
 /* ── Il rischio di restituzione ──────────────────────────────────
@@ -1909,7 +1916,7 @@ input, select, textarea { font: inherit; }
 /* Il titolo eredita il rosso d'allarme dalla classe base: su fondo verde, con
    un ✓ davanti, diceva due cose opposte nello stesso rigo. */
 .bonus-rischio--ok .bonus-rischio-titolo {
-  color: var(--c-success);
+  color: var(--c-success-text);
 }
 
 /* Le due cifre affiancate: etichetta a sinistra, importo a destra.
@@ -1945,7 +1952,7 @@ input, select, textarea { font: inherit; }
   border-color: var(--c-warning);
 }
 .bonus-rischio--anteprima .bonus-rischio-titolo {
-  color: var(--c-warning);
+  color: var(--c-warning-text);
 }
 
 /* La casella della rinuncia sta DENTRO il riquadro rosso, non in fondo alla
@@ -2055,7 +2062,7 @@ input, select, textarea { font: inherit; }
   padding: .05rem .4rem;
   border-radius: 99px;
   background: var(--c-warning-light);
-  color: var(--c-warning);
+  color: var(--c-warning-text);
   font-size: .62rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -2129,7 +2136,7 @@ input, select, textarea { font: inherit; }
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .05em;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   margin-top: .55rem;
   padding-top: .5rem;
   border-top: 1px solid var(--c-border);
@@ -2143,14 +2150,14 @@ input, select, textarea { font: inherit; }
 }
 
 .net-line--ded > span:last-child { color: var(--c-danger); font-weight: 600; }
-.net-line--bonus > span:last-child { color: var(--c-success); font-weight: 600; }
+.net-line--bonus > span:last-child { color: var(--c-success-text); font-weight: 600; }
 
 .net-subnote {
   padding-left: .85rem;
   margin-top: -.2rem;
   font-size: .72rem;
   font-style: italic;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
 }
 
 /* Nota che segnala un dato mancante, non un dettaglio: va letta, quindi esce
@@ -2158,7 +2165,7 @@ input, select, textarea { font: inherit; }
 .net-subnote--warn {
   margin-top: .45rem;
   font-style: normal;
-  color: var(--c-warning);
+  color: var(--c-warning-text);
   background: var(--c-warning-light);
   border-left: 3px solid var(--c-warning);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
@@ -2186,7 +2193,7 @@ input, select, textarea { font: inherit; }
   font-size: .82rem;
   color: var(--c-text-2);
 }
-.net-line--calc .pos { color: var(--c-success); }
+.net-line--calc .pos { color: var(--c-success-text); }
 .net-line--calc-strong {
   font-weight: 700;
   color: var(--c-text);
@@ -2204,7 +2211,7 @@ input, select, textarea { font: inherit; }
 .net-line--total {
   font-weight: 800;
   font-size: 1rem;
-  color: var(--c-success);
+  color: var(--c-success-text);
   border-top: 1px solid var(--c-border);
   padding-top: .5rem;
   margin-top: .1rem;
@@ -2212,7 +2219,7 @@ input, select, textarea { font: inherit; }
 
 .net-disclaimer {
   font-size: .72rem;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   font-style: italic;
   line-height: 1.4;
   margin-top: .1rem;
@@ -2253,7 +2260,7 @@ input, select, textarea { font: inherit; }
   font-weight: 700;
   color: var(--c-text);
 }
-.net-pillola--piu .net-pillola-cifra { color: var(--c-success); }
+.net-pillola--piu .net-pillola-cifra { color: var(--c-success-text); }
 
 /* I tre passi: prima di «voce per voce». */
 .net-passi {
@@ -2289,7 +2296,7 @@ input, select, textarea { font: inherit; }
   color: var(--c-text);
   white-space: nowrap;
 }
-.net-passo--piu .net-passo-cifra { color: var(--c-success); }
+.net-passo--piu .net-passo-cifra { color: var(--c-success-text); }
 .net-passo--totale {
   background: var(--c-success-light);
   border-color: var(--c-success);
@@ -2297,7 +2304,7 @@ input, select, textarea { font: inherit; }
 .net-passo--totale .net-passo-nome,
 .net-passo--totale .net-passo-cifra {
   font-size: 1.05rem;
-  color: var(--c-success);
+  color: var(--c-success-text);
 }
 
 /* La barra del trattamento integrativo: maturato pieno, previsto chiaro,
@@ -2358,11 +2365,11 @@ input, select, textarea { font: inherit; }
 }
 .debug-usage-tag {
   font-weight: 800;
-  color: var(--c-warning);
+  color: var(--c-warning-text);
   letter-spacing: .03em;
 }
 .debug-usage strong { color: var(--c-text); }
-.debug-usage-meta { color: var(--c-muted); margin-left: auto; }
+.debug-usage-meta { color: var(--c-muted-text); margin-left: auto; }
 
 .export-bar {
   display: flex;
@@ -2412,7 +2419,7 @@ input, select, textarea { font: inherit; }
   text-align: center;
   padding: 1.25rem 0 .5rem;
   font-size: .72rem;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   letter-spacing: .03em;
 }
 
@@ -2517,19 +2524,19 @@ input, select, textarea { font: inherit; }
 
 .stats-projection-sub {
   font-size: .8rem;
-  color: var(--c-success);
+  color: var(--c-success-text);
   font-weight: 600;
 }
 
 .stats-projection-arrow {
   font-size: 1.3rem;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   flex-shrink: 0;
 }
 
 .stats-projection-source {
   font-size: .78rem;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   margin-top: .5rem;
 }
 
@@ -2570,7 +2577,7 @@ input, select, textarea { font: inherit; }
 .simula-bonus-delta {
   font-size: .85rem;
   font-weight: 600;
-  color: var(--c-success);
+  color: var(--c-success-text);
 }
 
 /* L'esito sul trattamento integrativo: è il motivo per cui la simulazione
@@ -2582,7 +2589,7 @@ input, select, textarea { font: inherit; }
   line-height: 1.35;
 }
 
-.simula-bonus-ti--ok { color: var(--c-success); }
+.simula-bonus-ti--ok { color: var(--c-success-text); }
 .simula-bonus-ti--avviso { color: var(--c-danger); }
 .simula-bonus-ti--neutro { color: var(--c-text-2); }
 
@@ -2590,7 +2597,7 @@ input, select, textarea { font: inherit; }
   flex-basis: 100%;
   font-size: .75rem;
   font-style: normal;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
 }
 
 /* Fatti dell'anno: griglia che si adatta, così le voci opzionali
@@ -2613,7 +2620,7 @@ input, select, textarea { font: inherit; }
   color: var(--c-text);
   line-height: 1.2;
 }
-.stats-fact-value--sup { color: var(--c-warning); }
+.stats-fact-value--sup { color: var(--c-warning-text); }
 .stats-fact-value--str { color: var(--c-danger); }
 
 .stats-fact-label {
@@ -2645,7 +2652,7 @@ input, select, textarea { font: inherit; }
 
 .stats-streaks-note {
   font-size: .75rem;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   margin-top: .55rem;
   line-height: 1.45;
 }
@@ -2683,7 +2690,7 @@ input, select, textarea { font: inherit; }
 
 .stats-streaks-more {
   font-size: .72rem;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   margin-top: .35rem;
 }
 
@@ -2719,7 +2726,7 @@ input, select, textarea { font: inherit; }
 
 .mini-dow {
   font-size: .5rem;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   text-align: center;
   line-height: 1.4;
 }
@@ -2805,7 +2812,7 @@ input, select, textarea { font: inherit; }
 }
 
 .stats-legend-item--hint {
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   font-style: italic;
 }
 
@@ -2876,7 +2883,7 @@ input, select, textarea { font: inherit; }
    prima e sparisce se non c'è spazio, senza mai spingere fuori le ore. */
 .periodo-giorno-nota {
   font-size: .7rem;
-  color: var(--c-warning);
+  color: var(--c-warning-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2899,14 +2906,14 @@ input, select, textarea { font: inherit; }
 
 .form-label-hint {
   font-weight: 400;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   font-size: .8em;
 }
 
 /* Avviso su un valore che merita un'occhiata: giallo, non rosso — non è un
    errore che impedisce di salvare, è una cosa da guardare. */
 .form-hint--attenzione {
-  color: var(--c-warning);
+  color: var(--c-warning-text);
   background: var(--c-warning-light);
   border-radius: var(--radius-sm);
   padding: .4rem .55rem;
@@ -2927,7 +2934,7 @@ input, select, textarea { font: inherit; }
   margin-top: .35rem;
   padding: .45rem .6rem;
   background: var(--c-warning-light);
-  color: var(--c-warning);
+  color: var(--c-warning-text);
   border-radius: var(--radius-sm);
   line-height: 1.5;
 }
@@ -2935,7 +2942,7 @@ input, select, textarea { font: inherit; }
 .festivita-proposta-btn {
   margin-left: .4rem;
   font-weight: 700;
-  color: var(--c-warning);
+  color: var(--c-warning-text);
   text-decoration: underline;
 }
 
@@ -2979,7 +2986,7 @@ input, select, textarea { font: inherit; }
 
 .crash-esito {
   font-size: .85rem;
-  color: var(--c-success);
+  color: var(--c-success-text);
   font-weight: 600;
 }
 .crash-esito--errore { color: var(--c-danger); }
@@ -3003,7 +3010,7 @@ input, select, textarea { font: inherit; }
 .crash-dettaglio {
   margin-top: .25rem;
   font-size: .8rem;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
 }
 .crash-dettaglio summary {
   cursor: pointer;
@@ -3045,7 +3052,7 @@ input, select, textarea { font: inherit; }
   margin-top: 1px;
   font-size: .68rem;
   font-weight: 800;
-  color: var(--c-success);
+  color: var(--c-success-text);
   white-space: nowrap;
   letter-spacing: -.02em;
 }
@@ -3072,7 +3079,7 @@ input, select, textarea { font: inherit; }
 .stats-calcolo-nota {
   display: block;
   font-size: .68rem;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   font-style: italic;
   line-height: 1.35;
 }
@@ -3128,7 +3135,7 @@ input, select, textarea { font: inherit; }
   flex-basis: 100%;
   margin: 0;
   font-size: .68rem;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   font-style: italic;
 }
 
@@ -3175,7 +3182,7 @@ input, select, textarea { font: inherit; }
 /* Consegna non verificabile: né successo né guasto. L'arancione degli avvisi,
    non il rosso — chi legge deve controllare qualcosa, non spaventarsi. */
 .crash-esito--attenzione {
-  color: var(--c-warning);
+  color: var(--c-warning-text);
 }
 
 /* Backup in chiaro, via di riserva quando il download non è verificabile. */
@@ -3295,7 +3302,7 @@ input, select, textarea { font: inherit; }
 .avviso-magg-nota {
   margin: .6rem 0 0;
   font-size: .72rem;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
 }
 
 .avviso-magg-azioni {
@@ -3320,7 +3327,7 @@ input, select, textarea { font: inherit; }
   height: 40px;
   font-size: 1.4rem;
   line-height: 1;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   border-radius: var(--radius);
 }
 .avviso-magg-chiudi:hover { background: var(--c-bg); color: var(--c-text); }
@@ -3379,7 +3386,7 @@ input, select, textarea { font: inherit; }
   height: 40px;
   font-size: 1.3rem;
   line-height: 1;
-  color: var(--c-muted);
+  color: var(--c-muted-text);
   border-radius: var(--radius);
 }
 .avviso-agg-chiudi:hover { background: var(--c-bg); color: var(--c-text); }
