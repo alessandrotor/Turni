@@ -349,3 +349,41 @@ export function mancaAlPareggio(proiezioneAnnua, settings = {}, costo = null) {
   const g = Math.max(0, Number(proiezioneAnnua) || 0);
   return g > c.tetto && g < c.pareggio ? Math.round(c.pareggio - g) : 0;
 }
+
+/**
+ * Cosa succede AL TUO LORDO, non nel punto peggiore. `costoSoglia` risponde
+ * a «quanto costa superare i 15.000 di un euro»: una costante, −129 €. A chi
+ * è già oltre interessa un'altra cosa: a questo lordo, rispetto a essermi
+ * fermato sotto la soglia, cosa ho perso e cosa ho guadagnato? Il conto è lo
+ * stesso (due `calcNetAnnual`), coi due estremi diversi: il tetto e il lordo
+ * previsto. Le voci sommano SEMPRE al totale: il lavoro in più (lordo meno
+ * contributi) assorbe gli arrotondamenti, come `altro` in `costoSoglia`.
+ * → check-costo-soglia.mjs
+ *
+ * @returns {{ lordo, tetto, totale, voci: {bonus, tasse, indennita, lavoro,
+ *   detrazioneSotto, detrazioneSopra} }}
+ */
+export function confrontoConSoglia(lordo, settings = {}, costo = null) {
+  const c = costo || costoSoglia(settings);
+  const g = Math.max(0, Number(lordo) || 0);
+  const sotto = calcNetAnnual(c.tetto, settings);
+  const sopra = calcNetAnnual(g, settings);
+  const tasseDi = (v) => v.irpefNetta + v.addRegionale + v.addComunale;
+  const totale = Math.round(sopra.net - sotto.net);
+  const bonus = Math.round(sopra.trattamentoIntegrativo - sotto.trattamentoIntegrativo);
+  const tasse = Math.round(tasseDi(sotto) - tasseDi(sopra));
+  const indennita = Math.round(sopra.bonusCuneo - sotto.bonusCuneo);
+  return {
+    lordo: g,
+    tetto: c.tetto,
+    totale,
+    voci: {
+      bonus,
+      tasse,
+      indennita,
+      lavoro: totale - (bonus + tasse + indennita),
+      detrazioneSotto: Math.round(sotto.detrazioneLavoro),
+      detrazioneSopra: Math.round(sopra.detrazioneLavoro),
+    },
+  };
+}

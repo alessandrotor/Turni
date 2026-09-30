@@ -8,7 +8,7 @@ import { calcShiftMinutes, calcTotalPay, formatCurrency, lordoTurno } from '../u
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { isMensilizzato } from '../utils/ccnl';
 import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../utils/bonus';
-import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, CAUSA, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE } from '../utils/restituzione';
+import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, CAUSA, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../utils/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
 import { contrattoMancante } from '../utils/configurazione';
 import { ENABLE_MESE_PAGA } from '../config/features';
@@ -374,6 +374,16 @@ export default function CalendarView({
   // Costa una trentina di valutazioni del netto annuo, tutte per bisezione: si
   // memoizza sulle sole impostazioni perché non dipende dal mese guardato.
   const costo = useMemo(() => costoSoglia(settings), [settings]);
+  // La tabella del popup «Come funziona»: al lordo previsto per chi è già
+  // oltre il tetto, nel punto appena sopra per chi è ancora sotto.
+  const alTuoLordo = (annualProjection || annualGross) > costo.tetto;
+  const tabellaSoglia = useMemo(() => {
+    if (!alTuoLordo) {
+      return { ...costo.voci, indennita: costo.voci.indennita + costo.voci.altro, lavoro: 0, totale: -costo.perditaMax };
+    }
+    const r = confrontoConSoglia(annualProjection || annualGross, settings, costo);
+    return { ...r.voci, totale: r.totale };
+  }, [alTuoLordo, costo, annualProjection, annualGross, settings]);
   const proiezione = annualProjection || annualGross;
   const posizione = useMemo(
     () => posizioneRispettoSoglia(proiezione, settings, costo),
@@ -1932,69 +1942,73 @@ export default function CalendarView({
           motore (`costoSoglia`) e non da costanti scritte qui. */}
       {contiBonusAperti && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setContiBonusAperti(false)}>
-          <div ref={contiBonusRef} className="modal" role="dialog" aria-modal="true" aria-label="Come funziona il bonus">
+          <div ref={contiBonusRef} className="modal" role="dialog" aria-modal="true" aria-label="Come funziona il tratt. integrativo">
             <div className="modal-header">
-              <h2 className="modal-title">Come funziona il bonus</h2>
+              <h2 className="modal-title">Come funziona il tratt. integrativo</h2>
             </div>
             <div className="modal-form conti-bonus">
               <p className="form-hint">
-                Il bonus spetta sotto i 15.000 €. Se li superi, a dicembre il datore si
-                riprende tutto: {euroCella(rischio.erogato || tiFinora)} finora.
+                Spetta sotto i 15.000 €: se li superi, a dicembre il datore si riprende
+                tutto: {euroCella(rischio.erogato || tiFinora)} finora.
               </p>
               {/* La tabella è un'ALTRA grandezza rispetto alla cifra qui sopra:
                   quella è cassa, questa è il saldo di un anno intero. Senza
                   questa riga i due numeri sembrano lo stesso conto fatto male.
                   Le righe stanno in un blocco loro per stringere gli spazi:
                   il popup deve stare in uno schermo senza scorrere. */}
-              {/* L'intestazione dice RISPETTO A COSA, altrimenti «ci perdi
-                  129 €» è un confronto con un termine che non si vede. */}
-              <div className="net-group-label">Rispetto a restare sotto i 15.000, in un anno</div>
+              {/* AL TUO LORDO, non nel punto peggiore. Chi è sotto la soglia
+                  vede cosa succederebbe superandola di poco (`costoSoglia`); chi
+                  è già dentro la fascia o oltre vede il SUO anno contro
+                  fermarsi al tetto (`confrontoConSoglia`): «−129 €» e «non
+                  perdi niente» nello stesso popup si contraddicevano, perché
+                  il primo era il caso peggiore e il secondo era lui.
+                  L'intestazione dice RISPETTO A COSA. */}
+              <div className="net-group-label">
+                {alTuoLordo
+                  ? `A ${euroCella(proiezione)}, rispetto a fermarti a ${euroCella(costo.tetto)}`
+                  : 'Se superassi i 15.000 di poco, in un anno'}
+              </div>
               <div className="conti-bonus-righe">
                 <div className="bonus-cifre">
-                  <span>Bonus che non ti spetta più</span>
-                  <strong>{euroCella(costo.voci.bonus)}</strong>
+                  <span>Tratt. integrativo perso</span>
+                  <strong>{euroCella(tabellaSoglia.bonus)}</strong>
                 </div>
                 <div className="bonus-cifre">
-                  <span>Tasse in meno: la detrazione sale
-                    da {numeroIt(costo.voci.detrazioneSotto)} a {euroCella(costo.voci.detrazioneSopra)}</span>
-                  <strong>+{euroCella(costo.voci.tasse)}</strong>
+                  <span title={`detrazione ${numeroIt(tabellaSoglia.detrazioneSopra)} invece di ${numeroIt(tabellaSoglia.detrazioneSotto)}`}>
+                    Meno IRPEF (detrazione {numeroIt(tabellaSoglia.detrazioneSopra)})</span>
+                  <strong>+{euroCella(tabellaSoglia.tasse)}</strong>
                 </div>
                 {/* Il nome che la voce ha IN BUSTA («Indennit L.207/24» sui
                     cedolini letti): «sconto sui contributi» spiegava cos'è ma
                     non si poteva cercare sul cedolino, che è ciò che uno fa. */}
                 <div className="bonus-cifre">
                   <span>Indennità L. 207/24, che cala</span>
-                  <strong>{euroCella(costo.voci.indennita + costo.voci.altro)}</strong>
+                  <strong>{euroCella(tabellaSoglia.indennita)}</strong>
                 </div>
+                {alTuoLordo && (
+                  <div className="bonus-cifre">
+                    <span>Lavoro in più, netto di contributi</span>
+                    <strong>+{euroCella(tabellaSoglia.lavoro)}</strong>
+                  </div>
+                )}
                 <div className="bonus-cifre bonus-cifre--totale">
-                  {/* Il totale è il PUNTO PEGGIORE della fascia, una costante di
-                      `costoSoglia`, non quello che perde chi legge: chi è già
-                      oltre non perde niente, e «Ci perdi −129 €» sotto una riga
-                      che lo dice sembrava una contraddizione. */}
-                  <span><strong>
-                    {posizione === POSIZIONE.OLTRE ? 'Nel punto peggiore della fascia' : 'Al massimo ci perdi'}
-                  </strong></span>
-                  <strong>{euroCella(-costo.perditaMax)}</strong>
+                  <span><strong>{tabellaSoglia.totale >= 0 ? 'Ci guadagni' : 'Ci perdi'}</strong></span>
+                  <strong>{tabellaSoglia.totale > 0 ? '+' : ''}{euroCella(tabellaSoglia.totale)}</strong>
                 </div>
               </div>
-              {/* LA FASCIA MORTA, non la curva. Le versioni prima dicevano «il
-                  netto torna quello di prima della soglia» e «li ritrovi solo
-                  a X»: descrivevano il grafico, con un confronto controfattuale
-                  («se ti fossi fermato») che nessuno si fa. La domanda vera è
-                  «mi conviene lavorare di più?», e la risposta è che per due
-                  soli centoni la risposta è no, dopo torna sì. */}
-              {/* DOVE SEI TU nella fascia sta nello stesso paragrafo, dalla stessa
-                  posizione del riquadro rosso (`posizioneRispettoSoglia`): la
-                  fascia in astratto non dice se ti riguarda. */}
-              {costo.larghezzaBuca > 0 && (
+              {/* LA FASCIA MORTA, non la curva: la domanda vera è «mi conviene
+                  lavorare di più?». Solo a chi può ancora finirci dentro o ci
+                  sta; a chi è oltre la tabella sopra ha già risposto. */}
+              {costo.larghezzaBuca > 0 && posizione !== POSIZIONE.OLTRE && (
                 <p className="form-hint">
-                  Solo in una fascia di lordo annuo: da {euroCella(costo.tetto)} perdi{' '}
-                  {euroCella(costo.perditaMax)}, poi risali e a {euroCella(costo.pareggio)} sei come
-                  prima. Lì in mezzo guadagnare di più non conviene.
-                {' '}<strong>Tu, di questo passo ({euroCella(proiezione)}):</strong>{' '}
-                  {posizione === POSIZIONE.SOTTO && 'sotto la fascia.'}
-                  {posizione === POSIZIONE.DENTRO && `dentro; per tornare in pari mancano circa ${euroCella(mancaPareggio)} lordi.`}
-                  {posizione === POSIZIONE.OLTRE && 'oltre la fascia, non perdi niente.'}
+                  {posizione === POSIZIONE.SOTTO ? (<>
+                    Solo in una fascia di lordo annuo: da {euroCella(costo.tetto)} perdi{' '}
+                    {euroCella(costo.perditaMax)}, poi risali e a {euroCella(costo.pareggio)} sei come
+                    prima. <strong>Tu, di questo passo ({euroCella(proiezione)}), sei sotto.</strong>
+                  </>) : (<>
+                    Sei nella fascia fino a {euroCella(costo.pareggio)} dove guadagnare di più non
+                    conviene: <strong>per tornare in pari mancano circa {euroCella(mancaPareggio)} lordi.</strong>
+                  </>)}
                 </p>
               )}
               <p className="form-hint form-hint--warn">

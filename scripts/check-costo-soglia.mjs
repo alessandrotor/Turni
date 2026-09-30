@@ -21,7 +21,7 @@
 
 import { calcNetAnnual, redditoComplessivo, TAX_2026 } from '../src/utils/net.js';
 import {
-  costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE,
+  costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia,
 } from '../src/utils/restituzione.js';
 import { margineInOre } from '../src/utils/bonus.js';
 
@@ -157,6 +157,27 @@ esito(margineInOre(0, S0) === null, 'margine zero: niente ore');
 // base prometterebbe più lavoro di quello che ci sta.
 esito(margineInOre(2596, S0) < Math.floor(2596 / S0.hourlyRate),
   'le ore in più sono maggiorate, quindi ce ne stanno meno');
+
+// ── Al TUO lordo, non nel punto peggiore ────────────────────────────────────
+// Chi è oltre la fascia leggeva «−129 €» e «non perdi niente» nello stesso
+// popup. La tabella per lui confronta il SUO lordo previsto col tetto: stesso
+// motore, e le voci devono sommare alla differenza di netto vera.
+console.log('\nAl tuo lordo\n');
+for (const [nome, s] of PROFILI) {
+  const c = costoSoglia(s);
+  for (const lordo of [c.tetto + 1, c.pareggio ?? c.tetto + 200, c.tetto + 1500]) {
+    const r = confrontoConSoglia(lordo, s, c);
+    const vero = Math.round(calcNetAnnual(lordo, s).net - calcNetAnnual(c.tetto, s).net);
+    const somma = r.voci.bonus + r.voci.tasse + r.voci.indennita + r.voci.lavoro;
+    esito(r.totale === vero && somma === r.totale, `${nome}, ${lordo} €: le voci sommano alla differenza di netto`,
+      `${r.totale >= 0 ? '+' : ''}${r.totale} €`);
+  }
+  // Appena oltre la soglia il confronto coincide col punto peggiore.
+  esito(Math.abs(confrontoConSoglia(c.tetto + 1, s, c).totale + c.perditaMax) <= 1,
+    `${nome}: un euro oltre il tetto è il punto peggiore`);
+  if (c.pareggio) esito(confrontoConSoglia(c.pareggio + 500, s, c).totale > 0,
+    `${nome}: oltre il pareggio la differenza è a favore`);
+}
 
 console.log(`\n${falliti === 0 ? '✓ il costo della soglia regge' : falliti + ' controlli falliti'}\n`);
 process.exit(falliti > 0 ? 1 : 0);
