@@ -1,0 +1,11 @@
+
+> turni@0.9.6 dev
+> vite --port 5189 --host 127.0.0.1
+
+
+  VITE v5.4.21  ready in 2669 ms
+
+  ➜  Local:   http://127.0.0.1:5189/
+2:42:02 PM [vite] hmr update /src/components/CalendarView.jsx
+2:42:24 PM [vite] hmr update /src/components/CalendarView.jsx
+2:42:42 PM [vite] page reload public/privacy/index.html

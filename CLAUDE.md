@@ -386,6 +386,16 @@ Discendono tutte dalla parola d'ordine qui sopra.
 - Quando i conteggi non coprono il mese visualizzato (mese di paga), il periodo
   si **dichiara sopra i numeri**. Non si allunga il calendario per farceli stare:
   provato, era brutto e si perdeva di vista che mese si stava guardando.
+- **Le righe del calendario hanno tutte la stessa altezza**: quella della più
+  alta (`grid-template-rows` con `1fr`). Lasciarle sul contenuto allungava una
+  sola settimana per un doppio turno o una pill a capo, e il calendario perdeva
+  la proporzione.
+- **Un totale che vale per un caso non si scrive come se valesse per chi legge.**
+  «Ci perdi −129 €» è il punto peggiore della fascia dei 15.000, e sotto una
+  riga che diceva «oltre la fascia, non perdi niente» sembrava una
+  contraddizione: ora è «al massimo ci perdi», o «nel punto peggiore» per chi
+  è già oltre. Lo stesso per il conguaglio: «ti riprendono» è cassa (quello che
+  le buste hanno dato in più dell'anno), non una perdita, e si dice.
 - **Non si scrolla se non è assolutamente necessario.** Vale soprattutto per
   ciò che si apre sopra la pagina: una finestra che costa uno scorrimento per
   arrivare al pulsante che la chiude è una finestra scritta troppo lunga, e la

@@ -3461,7 +3461,10 @@ input, select, textarea { font: inherit; }
   .nav-link { padding: .4rem .5rem; font-size: .8rem; gap: .25rem; }
   /* Sulla griglia del mese ogni pixel di margine è un pixel tolto all'orario:
      «18–23³⁰» deve starci intero, senza puntini. */
-  .cal-cell { padding: .35rem .2rem .3rem; }
+  .cal-cell { padding: .35rem .1rem .3rem; }
+  /* E la pill ne lascia poco attorno: «13–15³⁰» deve stare su una riga anche
+     nella colonna più stretta, senza rimpicciolire il testo. */
+  .cal-shift-pill { padding: 1px; letter-spacing: -.02em; }
 }
 
 @media (max-width: 360px) {

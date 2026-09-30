@@ -900,7 +900,15 @@ export default function CalendarView({
           mostraEuro={mostraEuro}
         />
       ) : (
-        <div className="cal-grid">
+        // Le righe dei giorni hanno TUTTE la stessa altezza, quella della più
+        // alta (`1fr` con un contenitore senza altezza: le tracce si
+        // allineano alla maggiore). Prima ogni riga prendeva l'altezza dei
+        // suoi contenuti: una pill che va a capo o un doppio turno allungava
+        // una sola settimana, e il calendario perdeva la proporzione.
+        <div
+          className="cal-grid"
+          style={{ gridTemplateRows: `auto repeat(${Math.ceil(cells.length / 7)}, minmax(4.5rem, 1fr))` }}
+        >
           {DAY_HEADERS.map(d => (
             <div key={d} className="cal-day-header">{d}</div>
           ))}
@@ -1650,7 +1658,9 @@ export default function CalendarView({
                   <strong>{forchettaScritta}</strong>
                 </div>
                 <span className="bonus-strip-note">
-                  Di questo passo, stima.{' '}
+                  Di questo passo, stima
+                  {conguaglio.direzione === 'debito' ? ': presi in più in busta, non persi' : ''}
+                  {conguaglio.direzione === 'credito' ? ': quello che le buste non ti hanno ancora dato' : ''}.{' '}
                   <button type="button" className="linklike" onClick={() => setConguaglioAperto(true)}>perché?</button>
                 </span>
               </div>
@@ -1835,8 +1845,8 @@ export default function CalendarView({
             </div>
             <div className="modal-form conti-bonus">
               <p className="form-hint">
-                A dicembre il datore ricalcola queste voci sull&apos;anno e sistema la
-                differenza. Di questo passo: <strong>{forchettaScritta}</strong>.
+                A dicembre il datore ricalcola sull&apos;anno e sistema la differenza
+                con le buste, non è una perdita. Di questo passo: <strong>{forchettaScritta}</strong>.
               </p>
               {/* LE DUE COLONNE da cui nasce ogni voce. «IRPEF −317 €» da solo
                   non si capiva: di cosa è la differenza? Qui si legge. Le
@@ -1957,7 +1967,13 @@ export default function CalendarView({
                   <strong>{euroCella(costo.voci.indennita + costo.voci.altro)}</strong>
                 </div>
                 <div className="bonus-cifre bonus-cifre--totale">
-                  <span><strong>Ci perdi</strong></span>
+                  {/* Il totale è il PUNTO PEGGIORE della fascia, una costante di
+                      `costoSoglia`, non quello che perde chi legge: chi è già
+                      oltre non perde niente, e «Ci perdi −129 €» sotto una riga
+                      che lo dice sembrava una contraddizione. */}
+                  <span><strong>
+                    {posizione === POSIZIONE.OLTRE ? 'Nel punto peggiore della fascia' : 'Al massimo ci perdi'}
+                  </strong></span>
                   <strong>{euroCella(-costo.perditaMax)}</strong>
                 </div>
               </div>
