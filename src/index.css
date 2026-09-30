@@ -331,7 +331,7 @@ input, select, textarea { font: inherit; }
 }
 
 .timeline-badge-today {
-  font-size: .6rem;
+  font-size: .65rem;
   font-weight: 700;
   background: var(--c-primary);
   color: #fff;
@@ -342,7 +342,7 @@ input, select, textarea { font: inherit; }
 }
 
 .timeline-badge-holiday {
-  font-size: .55rem;
+  font-size: .65rem;
   font-weight: 700;
   background: var(--c-warning-light);
   color: var(--c-warning-text);
@@ -502,7 +502,7 @@ input, select, textarea { font: inherit; }
 }
 
 .timeline-badge {
-  font-size: .68rem;
+  font-size: .72rem;
   font-weight: 600;
   padding: 1px 6px;
   border-radius: 4px;
@@ -536,16 +536,26 @@ input, select, textarea { font: inherit; }
   white-space: nowrap;
 }
 
+/* L'area di tocco è più grande di quello che si vede (::after): alzare il
+   pulsante vero allungherebbe ogni giorno della timeline. → check-leggibilita */
 .timeline-add-extra-btn {
+  position: relative;
   align-self: flex-start;
   font-size: .72rem;
-  font-weight: 600;
-  color: var(--c-primary);
+  font-weight: 500;
+  color: var(--c-muted-text);
   padding: 2px 6px;
   border-radius: 4px;
-  transition: background .12s;
+  transition: background .12s, color .12s;
 }
-.timeline-add-extra-btn:hover {
+.timeline-add-extra-btn::after {
+  content: '';
+  position: absolute;
+  inset: -.6rem -.4rem;
+}
+.timeline-add-extra-btn:hover,
+.timeline-add-extra-btn:focus-visible {
+  color: var(--c-primary);
   background: var(--c-primary-light);
 }
 
@@ -728,7 +738,7 @@ input, select, textarea { font: inherit; }
   display: block;
   width: 100%;
   text-align: left;
-  font-size: .65rem;
+  font-size: .72rem;
   font-weight: 600;
   color: var(--c-primary-dark);
   background: var(--c-primary-light);
@@ -769,7 +779,7 @@ input, select, textarea { font: inherit; }
 .summary-sublabel-nota {
   display: block;
   color: var(--c-muted-text);
-  font-size: .68rem;
+  font-size: .72rem;
   font-style: italic;
 }
 
@@ -1463,7 +1473,11 @@ input, select, textarea { font: inherit; }
   font-size: .82rem;
   color: var(--c-text-2);
 }
+/* Link dentro il testo: non può crescere senza spostare le righe, quindi l'area
+   di tocco si allunga solo in verticale (≥ 24 px, WCAG 2.5.8). Di lato no: nel
+   riquadro del tratt. integrativo accanto a «perché?» c'è la casella. */
 .linklike {
+  position: relative;
   background: none;
   border: none;
   padding: 0;
@@ -1472,6 +1486,11 @@ input, select, textarea { font: inherit; }
   font-weight: 600;
   text-decoration: underline;
   cursor: pointer;
+}
+.linklike::after {
+  content: '';
+  position: absolute;
+  inset: -.35rem 0;
 }
 
 /* Worked preview */
@@ -2063,7 +2082,7 @@ input, select, textarea { font: inherit; }
   border-radius: 99px;
   background: var(--c-warning-light);
   color: var(--c-warning-text);
-  font-size: .62rem;
+  font-size: .65rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: .05em;
@@ -2089,11 +2108,17 @@ input, select, textarea { font: inherit; }
 }
 
 .net-toggle {
+  position: relative;
   align-self: flex-start;
   font-size: .8rem;
   font-weight: 600;
   color: var(--c-primary);
   padding: .1rem 0;
+}
+.net-toggle::after {
+  content: '';
+  position: absolute;
+  inset: -.6rem -.5rem;
 }
 
 .net-detail {
@@ -2252,7 +2277,7 @@ input, select, textarea { font: inherit; }
   min-width: 5.5rem;
 }
 .net-pillola-nome {
-  font-size: .68rem;
+  font-size: .72rem;
   color: var(--c-text-2);
 }
 .net-pillola-cifra {
@@ -2343,7 +2368,7 @@ input, select, textarea { font: inherit; }
   position: absolute;
   top: .75rem;
   transform: translateX(-100%);
-  font-size: .68rem;
+  font-size: .72rem;
   color: var(--c-text-2);
   white-space: nowrap;
 }
@@ -2725,7 +2750,7 @@ input, select, textarea { font: inherit; }
 }
 
 .mini-dow {
-  font-size: .5rem;
+  font-size: .65rem;
   color: var(--c-muted-text);
   text-align: center;
   line-height: 1.4;
@@ -2782,7 +2807,7 @@ input, select, textarea { font: inherit; }
 .mini-day[data-cat="mal"] { background: #94a3b8; }   /* malattia: grigio */
 
 .mini-month-total {
-  font-size: .68rem;
+  font-size: .72rem;
   color: var(--c-text-2);
   font-weight: 600;
 }
@@ -2882,7 +2907,7 @@ input, select, textarea { font: inherit; }
 /* La nota «sostituisce…» è un avvertimento, non un dato: si stringe per
    prima e sparisce se non c'è spazio, senza mai spingere fuori le ore. */
 .periodo-giorno-nota {
-  font-size: .7rem;
+  font-size: .72rem;
   color: var(--c-warning-text);
   white-space: nowrap;
   overflow: hidden;
@@ -2997,7 +3022,7 @@ input, select, textarea { font: inherit; }
   width: 100%;
   min-height: 140px;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .7rem;
+  font-size: .72rem;
   line-height: 1.4;
   padding: .6rem;
   border: 1px solid var(--c-border);
@@ -3019,7 +3044,7 @@ input, select, textarea { font: inherit; }
 
 .crash-stack {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .68rem;
+  font-size: .72rem;
   line-height: 1.45;
   white-space: pre-wrap;
   word-break: break-word;
@@ -3037,7 +3062,7 @@ input, select, textarea { font: inherit; }
 .cal-day-total {
   align-self: flex-end;
   margin-top: 1px;
-  font-size: .6rem;
+  font-size: .72rem;
   font-weight: 700;
   color: var(--c-text-2);
   white-space: nowrap;
@@ -3050,7 +3075,7 @@ input, select, textarea { font: inherit; }
 .cal-day-euro {
   align-self: flex-end;
   margin-top: 1px;
-  font-size: .68rem;
+  font-size: .72rem;
   font-weight: 800;
   color: var(--c-success-text);
   white-space: nowrap;
@@ -3078,7 +3103,7 @@ input, select, textarea { font: inherit; }
    `.net-line` del pannello gemello in Calendario: stessa cosa, stesso aspetto. */
 .stats-calcolo-nota {
   display: block;
-  font-size: .68rem;
+  font-size: .72rem;
   color: var(--c-muted-text);
   font-style: italic;
   line-height: 1.35;
@@ -3115,7 +3140,7 @@ input, select, textarea { font: inherit; }
 }
 
 .periodo-btn {
-  font-size: .68rem;
+  font-size: .72rem;
   font-weight: 600;
   padding: .18rem .45rem;
   border-radius: var(--radius-sm);
@@ -3134,7 +3159,7 @@ input, select, textarea { font: inherit; }
 .periodo-nota {
   flex-basis: 100%;
   margin: 0;
-  font-size: .68rem;
+  font-size: .72rem;
   color: var(--c-muted-text);
   font-style: italic;
 }
@@ -3197,7 +3222,7 @@ input, select, textarea { font: inherit; }
   border: 1px solid var(--c-border);
   border-radius: var(--radius-sm);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: .7rem;
+  font-size: .72rem;
   line-height: 1.35;
   color: var(--c-text-2);
   background: var(--c-bg);
@@ -3554,7 +3579,7 @@ input, select, textarea { font: inherit; }
 }
 
 .conguaglio-tabella th {
-  font-size: .7rem;
+  font-size: .72rem;
   font-weight: 600;
   color: var(--c-text-2);
   text-align: right;

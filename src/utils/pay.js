@@ -426,7 +426,15 @@ export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = nul
   };
 }
 
+// `useGrouping: 'always'`: in italiano il punto delle migliaia parte da cinque
+// cifre, e il riepilogo scriveva «2317,25 €» sotto la barra che diceva
+// «2.317 €». Stessa scelta di `numeroIt` in CalendarView, stesso fallback per
+// le WebView vecchie.
 export function formatCurrency(amount) {
   const n = Number.isFinite(Number(amount)) ? Number(amount) : 0;
-  return n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
+  try {
+    return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', useGrouping: 'always' }).format(n);
+  } catch {
+    return n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
+  }
 }

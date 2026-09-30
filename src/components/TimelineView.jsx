@@ -266,13 +266,16 @@ export default function TimelineView({
                     </div>
                   )}
 
-                  {/* Pulsante per aggiungere un secondo turno nello stesso giorno */}
+                  {/* Secondo turno nello stesso giorno. A voce bassa: ripetuto sotto
+                      ogni giorno, in blu faceva sette link primari per schermata in
+                      concorrenza col pulsante flottante. */}
                   <button
                     type="button"
                     className="timeline-add-extra-btn"
+                    aria-label="Aggiungi un altro turno"
                     onClick={() => onAddShift(d.dateStr)}
                   >
-                    + Aggiungi un altro turno
+                    + altro turno
                   </button>
                 </div>
               ) : (

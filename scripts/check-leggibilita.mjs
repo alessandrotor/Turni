@@ -16,7 +16,10 @@
 //  1. le varianti `-text` superano 4,5:1 su ogni fondo su cui compaiono;
 //  2. nessuna regola usa un colore semantico «da riempimento» come `color:`,
 //     tranne il testo grande (≥ 1,2rem e grassetto), per cui WCAG chiede 3:1 —
-//     e allora quel 3:1 lo si verifica.
+//     e allora quel 3:1 lo si verifica;
+//  3. nessun testo sotto .72rem (.65rem le etichette in maiuscolo);
+//  4. i comandi piccoli hanno un'area di tocco più grande di come appaiono;
+//  5. gli euro si scrivono sempre col punto delle migliaia.
 
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -104,6 +107,66 @@ for (const { sel, corpo } of regole) {
   }
 }
 if (trovate === 0) verifica('nessun colore da riempimento usato come testo', true);
+
+// ── 3. Pavimento del testo ─────────────────────────────────────────────────
+// Sotto .72rem (11,5 px) non si legge col telefono in una mano. Le etichette
+// in maiuscolo spaziato possono scendere a .65rem: il maiuscolo compensa. Le
+// intestazioni del mini-calendario sono una lettera sola, e ci stanno lo stesso.
+console.log('\nNessun testo sotto .72rem\n');
+
+const PAVIMENTO = 0.72;
+const PAVIMENTO_MAIUSC = 0.65;
+const MAIUSC_SENZA_UPPERCASE = ['.mini-dow'];
+
+let piccoli = 0;
+for (const { sel, corpo } of regole) {
+  const m = corpo.match(/font-size\s*:\s*([\d.]+)(rem|em|px)/);
+  if (!m) continue;
+  const v = m[2] === 'px' ? Number(m[1]) / 16 : Number(m[1]);
+  const nome = sel.split('*/').pop().trim();
+  const maiusc = /text-transform\s*:\s*uppercase/.test(corpo) || MAIUSC_SENZA_UPPERCASE.includes(nome);
+  const soglia = maiusc ? PAVIMENTO_MAIUSC : PAVIMENTO;
+  if (v < soglia) {
+    piccoli++;
+    verifica(nome.slice(0, 50), false, `${m[1]}${m[2]} < ${soglia}rem`);
+  }
+}
+if (piccoli === 0) verifica('tutte le regole sopra il pavimento', true);
+
+// ── 4. Aree di tocco ───────────────────────────────────────────────────────
+// Tre comandi piccoli per disegno, che non possono crescere senza allungare la
+// pagina: l'area vera sta in un ::after che deborda. Già capitato: il tocco su
+// «perché?» finiva sulla casella accanto.
+console.log('\nAree di tocco dei comandi piccoli\n');
+
+function trova(selettore) {
+  return regole.find(r => r.sel.split('*/').pop().trim() === selettore)?.corpo ?? '';
+}
+function inset(corpo) {
+  const m = corpo.match(/inset\s*:\s*(-?[\d.]+)rem(?:\s+(-?[\d.]+)(?:rem)?)?/);
+  return m ? [Number(m[1]), Number(m[2] ?? m[1])] : null;
+}
+const AREE = {
+  // quanto deve debordare sopra e sotto (rem), e se può farlo anche di lato
+  '.linklike':              { dy: 0.35, lato: false },
+  '.net-toggle':            { dy: 0.5,  lato: true },
+  '.timeline-add-extra-btn': { dy: 0.5, lato: true },
+};
+for (const [sel, { dy, lato }] of Object.entries(AREE)) {
+  verifica(`${sel} è position: relative`, /position\s*:\s*relative/.test(trova(sel)));
+  const i = inset(trova(`${sel}::after`));
+  verifica(`${sel}::after allarga di ≥ ${dy}rem in verticale`, Boolean(i) && -i[0] >= dy, i ? `inset ${i.join(' ')}` : 'manca');
+  if (i && !lato) verifica(`${sel}::after non deborda di lato`, i[1] === 0, `inset ${i.join(' ')}`);
+}
+
+// ── 5. Un solo modo di scrivere gli euro ───────────────────────────────────
+console.log('\nGli euro col punto delle migliaia\n');
+
+const { formatCurrency } = await import('../src/utils/pay.js');
+const spazi = s => s.replace(/[  ]/g, ' ');
+verifica('formatCurrency(2317.25)', spazi(formatCurrency(2317.25)) === '2.317,25 €', spazi(formatCurrency(2317.25)));
+verifica('formatCurrency(16600)', spazi(formatCurrency(16600)) === '16.600,00 €', spazi(formatCurrency(16600)));
+verifica('formatCurrency(999.5)', spazi(formatCurrency(999.5)) === '999,50 €', spazi(formatCurrency(999.5)));
 
 console.log(`\n${totale - falliti}/${totale} ok\n`);
 process.exit(falliti ? 1 : 0);
