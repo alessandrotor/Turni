@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Semplificazione Testi di Spiegazione - Turni</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 15mm 15mm 15mm 15mm;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      background: #ffffff;
+      line-height: 1.5;
+      font-size: 13px;
+      margin: 0;
+      padding: 0;
+    }
+    .header {
+      border-bottom: 2px solid #2563eb;
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #0f172a;
+      margin: 0 0 4px 0;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #64748b;
+      margin: 0;
+    }
+    .badge {
+      background: #eff6ff;
+      color: #2563eb;
+      border: 1px solid #bfdbfe;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .section {
+      margin-bottom: 24px;
+      page-break-inside: avoid;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1e293b;
+      margin: 0 0 10px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .image-container {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .image-container img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 6px;
+      display: block;
+      margin: 0 auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 12px;
+    }
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f1f5f9;
+      color: #334155;
+      font-weight: 700;
+    }
+    tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+    .col-prima {
+      color: #b91c1c;
+      background: #fef2f2 !important;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 11px;
+    }
+    .col-dopo {
+      color: #15803d;
+      background: #f0fdf4 !important;
+      font-weight: 500;
+    }
+    .alert-box {
+      background: #eff6ff;
+      border-left: 4px solid #2563eb;
+      padding: 10px 14px;
+      border-radius: 4px;
+      margin-bottom: 18px;
+      font-size: 12px;
+      color: #1e3a8a;
+    }
+    .page-break {
+      page-break-before: always;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div>
+      <h1 class="title">Semplificazione Testi & Spiegazioni</h1>
+      <p class="subtitle">Turni App • Allineamento Repository Branch <code>experimental</code> (v0.9.6)</p>
+    </div>
+    <span class="badge">UX & Copywriting</span>
+  </div>
+
+  <div class="alert-box">
+    <strong>Principio Guida:</strong> L'utente target (turnista) sa praticamente 0 di fiscalità. Ogni informazione deve essere chiara in 2 secondi, senza formule da commercialista né toni ansiogeni ("a rate", "debito a conguaglio").
+  </div>
+
+  <!-- SEZIONE 1 -->
+  <div class="section">
+    <h2 class="section-title">1. Card Netto Mensile: Da formula complessa a risposta istantanea</h2>
+    <div class="image-container">
+      <img src="mockups/semplificazione-netto.jpg" alt="Confronto Card Netto">
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 25%;">Elemento</th>
+          <th style="width: 37%;">PRIMA (Attuale nel codice)</th>
+          <th style="width: 38%;">DOPO (Proposta Semplificata)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Formula del mese</strong></td>
+          <td class="col-prima">1.298 × 12 = 15.576 €: sopra i 15.000, niente tratt. integrativo ma meno IRPEF. A dicembre si inverte. perché?</td>
+          <td class="col-dopo">3 pillole visive immediate:<br><strong>Lordo 2.317 €</strong> | <strong>Trattenute -469 €</strong> | <strong>Bonus +101 €</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Disclaimer Beta</strong></td>
+          <td class="col-prima">⚠️ Funzione beta: i calcoli possono contenere errori. Fai sempre controllare questi dati a un professionista...</td>
+          <td class="col-dopo">Pillola discreta ed elegante:<br><strong>Stima basata sul tuo CCNL 2026</strong> (note legali apribili al tocco).</td>
+        </tr>
+        <tr>
+          <td><strong>Pulsante Dettaglio</strong></td>
+          <td class="col-prima">Come è calcolato? ▼</td>
+          <td class="col-dopo"><strong>Vedi dettaglio</strong> (apre bottom sheet pulito).</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- SEZIONE 2 -->
+  <div class="section">
+    <h2 class="section-title">2. Bonus Renzi / Trattamento Integrativo: Il Semaforo Visivo</h2>
+    <div class="image-container">
+      <img src="mockups/semplificazione-bonus.jpg" alt="Confronto Bonus Trattamento Integrativo">
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 25%;">Stato Lavoratore</th>
+          <th style="width: 37%;">PRIMA (Paragrafi burocratici)</th>
+          <th style="width: 38%;">DOPO (Semaforo Rassicurante)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Sotto la soglia (Sicuro)</strong></td>
+          <td class="col-prima">Margine prima della soglia: 8.819 € (~639 h). Prevedibile a fine anno...</td>
+          <td class="col-dopo">🟢 <strong>Bonus confermato: nessun rischio</strong><br>Barra visuale (8.819 / 15.000 €). "Ti rimangono circa 80 turni prima della soglia."</td>
+        </tr>
+        <tr>
+          <td><strong>Vicino alla soglia</strong></td>
+          <td class="col-prima">⚠️ Ancora 1.200 € e superi i 15.000 €. Se li superi a dicembre il datore si riprende tutto il bonus...</td>
+          <td class="col-dopo">🟡 <strong>Attenzione: sei vicino alla soglia</strong><br>"Mancano circa 5 turni ai 15.000 €. Valuta se sospenderlo per evitare sorprese."</td>
+        </tr>
+        <tr>
+          <td><strong>Oltre la soglia</strong></td>
+          <td class="col-prima">⚠️ Occhio al bonus! Supererai i 15.000 €, a dicembre si riprende finora 845 € a rate. Sull'anno ci perdi 130 €.</td>
+          <td class="col-dopo">🔵 <strong>Soglia superata: sei in pari</strong><br>"Niente bonus in busta, ma paghi meno tasse grazie alle detrazioni. Nessun debito a fine anno."</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="page-break"></div>
+
+  <!-- SEZIONE 3 -->
+  <div class="section">
+    <h2 class="section-title">3. Dettaglio "Come è calcolato?": Dai codici tributo ai 3 passaggi</h2>
+    <div class="image-container">
+      <img src="mockups/semplificazione-dettaglio.jpg" alt="Confronto Dettaglio Calcolo">
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 30%;">Livello di Dettaglio</th>
+          <th style="width: 70%;">Cosa vede l'utente nella nuova interfaccia</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Passo 1 • Ore & Turni</strong></td>
+          <td>Mostra il totale delle ore e dei turni lavorati nel mese con la retribuzione lorda maturata (inclusi notturni e festivi).</td>
+        </tr>
+        <tr>
+          <td><strong>Passo 2 • Trattenute</strong></td>
+          <td>Raggruppa contributi INPS e imposta IRPEF in un unico importo comprensibile (es. <em>−469 €</em>), senza confondere con addizionali separate.</td>
+        </tr>
+        <tr>
+          <td><strong>Passo 3 • Bonus & Maggiorazioni</strong></td>
+          <td>Evidenzia le agevolazioni che aumentano il netto (trattamento integrativo, indennità, detrazioni lavoro).</td>
+        </tr>
+        <tr>
+          <td><strong>Risultato Finale</strong></td>
+          <td class="col-dopo"><strong>Netto in tasca: 1.949 €</strong> — la cifra esatta che l'utente troverà accreditata sul conto corrente.</td>
+        </tr>
+        <tr>
+          <td><strong>Per i più curiosi</strong></td>
+          <td>Interruttore opzionale a fondo pagina: <em>"Mostra formula per esperti"</em> per visualizzare tutte le singole aliquote decimali.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>
