@@ -153,10 +153,10 @@ input, select, textarea { font: inherit; }
   z-index: 30;
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: .35rem;
   background: var(--c-card);
   border-radius: var(--radius);
-  padding: .75rem 1rem;
+  padding: .6rem .75rem;
   box-shadow: var(--shadow);
   /* Il totale del mese va a capo su una riga sua: mese e frecce restano dove
      sono sempre stati, e il numero non li stringe su schermi piccoli. */
@@ -197,8 +197,17 @@ input, select, textarea { font: inherit; }
   color: var(--c-text-2);
 }
 
+.cal-header-mese {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: .15rem;
+}
+
 .cal-header-center {
   flex: 1;
+  min-width: 0;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -206,16 +215,42 @@ input, select, textarea { font: inherit; }
   gap: .25rem;
 }
 
+/* Frecce e comandi più piccoli qui che in Statistiche: devono stare sulla
+   riga del mese anche a 360 px. L'area di tocco resta grande (::after). */
+.cal-header .week-nav-btn {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  font-size: 1.2rem;
+}
+.cal-header .cal-mode-btn,
+.cal-header .cal-header-share-btn {
+  width: 28px;
+  height: 28px;
+}
+.cal-header .week-nav-btn::after {
+  content: '';
+  position: absolute;
+  inset: -.4rem -.2rem;
+}
+
+/* I giorni si sfogliano di lato: il browser tiene per sé lo scorrimento
+   verticale e lo zoom, l'orizzontale lo decide `utils/swipe.js`. */
+.cal-sfoglia {
+  touch-action: pan-y pinch-zoom;
+}
+
 .cal-month-name {
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--c-text);
+  white-space: nowrap;
 }
 
 .cal-header-right {
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: .35rem;
 }
 
 .cal-mode-toggle {
@@ -1318,6 +1353,30 @@ input, select, textarea { font: inherit; }
   gap: .75rem;
 }
 .form-row--compact { grid-template-columns: 1fr; }
+
+/* Mezz'ora avanti e indietro sotto ogni orario: due metà larghe, facili da
+   prendere col pollice senza aprire il selettore del telefono. */
+.orario-passi {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .35rem;
+  margin-top: .35rem;
+}
+.orario-passo {
+  min-height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--c-text-2);
+  font-variant-numeric: tabular-nums;
+}
+.orario-passo:hover,
+.orario-passo:focus-visible {
+  color: var(--c-primary);
+  border-color: var(--c-primary);
+}
 
 /* Sezione «Altro» del modale turno: stesso meccanismo di ⚙️ Avanzate in
    Impostazioni (<details> nativo, freccia che ruota), ma alleggerita — qui

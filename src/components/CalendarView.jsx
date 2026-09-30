@@ -11,6 +11,7 @@ import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../utils/bonus';
 import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, CAUSA, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../utils/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
 import { contrattoMancante } from '../utils/configurazione';
+import { direzioneSwipe } from '../utils/swipe';
 import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../utils/assenze';
@@ -759,29 +760,49 @@ export default function CalendarView({
     }
   }
 
+  // Lo sfoglio col pollice. Un dito solo: con due si sta zoomando.
+  const sfoglio = useRef(null);
+  const inizioSfoglia = (e) => {
+    if (e.touches.length !== 1) { sfoglio.current = null; return; }
+    const t = e.touches[0];
+    sfoglio.current = { x: t.clientX, y: t.clientY, ms: Date.now() };
+  };
+  const annullaSfoglia = () => { sfoglio.current = null; };
+  const fineSfoglia = (e) => {
+    const s = sfoglio.current;
+    sfoglio.current = null;
+    const t = e.changedTouches?.[0];
+    if (!s || !t) return;
+    const verso = direzioneSwipe({ dx: t.clientX - s.x, dy: t.clientY - s.y, ms: Date.now() - s.ms });
+    if (verso !== 0) onMonthChange(addMonths(currentMonth, verso));
+  };
+
   return (
     <div className="calendar-view">
       {/* Month navigation & Layout toggle */}
       <div className="cal-header">
-        <button
-          className="week-nav-btn"
-          onClick={() => onMonthChange(addMonths(currentMonth, -1))}
-          aria-label="Mese precedente"
-        >
-          ‹
-        </button>
-        <div className="cal-header-center">
-          <span className="cal-month-name">{formatMonthYear(currentMonth)}</span>
-          {!isCurrentMonth(currentMonth) && (
-            <button
-              className="week-today-btn"
-              onClick={() => onMonthChange(getMonthStart(new Date()))}
-            >
-              Oggi
-            </button>
-          )}
-        </div>
-        <div className="cal-header-right">
+        {/* Il mese fra le sue frecce, i comandi della vista a destra, tutto su
+            una riga: su 360 px le frecce finivano una sopra l'altra e
+            l'intestazione agganciata si mangiava due righe di calendario. */}
+        <div className="cal-header-mese">
+          <button
+            className="week-nav-btn"
+            onClick={() => onMonthChange(addMonths(currentMonth, -1))}
+            aria-label="Mese precedente"
+          >
+            ‹
+          </button>
+          <div className="cal-header-center">
+            <span className="cal-month-name">{formatMonthYear(currentMonth)}</span>
+            {!isCurrentMonth(currentMonth) && (
+              <button
+                className="week-today-btn"
+                onClick={() => onMonthChange(getMonthStart(new Date()))}
+              >
+                Oggi
+              </button>
+            )}
+          </div>
           <button
             className="week-nav-btn"
             onClick={() => onMonthChange(addMonths(currentMonth, 1))}
@@ -789,6 +810,8 @@ export default function CalendarView({
           >
             ›
           </button>
+        </div>
+        <div className="cal-header-right">
           <div className="cal-mode-toggle" role="group" aria-label="Modalità di visualizzazione">
             <button
               type="button"
@@ -902,7 +925,10 @@ export default function CalendarView({
         </div>
       )}
 
-      {/* Main shifts view: Timeline or Grid */}
+      {/* Main shifts view: Timeline or Grid. Scorrere di lato sui giorni cambia
+          mese (`utils/swipe.js`): le frecce stanno in alto, fuori dalla portata
+          del pollice. Solo qui — l'intestazione e il netto non sfogliano. */}
+      <div className="cal-sfoglia" onTouchStart={inizioSfoglia} onTouchEnd={fineSfoglia} onTouchCancel={annullaSfoglia}>
       {calLayout === 'timeline' ? (
         <TimelineView
           daysInMonth={daysInMonth}
@@ -1024,6 +1050,7 @@ export default function CalendarView({
           })}
         </div>
       )}
+      </div>
 
       {/* Monthly summary */}
       <div className="cal-summary">

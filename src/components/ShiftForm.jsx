@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
-import { formatDate, formatDayShort, parseDate, minutesDiff, formatMinutes } from '../utils/dates';
+import { formatDate, formatDayShort, parseDate, minutesDiff, formatMinutes, spostaOrario } from '../utils/dates';
 import { proponiPeriodo, totalePeriodo } from '../utils/periodo-assenza';
 import useModalDismiss from '../hooks/useModalDismiss';
 import { TIPO, ETICHETTA, ICONA, tipoTurno, isAssenza, minutiGiornoAssenza } from '../utils/assenze';
@@ -119,6 +119,21 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
   }, [trattieni]);
 
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }));
+
+  // Mezz'ora avanti o indietro senza aprire l'orologio del telefono: il turno
+  // che differisce dal solito di solito differisce di lì (06:30, 14:30), e il
+  // selettore nativo a rulli su quel gesto costa più tocchi e sbaglia spesso.
+  const PASSO_ORARIO = 30;
+  const passoOrario = (field, nome, verso) => (
+    <button
+      type="button"
+      className="orario-passo"
+      onClick={() => setForm(f => ({ ...f, [field]: spostaOrario(f[field], verso * PASSO_ORARIO) }))}
+      aria-label={`${nome} mezz'ora ${verso < 0 ? 'prima' : 'dopo'}`}
+    >
+      {verso < 0 ? '−30' : '+30'}
+    </button>
+  );
 
   const assenzaSelezionata = isAssenza({ type: form.kind });
   const isEdit = modal.type === 'edit';
@@ -488,6 +503,10 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
                 onChange={set('startTime')}
                 required
               />
+              <div className="orario-passi">
+                {passoOrario('startTime', 'Inizio', -1)}
+                {passoOrario('startTime', 'Inizio', 1)}
+              </div>
             </div>
             <div className="form-group">
               <label className="form-label" htmlFor="shift-end">Fine</label>
@@ -499,6 +518,10 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
                 onChange={set('endTime')}
                 required
               />
+              <div className="orario-passi">
+                {passoOrario('endTime', 'Fine', -1)}
+                {passoOrario('endTime', 'Fine', 1)}
+              </div>
             </div>
           </div>
 

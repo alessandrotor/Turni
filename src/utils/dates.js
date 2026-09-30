@@ -63,6 +63,16 @@ export function parseTime(value) {
   return h * 60 + min;
 }
 
+// Sposta un orario 'HH:MM' di `delta` minuti, girando sulla mezzanotte
+// (23:45 + 30 = 00:15). Un orario non valido resta com'è: lo stepper non deve
+// inventarne uno. → scripts/check-sposta-orario.mjs
+export function spostaOrario(hhmm, delta) {
+  const t = parseTime(hhmm);
+  if (t === null || !Number.isFinite(delta)) return hhmm;
+  const m = (((t + delta) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+}
+
 export function minutesDiff(startTime, endTime) {
   const start = parseTime(startTime);
   const end = parseTime(endTime);
