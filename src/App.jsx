@@ -27,7 +27,7 @@ import useOccupato from './hooks/useOccupato';
 import { iscrivitiOccupato } from './utils/occupato';
 import { isAssenza } from './utils/assenze';
 import { turniDaImportare } from './utils/import-turni';
-import { haDatiMinimi, maggiorazioneDaChiedere } from './utils/configurazione';
+import { haDatiMinimi, maggiorazioneDaChiedere, promemoriaHaDaDire, KEY_PROMEMORIA_CHIUSO } from './utils/configurazione';
 
 const DEFAULT_SETTINGS = {
   hourlyRate: 0,
@@ -315,6 +315,19 @@ export default function App() {
     ...ambiente, turni: allShifts.length, rifiutato: installaIOSRifiutato,
   });
 
+  // Il promemoria in alto. Deciso qui e non nel componente: chi parla in alto
+  // si sceglie fra tutti, e il banner di installazione deve sapere se tacere.
+  const [promemoriaChiuso, setPromemoriaChiuso] = useState(() => {
+    try { return localStorage.getItem(KEY_PROMEMORIA_CHIUSO) === '1'; } catch { return false; }
+  });
+  const chiudiPromemoria = useCallback(() => {
+    setPromemoriaChiuso(true);
+    try { localStorage.setItem(KEY_PROMEMORIA_CHIUSO, '1'); } catch { /* il no vale almeno per questa sessione */ }
+  }, []);
+  const promemoria = promemoriaHaDaDire({
+    settings, turni: allShifts.length, chiuso: promemoriaChiuso,
+  });
+
   const monthShifts = useMemo(() => {
     const y = currentMonth.getFullYear();
     const m = currentMonth.getMonth();
@@ -557,7 +570,7 @@ export default function App() {
   });
   // E chi in cima: l'avviso iOS batte il promemoria, perché i turni cancellati
   // da Safari non tornano e la configurazione sì. Vedi utils/installazione.js.
-  const inAlto = chiParlaInAlto({ strisciaInBasso: chiParla !== null, installaIOS });
+  const inAlto = chiParlaInAlto({ strisciaInBasso: chiParla !== null, installaIOS, promemoria });
 
   return (
     <div className="app">
@@ -582,19 +595,18 @@ export default function App() {
             che il tester deve vedere è che la busta resta sul telefono. */}
         {view !== 'verifica' && (
           <>
+            {/* Uno solo dei due, mai impilati: `chiParlaInAlto`. Il promemoria
+                tace davanti alla striscia in fondo e all'avviso iOS; il banner
+                di installazione fuori da iOS tace davanti a tutti. */}
             <SetupPrompt
               settings={settings}
-              onNavigate={setView}
+              parla={inAlto === 'promemoria'}
               onSistema={() => setSistemaAperto(true)}
-              turniInseriti={allShifts.length}
-              // Quando la striscia in fondo parla, il promemoria in alto tace —
-              // chiunque sia a parlare, non più le sole maggiorazioni — e tace
-              // anche davanti all'avviso iOS. Due avvisi impilati sono un muro.
-              sospeso={inAlto !== 'promemoria'}
+              onChiudi={chiudiPromemoria}
             />
             <InstallPrompt
               installaIOS={inAlto === 'installa'}
-              sospeso={inAlto === null}
+              sospeso={inAlto !== 'comodita'}
               onRifiutaIOS={rifiutaInstallaIOS}
               onBackup={() => setView('settings')}
             />

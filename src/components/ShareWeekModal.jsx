@@ -98,6 +98,10 @@ export default function ShareWeekModal({
     const m = weekData.totalMins % 60;
     const durStr = m > 0 ? `${h}h ${m}m` : `${h}h`;
     lines.push(`⏱️ Totale: ${durStr}`);
+    // Una riga, staccata dai turni, senza inviti: chi la riceve è un collega
+    // con lo stesso tabellone, ed è lì che l'app si fa conoscere. Sempre la
+    // produzione, anche dal sito di prova: il link lo apre un altro.
+    lines.push('', 'Segnati con Turni · turni-9vr.pages.dev');
     return lines.join('\n');
   }, [weekData]);
 

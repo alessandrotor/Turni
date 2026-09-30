@@ -60,14 +60,20 @@ export function chiedereInstallazioneIOS({
  * promemoria suggerisce è retroattiva e può aspettare. E quando parla la
  * striscia in basso, in alto tace chiunque: due avvisi insieme sono un muro.
  *
+ * Ultimo viene il banner di installazione fuori da iOS: lì è una comodità, e
+ * il promemoria dice che i conti sono sbagliati. Prima questa riga non c'era,
+ * e su Chrome per Android i due banner comparivano uno sopra l'altro.
+ *
  * @param {object} stato
  * @param {boolean} stato.strisciaInBasso la striscia in fondo sta parlando
  * @param {boolean} stato.installaIOS `chiedereInstallazioneIOS` è vera
- * @returns {'installa'|'promemoria'|null} chi può parlare; il promemoria poi
- *   decide da sé se ha qualcosa da dire.
+ * @param {boolean} stato.promemoria `promemoriaHaDaDire` è vera
+ * @returns {'installa'|'promemoria'|'comodita'|null} chi può parlare; il banner
+ *   di comodità poi decide da sé se il browser gli dà qualcosa da proporre.
  */
-export function chiParlaInAlto({ strisciaInBasso = false, installaIOS = false } = {}) {
+export function chiParlaInAlto({ strisciaInBasso = false, installaIOS = false, promemoria = false } = {}) {
   if (strisciaInBasso) return null;
   if (installaIOS) return 'installa';
-  return 'promemoria';
+  if (promemoria) return 'promemoria';
+  return 'comodita';
 }

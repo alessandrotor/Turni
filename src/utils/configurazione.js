@@ -249,6 +249,24 @@ export function consigliatiMancanti(settings = {}) {
   });
 }
 
+// Il «no» al promemoria in alto. Il nome resta quello di sempre: cambiarlo
+// farebbe ricomparire il promemoria a chi l'ha già chiuso.
+export const KEY_PROMEMORIA_CHIUSO = 'turni_setup_dismissed';
+
+/**
+ * Il promemoria in alto («Manca ancora una cosa») ha qualcosa da dire?
+ *
+ * Sta qui e non dentro `SetupPrompt` perché App deve saperlo PRIMA di decidere
+ * chi parla in alto: finché lo sapeva solo il componente, su Chrome per Android
+ * il promemoria e il banner di installazione comparivano uno sopra l'altro.
+ *
+ * Tace a chi non ha ancora segnato niente (all'apertura non si chiede niente) e
+ * a chi non ha i dati minimi (quelli li chiede il blocco al primo turno).
+ */
+export function promemoriaHaDaDire({ settings = {}, turni = 0, chiuso = false } = {}) {
+  return turni > 0 && !chiuso && haDatiMinimi(settings) && consigliatiMancanti(settings).length > 0;
+}
+
 /**
  * Il quadro completo, per chi deve mostrarlo tutto insieme (Impostazioni, e il
  * promemoria nel calendario).

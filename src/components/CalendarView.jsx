@@ -845,6 +845,16 @@ export default function CalendarView({
         )}
       </div>
 
+      {/* Il calendario vuoto non dice da dove si comincia. Non è una domanda e
+          non ha ✕: nasce dallo stato dei dati (zero turni in assoluto, non nel
+          mese) e sparisce da sé al primo turno. */}
+      {allShifts.length === 0 && (
+        <p className="cal-vuoto">
+          Tocca un giorno per segnare il primo turno
+          {hasImportAI ? ', o importa la foto del tabellone qui sotto.' : '.'}
+        </p>
+      )}
+
       {/* Import bar */}
       {hasImportAI && (
         <div className="import-bar">

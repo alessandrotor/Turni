@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { haDatiMinimi, consigliatiMancanti } from '../utils/configurazione';
+import { useState, useEffect } from 'react';
+import { consigliatiMancanti } from '../utils/configurazione';
 
 // Il promemoria di quello che resta da sistemare.
 //
@@ -20,58 +20,29 @@ import { haDatiMinimi, consigliatiMancanti } from '../utils/configurazione';
 // totale del mese, dove c'è un importo da qualificare. Ripeterlo in due posti
 // lo farebbe sembrare più urgente di quanto la sua natura rimandabile giustifichi.
 
-const DISMISS_KEY = 'turni_setup_dismissed';
-
-const leggiFlag = (k) => {
-  try { return localStorage.getItem(k); } catch { return null; }
-};
-const scriviFlag = (k, v) => {
-  try { localStorage.setItem(k, v); } catch { /* senza storage il banner ricomparirà: non è un errore da mostrare */ }
-};
-
 // Quante voci nominare. Oltre tre diventa un elenco di compiti, e un elenco di
 // compiti si chiude senza leggerlo.
 const DA_NOMINARE = 2;
 
-export default function SetupPrompt({ settings, onNavigate, onSistema, turniInseriti = 0, sospeso = false }) {
-  const [show, setShow] = useState(false);
-  // Chiuso in QUESTA sessione: vale fino alla prossima apertura, qualunque cosa
-  // succeda ai turni nel frattempo. Senza, tornerebbe a ogni turno aggiunto,
-  // che è un assillo e non un aiuto.
-  const chiusoOra = useRef(false);
+// SE parlare lo decide App (`promemoriaHaDaDire` e `chiParlaInAlto`): deve
+// saperlo prima di dare la parola al banner di installazione. Il «chiuso»
+// vive in App per la stessa ragione — e vale la sessione anche senza storage,
+// altrimenti tornerebbe a ogni turno aggiunto.
+export default function SetupPrompt({ settings, parla = false, onSistema, onChiudi }) {
+  // «Sistemale» apre la finestra: il banner si fa da parte finché le
+  // impostazioni non cambiano, poi dice di nuovo quello che manca ancora.
+  const [nascosto, setNascosto] = useState(false);
+  useEffect(() => { setNascosto(false); }, [settings]);
+
+  if (!parla || nascosto) return null;
 
   const mancanti = consigliatiMancanti(settings);
 
-  useEffect(() => {
-    // Niente da dire a chi non ha ancora segnato niente: l'apertura dell'app
-    // resta senza domande, ed è la scelta che regge tutto il percorso.
-    if (turniInseriti === 0 || chiusoOra.current) { setShow(false); return; }
-    // I dati minimi mancanti li chiede il blocco al primo turno, non questo.
-    if (!haDatiMinimi(settings)) { setShow(false); return; }
-    if (mancanti.length === 0) { setShow(false); return; }
-    if (leggiFlag(DISMISS_KEY) === '1') { setShow(false); return; }
-    setShow(true);
-  }, [settings, turniInseriti, mancanti.length]);
-
-  // Sospeso, non smontato. Mentre la striscia in fondo fa la sua domanda —
-  // quella nata dal turno appena segnato, che è più precisa e più urgente di
-  // questo promemoria — il banner si toglie di mezzo: due avvisi insieme sono
-  // un muro, e un muro si chiude senza leggerlo. Smontarlo invece che
-  // nasconderlo farebbe perdere il «chiuso in questa sessione», e tornerebbe
-  // ogni volta che si segna un turno: l'assillo che questo file esiste per
-  // evitare.
-  if (!show || sospeso) return null;
-
-  const dismiss = () => {
-    chiusoOra.current = true;
-    scriviFlag(DISMISS_KEY, '1');
-    setShow(false);
-  };
-
   const sistema = () => {
     onSistema();
-    setShow(false);
+    setNascosto(true);
   };
+  const dismiss = onChiudi;
 
   const nominate = mancanti.slice(0, DA_NOMINARE);
   const altre = mancanti.length - nominate.length;

@@ -17,6 +17,7 @@
 // non può tornare.
 
 import { datiARischio, chiedereInstallazioneIOS, chiParlaInAlto } from '../src/utils/installazione.js';
+import { promemoriaHaDaDire } from '../src/utils/configurazione.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {
@@ -49,19 +50,41 @@ esito(chiParlaInAlto({ strisciaInBasso: true, installaIOS: true }) === null,
   'striscia in basso attiva: in alto tace tutto', 'due avvisi insieme sono un muro');
 esito(chiParlaInAlto({ installaIOS: true }) === 'installa',
   'iOS batte il promemoria', 'i dati cancellati non tornano, la configurazione sì');
-esito(chiParlaInAlto({ installaIOS: false }) === 'promemoria',
+esito(chiParlaInAlto({ installaIOS: false, promemoria: true }) === 'promemoria',
   'senza avviso iOS parla il promemoria', '');
+esito(chiParlaInAlto({ installaIOS: true, promemoria: true }) === 'installa',
+  'iOS batte anche un promemoria con qualcosa da dire', '');
+// Il difetto che ha fatto nascere il terzo valore: su Chrome per Android il
+// banner di installazione si sospendeva solo con la striscia in basso, e con
+// «Manca ancora una cosa» a schermo comparivano tutti e due.
+esito(chiParlaInAlto({ promemoria: true }) !== 'comodita',
+  'col promemoria a schermo il banner di comodità tace', 'erano impilati su Android');
+esito(chiParlaInAlto({ promemoria: false }) === 'comodita',
+  'se nessuno ha niente da dire, tocca al banner di comodità', '');
 
 // La proprietà che nessun occhio controlla, come in check-avvisi.mjs: ognuno
-// dei due deve avere almeno una combinazione in cui tocca a lui. Un ordine che
-// ne seppellisse uno per sempre non darebbe nessun errore a schermo.
+// deve avere almeno una combinazione in cui tocca a lui. Un ordine che ne
+// seppellisse uno per sempre non darebbe nessun errore a schermo.
 const combinazioni = [];
 for (const strisciaInBasso of [false, true]) {
-  for (const installaIOS of [false, true]) combinazioni.push(chiParlaInAlto({ strisciaInBasso, installaIOS }));
+  for (const installaIOS of [false, true]) {
+    for (const promemoria of [false, true]) combinazioni.push(chiParlaInAlto({ strisciaInBasso, installaIOS, promemoria }));
+  }
 }
-for (const chi of ['installa', 'promemoria']) {
+for (const chi of ['installa', 'promemoria', 'comodita']) {
   esito(combinazioni.includes(chi), `«${chi}» ha almeno un caso in cui parla`, '');
 }
+
+console.log('\nQuando il promemoria ha qualcosa da dire\n');
+const MINIMI = { hourlyRate: 10, expectedWeeklyHours: 24 };
+esito(promemoriaHaDaDire({ settings: MINIMI, turni: 0 }) === false,
+  'app vuota: niente', 'all\'apertura non si chiede niente');
+esito(promemoriaHaDaDire({ settings: {}, turni: 5 }) === false,
+  'senza dati minimi: niente', 'quelli li chiede il blocco al primo turno');
+esito(promemoriaHaDaDire({ settings: MINIMI, turni: 5 }) === true,
+  'turni e minimi, consigliati mancanti: parla', '');
+esito(promemoriaHaDaDire({ settings: MINIMI, turni: 5, chiuso: true }) === false,
+  'un no dura', '');
 
 console.log();
 if (falliti) {
