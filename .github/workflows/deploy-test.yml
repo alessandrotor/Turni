@@ -68,6 +68,14 @@ jobs:
           # (o non mostra) l'immagine di un altro ambiente.
           VITE_SITE_URL: 'https://test.turni-9vr.pages.dev'
 
+      # IL CANCELLO. Senza questo passo i riscontri esistevano ma non fermavano
+      # niente: li lanciava chi se ne ricordava. Ora un riscontro rosso
+      # lascia il sito di prova com'era. Girano anche con l'orologio spostato
+      # (vedi scripts/riscontri.mjs), e `check-dati-in-uscita` controlla il
+      # pacchetto appena costruito qui sopra, coi segreti della CI.
+      - name: Riscontri (bloccano il deploy se uno fallisce)
+        run: npm run riscontri
+
       - name: Deploy su Pages (branch test)
         uses: cloudflare/wrangler-action@v3
         with:

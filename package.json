@@ -8,6 +8,7 @@
     "prebuild": "node scripts/genera-privacy.mjs",
     "build": "vite build",
     "preview": "vite preview",
+    "riscontri": "node scripts/riscontri.mjs",
     "ccnl:aggiorna": "node scripts/scarica-ccnl.mjs src/data/ccnl.json",
     "android:release": "npm run build && npx cap sync android && cd android && ./gradlew bundleRelease"
   },

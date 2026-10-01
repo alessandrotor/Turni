@@ -117,8 +117,30 @@ cedolini Zucchetti con lo strato di testo; per il resto c'è l'inserimento a man
 ```sh
 npm run dev
 npm run build
-for f in scripts/check-*.mjs; do node "$f" >/dev/null || echo "FAIL $f"; done
+npm run riscontri                # tutti i check, anche con l'orologio spostato
+npm run riscontri -- --senza-dist   # in locale, vedi sotto
 ```
+
+**I riscontri sono un cancello, non un consiglio.** La CI (`deploy-test.yml`)
+esegue `npm run riscontri` dopo la build e prima del deploy: uno rosso e il sito
+di prova resta com'era. Prima esistevano ma li lanciava chi se ne ricordava.
+`scripts/riscontri.mjs` li fa girare anche con l'orologio spostato
+(`scripts/lib/orologio-finto.mjs`) a gennaio, al 31 dicembre e l'anno dopo:
+due riscontri leggevano la data senza dirlo, e uno è diventato rosso il primo
+ottobre senza che il motore fosse cambiato. Un riscontro nuovo che dipende dal
+giorno passa `oggi` in modo esplicito.
+
+Tre riscontri non parlano di buste ma di come il codice resta leggibile:
+- **`check-dimensioni.mjs`**: un file nuovo sta sotto le 600 righe; quelli già
+  oltre sono congelati alla misura attuale e possono solo scendere. Il codice
+  lo scrive in gran parte un'AI, che aggiunge dove è più comodo: in fondo al
+  file già aperto. `CalendarView.jsx` era arrivato a 2.211 righe; i tre popup
+  fiscali ora stanno in `PopupFiscali.jsx`. Quando un file scende, il suo tetto
+  si abbassa; alzarlo si chiede prima.
+- **`check-documentazione.mjs`**: ogni file e ogni funzione `nome()` citati
+  fra backtick in questo file, in `COSE-NUOVE.md` e in `docs/` devono esistere.
+  La documentazione invecchia in silenzio; così invecchia a voce alta.
+- **`check-codice-morto.mjs`**: classi CSS ed export senza nessuno che li usi.
 
 `check-dati-in-uscita.mjs` ispeziona `dist/`, e su una build locale fallisce
 senza che ci sia niente di rotto: `.env.local` imposta `VITE_TELEMETRY_URL`,

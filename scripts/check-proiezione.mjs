@@ -162,7 +162,7 @@ const conBonus = (modo, mesi) => ({
   monthlyBonusAmount: BONUS,
   monthlyBonus: Object.fromEntries(mesi.map(m => [`${ANNO}-${String(m).padStart(2, '0')}`, true])),
 });
-const stima = (s) => projectAnnualIncome(9000, 0, s, ANNO).value;
+const stima = (s) => projectAnnualIncome(9000, 0, s, ANNO, { oggi: OGGI }).value;
 
 for (const modo of ['stimato', 'ytd']) {
   const senza = stima({ ...S, tiProjectionMode: modo });
@@ -199,7 +199,7 @@ const casiVoci = [
   ['nessun turno segnato', 0, 0, S],
 ];
 for (const [nome, ag, ae, st] of casiVoci) {
-  const r = projectAnnualIncome(ag, ae, st, ANNO);
+  const r = projectAnnualIncome(ag, ae, st, ANNO, { oggi: OGGI });
   const somma = (r.voci || []).reduce((t, v) => t + v.valore, 0);
   verifica(nome, arr(somma), arr(r.value), `fonte: ${r.source}`);
 }
@@ -222,15 +222,17 @@ const conMontante = (extra = {}) => ({
   priorTaxableIncome: 9000, priorIncomeDate: `${ANNO}-08-01`, ...extra,
 });
 for (const modo of ['stimato', 'ytd']) {
-  const base = projectAnnualIncome(9000, 0, conMontante({ tiProjectionMode: modo, fixedMonthlyItems: [] }), ANNO).value;
-  const conFisse = projectAnnualIncome(9000, 0, conMontante({ tiProjectionMode: modo }), ANNO).value;
+  // `oggi` fisso: col mese vero il conto cambiava ogni mese, e il riscontro
+  // passava a settembre e falliva il primo ottobre.
+  const base = projectAnnualIncome(9000, 0, conMontante({ tiProjectionMode: modo, fixedMonthlyItems: [] }), ANNO, { oggi: OGGI }).value;
+  const conFisse = projectAnnualIncome(9000, 0, conMontante({ tiProjectionMode: modo }), ANNO, { oggi: OGGI }).value;
   // stimato: le si aggiunge per i 4 mesi che restano. ytd: le si annualizza
   // col maturato, e quelle del montante ci sono già — resta il solo settembre,
   // × 12/9. In entrambi i casi l'anno ne conta dodici, non venti.
   verifica(`${modo}: voci fisse solo nei mesi dopo il montante`, arr(conFisse - base),
     modo === 'ytd' ? arr(10 * 12 / MESE) : 4 * 10, 'non × 12 sopra il montante');
   const spunte = { [`${ANNO}-02`]: true, [`${ANNO}-07`]: true, [`${ANNO}-09`]: true };
-  const conPremi = projectAnnualIncome(9000, 0, conMontante({ tiProjectionMode: modo, monthlyBonus: spunte }), ANNO).value;
+  const conPremi = projectAnnualIncome(9000, 0, conMontante({ tiProjectionMode: modo, monthlyBonus: spunte }), ANNO, { oggi: OGGI }).value;
   verifica('  e i premi spuntati solo dopo il montante', arr(conPremi - conFisse), 120,
     'febbraio e luglio sono già nel montante');
 }

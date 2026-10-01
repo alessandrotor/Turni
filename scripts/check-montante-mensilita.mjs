@@ -198,10 +198,14 @@ verifica('13ª del 2026 e intera', extraMonthAccrual('tredicesima', 2026, REALE)
 const caso = computeAnnualGrossFromShifts(2026, [], {
   ...REALE, priorTaxableIncome: MONTANTE, priorIncomeDate: '2026-07-01',
 });
+// A dicembre la 13ª è arrivata ed è fuori dal montante: si somma, intera.
+// Il riscontro non lo prevedeva, e il 31 dicembre sarebbe diventato rosso con
+// un motore che faceva la cosa giusta (provato con l'orologio spostato).
+const tredicesimaArrivata = MESE === 12 ? MENSILE : 0;
 if (ANNO === 2026 && MESE > 6) {
-  verifica('montante a luglio 2026 → maturato = montante', arr(caso.total), MONTANTE,
-    'la 14ª non si risomma');
-  verifica('  con mezza mensilita dichiarata', arr(caso.extras), arr(MENSILE * 0.5),
+  verifica('montante a luglio 2026 → maturato = montante', arr(caso.total), arr(MONTANTE + tredicesimaArrivata),
+    tredicesimaArrivata ? 'più la 13ª di dicembre, che è fuori' : 'la 14ª non si risomma');
+  verifica('  con mezza mensilita dichiarata', arr(caso.extras), arr(MENSILE * 0.5 + tredicesimaArrivata),
     'sta dentro il montante, non fuori');
 } else {
   console.log(`  --  siamo nel ${ANNO}: il caso vive nel 2026, non si prova da qui`);
