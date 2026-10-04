@@ -70,7 +70,7 @@ export const TAX_2026 = {
   ADD_COMUNALE_DEFAULT: 0,       // %
 };
 
-function irpefLorda(imponibile) {
+export function irpefLorda(imponibile) {
   const T = TAX_2026;
   let imposta = 0;
   let prev = 0;
@@ -198,7 +198,7 @@ export function calcContributi(gross, settings = {}, ebBase = 0) {
   return { totale: round2(totale), deducibili: round2(deducibili), fringeImponibile, righe };
 }
 
-function detrazioneLavoro(reddito) {
+export function detrazioneLavoro(reddito) {
   const T = TAX_2026;
   let d = 0;
   if (reddito <= 15000) {

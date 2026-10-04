@@ -297,6 +297,25 @@ nemmeno la maggiorazione domenicale lo comprendeva.
 
 - Riscontro: `scripts/check-tabellare-turismo.mjs`.
 
+### Il reddito dei 15.000 — definizione ferma, confermata su una CU
+
+**Il «reddito complessivo» del trattamento integrativo è il lordo MENO i
+contributi previdenziali a carico del lavoratore**, non il lordo in busta: i
+contributi obbligatori non concorrono a formare il reddito (art. 51, c. 2,
+lett. a TUIR). Le deduzioni (art. 10) vengono dopo, per il reddito imponibile,
+e alla soglia non contano. Lo prova una Certificazione Unica 2026: «Reddito
+pari a euro» è il lordo previdenziale meno i contributi, e imposta, detrazione
+e indennità L. 207/24 stampate tornano su quel reddito e NON sul lordo.
+
+Per chi legge l'app la conseguenza va detta in lordo: **15.000 di reddito sono
+~16.600 € lordi l'anno** (`costoSoglia()`, il tetto). Non c'è contraddizione con
+la regola MENSILE del programma paghe (1.250 € *lordi* al mese, più sotto): quella
+è una decisione provvisoria mese per mese, il conguaglio di dicembre la rifà sul
+reddito vero. Chi propone «15.000 al lordo» va fermato con la CU, non assecondato:
+l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
+15.000 e 16.600 € lordi rifiuterebbe turni per una soglia che non esiste.
+→ `check-cu-2025.mjs`
+
 ### Gli altri, con il loro riscontro
 
 - **La finestra del mese è il CALENDARIO**, dal 1 all'ultimo giorno — non le
