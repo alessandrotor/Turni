@@ -11,7 +11,6 @@ import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../utils/bonus';
 import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../utils/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
 import { contrattoMancante } from '../utils/configurazione';
-import { direzioneSwipe } from '../utils/swipe';
 import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../utils/assenze';
@@ -39,6 +38,7 @@ import ImportModal from './ImportModal';
 import TimelineView from './TimelineView';
 import ShareWeekModal from './ShareWeekModal';
 import useOccupato from '../hooks/useOccupato';
+import useSfoglio from '../hooks/useSfoglio';
 import { KEY_CAL_LAYOUT } from '../services/backup';
 
 import { intervalloCella } from '../utils/orario-cella';
@@ -725,36 +725,11 @@ export default function CalendarView({
     }
   }
 
-  // Da che parte è arrivato il mese che si sta guardando: il nuovo entra
-  // scivolando da quel lato invece di sostituire il vecchio di colpo. Vale per
-  // lo sfoglio, le frecce e «Oggi». Tenuto in un ref aggiornato solo quando il
-  // mese cambia: un render qualsiasi a metà animazione non deve interromperla.
+  // Lo sfoglio col pollice e il mese che entra di lato (`hooks/useSfoglio.js`).
   const meseChiave = year * 12 + month;
-  const mesePrecedente = useRef(meseChiave);
-  const versoMese = useRef(0);
-  if (mesePrecedente.current !== meseChiave) {
-    versoMese.current = meseChiave > mesePrecedente.current ? 1 : -1;
-    mesePrecedente.current = meseChiave;
-  }
-  const classeEntrata = versoMese.current === 0 ? ''
-    : versoMese.current > 0 ? 'cal-mese--avanti' : 'cal-mese--indietro';
-
-  // Lo sfoglio col pollice. Un dito solo: con due si sta zoomando.
-  const sfoglio = useRef(null);
-  const inizioSfoglia = (e) => {
-    if (e.touches.length !== 1) { sfoglio.current = null; return; }
-    const t = e.touches[0];
-    sfoglio.current = { x: t.clientX, y: t.clientY, ms: Date.now() };
-  };
-  const annullaSfoglia = () => { sfoglio.current = null; };
-  const fineSfoglia = (e) => {
-    const s = sfoglio.current;
-    sfoglio.current = null;
-    const t = e.changedTouches?.[0];
-    if (!s || !t) return;
-    const verso = direzioneSwipe({ dx: t.clientX - s.x, dy: t.clientY - s.y, ms: Date.now() - s.ms });
-    if (verso !== 0) onMonthChange(addMonths(currentMonth, verso));
-  };
+  const { classeEntrata, contenuto, gestori } = useSfoglio(
+    meseChiave, (verso) => onMonthChange(addMonths(currentMonth, verso)),
+  );
 
   return (
     <div className="calendar-view">
@@ -907,10 +882,10 @@ export default function CalendarView({
       {/* Main shifts view: Timeline or Grid. Scorrere di lato sui giorni cambia
           mese (`utils/swipe.js`): le frecce stanno in alto, fuori dalla portata
           del pollice. Solo qui — l'intestazione e il netto non sfogliano. */}
-      <div className="cal-sfoglia" onTouchStart={inizioSfoglia} onTouchEnd={fineSfoglia} onTouchCancel={annullaSfoglia}>
+      <div className="cal-sfoglia" {...gestori}>
       {/* La chiave è il mese: cambiandolo il contenuto si rimonta e l'animazione
           d'entrata riparte da capo. */}
-      <div key={meseChiave} className={classeEntrata}>
+      <div key={meseChiave} ref={contenuto} className={classeEntrata}>
       {calLayout === 'timeline' ? (
         <TimelineView
           daysInMonth={daysInMonth}

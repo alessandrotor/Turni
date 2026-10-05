@@ -44,9 +44,11 @@ verifica('valori mancanti', direzioneSwipe({ dx: NaN, dy: 0, ms: 100 }), 0, '');
 console.log('\nDa dove parte il gesto\n');
 const QUI = dirname(fileURLToPath(import.meta.url));
 const cal = readFileSync(join(QUI, '..', 'src', 'components', 'CalendarView.jsx'), 'utf8');
-verifica('CalendarView usa direzioneSwipe', /direzioneSwipe\(/.test(cal), true);
+const sfoglio = readFileSync(join(QUI, '..', 'src', 'hooks', 'useSfoglio.js'), 'utf8');
+verifica('lo sfoglio decide con direzioneSwipe', /direzioneSwipe\(/.test(sfoglio) && /useSfoglio\(/.test(cal), true,
+  'l\'animazione segue il dito, ma il mese lo cambia solo la regola');
 verifica('il gesto sta sull\'area dei giorni, non su tutta la vista',
-  /className="cal-sfoglia"[^>]*onTouchStart|onTouchStart[^>]*className="cal-sfoglia"/s.test(cal), true,
+  /className="cal-sfoglia" \{\.\.\.gestori\}/.test(cal), true,
   'l\'intestazione e il netto non sfogliano');
 
 console.log(`\n${totale - falliti}/${totale} ok\n`);

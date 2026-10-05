@@ -247,18 +247,19 @@ input, select, textarea { font: inherit; }
 
 /* Il mese nuovo scivola dentro dal lato verso cui si va, con una dissolvenza.
    Breve apposta: accompagna il gesto, non lo fa aspettare. */
-.cal-mese--avanti   { animation: mese-da-destra .24s cubic-bezier(.2, .7, .3, 1); }
-.cal-mese--indietro { animation: mese-da-sinistra .24s cubic-bezier(.2, .7, .3, 1); }
+.cal-mese--avanti   { animation: mese-da-destra .3s cubic-bezier(.22, .8, .3, 1); }
+.cal-mese--indietro { animation: mese-da-sinistra .3s cubic-bezier(.22, .8, .3, 1); }
 @keyframes mese-da-destra {
-  from { transform: translateX(40px); opacity: 0; }
+  from { transform: translateX(64px); opacity: 0; }
   to   { transform: none; opacity: 1; }
 }
 @keyframes mese-da-sinistra {
-  from { transform: translateX(-40px); opacity: 0; }
+  from { transform: translateX(-64px); opacity: 0; }
   to   { transform: none; opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
   .cal-mese--avanti, .cal-mese--indietro { animation: none; }
+  .cal-sfoglia > * { transform: none !important; transition: none !important; }
 }
 
 .cal-month-name {
