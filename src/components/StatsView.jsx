@@ -482,7 +482,7 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
                   </span>
                   <span className="bonus-strip-value">{fmt0(bonus.marginToFull)}</span>
                   <span className="bonus-strip-note">
-                    prima di superare i 15.000 € di reddito (per te ~{fmt0(bonus.thresholdFullGross)} lordi, proiezione annua)
+                    prima di superare ~{fmt0(bonus.thresholdFullGross)} lordi l'anno (15.000 € di reddito)
                   </span>
                 </div>
               )}
@@ -491,7 +491,7 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
                   <span className="bonus-strip-label">Puoi ancora guadagnare</span>
                   <span className="bonus-strip-value">{fmt0(bonus.marginToMax)}</span>
                   <span className="bonus-strip-note">
-                    prima di superare i 28.000 € di reddito (per te ~{fmt0(bonus.thresholdMaxGross)} lordi, proiezione annua)
+                    prima di superare ~{fmt0(bonus.thresholdMaxGross)} lordi l'anno (28.000 € di reddito)
                   </span>
                 </div>
               )}

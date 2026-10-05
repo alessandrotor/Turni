@@ -307,9 +307,11 @@ e alla soglia non contano. Lo prova una Certificazione Unica 2026: «Reddito
 pari a euro» è il lordo previdenziale meno i contributi, e imposta, detrazione
 e indennità L. 207/24 stampate tornano su quel reddito e NON sul lordo.
 
-**A schermo prima la cifra che si conosce, poi quella che si vede in busta:**
-«15.000 € (per te ~16.596 € lordi l'anno)». I 15.000 stanno su ogni guida e
-ogni CU; il lordo dipende dai contributi, quindi dal contratto (~16.500 senza
+**A schermo prima il lordo, da confrontare con la busta, poi i 15.000 tra
+parentesi:** «La tua soglia lorda è ~16.596 € l'anno (15.000 € di reddito)».
+Senza i 15.000 accanto, chi cerca in rete trova un'altra cifra e non capisce;
+senza il lordo, non ha niente da confrontare col cedolino. I 15.000 stanno su
+ogni guida e ogni CU; il lordo dipende dai contributi, quindi dal contratto (~16.500 senza
 CCNL, ~16.600 nel Turismo, ~15.900 per un apprendista), e lo calcola il motore:
 `lordoPerReddito()`, una sola ricerca per barra, riquadri e popup. Prima la
 barra divideva per l'aliquota (16.622) e il popup cercava sul reddito vero

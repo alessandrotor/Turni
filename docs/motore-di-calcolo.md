@@ -621,8 +621,8 @@ CU in `check-cu-2025.mjs`). Il lordo che corrisponde a una soglia lo dà
 `lordoPerReddito()` (`utils/soglia-lorda.js`): l'ultimo euro lordo che resta
 entro il reddito, cercato col reddito vero (`redditoComplessivo()`). Dipende dal
 contratto: senza CCNL ~16.518 € e ~30.833 €, nel Turismo ~16.621 € e ~31.027 €.
-A schermo si dice prima la cifra di legge e poi quella lorda: «15.000 € di
-reddito, per te ~16.621 € lordi».
+A schermo si dice prima il lordo, da confrontare con la busta, e i 15.000 tra
+parentesi: «La tua soglia lorda è ~16.621 € l'anno (15.000 € di reddito)».
 
 Lo sconto di 75 € nella capienza del TI **non è riscontrato su busta**: viene
 dalla norma. Nelle buste disponibili la capienza c'è comunque, con o senza. Se

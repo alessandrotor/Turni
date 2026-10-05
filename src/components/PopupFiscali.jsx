@@ -184,7 +184,7 @@ export function PopupSoglia({
   return (
     <Finestra titolo="Come funziona il tratt. integrativo" onChiudi={onChiudi}>
       <p className="form-hint">
-        Spetta sotto i 15.000 € di reddito, per te ~{euroCella(costo.tetto)} lordi l'anno: se li superi, a dicembre il datore si riprende
+        Spetta fino a ~{euroCella(costo.tetto)} lordi l'anno (15.000 € di reddito): se li superi, a dicembre il datore si riprende
         tutto: {euroCella(erogato)} finora.
       </p>
       {/* La tabella è un'ALTRA grandezza rispetto alla cifra qui sopra:

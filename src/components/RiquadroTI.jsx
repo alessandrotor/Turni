@@ -20,11 +20,6 @@ import { BONUS_STATUS } from '../utils/bonus';
 import { CAUSA, POSIZIONE } from '../utils/restituzione';
 import { tiSospeso, patchTiSospeso } from '../utils/net';
 
-// La soglia come la conosce chi legge, poi in lordo per il suo contratto.
-function Soglia({ tetto }) {
-  return <>15.000 € di reddito <span className="soglia-lorda">(per te ~{euroCella(tetto)} lordi l'anno)</span></>;
-}
-
 function Sospendi({ settings, onUpdateSettings }) {
   return (
     <label className="check-row bonus-rischio-scelta">
@@ -121,11 +116,12 @@ export default function RiquadroTI({
 
       {stato}
 
-      {/* 2) COS'È LA SOGLIA, per chi legge: i 15.000 che conosce, poi il lordo
-          della sua busta, e perché sono diversi. Una volta sola. */}
+      {/* 2) COS'È LA SOGLIA: prima il lordo, da confrontare con la busta, poi i
+          15.000 che si trovano su ogni guida, perché non sembri un'altra soglia. */}
       {tetto > 0 && rischio.causa !== CAUSA.RINUNCIATO && (
         <p className="ti-soglia">
-          La soglia è <Soglia tetto={tetto} />: il reddito è il lordo meno i contributi.
+          La tua soglia lorda è <strong>~{euroCella(tetto)}</strong> l'anno
+          {' '}<span className="soglia-lorda">(15.000 € di reddito, cioè lordo meno contributi)</span>.
         </p>
       )}
 
