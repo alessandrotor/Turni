@@ -1932,11 +1932,6 @@ input, select, textarea { font: inherit; }
   color: var(--c-text);
 }
 
-.bonus-strip-income {
-  font-size: .78rem;
-  color: var(--c-text-2);
-}
-
 .bonus-strip-body {
   background: var(--c-primary-light);
   border: 1px solid var(--c-primary);
@@ -2007,23 +2002,6 @@ input, select, textarea { font: inherit; }
   background: var(--c-danger-light);
   border: 1px solid var(--c-danger);
   border-radius: var(--radius);
-}
-
-/* Il riquadro quando NON c'è niente da temere: stessa forma, colore opposto.
-   Serve perché il caso «oltre la buca» prima non esisteva e finiva nel riquadro
-   rosso, allarmando chi non ci sta perdendo nulla. Tenere la stessa scatola e
-   cambiarle colore dice «ho guardato, ed è a posto» meglio di quanto faccia
-   togliere il riquadro: una cosa che sparisce non si legge come rassicurazione,
-   si legge come una cosa che manca. */
-.bonus-rischio--ok {
-  background: var(--c-success-light);
-  border-color: var(--c-success);
-}
-
-/* Il titolo eredita il rosso d'allarme dalla classe base: su fondo verde, con
-   un ✓ davanti, diceva due cose opposte nello stesso rigo. */
-.bonus-rischio--ok .bonus-rischio-titolo {
-  color: var(--c-success-text);
 }
 
 /* Le due cifre affiancate: etichetta a sinistra, importo a destra.
@@ -2424,7 +2402,7 @@ input, select, textarea { font: inherit; }
    tacca alla soglia in lordo. Il colore segue la posizione dei testi. */
 .ti-barra {
   position: relative;
-  margin: .5rem 0 1.3rem;
+  margin: .5rem 0 .6rem;
   --ti-colore: var(--c-success);
 }
 .ti-barra--vicino { --ti-colore: var(--c-warning); }
@@ -2452,14 +2430,46 @@ input, select, textarea { font: inherit; }
   margin-left: -1px;
   background: var(--c-text);
 }
-.ti-barra-etichetta {
-  position: absolute;
-  top: .75rem;
-  transform: translateX(-100%);
-  font-size: .72rem;
+.ti-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .2rem .9rem;
+  margin-top: .4rem;
+  font-size: .74rem;
   color: var(--c-text-2);
-  white-space: nowrap;
 }
+.ti-legenda span { white-space: nowrap; }
+.ti-segno {
+  display: inline-block;
+  width: .6rem;
+  height: .6rem;
+  margin-right: .3rem;
+  border-radius: 99px;
+  vertical-align: -.05rem;
+  background: var(--ti-colore);
+}
+.ti-segno--previsto { opacity: .35; }
+.ti-segno--soglia {
+  width: 2px;
+  border-radius: 0;
+  background: var(--c-text);
+}
+
+/* Lo stato in una riga, quando non c'è niente da segnalare. */
+.ti-stato {
+  margin: .3rem 0;
+  font-size: .9rem;
+}
+.ti-stato--ok {
+  font-weight: 600;
+  color: var(--c-success-text);
+}
+.ti-soglia {
+  margin: .3rem 0 0;
+  font-size: .8rem;
+  color: var(--c-text-2);
+}
+.ti-soglia .soglia-lorda { font-size: inherit; }
 
 .debug-usage {
   flex-basis: 100%;
@@ -2679,12 +2689,6 @@ input, select, textarea { font: inherit; }
   flex-wrap: wrap;
   gap: .45rem;
   margin: .1rem 0 0;
-}
-
-.simula-bonus-valore {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--c-text);
 }
 
 .simula-bonus-delta {

@@ -8,14 +8,14 @@ import { calcShiftMinutes, calcTotalPay, formatCurrency, lordoTurno } from '../u
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
 import { isMensilizzato } from '../utils/ccnl';
 import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../utils/bonus';
-import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, CAUSA, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../utils/restituzione';
+import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../utils/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
 import { contrattoMancante } from '../utils/configurazione';
 import { direzioneSwipe } from '../utils/swipe';
 import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../utils/assenze';
-import { EXTRA_MONTHS, TAX_2026, projectAnnualIncome, tiSospeso, patchTiSospeso } from '../utils/net';
+import { EXTRA_MONTHS, TAX_2026, projectAnnualIncome } from '../utils/net';
 import { ENABLE_DEBUG, ENABLE_NET_CALC } from '../config/features';
 import useMonthlyNet from '../hooks/useMonthlyNet';
 
@@ -45,6 +45,7 @@ import { intervalloCella } from '../utils/orario-cella';
 import { stimaConguaglio } from '../utils/conguaglio';
 import { numeroIt, euroCella, scriviForchetta } from '../utils/formato';
 import { PopupMese, PopupConguaglio, PopupSoglia } from './PopupFiscali';
+import RiquadroTI from './RiquadroTI';
 import { confrontoMontante } from '../utils/confronto-montante';
 import { tipoDiErrore, TITOLO_ERRORE } from '../utils/errore-import';
 
@@ -368,9 +369,6 @@ export default function CalendarView({
   // Costa una trentina di valutazioni del netto annuo, tutte per bisezione: si
   // memoizza sulle sole impostazioni perché non dipende dal mese guardato.
   const costo = useMemo(() => costoSoglia(settings), [settings]);
-  // Prima i 15.000 che si conoscono, poi il lordo del suo contratto (vedi
-  // soglia-lorda.js e check-cu-2025.mjs).
-  const sogliaPerTe = <span className="soglia-lorda">(per te ~{euroCella(costo.tetto)} lordi l'anno)</span>;
   // La tabella del popup «Come funziona»: al lordo previsto per chi è già
   // oltre il tetto, nel punto appena sopra per chi è ancora sotto.
   const alTuoLordo = (annualProjection || annualGross) > costo.tetto;
@@ -392,17 +390,6 @@ export default function CalendarView({
   );
   const mancaOre = useMemo(() => margineInOre(mancaPareggio, settings), [mancaPareggio, settings]);
 
-  // UNA spiegazione sola, riusata dai tre casi. Non più un tooltip: i conti
-  // non ci stavano, e il punto da far capire — il bonus in busta torna
-  // indietro se superi la soglia — ha bisogno dei conti per essere creduto.
-  // Non chiamarlo «anticipo»: per chi lo riceve sono soldi del datore, e la
-  // parola suona come un prestito.
-  // Il popup lo apre chi tocca «perché?»: non interrompe nessuno.
-  const spiegazione = (
-    <button type="button" className="linklike" onClick={() => setContiBonusAperti(true)}>
-      perché?
-    </button>
-  );
   // Coi centesimi del motore: arrotondare all'euro e poi scrivere «,00»
   // (1156,00 per 1.155,86) fingeva una precisione che la cifra non aveva.
   const fmt0 = (n) => formatCurrency(n);
@@ -1508,243 +1495,23 @@ export default function CalendarView({
           </div>
         )}
 
-        {/* Trattamento integrativo (ex bonus Renzi): riga minima sempre visibile, con
-            dettaglio (soglie, importi) aperto solo se rilevante — vicino o
-            oltre soglia — oppure a richiesta per chi vuole controllare. */}
+        {/* Il riquadro del trattamento integrativo vive in RiquadroTI.jsx:
+            le cifre gliele passa questo file, che le prende dal motore. */}
         {bonus.status !== BONUS_STATUS.ATTESA && (
-          <div className="bonus-strip">
-            <div className="bonus-strip-head">
-              <span className="bonus-strip-title">💶 Trattamento integrativo (ex bonus Renzi)</span>
-            </div>
-
-            {/* TRE CASI, NON QUATTRO INTENSITÀ DELLO STESSO ALLARME.
-                Prima qui si gridava «devi restituire ~805 €» a chiunque avesse
-                passato i 15.000 — anche a chi li aveva passati da un pezzo e
-                non ci stava più perdendo niente. Quel numero è vero come colpo
-                di cassa e falso come perdita: il bonus che sparisce (−1.200) se
-                lo riprende quasi tutto la detrazione che sale da 1.955 a 3.100.
-                Quello che resta scoperto sono ~130 € l'anno, e solo per i primi
-                ~200 € di lordo oltre la soglia (`costoSoglia`).
-
-                Da lì i tre messaggi: quanto margine resta (SOTTO), quanto manca
-                per tornare in pari (DENTRO — l'unico caso in cui la risposta è
-                «guadagna di più», ed è l'unico azionabile), niente da temere
-                (OLTRE). La cassa resta detta, ma come cassa. */}
-            {rischio.causa === CAUSA.RINUNCIATO ? (
-              <span className="bonus-strip-note">
-                {/* Deve dire PERCHÉ il riquadro è sparito: la casella sta a un
-                    dito da «perché?», e una spunta per sbaglio lasciava solo
-                    questa riga, senza far capire di averla causata. */}
-                Hai segnato il bonus come sospeso: niente da restituire.{' '}
-                <button
-                  type="button"
-                  className="linklike"
-                  onClick={() => onUpdateSettings(patchTiSospeso(false))}
-                >
-                  Annulla
-                </button>
-              </span>
-            ) : posizione === POSIZIONE.OLTRE ? (
-              // Il rischio vero qui non è perdere soldi, è averli già spesi:
-              // chi non sa del conguaglio tratta il bonus in busta come
-              // stipendio. Il titolo serve quindi a FERMARE, non a istruire:
-              // diceva «Non spendere il bonus in busta», che è un ordine dato a
-              // chi non ha ancora sbagliato niente. Cosa succede lo spiegano le
-              // due righe sotto, che hanno lo spazio per dirlo senza rimproveri.
-              <div className={`bonus-rischio ${rischio.daRestituire > 0 ? 'bonus-rischio--anteprima' : 'bonus-rischio--ok'}`}>
-                <span className="bonus-rischio-titolo">
-                  {rischio.daRestituire > 0 ? '⚠️ Occhio al bonus!' : '✓ Oltre la soglia, niente da restituire'}
-                </span>
-                {rischio.daRestituire > 0 && (
-                  <>
-                    {/* A frasi, come il popup: «Lo restituisci 845 €» accanto a
-                        «Torni in pari con 119 €» faceva credere che guadagnando
-                        di più la restituzione sparisse. Non dipende da quanto
-                        sopra si va: si restituisce tutto quello già preso. */}
-                    <p className="bonus-spiega">Supererai i 15.000 € {sogliaPerTe}, quindi a dicembre il datore si riprende tutto il
-                      tratt. integrativo che ti ha dato: finora <strong>{euroCella(rischio.daRestituire)}</strong>{rischio.rateizzabile ? ', a rate' : ''}.</p>
-                    <p className="bonus-spiega">
-                      In compenso paghi meno tasse, e non ci perdi niente. {spiegazione}
-                    </p>
-                    <label className="check-row bonus-rischio-scelta">
-                      <input
-                        type="checkbox"
-                        checked={tiSospeso(settings)}
-                        onChange={(e) => onUpdateSettings(patchTiSospeso(e.target.checked))}
-                      />
-                      <span>Chiedi al datore di sospenderlo, poi spunta qui</span>
-                    </label>
-                  </>
-                )}
-              </div>
-            ) : posizione === POSIZIONE.DENTRO ? (
-              <div className="bonus-rischio">
-                <span className="bonus-rischio-titolo">⚠️ Occhio al bonus!</span>
-                {rischio.daRestituire > 0 && (
-                  <p className="bonus-spiega">Supererai i 15.000 € {sogliaPerTe}, quindi a dicembre il datore si riprende tutto il
-                    tratt. integrativo che ti ha dato: finora <strong>{euroCella(rischio.daRestituire)}</strong>.</p>
-                )}
-                <p className="bonus-spiega">
-                  Paghi meno tasse, ma non abbastanza: sull'anno ci perdi {euroCella(costo.perditaMax)}.
-                  Con altri <strong>{euroCella(mancaPareggio)}</strong>
-                  {mancaOre !== null && ` (~${mancaOre} h)`} torni in pari, ma il tratt.
-                  integrativo lo restituisci comunque. {spiegazione}
-                </p>
-                {rischio.daRestituire > 0 && (
-                  <label className="check-row bonus-rischio-scelta">
-                    <input
-                      type="checkbox"
-                      checked={tiSospeso(settings)}
-                      onChange={(e) => onUpdateSettings(patchTiSospeso(e.target.checked))}
-                    />
-                    <span>Chiedi al datore di sospenderlo, poi spunta qui</span>
-                  </label>
-                )}
-              </div>
-            ) : bonus.status === BONUS_STATUS.PIENO && bonus.nearThreshold ? (
-              <div className="bonus-rischio bonus-rischio--anteprima">
-                {/* Il margine nel titolo, perché è la cosa su cui si decide; le
-                    ore sotto, perché è l'unità in cui si ragiona davvero — «2.400
-                    €» va diviso a mente per una paga oraria che nemmeno è quella
-                    base, visto che le ore in più sono maggiorate. */}
-                <span className="bonus-rischio-titolo">
-                  ⚠️ Ancora {euroCella(bonus.marginToFull)}
-                  {bonus.oreResidue !== null && <> (~{bonus.oreResidue} h)</>} e superi i 15.000 €
-                </span>
-                <p className="bonus-spiega">I 15.000 sono di reddito {sogliaPerTe}. Se li superi, a dicembre il datore si
-                  riprende tutto il tratt. integrativo che ti ha dato: finora <strong>{euroCella(tiFinora)}</strong>. {spiegazione}</p>
-                <label className="check-row bonus-rischio-scelta">
-                  <input
-                    type="checkbox"
-                    checked={tiSospeso(settings)}
-                    onChange={(e) => onUpdateSettings(patchTiSospeso(e.target.checked))}
-                  />
-                  <span>Chiedi al datore di sospenderlo, poi spunta qui</span>
-                </label>
-              </div>
-            ) : (
-              <span className="bonus-strip-note">
-                {bonus.status === BONUS_STATUS.PIENO && bonus.marginToFull > 0 && (
-                  <>
-                    Margine prima della soglia: <strong>{euroCella(bonus.marginToFull)}</strong>
-                    {bonus.oreResidue !== null && <> (~{bonus.oreResidue} h)</>}
-                  </>
-                )}
-                {bonus.status === BONUS_STATUS.PARZIALE && 'Sei oltre la soglia del bonus.'}
-                {bonus.status === BONUS_STATUS.OLTRE && '🚨 Oltre i 28.000 €: il bonus non spetta.'}
-              </span>
-            )}
-
-            {/* Una riga fissa al posto di «Dettagli ▼»: previsto e maturato
-                stanno insieme, e la soglia dei 28.000 la dice già il caso OLTRE. */}
-            {/* La scomposizione appartiene al MATURATO, non alla proiezione:
-                sottrarre montante ed extra da un numero proiettato darebbe una
-                voce «turni» che non corrisponde a nessun turno inserito. Il
-                margine non si ripete qui: lo dice già il riquadro sopra. */}
-            {/* LA BARRA, l'unica cosa presa dal «semaforo» di Gemini: i suoi
-                testi toglievano la restituzione a chi ce l'ha. È in LORDO,
-                come le cifre della riga sotto che le fa da legenda: la soglia
-                dei 15.000 è di reddito, e «8.819 / 15.000» avrebbe messo
-                insieme due grandezze diverse. Il colore segue la stessa
-                `posizione` dei testi: oltre la buca non si perde più niente,
-                quindi niente rosso. */}
-            {bonus.thresholdFullGross > 0 && (() => {
-              const soglia = bonus.thresholdFullGross;
-              const scala = Math.max(soglia * 1.15, bonus.income, annualGross);
-              const pct = (v) => `${Math.min(100, Math.max(0, v / scala * 100))}%`;
-              const tono = posizione === POSIZIONE.OLTRE ? 'oltre'
-                : (posizione === POSIZIONE.DENTRO || bonus.nearThreshold) ? 'vicino'
-                  : 'sotto';
-              return (
-                <div
-                  className={`ti-barra ti-barra--${tono}`}
-                  role="img"
-                  aria-label={`Maturato ${euroCella(annualGross)}, previsto a fine anno ${euroCella(bonus.income)}, soglia ${euroCella(soglia)} lordi`}
-                >
-                  <div className="ti-barra-binario">
-                    <span className="ti-barra-previsto" style={{ width: pct(Math.max(bonus.income, annualGross)) }} />
-                    <span className="ti-barra-maturato" style={{ width: pct(annualGross) }} />
-                    <span className="ti-barra-soglia" style={{ left: pct(soglia) }} />
-                  </div>
-                  <span className="ti-barra-etichetta" style={{ left: pct(soglia) }}>
-                    15.000 € (~{euroCella(soglia)} lordi)
-                  </span>
-                </div>
-              );
-            })()}
-            <span className="bonus-strip-income">
-              Previsto a fine anno <strong>{euroCella(bonus.income)}</strong>
-              {' · '}maturato {euroCella(annualGross)}
-              {montante > 0 && ` (montante ${euroCella(montante)})`}
-            </span>
-            {montanteMismatch && (
+          <RiquadroTI
+            bonus={bonus} rischio={rischio} posizione={posizione} costo={costo}
+            mancaPareggio={mancaPareggio} mancaOre={mancaOre} tiFinora={tiFinora} annualGross={annualGross}
+            settings={settings} onUpdateSettings={onUpdateSettings} onPerche={() => setContiBonusAperti(true)}
+            avvisoMontante={montanteMismatch && (
               <span className="bonus-strip-note bonus-strip-note--warn">
                 ⚠️ Il montante ({fmt0(montante)}) non torna coi mesi segnati {priorMonthLabel ? `fino ${/^a/i.test(priorMonthLabel) ? 'ad' : 'a'} ${priorMonthLabel.toLowerCase()}` : ''} ({fmt0(shiftsCovered)}).
               </span>
             )}
-
-            {/* Il conguaglio di dicembre. Tre registri, mai mescolati: il
-                meccanismo si dice all'indicativo, la cifra è sempre una
-                forchetta «di questo passo», e quello che l'app non sa sta
-                scritto accanto — non in un disclaimer in fondo. */}
-            {conguaglio && (
-              <div className="conguaglio">
-                <div className="conguaglio-testa">
-                  <span>Conguaglio di dicembre</span>
-                  <strong>{forchettaScritta}</strong>
-                </div>
-                <span className="bonus-strip-note">
-                  Di questo passo, stima
-                  {conguaglio.direzione === 'debito' ? ': presi in più in busta, non persi' : ''}
-                  {conguaglio.direzione === 'credito' ? ': quello che le buste non ti hanno ancora dato' : ''}.{' '}
-                  <button type="button" className="linklike" onClick={() => setConguaglioAperto(true)}>perché?</button>
-                </span>
-              </div>
-            )}
-
-            {/* «E se lo prendessi tutti i mesi?» sta QUI e non accanto alla
-                spunta del mese: la domanda è sul reddito previsto e sulla
-                soglia, cioè su questo riquadro. Spostarla vicino alla spunta
-                obbligava a tenere a mente una cifra mentre si scorreva fino
-                alla risposta.
-                Si dice «i 120 €» e non «il bonus» di proposito: qui dentro
-                «bonus» è già il trattamento integrativo, e due bonus diversi
-                nello stesso riquadro non si distinguono più. */}
-            {puoSimulareBonus && (
-              <div className="simula-bonus">
-                <label className="check-row" htmlFor="simula-bonus">
-                  <input
-                    id="simula-bonus"
-                    type="checkbox"
-                    checked={simulaBonus}
-                    onChange={e => setSimulaBonus(e.target.checked)}
-                  />
-                  <span>E se prendessi i {fmt0(monthlyBonusAmount)} <strong>tutti i mesi</strong> da qui a dicembre?</span>
-                </label>
-                {simulaBonus && (
-                  <p className="simula-bonus-esito">
-                    <span className="simula-bonus-valore">{fmt0(proiezioneBonusOgniMese.value)}</span>
-                    <span className="simula-bonus-delta">+{fmt0(differenzaBonus)}</span>
-                    {esitoSimulazione && (
-                      <strong className={`simula-bonus-ti simula-bonus-ti--${esitoSimulazione.tono}`}>
-                        {esitoSimulazione.testo}
-                      </strong>
-                    )}
-                    {conguaglioSimulato && (
-                      <span className="simula-bonus-conguaglio">
-                        Conguaglio di dicembre: <strong>{scriviForchetta(conguaglioSimulato)}</strong>
-                        {' '}(adesso: {forchettaScritta})
-                      </span>
-                    )}
-                    <em>
-                      previsto a fine anno — solo una simulazione: i mesi segnati restano
-                      quelli che hai spuntato
-                    </em>
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
+            conguaglio={conguaglio} forchettaScritta={forchettaScritta} onApriConguaglio={() => setConguaglioAperto(true)}
+            puoSimulareBonus={puoSimulareBonus} simulaBonus={simulaBonus} setSimulaBonus={setSimulaBonus}
+            monthlyBonusAmount={monthlyBonusAmount} proiezioneBonusOgniMese={proiezioneBonusOgniMese}
+            differenzaBonus={differenzaBonus} esitoSimulazione={esitoSimulazione} conguaglioSimulato={conguaglioSimulato}
+          />
         )}
 
         {/* ESPORTA IN FONDO, e non è una rifinitura: stava incastrato FRA il
