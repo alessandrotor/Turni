@@ -6,6 +6,7 @@ import { isTelemetryEnabled, setTelemetryEnabled, telemetriaDisponibile } from '
 import { esportaBackup, leggiBackup, applicaBackup, contaTurniSalvati } from '../services/backup';
 import { ESITO } from '../services/export';
 import CcnlPicker from './CcnlPicker';
+import SezionePrevidenza, { formPrevidenza, salvaPrevidenza } from './SezionePrevidenza';
 import { statoConfigurazione } from '../utils/configurazione';
 import { modoTrattamentoIntegrativo } from '../utils/net';
 import { elencoOrariDaCorreggere, applicaCorrezioneOrari } from '../services/correzioni';
@@ -17,12 +18,7 @@ import { fasciaNotturnaRisolta, CUMULO_DEFAULT } from '../utils/notturno';
 import { normalizzaMaggiorazione, messaggioMaggiorazione } from '../utils/maggiorazioni';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
-const toInput = (n) => {
-  if (n === '' || n == null) return '';
-  const num = Number(n);
-  if (!num) return '';
-  return String(num).replace('.', ',');
-};
+const toInput = (n) => (n === '' || n == null || !Number(n) ? '' : String(Number(n)).replace('.', ','));
 
 // Mese di riferimento del montante, come 'YYYY-MM' per <input type="month">.
 // In ora LOCALE: `toISOString()` è UTC, e il 1° del mese fra mezzanotte e le
@@ -95,6 +91,7 @@ export default function Settings({ settings, onSave }) {
     malattiaCarenzaGiorni: toInput(settings.malattiaCarenzaGiorni ?? 3),
     malattiaCarenzaPct: toInput(settings.malattiaCarenzaPct ?? 0),
     malattiaPct: toInput(settings.malattiaPct ?? 100),
+    ...formPrevidenza(settings),
     // Non passa da `onSave`: vive in localStorage, gestito da services/telemetry.
     telemetry: isTelemetryEnabled(),
   });
@@ -456,6 +453,7 @@ export default function Settings({ settings, onSave }) {
       malattiaCarenzaGiorni: parseNum(form.malattiaCarenzaGiorni),
       malattiaCarenzaPct: parseNum(form.malattiaCarenzaPct),
       malattiaPct: parseNum(form.malattiaPct),
+      ...salvaPrevidenza(form),
     });
     ultimoSalvato.current = JSON.stringify(form);
     setSaved(true);
@@ -1814,6 +1812,7 @@ export default function Settings({ settings, onSave }) {
           </div>
         </details>
 
+        <SezionePrevidenza form={form} set={set} />
         {/* Trattenute fisse mensili */}
         <details className="settings-section">
           <summary className="settings-section-title">➖ Trattenute fisse mensili</summary>

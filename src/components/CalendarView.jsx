@@ -1332,7 +1332,7 @@ export default function CalendarView({
                 <div className="net-group-label">Trattenute</div>
                 {netMonth.contributiRighe.map(r => (
                   <div className="net-line net-line--ded" key={r.label}>
-                    <span>{r.label} ({fmtPct(r.pct)}%)</span>
+                    <span>{r.label}{r.pct != null && ` (${fmtPct(r.pct)}%)`}</span>
                     <span>−{fmt0(r.importo)}</span>
                   </div>
                 ))}

@@ -623,6 +623,9 @@ entro il reddito, cercato col reddito vero (`redditoComplessivo()`). Dipende dal
 contratto: senza CCNL ~16.518 € e ~30.833 €, nel Turismo ~16.621 € e ~31.027 €.
 A schermo si dice prima il lordo, da confrontare con la busta, e i 15.000 tra
 parentesi: «La tua soglia lorda è ~16.621 € l'anno (15.000 € di reddito)».
+Fondo pensione e cassa sanitaria trattenuti in busta (`utils/previdenza.js`)
+entrano in `calcContributi` come contributi deducibili: abbassano il reddito e
+alzano la soglia lorda (1,5% al fondo nel Turismo: da ~16.596 a ~16.876 €).
 
 Lo sconto di 75 € nella capienza del TI **non è riscontrato su busta**: viene
 dalla norma. Nelle buste disponibili la capienza c'è comunque, con o senza. Se

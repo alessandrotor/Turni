@@ -121,7 +121,8 @@ export default function RiquadroTI({
       {tetto > 0 && rischio.causa !== CAUSA.RINUNCIATO && (
         <p className="ti-soglia">
           La tua soglia lorda è <strong>~{euroCella(tetto)}</strong> l'anno
-          {' '}<span className="soglia-lorda">(15.000 € di reddito, cioè lordo meno contributi)</span>.
+          {' '}<span className="soglia-lorda">(15.000 € di reddito, cioè lordo meno contributi{
+            Number(settings.fondoPensionePct) || Number(settings.cassaSanitariaEuro) ? ' e fondi' : ''})</span>.
         </p>
       )}
 

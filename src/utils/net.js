@@ -10,6 +10,7 @@
 // importare questo modulo con Node puro, senza passare dal bundler.
 import { getCcnl, monthlyContractHours } from './ccnl.js';
 import { contributiDiLegge } from './contributi-legge.js';
+import { trattenuteFuoriReddito } from './previdenza.js';
 import { calcTotalPay } from './pay.js';
 import { parseDate } from './dates.js';
 
@@ -110,9 +111,10 @@ export function aliquotaMarginale(imponibile) {
  * @param {number} gross lordo del periodo
  * @param {object} settings contiene `ccnl`
  * @param {number} ebBase base di calcolo dell'Ente Bilaterale (retribuzione contrattuale)
+ * @param {number} [mesi=1] mesi coperti da `gross` (i tetti di previdenza.js sono annui)
  * @returns {{ totale, deducibili, fringeImponibile, righe }}
  */
-export function calcContributi(gross, settings = {}, ebBase = 0) {
+export function calcContributi(gross, settings = {}, ebBase = 0, mesi = 1) {
   const T = TAX_2026;
   const g = Math.max(0, Number(gross) || 0);
   const ccnl = getCcnl(settings.ccnl);
@@ -193,6 +195,11 @@ export function calcContributi(gross, settings = {}, ebBase = 0) {
     // La quota ditta è un fringe benefit: tassato pur non essendo trattenuto.
     // In busta è TRONCATA (948,05 × 0,20% = 1,8961 → 1,89).
     fringeImponibile += trunc2(base * ((Number(eb.quotaDitta) || 0) / 100));
+  }
+
+  // Fondo pensione e cassa sanitaria in busta: fuori dal reddito come l'INPS.
+  for (const r of trattenuteFuoriReddito(g, settings, mesi)) {
+    righe.push(r); totale += r.importo; deducibili += r.importo;
   }
 
   return { totale: round2(totale), deducibili: round2(deducibili), fringeImponibile, righe };
@@ -303,24 +310,17 @@ export function deductibleContribRate(settings = {}) {
  * soli contributi DEDUCIBILI e si aggiunge il fringe benefit (quota Ente
  * Bilaterale a carico ditta), tassato pur non essendo trattenuto.
  *
- * Sta qui, esportata, per una ragione precisa: è l'UNICA definizione, e la
- * usano sia il pannello del netto sia la striscia del bonus. Finché la
- * striscia se la calcolava per conto suo con `grossToTaxable` — una
- * moltiplicazione pulita, senza l'arrotondamento dei contributi né il fringe —
- * le due schermate si contraddicevano in una fascia di circa un euro di lordo:
- * una diceva «soglia superata» mentre l'altra erogava ancora il bonus pieno.
- * Riscontro in `scripts/check-bonus.mjs`.
- *
- * `grossToTaxable` resta, ma per quello che sa fare: una conversione
- * approssimata e invertibile, buona per TRADURRE una soglia in lordo e dire
- * «quanto manca», non per decidere da che parte della soglia si sta.
+ * È l'UNICA definizione: pannello del netto, riquadro e soglia lorda la
+ * chiedono qui. Quando la striscia moltiplicava per conto suo, le due
+ * schermate si contraddicevano a un euro dalla soglia. → check-bonus.mjs
+ * Toglie anche fondo pensione e cassa sanitaria trattenuti (previdenza.js).
  *
  * @param {object} [contributi] i contributi già calcolati, per non rifare il
  *   lavoro quando chi chiama li ha già.
  */
 export function redditoComplessivo(gross, settings = {}, contributi = null) {
   const g = Math.max(0, Number(gross) || 0);
-  const cont = contributi || calcContributi(g, settings, monthlyBaseGross(settings) * 12);
+  const cont = contributi || calcContributi(g, settings, monthlyBaseGross(settings) * 12, 12);
   return g - cont.deducibili + cont.fringeImponibile;
 }
 
@@ -894,7 +894,7 @@ export function calcNetAnnual(grossAnnual, settings = {}, { giorni = 365 } = {})
     };
   }
 
-  const cont = calcContributi(gross, settings, monthlyBaseGross(settings) * 12);
+  const cont = calcContributi(gross, settings, monthlyBaseGross(settings) * 12, 12);
   const contributi = cont.totale;
   const imponibile = redditoComplessivo(gross, settings, cont);
 

@@ -315,10 +315,13 @@ ogni guida e ogni CU; il lordo dipende dai contributi, quindi dal contratto (~16
 CCNL, ~16.600 nel Turismo, ~15.900 per un apprendista), e lo calcola il motore:
 `lordoPerReddito()`, una sola ricerca per barra, riquadri e popup. Prima la
 barra divideva per l'aliquota (16.622) e il popup cercava sul reddito vero
-(16.596): due lordi per la stessa soglia. Cosa quel lordo NON sa, e va detto se
-serve: altri redditi o altri datori (la soglia in lordo scende), contributi a
-fondi pensione trattenuti in busta (art. 51 c. 2 lett. h: escono dal reddito,
-la soglia sale), aliquote diverse dalla 9,19% (apprendisti), voci esenti.
+(16.596): due lordi per la stessa soglia. Fondo pensione e cassa sanitaria
+trattenuti in busta escono dal reddito come l'INPS (art. 51 c. 2 lett. h e a),
+quindi alzano la soglia: si chiedono in Impostazioni e li toglie
+`calcContributi` (`utils/previdenza.js`, → `check-previdenza.mjs`, dalla
+norma, non da una busta). Cosa quel lordo NON sa, e va detto se serve: altri
+redditi o altri datori (la soglia in lordo scende), aliquote diverse dalla
+9,19% (apprendisti), voci esenti.
 Con la CU dell'utente il conto torna a ~30 € l'anno. Non c'è contraddizione con
 la regola MENSILE del programma paghe (1.250 € *lordi* al mese, più sotto): quella
 è una decisione provvisoria mese per mese, il conguaglio di dicembre la rifà sul
