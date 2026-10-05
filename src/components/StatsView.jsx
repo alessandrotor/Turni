@@ -470,10 +470,10 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
                 <span className="bonus-strip-title">💶 Trattamento integrativo (ex bonus Renzi)</span>
               </div>
               <span className={`bonus-strip-note ${bonus.status === BONUS_STATUS.OLTRE ? 'bonus-strip-note--warn' : ''}`}>
-                {bonus.status === BONUS_STATUS.PIENO && !bonus.nearThreshold && 'Bonus pieno: reddito entro le soglie.'}
-                {bonus.status === BONUS_STATUS.PIENO && bonus.nearThreshold && '⚠️ Vicino alla soglia del bonus pieno.'}
-                {bonus.status === BONUS_STATUS.PARZIALE && 'Bonus ridotto: reddito oltre i 15.000 € imponibili.'}
-                {bonus.status === BONUS_STATUS.OLTRE && '🚨 Reddito oltre i 28.000 € imponibili: il bonus non spetta.'}
+                {bonus.status === BONUS_STATUS.PIENO && !bonus.nearThreshold && 'Tratt. integrativo pieno: reddito entro le soglie.'}
+                {bonus.status === BONUS_STATUS.PIENO && bonus.nearThreshold && '⚠️ Vicino ai 15.000 € di reddito.'}
+                {bonus.status === BONUS_STATUS.PARZIALE && 'Tratt. integrativo ridotto: reddito oltre i 15.000 €.'}
+                {bonus.status === BONUS_STATUS.OLTRE && '🚨 Reddito oltre i 28.000 €: il tratt. integrativo non spetta.'}
               </span>
               {bonus.status === BONUS_STATUS.PIENO && (
                 <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
@@ -482,7 +482,7 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
                   </span>
                   <span className="bonus-strip-value">{fmt0(bonus.marginToFull)}</span>
                   <span className="bonus-strip-note">
-                    prima di superare i {fmt0(bonus.thresholdFullGross)} lordi (proiezione annua) e uscire dal bonus pieno
+                    prima di superare i 15.000 € di reddito (per te ~{fmt0(bonus.thresholdFullGross)} lordi, proiezione annua)
                   </span>
                 </div>
               )}
@@ -491,14 +491,14 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
                   <span className="bonus-strip-label">Puoi ancora guadagnare</span>
                   <span className="bonus-strip-value">{fmt0(bonus.marginToMax)}</span>
                   <span className="bonus-strip-note">
-                    prima di superare i {fmt0(bonus.thresholdMaxGross)} lordi (proiezione annua) e perdere del tutto il bonus
+                    prima di superare i 28.000 € di reddito (per te ~{fmt0(bonus.thresholdMaxGross)} lordi, proiezione annua)
                   </span>
                 </div>
               )}
               {bonus.status === BONUS_STATUS.OLTRE && (
                 <div className="bonus-strip-body bonus-strip-body--danger">
                   <span className="bonus-strip-note">
-                    🚨 Proiezione annua oltre i {fmt0(bonus.thresholdMaxGross)} lordi: il bonus non spetta.
+                    🚨 Proiezione annua oltre i 28.000 € di reddito (~{fmt0(bonus.thresholdMaxGross)} lordi): non spetta.
                   </span>
                 </div>
               )}

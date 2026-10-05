@@ -293,10 +293,9 @@ export function deductibleContribRate(settings = {}) {
 // il trattamento integrativo, 20.000/40.000 per il cuneo) sono definite sul
 // REDDITO COMPLESSIVO, che per un dipendente è il lordo al netto dei contributi
 // deducibili. Chi ragiona in lordo (come l'utente che somma i turni) ha bisogno
-// di queste due funzioni per confrontare mele con mele.
-export function grossToTaxable(gross, settings = {}) {
-  return Math.max(0, Number(gross) || 0) * (1 - deductibleContribRate(settings));
-}
+// di una conversione: dal reddito al lordo c'è `lordoPerReddito`
+// (soglia-lorda.js), che cerca sul reddito vero; `taxableToGross` resta per il
+// riferimento mensile del programma paghe, tarato sulle buste.
 
 /**
  * Reddito complessivo ai fini IRPEF — la grandezza su cui la legge misura le

@@ -54,7 +54,8 @@
 //
 // Modulo puro, senza React e senza browser: `node scripts/check-restituzione.mjs`.
 
-import { TAX_2026, tiDecision, calcNetAnnual, redditoComplessivo, tiSospeso } from './net.js';
+import { TAX_2026, tiDecision, calcNetAnnual, tiSospeso } from './net.js';
+import { lordoPerReddito } from './soglia-lorda.js';
 
 /**
  * Soglia di legge per la rateizzazione: sopra i 60 € il datore non trattiene
@@ -252,14 +253,7 @@ export function costoSoglia(settings = {}) {
   // GIÀ sopra soglia (imponibile 15.023). Il calcolo della perdita partiva
   // dall'altro lato dello scalino e restituiva zero: nessun errore a schermo,
   // solo un avviso che taceva.
-  let lo = 0;
-  let hi = 60000;
-  while (lo < hi) {
-    const mid = Math.ceil((lo + hi) / 2);
-    if (redditoComplessivo(mid, settings) <= TAX_2026.TI_SOGLIA_PIENO) lo = mid;
-    else hi = mid - 1;
-  }
-  const tetto = lo;
+  const tetto = lordoPerReddito(TAX_2026.TI_SOGLIA_PIENO, settings);
   const nettoTetto = netto(tetto);
 
   // Lo scalino è tutto fra il tetto e l'euro successivo: due valutazioni bastano.

@@ -307,8 +307,17 @@ e alla soglia non contano. Lo prova una Certificazione Unica 2026: «Reddito
 pari a euro» è il lordo previdenziale meno i contributi, e imposta, detrazione
 e indennità L. 207/24 stampate tornano su quel reddito e NON sul lordo.
 
-Per chi legge l'app la conseguenza va detta in lordo: **15.000 di reddito sono
-~16.600 € lordi l'anno** (`costoSoglia()`, il tetto). Non c'è contraddizione con
+**A schermo prima la cifra che si conosce, poi quella che si vede in busta:**
+«15.000 € (per te ~16.596 € lordi l'anno)». I 15.000 stanno su ogni guida e
+ogni CU; il lordo dipende dai contributi, quindi dal contratto (~16.500 senza
+CCNL, ~16.600 nel Turismo, ~15.900 per un apprendista), e lo calcola il motore:
+`lordoPerReddito()`, una sola ricerca per barra, riquadri e popup. Prima la
+barra divideva per l'aliquota (16.622) e il popup cercava sul reddito vero
+(16.596): due lordi per la stessa soglia. Cosa quel lordo NON sa, e va detto se
+serve: altri redditi o altri datori (la soglia in lordo scende), contributi a
+fondi pensione trattenuti in busta (art. 51 c. 2 lett. h: escono dal reddito,
+la soglia sale), aliquote diverse dalla 9,19% (apprendisti), voci esenti.
+Con la CU dell'utente il conto torna a ~30 € l'anno. Non c'è contraddizione con
 la regola MENSILE del programma paghe (1.250 € *lordi* al mese, più sotto): quella
 è una decisione provvisoria mese per mese, il conguaglio di dicembre la rifà sul
 reddito vero. Chi propone «15.000 al lordo» va fermato con la CU, non assecondato:

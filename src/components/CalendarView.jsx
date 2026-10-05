@@ -368,6 +368,9 @@ export default function CalendarView({
   // Costa una trentina di valutazioni del netto annuo, tutte per bisezione: si
   // memoizza sulle sole impostazioni perché non dipende dal mese guardato.
   const costo = useMemo(() => costoSoglia(settings), [settings]);
+  // Prima i 15.000 che si conoscono, poi il lordo del suo contratto (vedi
+  // soglia-lorda.js e check-cu-2025.mjs).
+  const sogliaPerTe = <span className="soglia-lorda">(per te ~{euroCella(costo.tetto)} lordi l'anno)</span>;
   // La tabella del popup «Come funziona»: al lordo previsto per chi è già
   // oltre il tetto, nel punto appena sopra per chi è ancora sotto.
   const alTuoLordo = (annualProjection || annualGross) > costo.tetto;
@@ -1558,11 +1561,8 @@ export default function CalendarView({
                         «Torni in pari con 119 €» faceva credere che guadagnando
                         di più la restituzione sparisse. Non dipende da quanto
                         sopra si va: si restituisce tutto quello già preso. */}
-                    <p className="bonus-spiega">
-                      Supererai i 15.000 €, quindi a dicembre il datore si riprende tutto il
-                      bonus che ti ha dato: finora <strong>{euroCella(rischio.daRestituire)}</strong>
-                      {rischio.rateizzabile ? ', a rate' : ''}.
-                    </p>
+                    <p className="bonus-spiega">Supererai i 15.000 € {sogliaPerTe}, quindi a dicembre il datore si riprende tutto il
+                      tratt. integrativo che ti ha dato: finora <strong>{euroCella(rischio.daRestituire)}</strong>{rischio.rateizzabile ? ', a rate' : ''}.</p>
                     <p className="bonus-spiega">
                       In compenso paghi meno tasse, e non ci perdi niente. {spiegazione}
                     </p>
@@ -1581,16 +1581,14 @@ export default function CalendarView({
               <div className="bonus-rischio">
                 <span className="bonus-rischio-titolo">⚠️ Occhio al bonus!</span>
                 {rischio.daRestituire > 0 && (
-                  <p className="bonus-spiega">
-                    Supererai i 15.000 €, quindi a dicembre il datore si riprende tutto il
-                    bonus che ti ha dato: finora <strong>{euroCella(rischio.daRestituire)}</strong>.
-                  </p>
+                  <p className="bonus-spiega">Supererai i 15.000 € {sogliaPerTe}, quindi a dicembre il datore si riprende tutto il
+                    tratt. integrativo che ti ha dato: finora <strong>{euroCella(rischio.daRestituire)}</strong>.</p>
                 )}
                 <p className="bonus-spiega">
                   Paghi meno tasse, ma non abbastanza: sull'anno ci perdi {euroCella(costo.perditaMax)}.
                   Con altri <strong>{euroCella(mancaPareggio)}</strong>
-                  {mancaOre !== null && ` (~${mancaOre} h)`} torni in pari, ma il bonus
-                  lo restituisci comunque. {spiegazione}
+                  {mancaOre !== null && ` (~${mancaOre} h)`} torni in pari, ma il tratt.
+                  integrativo lo restituisci comunque. {spiegazione}
                 </p>
                 {rischio.daRestituire > 0 && (
                   <label className="check-row bonus-rischio-scelta">
@@ -1613,10 +1611,8 @@ export default function CalendarView({
                   ⚠️ Ancora {euroCella(bonus.marginToFull)}
                   {bonus.oreResidue !== null && <> (~{bonus.oreResidue} h)</>} e superi i 15.000 €
                 </span>
-                <p className="bonus-spiega">
-                  Se li superi, a dicembre il datore si riprende tutto il bonus che ti ha
-                  dato: finora <strong>{euroCella(tiFinora)}</strong>. {spiegazione}
-                </p>
+                <p className="bonus-spiega">I 15.000 sono di reddito {sogliaPerTe}. Se li superi, a dicembre il datore si
+                  riprende tutto il tratt. integrativo che ti ha dato: finora <strong>{euroCella(tiFinora)}</strong>. {spiegazione}</p>
                 <label className="check-row bonus-rischio-scelta">
                   <input
                     type="checkbox"
@@ -1671,7 +1667,7 @@ export default function CalendarView({
                     <span className="ti-barra-soglia" style={{ left: pct(soglia) }} />
                   </div>
                   <span className="ti-barra-etichetta" style={{ left: pct(soglia) }}>
-                    soglia ~{euroCella(soglia)} lordi
+                    15.000 € (~{euroCella(soglia)} lordi)
                   </span>
                 </div>
               );

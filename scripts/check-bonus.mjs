@@ -19,7 +19,8 @@
 // estensione: Node non riusciva a caricarlo.
 
 import { calcBonusMargin, BONUS_CONST, BONUS_STATUS } from '../src/utils/bonus.js';
-import { grossToTaxable, redditoComplessivo, tiDecision } from '../src/utils/net.js';
+import { redditoComplessivo, tiDecision } from '../src/utils/net.js';
+import { costoSoglia } from '../src/utils/restituzione.js';
 
 let falliti = 0;
 let totale = 0;
@@ -38,12 +39,17 @@ console.log('\nSoglie di legge riportate in lordo\n');
 
 for (const [nome, s] of [['senza CCNL', {}], ['turismo', { ccnl: 'turismo' }], ['vigilanza', { ccnl: 'vigilanza' }]]) {
   const b = calcBonusMargin(20000, s);
-  // Il giro completo deve tornare: tradotta in lordo e ritradotta in
-  // imponibile, la soglia e' di nuovo quella di legge.
-  verifica(`${nome}: 15.000 imponibili in lordo`, arrotonda(grossToTaxable(b.thresholdFullGross, s)), BONUS_CONST.SOGLIA_BONUS_PIENO,
+  // La soglia in lordo è l'ULTIMO euro che resta entro il reddito di legge,
+  // misurato col reddito vero (`redditoComplessivo`): un euro in più e si è
+  // oltre. Prima si convertiva dividendo per l'aliquota (`taxableToGross`), che
+  // arrotonda altrove: la barra diceva 16.622 e il popup, sugli stessi dati,
+  // 16.596. Ora è una sola ricerca (`lordoPerReddito`) per tutti.
+  const entro = (g, soglia) => redditoComplessivo(g, s) <= soglia && redditoComplessivo(g + 1, s) > soglia;
+  verifica(`${nome}: 15.000 di reddito in lordo`, entro(b.thresholdFullGross, BONUS_CONST.SOGLIA_BONUS_PIENO), true,
     `lordo ${arrotonda(b.thresholdFullGross)}`);
-  verifica(`${nome}: 28.000 imponibili in lordo`, arrotonda(grossToTaxable(b.thresholdMaxGross, s)), BONUS_CONST.SOGLIA_BONUS_MAX,
+  verifica(`${nome}: 28.000 di reddito in lordo`, entro(b.thresholdMaxGross, BONUS_CONST.SOGLIA_BONUS_MAX), true,
     `lordo ${arrotonda(b.thresholdMaxGross)}`);
+  verifica(`${nome}: la stessa del popup`, b.thresholdFullGross, costoSoglia(s).tetto, 'barra e popup, un numero solo');
   verifica(`${nome}: il lordo e' MAGGIORE dell imponibile`, b.thresholdFullGross > BONUS_CONST.SOGLIA_BONUS_PIENO, true,
     'i contributi stanno in mezzo');
 }

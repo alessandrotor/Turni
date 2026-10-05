@@ -26,9 +26,9 @@ import { fileURLToPath } from 'node:url';
 const RADICE = join(dirname(fileURLToPath(import.meta.url)), '..');
 const LIMITE = 600;
 const ECCEZIONI = {
-  'src/components/CalendarView.jsx': 1973,
+  'src/components/CalendarView.jsx': 1969,
   'src/components/Settings.jsx': 1894,
-  'src/utils/net.js': 1106,
+  'src/utils/net.js': 1105,
   'src/App.jsx': 751,
   'src/components/ShiftForm.jsx': 690,
   'src/index.css': 3720,

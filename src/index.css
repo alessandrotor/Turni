@@ -3704,3 +3704,11 @@ input, select, textarea { font: inherit; }
   flex-basis: 100%;
   font-size: .88rem;
 }
+
+/* La soglia in lordo accanto ai 15.000 di legge: dice la stessa cosa, più
+   piccola, perché la cifra che si conosce è l'altra. */
+.soglia-lorda {
+  font-size: .85em;
+  color: var(--c-text-2);
+  white-space: nowrap;
+}

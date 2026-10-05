@@ -12,7 +12,8 @@
 // 16.518 € e 30.834 €, e si spostano col CCNL.
 // Estensione esplicita: senza, Node puro non importa questo modulo e non si
 // puo' scrivere uno script di riscontro — che infatti mancava.
-import { redditoComplessivo, taxableToGross } from './net.js';
+import { redditoComplessivo } from './net.js';
+import { lordoPerReddito } from './soglia-lorda.js';
 
 export const BONUS_CONST = {
   SOGLIA_BONUS_PIENO: 15000, // imponibile: fino a qui bonus pieno (1200€)
@@ -60,8 +61,10 @@ export function calcBonusMargin(annualIncome, settings = {}) {
   const C = BONUS_CONST;
   const income = Math.max(0, Number(annualIncome) || 0);
   // Soglie di legge riportate in lordo, per poterle confrontare con `income`.
-  const thresholdFullGross = taxableToGross(C.SOGLIA_BONUS_PIENO, settings);
-  const thresholdMaxGross = taxableToGross(C.SOGLIA_BONUS_MAX, settings);
+  // Le soglie in lordo dalla stessa ricerca del popup (`lordoPerReddito`): con
+  // `taxableToGross` la barra e il popup dicevano due lordi diversi.
+  const thresholdFullGross = lordoPerReddito(C.SOGLIA_BONUS_PIENO, settings);
+  const thresholdMaxGross = lordoPerReddito(C.SOGLIA_BONUS_MAX, settings);
   // L'imponibile viene dalla STESSA funzione che usa il pannello del netto:
   // e' la garanzia che le due schermate non possano contraddirsi.
   const base = { income, thresholdFullGross, thresholdMaxGross, taxable: redditoComplessivo(income, settings) };
