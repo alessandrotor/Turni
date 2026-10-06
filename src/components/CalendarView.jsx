@@ -448,7 +448,7 @@ export default function CalendarView({
     netMonth, monthNet, monthTrattenute, monthTfr,
     tiInfo, effectiveRatePct, addizionaliPct, showNetPanel: showNetPanelRaw,
     riferimento,
-  } = useMonthlyNet({ year, month, settings, pay, annualGross, annualExtras, daysInMonth });
+  } = useMonthlyNet({ year, month, settings, pay, annualGross, annualExtras, daysInMonth, allShifts, payMap: payByShift });
   // Senza nemmeno un turno segnato nel mese non c'è niente da stimare: voci
   // fisse mensili o mensilità aggiuntive maturate da sole (senza turni)
   // farebbero comunque comparire trattamento integrativo/cuneo, dando
@@ -1239,7 +1239,7 @@ export default function CalendarView({
               {netMonth?.esitoTi?.proiezione != null && (
                 <span className="bonus-strip-note">
                   {tiNelMese ? <>Questo mese resti sotto i {numeroIt(TAX_2026.TI_SOGLIA_PIENO / 12)} € lordi: c'è il tratt. integrativo.</>
-                    : netMonth.esitoTi.spetta ? <>Niente tratt. integrativo: sotto i ~{numeroIt(minimoTi ?? 0)} € lordi al mese non c'è IRPEF da compensare.</>
+                    : netMonth.esitoTi.spetta ? <>Niente tratt. integrativo: la media dell'anno{netMonth.esitoTi.media != null && <>, ~{numeroIt(Math.round(netMonth.esitoTi.media))} € al mese,</>} è sotto i ~{numeroIt(minimoTi ?? 0)} € lordi che danno IRPEF da compensare.</>
                     : <>Questo mese superi i {numeroIt(TAX_2026.TI_SOGLIA_PIENO / 12)} € lordi: niente tratt. integrativo, ma meno IRPEF.</>}
                   {meseSiInverte && <strong> A dicembre si inverte.</strong>}{' '}
                   <button type="button" className="linklike" onClick={() => setMeseSpiegato(true)}>perché?</button>

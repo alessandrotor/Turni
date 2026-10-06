@@ -50,6 +50,7 @@
 // Modulo puro, senza React e senza browser.
 
 import { calcTotalPay } from './pay.js';
+import { capienzaProgressiva } from './capienza.js';
 import {
   nettoDelMese, lordoDelMese, calcNetAnnual, monthlyBaseGross, TAX_2026,
   tiSpettaQuestoMese, modoTrattamentoIntegrativo,
@@ -70,12 +71,15 @@ const r2 = (n) => Math.round(n * 100) / 100;
  * @param {object} settings
  */
 export function saldoConguaglio(mesi, settings = {}, { tiMontanteNoto = null, irpefMontanteNota = null } = {}) {
-  let cuneo = 0, lordoAnno = 0, giorni = 0;
+  let cuneo = 0, lordoAnno = 0, giorni = 0, conLordo = 0;
   const irpefMesi = [];
   const tiMesi = mesi.map((m, i) => {
     irpefMesi[i] = 0;
     if (!(m.lordo > 0)) return 0;
-    const n = nettoDelMese(m.lordo, settings, m.giorni, m.extra || 0);
+    // La capienza sul progressivo, come nel calendario (capienza.js).
+    const cap = capienzaProgressiva(m.lordo, settings, { lordo: lordoAnno, mesi: conLordo });
+    const n = nettoDelMese(m.lordo, settings, m.giorni, m.extra || 0, cap);
+    conLordo += 1;
     irpefMesi[i] = n.irpefNetta;
     cuneo += n.bonusCuneo;
     lordoAnno += m.lordo;
@@ -234,6 +238,21 @@ export function mesiDellAnno({
     }
   }
   return { mesi, meseOggi, mesiVuoti, cutoffIdx };
+}
+
+/**
+ * Il progressivo dell'anno PRIMA di ogni mese — lordo e mesi con un lordo —
+ * dagli stessi mesi del conguaglio (montante diviso, turni, poi il contratto).
+ * Serve alla capienza del trattamento integrativo (capienza.js): calendario,
+ * statistiche e «cosa cambia» la chiedono qui, il conguaglio la fa da sé.
+ */
+export function progressiviDellAnno(args) {
+  let lordo = 0, mesi = 0;
+  return mesiDellAnno(args).mesi.map((m) => {
+    const p = { lordo, mesi };
+    if (m.lordo > 0) { lordo += m.lordo; mesi += 1; }
+    return p;
+  });
 }
 
 /**

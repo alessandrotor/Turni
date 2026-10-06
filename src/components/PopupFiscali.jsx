@@ -54,8 +54,8 @@ export function PopupMese({
         Il datore non sa quanto guadagnerai: ogni mese fa i conti su lordo × 12
         (verificato sulle buste Zucchetti). Sotto 1.250 € al mese ti dà il tratt.
         integrativo; sopra lo toglie, ma alza la detrazione.
-        {netMonth.esitoTi.senzaCapienza && <> Però serve IRPEF da compensare: sotto i
-          ~{numeroIt(minimoTi ?? 0)} € al mese le detrazioni la azzerano già, e non spetta.</>}
+        {netMonth.esitoTi.senzaCapienza && <> Però serve IRPEF da compensare, e conta la media
+          dell&apos;anno: sotto i ~{numeroIt(minimoTi ?? 0)} € al mese le detrazioni la azzerano già.</>}
       </p>
       <div className="net-group-label">
         {formatMonthYear(currentMonth)}: {numeroIt(netMonth.esitoTi.baseMese)} × 12

@@ -489,8 +489,8 @@ export function lordoDelMese(pagaTurni, anno, mese, settings = {}, { enableNetCa
  * (`monthlyBreakdown`). Prima ognuna sceglieva il suo riferimento, e dal 14
  * settembre non erano più lo stesso. → check-netto-coerente.mjs
  */
-export function nettoDelMese(lordoMese, settings, giorniMese, extraMese = 0) {
-  return calcNetMonthly(lordoMese, riferimentoAnnuoDelMese(lordoMese, settings), settings, giorniMese, extraMese);
+export function nettoDelMese(lordoMese, settings, giorniMese, extraMese = 0, capienza = null) {
+  return calcNetMonthly(lordoMese, riferimentoAnnuoDelMese(lordoMese, settings), settings, giorniMese, extraMese, capienza);
 }
 
 export function taxableToGross(taxable, settings = {}) {
@@ -988,7 +988,7 @@ export function tiDecision(annualGrossRef, settings = {}) {
  * @param {number} monthDays giorni di calendario del mese (per la prorata di TI/indennità)
  * @param {number} extraMonthGross quota di `monthGross` che è 13ª/14ª (tassata a parte)
  */
-export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthDays = 365 / 12, extraMonthGross = 0) {
+export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthDays = 365 / 12, extraMonthGross = 0, capienza = null) {
   const T = TAX_2026;
   const gross = Math.max(0, Number(monthGross) || 0);
   const ann = calcNetAnnual(annualGrossRef, settings);
@@ -1058,13 +1058,12 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   // Entrambe TRONCATE a due decimali, non arrotondate: in busta 1.200 × 31/365
   // fa 101,91 (il valore pieno è 101,9178) e 1.060,92 × 5,3% fa 56,22 (56,2288).
   const dayFraction = monthDays / 365;
-  // Decisione MENSILE come il software paghe (`tiSpettaQuestoMese`); l'importo è
-  // la quota annua sui giorni. Sotto i 1.250 senza IRPEF da compensare la regola
-  // dice sì e la capienza no: `senzaCapienza` (→ check-ti-capienza.mjs).
-  const esitoTi = { ...tiSpettaQuestoMese(gross, settings) };
-  esitoTi.senzaCapienza = esitoTi.spetta && !(ann.trattamentoIntegrativo > 0);
-  const trattamentoIntegrativo = esitoTi.spetta
-    ? trunc2(ann.trattamentoIntegrativo * dayFraction) : 0;
+  // Soglia sul MESE (`tiSpettaQuestoMese`), capienza sul progressivo dell'anno
+  // (`capienza`, da capienza.js; senza, sul solo mese). → check-ti-capienza.mjs
+  const esitoTi = { ...tiSpettaQuestoMese(gross, settings), media: capienza?.media ?? null };
+  esitoTi.senzaCapienza = esitoTi.spetta && !(capienza ? capienza.capiente : ann.trattamentoIntegrativo > 0);
+  const trattamentoIntegrativo = esitoTi.spetta && !esitoTi.senzaCapienza
+    ? trunc2((ann.trattamentoIntegrativo || T.TI_MASSIMO) * dayFraction) : 0;
   // L'indennità L. 207/2024 NON è una quota annua spalmata sui giorni: in busta
   // è la percentuale di fascia applicata all'imponibile fiscale DEL MESE, quindi
   // segue le ore effettivamente lavorate (verificato: 4,8% × 1.849,65 = 88,78).

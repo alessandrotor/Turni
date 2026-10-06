@@ -63,9 +63,15 @@ const meta = calcNetAnnual(6600, S, { giorni: 184 });
 esito(Math.abs(meta.detrazioneLavoro - calcNetAnnual(6600, S).detrazioneLavoro * 184 / 365) < 0.01,
   'motore: assunto a luglio → detrazione rapportata ai giorni', `${Math.round(meta.detrazioneLavoro)} €`);
 
-// Il bonus a zero per reddito BASSO non è mai stato accreditato: niente da ridare.
+// Reddito BASSO: la capienza è sul progressivo (capienza.js), e a gennaio,
+// senza progressivo, il datore il trattamento lo dà. Da febbraio la media dice
+// che non c'è IRPEF da compensare e smette: a dicembre torna indietro SOLO
+// gennaio, mai l'anno intero (il difetto di prima: 805 € a chi ne guadagna 2.150).
 const poco = saldoConguaglio(anno([180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180]), S);
-esito(poco.voci.trattamentoIntegrativo <= 0.01, 'sotto la no tax area → nessuna restituzione', `${poco.voci.trattamentoIntegrativo} €`);
+esito(poco.tiMesi[0] > 0 && poco.tiMesi.slice(1).every((v) => v === 0),
+  'sotto la no tax area → solo gennaio, poi smette', `gennaio ${poco.tiMesi[0]} €`);
+esito(Math.abs(poco.voci.trattamentoIntegrativo - poco.tiMesi[0]) <= 0.01,
+  '… e a dicembre torna indietro solo quello', `${poco.voci.trattamentoIntegrativo} €`);
 
 // Bonus sospeso su richiesta e anno sotto soglia: a dicembre lo si riceve tutto.
 const sospeso = saldoConguaglio(anno(Array(12).fill(1100)), { ...S, noTrattamentoIntegrativo: true, tiModo: 'mai' });

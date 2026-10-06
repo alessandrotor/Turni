@@ -10,6 +10,8 @@ import { parseDate, getDaysInMonth, formatDate, dayNumber } from './dates.js';
 import { isHoliday } from './holidays.js';
 import { tipoTurno, TIPO } from './assenze.js';
 import { nettoDelMese, lordoDelMese } from './net.js';
+import { progressiviDellAnno } from './conguaglio.js';
+import { capienzaProgressiva } from './capienza.js';
 
 // Raggruppa per MESE DI CALENDARIO, non di paga: è la vista d'insieme
 // dell'anno, e l'utente ragiona in mesi solari (stessa scelta già fatta per
@@ -48,6 +50,8 @@ export function monthlyBreakdown(year, allShifts, settings = {}, payByShift = nu
 
   const canPay = hasAnyRate(settings);
 
+  // La capienza del trattamento integrativo sul progressivo, come in Calendario.
+  const progressivi = enableNetCalc && canPay ? progressiviDellAnno({ anno: year, allShifts, settings, payMap: payByShift || {} }) : [];
   const rows = [];
   for (let m = 0; m < 12; m += 1) {
     const monthShifts = shiftsByMonth.get(m);
@@ -69,7 +73,8 @@ export function monthlyBreakdown(year, allShifts, settings = {}, payByShift = nu
     const { lordo, extraMese: extraThisMonth } = lordoDelMese(pay?.total, year, m, settings, { enableNetCalc });
     const gross = pay ? lordo : 0;
     const net = (enableNetCalc && pay && gross > 0)
-      ? nettoDelMese(gross, settings, getDaysInMonth(year, m), extraThisMonth).net
+      ? nettoDelMese(gross, settings, getDaysInMonth(year, m), extraThisMonth,
+        capienzaProgressiva(gross, settings, progressivi[m])).net
       : 0;
 
     rows.push({

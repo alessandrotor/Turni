@@ -3,6 +3,8 @@ import {
   nettoDelMese, lordoDelMese, riferimentoAnnuoDelMese, TAX_2026, tiDecision, projectAnnualIncome,
 } from '../utils/net';
 import { ENABLE_NET_CALC } from '../config/features';
+import { progressiviDellAnno } from '../utils/conguaglio';
+import { capienzaProgressiva } from '../utils/capienza';
 
 // Netto stimato del mese (beta): calcolato PARTENDO DAL MESE, come una busta
 // paga. Estratto da CalendarView per leggibilità — la logica è identica.
@@ -16,7 +18,9 @@ import { ENABLE_NET_CALC } from '../config/features';
 //
 // Riceve gli aggregati già pronti (pay del mese, reddito annuo) e restituisce
 // tutti i valori derivati usati dal riepilogo.
-export default function useMonthlyNet({ year, month, settings, pay, annualGross, annualExtras = 0, daysInMonth }) {
+export default function useMonthlyNet({
+  year, month, settings, pay, annualGross, annualExtras = 0, daysInMonth, allShifts = [], payMap,
+}) {
   const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
   const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
     .reduce((s, v) => s + (Number(v.amount) || 0), 0);
@@ -67,10 +71,17 @@ export default function useMonthlyNet({ year, month, settings, pay, annualGross,
     () => riferimentoAnnuoDelMese(monthGross, settings),
     [monthGross, settings],
   );
+  // La capienza del trattamento integrativo si costruisce sull'anno: il
+  // progressivo dei mesi prima di questo (capienza.js).
+  const progressivo = useMemo(
+    () => (ENABLE_NET_CALC ? progressiviDellAnno({ anno: year, allShifts, settings, payMap: payMap || {} })[month] : null),
+    [year, month, allShifts, settings, payMap],
+  );
   // Statistiche passa dalla stessa funzione: vedi `nettoDelMese`.
   const netMonth = useMemo(
-    () => (ENABLE_NET_CALC ? nettoDelMese(monthGross, settings, daysInMonth, extraThisMonth) : null),
-    [monthGross, settings, daysInMonth, extraThisMonth],
+    () => (ENABLE_NET_CALC ? nettoDelMese(monthGross, settings, daysInMonth, extraThisMonth,
+      capienzaProgressiva(monthGross, settings, progressivo)) : null),
+    [monthGross, settings, daysInMonth, extraThisMonth, progressivo],
   );
   const monthNet = netMonth ? netMonth.net : 0;
   const monthTrattenute = netMonth ? netMonth.trattenute : 0;

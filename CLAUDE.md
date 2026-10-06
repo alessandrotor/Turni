@@ -350,8 +350,13 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   **Sotto i 1.250 non basta**: serve anche IRPEF da compensare (la capienza).
   Con poche ore le detrazioni la azzerano già e il trattamento non c'è; il
   riquadro diceva «c'è il tratt. integrativo» su un netto che non l'aveva.
-  La riga ora dice la soglia vera del mese, `lordoMeseMinimoTi()` (~750 € nel
-  Turismo). → `check-ti-capienza.mjs`
+  La capienza però si guarda sul **progressivo dell'anno**, non sul mese da
+  solo (`capienzaProgressiva()`, `progressiviDellAnno()`): 534 € a metà mese
+  dopo nove mesi pieni il trattamento ce l'hanno. Il primo mese, senza
+  progressivo, il datore lo dà e smette dopo se serve: chi sta sotto la no tax
+  area restituisce a dicembre quello di gennaio, non l'anno. Indicato da chi
+  mantiene il progetto, non ancora visto su una busta. La riga dice la media e
+  la soglia, `lordoMeseMinimoTi()` (~750 € nel Turismo). → `check-ti-capienza.mjs`
   **La regola si spiega dove si vede il suo effetto**: il riquadro del netto ha
   una riga «1.298 × 12 = 15.576 €: sopra i 15.000…» e un «perché?» con IRPEF
   lorda, detrazioni, ritenute e trattamento integrativo del mese, coi nomi

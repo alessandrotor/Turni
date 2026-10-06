@@ -17,6 +17,8 @@ import {
   computeAnnualGrossFromShifts,
   projectAnnualIncome,
 } from './net.js';
+import { progressiviDellAnno } from './conguaglio.js';
+import { capienzaProgressiva } from './capienza.js';
 import { calcBonusMargin, BONUS_STATUS } from './bonus.js';
 import { getDaysInMonth } from './dates.js';
 
@@ -88,9 +90,10 @@ export function calcolaCosaCambia({
   let deltaLordo = 0;
   let payBefore = null;
   let payAfter = null;
+  let payMapBefore = null;
 
   if (rateAvailable) {
-    const payMapBefore = computePayByShift(shiftsBefore, settings);
+    payMapBefore = computePayByShift(shiftsBefore, settings);
     payBefore = calcTotalPay(monthShiftsBefore, settings, shiftsBefore, payMapBefore);
 
     const payMapAfter = computePayByShift(shiftsAfter, settings);
@@ -112,8 +115,10 @@ export function calcolaCosaCambia({
     // già rimasta indietro una volta sul formato del bonus.
     const prima = lordoDelMese(payBefore.total, year, month, settings);
     const dopo = lordoDelMese(payAfter.total, year, month, settings);
-    netBefore = nettoDelMese(prima.lordo, settings, daysInMonth, prima.extraMese);
-    netAfter = nettoDelMese(dopo.lordo, settings, daysInMonth, dopo.extraMese);
+    // I mesi prima non cambiano: un progressivo solo, per la capienza.
+    const prog = progressiviDellAnno({ anno: year, allShifts: shiftsBefore, settings, payMap: payMapBefore })[month];
+    netBefore = nettoDelMese(prima.lordo, settings, daysInMonth, prima.extraMese, capienzaProgressiva(prima.lordo, settings, prog));
+    netAfter = nettoDelMese(dopo.lordo, settings, daysInMonth, dopo.extraMese, capienzaProgressiva(dopo.lordo, settings, prog));
 
     if (netBefore && netAfter) {
       deltaNetto = netAfter.net - netBefore.net;
@@ -129,7 +134,7 @@ export function calcolaCosaCambia({
   let rientraSottoSoglia = false;
 
   if (rateAvailable) {
-    const payMapBefore = computePayByShift(shiftsBefore, settings);
+    payMapBefore = computePayByShift(shiftsBefore, settings);
     const annualBefore = computeAnnualGrossFromShifts(year, shiftsBefore, settings, payMapBefore);
     const projBefore = projectAnnualIncome(annualBefore.total, annualBefore.extras, settings, year);
 
