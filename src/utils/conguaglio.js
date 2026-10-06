@@ -318,7 +318,8 @@ export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi = new 
       ? mesiCentrale.map((m, i) => (m.lordo > 0 && !tiSpettaQuestoMese(m.lordo, settings).spetta ? i : -1)).filter((i) => i >= 0)
       : null,
     mesiSottoSoglia: modoTrattamentoIntegrativo(settings) === 'auto'
-      ? mesiCentrale.map((m, i) => (m.lordo > 0 && tiSpettaQuestoMese(m.lordo, settings).spetta ? i : -1)).filter((i) => i >= 0)
+      // Col bonus DAVVERO in busta: sotto i 1.250 senza capienza non c'è (check-ti-capienza).
+      ? mesiCentrale.map((m, i) => (m.lordo > 0 && centrale.tiMesi[i] > 0 ? i : -1)).filter((i) => i >= 0)
       : null,
   };
 }

@@ -1058,10 +1058,11 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   // Entrambe TRONCATE a due decimali, non arrotondate: in busta 1.200 × 31/365
   // fa 101,91 (il valore pieno è 101,9178) e 1.060,92 × 5,3% fa 56,22 (56,2288).
   const dayFraction = monthDays / 365;
-  // La decisione è MENSILE e segue quella del software paghe: vedi
-  // `tiSpettaQuestoMese`. L'importo, quando spetta, resta la quota annua
-  // rapportata ai giorni — su quello la busta tornava già al centesimo.
-  const esitoTi = tiSpettaQuestoMese(gross, settings);
+  // Decisione MENSILE come il software paghe (`tiSpettaQuestoMese`); l'importo è
+  // la quota annua sui giorni. Sotto i 1.250 senza IRPEF da compensare la regola
+  // dice sì e la capienza no: `senzaCapienza` (→ check-ti-capienza.mjs).
+  const esitoTi = { ...tiSpettaQuestoMese(gross, settings) };
+  esitoTi.senzaCapienza = esitoTi.spetta && !(ann.trattamentoIntegrativo > 0);
   const trattamentoIntegrativo = esitoTi.spetta
     ? trunc2(ann.trattamentoIntegrativo * dayFraction) : 0;
   // L'indennità L. 207/2024 NON è una quota annua spalmata sui giorni: in busta
@@ -1099,7 +1100,6 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
     imponibileOrdinario, imponibileExtra, irpefExtra, cuneoPct,
     irpefLorda, detrazioni, detrazioniApplicate, irpefNetta,
     addRegionale, addComunale, trattenuteFisse, trattenute,
-    trattamentoIntegrativo, bonusCuneo, bonus, esitoTi,
-    tfrLordo, tfrImposta, aliqTfr, tfr, net,
+    trattamentoIntegrativo, bonusCuneo, bonus, esitoTi, tfrLordo, tfrImposta, aliqTfr, tfr, net,
   };
 }

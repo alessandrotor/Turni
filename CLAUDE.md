@@ -347,6 +347,11 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   febbraio e maggio e luglio sotto soglia col bonus, agosto sopra senza. Per chi
   legge, la soglia si dice in una cifra sola: **1.250 € di lordo al mese**
   (15.000 ÷ 12). → `check-ti-mensile.mjs`
+  **Sotto i 1.250 non basta**: serve anche IRPEF da compensare (la capienza).
+  Con poche ore le detrazioni la azzerano già e il trattamento non c'è; il
+  riquadro diceva «c'è il tratt. integrativo» su un netto che non l'aveva.
+  La riga ora dice la soglia vera del mese, `lordoMeseMinimoTi()` (~750 € nel
+  Turismo). → `check-ti-capienza.mjs`
   **La regola si spiega dove si vede il suo effetto**: il riquadro del netto ha
   una riga «1.298 × 12 = 15.576 €: sopra i 15.000…» e un «perché?» con IRPEF
   lorda, detrazioni, ritenute e trattamento integrativo del mese, coi nomi

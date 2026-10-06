@@ -47,6 +47,7 @@ import { numeroIt, euroCella, scriviForchetta } from '../utils/formato';
 import { PopupMese, PopupConguaglio, PopupSoglia } from './PopupFiscali';
 import RiquadroTI from './RiquadroTI';
 import { confrontoMontante } from '../utils/confronto-montante';
+import { lordoMeseMinimoTi } from '../utils/soglia-lorda';
 import { tipoDiErrore, TITOLO_ERRORE } from '../utils/errore-import';
 
 // La forchetta a dieci euro: una cifra al centesimo prometterebbe una
@@ -542,13 +543,13 @@ export default function CalendarView({
     }
     return null;
   })();
-  // IL MESE NON È COSA FATTA. La riga del netto dice cosa ha deciso il
-  // programma paghe su QUESTO mese; se l'anno, di questo passo, finisce
-  // dall'altra parte dei 15.000, a dicembre la decisione si rovescia. Il lato
-  // del mese e quello dell'anno vengono entrambi dal motore
-  // (`tiSpettaQuestoMese`, `stimaConguaglio` sulla proiezione dell'anno).
+  // IL MESE NON È COSA FATTA: se l'anno, di questo passo, finisce dall'altra
+  // parte dei 15.000, a dicembre la decisione del mese si rovescia. Mese e anno
+  // dal motore (`tiSpettaQuestoMese` con la capienza, `stimaConguaglio`).
+  const tiNelMese = !!netMonth?.esitoTi?.spetta && !netMonth.esitoTi.senzaCapienza;
+  const minimoTi = useMemo(() => lordoMeseMinimoTi(settings), [settings]);
   const meseSiInverte = !!(conguaglio && netMonth?.esitoTi?.proiezione != null
-    && conguaglio.centrale.annoSottoSoglia !== netMonth.esitoTi.spetta);
+    && conguaglio.centrale.dettaglio.trattamentoIntegrativo.anno > 0 !== tiNelMese);
   const forchettaScritta = scriviForchetta(conguaglio);
 
   const [simulaBonus, setSimulaBonus] = useState(false);
@@ -1237,8 +1238,8 @@ export default function CalendarView({
                   nel popup di «perché?» per chi lo vuole vedere. */}
               {netMonth?.esitoTi?.proiezione != null && (
                 <span className="bonus-strip-note">
-                  {netMonth.esitoTi.spetta
-                    ? <>Questo mese resti sotto i {numeroIt(TAX_2026.TI_SOGLIA_PIENO / 12)} € lordi: c'è il tratt. integrativo.</>
+                  {tiNelMese ? <>Questo mese resti sotto i {numeroIt(TAX_2026.TI_SOGLIA_PIENO / 12)} € lordi: c'è il tratt. integrativo.</>
+                    : netMonth.esitoTi.spetta ? <>Niente tratt. integrativo: sotto i ~{numeroIt(minimoTi ?? 0)} € lordi al mese non c'è IRPEF da compensare.</>
                     : <>Questo mese superi i {numeroIt(TAX_2026.TI_SOGLIA_PIENO / 12)} € lordi: niente tratt. integrativo, ma meno IRPEF.</>}
                   {meseSiInverte && <strong> A dicembre si inverte.</strong>}{' '}
                   <button type="button" className="linklike" onClick={() => setMeseSpiegato(true)}>perché?</button>
@@ -1553,12 +1554,11 @@ export default function CalendarView({
         />
       )}
 
-      {/* I tre popup fiscali vivono in PopupFiscali.jsx: stessi numeri, presi
-          qui e passati; nessun conto rifatto là dentro. */}
+      {/* I popup fiscali (PopupFiscali.jsx) ricevono i numeri, non li rifanno. */}
       {meseSpiegato && netMonth?.esitoTi?.proiezione != null && (
         <PopupMese
           netMonth={netMonth} currentMonth={currentMonth} conguaglio={conguaglio}
-          meseSiInverte={meseSiInverte} forchettaScritta={forchettaScritta}
+          meseSiInverte={meseSiInverte} forchettaScritta={forchettaScritta} tiNelMese={tiNelMese} minimoTi={minimoTi}
           onChiudi={() => setMeseSpiegato(false)}
           onApriConguaglio={() => { setMeseSpiegato(false); setConguaglioAperto(true); }}
         />

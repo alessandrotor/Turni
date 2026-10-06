@@ -46,7 +46,7 @@ function Finestra({ titolo, onChiudi, children }) {
 // (check-ti-mensile.mjs): lo si dice, senza promettere che ogni
 // programma paghe faccia uguale.
 export function PopupMese({
-  netMonth, currentMonth, conguaglio, meseSiInverte, forchettaScritta, onChiudi, onApriConguaglio,
+  netMonth, currentMonth, conguaglio, meseSiInverte, forchettaScritta, tiNelMese, minimoTi, onChiudi, onApriConguaglio,
 }) {
   return (
     <Finestra titolo="Perché ogni mese è diverso" onChiudi={onChiudi}>
@@ -54,6 +54,8 @@ export function PopupMese({
         Il datore non sa quanto guadagnerai: ogni mese fa i conti su lordo × 12
         (verificato sulle buste Zucchetti). Sotto 1.250 € al mese ti dà il tratt.
         integrativo; sopra lo toglie, ma alza la detrazione.
+        {netMonth.esitoTi.senzaCapienza && <> Però serve IRPEF da compensare: sotto i
+          ~{numeroIt(minimoTi ?? 0)} € al mese le detrazioni la azzerano già, e non spetta.</>}
       </p>
       <div className="net-group-label">
         {formatMonthYear(currentMonth)}: {numeroIt(netMonth.esitoTi.baseMese)} × 12
@@ -74,9 +76,10 @@ export function PopupMese({
           fa {euroCella(conguaglio.centrale.redditoAnno)}, {conguaglio.centrale.annoSottoSoglia ? 'sotto' : 'sopra'} i
           15.000:{' '}
           {!meseSiInverte ? 'per questo mese niente da sistemare.'
-            : netMonth.esitoTi.spetta
+            : tiNelMese
               ? 'il tratt. integrativo di questo mese te lo riprendono, l\'IRPEF in più te la ridanno.'
-              : 'il tratt. integrativo di questo mese te lo ridanno, l\'IRPEF in meno se la riprendono.'}
+              : netMonth.esitoTi.senzaCapienza ? 'il tratt. integrativo di questo mese te lo ridanno.'
+                : 'il tratt. integrativo di questo mese te lo ridanno, l\'IRPEF in meno se la riprendono.'}
           {' '}Sull&apos;anno {forchettaScritta}:{' '}
           <button type="button" className="linklike" onClick={() => { onApriConguaglio(); }}>vedi il conguaglio</button>.
         </p>
