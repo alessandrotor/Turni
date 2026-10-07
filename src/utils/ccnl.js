@@ -101,8 +101,8 @@ export function monthlyContractHours(settings = {}) {
 }
 
 // Ore FULL-TIME di un mese, stesso fattore di conversione delle ore
-// contrattuali: soglia oltre la quale le ore eccedenti diventano
-// straordinarie invece che supplementari (vedi computePayByShift in pay.js).
+// contrattuali: è il divisore orario (172 nel Turismo, check-tabellare-turismo).
+// NON è la soglia dello straordinario, che è settimanale (vedi pay.js).
 export function monthlyFullTimeHours(settings = {}) {
   const weeklyHours = Math.max(0, Number(settings.fullTimeWeeklyHours) || 0);
   return weeklyHours * monthlyHoursFactor(settings);

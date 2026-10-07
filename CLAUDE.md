@@ -387,6 +387,11 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
 - **La soglia del supplementare resta MENSILE** (103,20 h = 24 × 4,3), non
   settimanale: questo lo avevano stabilito giugno e luglio, e non cambia.
   → `check-mese-paga-2026.mjs`
+  Lo **straordinario** invece si conta sempre a SETTIMANA, oltre le 40 ore
+  (D.Lgs. 66/2003), anche sul mensilizzato: contarlo sul mese (172 h) non lo
+  faceva mai scattare a chi aveva una settimana lunga in un mese corto. Le sue
+  ore non riempiono il monte ore. Dalla norma, nessuna busta con una settimana
+  oltre le 40. → `check-straordinario-settimanale.mjs`
 - **Le assenze riempiono il monte ore**, anche quando cadono in coda al mese:
   in busta `4,00 ferie + 99,20 retribuzione = 103,20`, e il lavoro eccedente è
   tutto supplementare. Contarle in ordine cronologico faceva perdere ore già

@@ -167,7 +167,8 @@ sempre più lenta al crescere dei turni: è `O(N)` sull'intera storia, non sul
 mese.
 
 **Perché il contesto è sempre `allShifts` e mai i soli turni del mese:** le
-soglie di supplementare/straordinario si cumulano su settimana o mese di paga,
+soglie di supplementare/straordinario si cumulano su settimana o mese (lo
+straordinario sempre a settimana, `check-straordinario-settimanale.mjs`),
 e una settimana a cavallo di capodanno o di fine mese va raggruppata per
 intero. Passare solo il mese farebbe risultare cifre diverse fra Calendario e
 Statistiche per lo stesso periodo.

@@ -2,7 +2,7 @@
 // i riscontri in `scripts/` (che girano fuori da Vite) non partono.
 import { minutesDiff, parseDate, getWeekStart, formatDate, payrollMonthKey } from './dates.js';
 import { isHoliday } from './holidays.js';
-import { isMensilizzato, monthlyContractHours, monthlyFullTimeHours } from './ccnl.js';
+import { isMensilizzato, monthlyContractHours } from './ccnl.js';
 import { isAssenza, tipoTurno, percentualeAssenza, giorniEventoMalattia, TIPO } from './assenze.js';
 import { minutiNotturniPagati, pctNotturnoAggiuntiva } from './notturno.js';
 
@@ -152,6 +152,28 @@ function minutesInBand(before, after, lo, hi) {
 //  - a chiamata (onCall): oltre la soglia giornaliera (dailyOvertimeThreshold).
 //    Ha la precedenza: chi lavora a chiamata non ha un orario mensilizzato da
 //    rispettare, né una soglia full-time (vedi sopra).
+// Minuti di STRAORDINARIO di ogni turno, contati a settimana (lun-dom) sul
+// lavoro effettivo: ferie e permessi non sono lavoro prestato, e le ore festive
+// hanno la loro riga in busta (stessa regola del supplementare, sotto). La
+// settimana a cavallo di due mesi resta una: le ore di fine settembre contano
+// per le 40 della settimana che finisce in ottobre.
+function straordinarioPerSettimana(allShifts, settings, sogliaMin) {
+  const ordinati = [...allShifts].sort((a, b) =>
+    (a.date + (a.startTime || '')).localeCompare(b.date + (b.startTime || '')));
+  const cumulo = new Map();
+  const esito = new Map();
+  for (const s of ordinati) {
+    if (isAssenza(s) || isHoliday(s.date, settings)) continue;
+    const settimana = formatDate(getWeekStart(parseDate(s.date)));
+    const prima = cumulo.get(settimana) || 0;
+    const dopo = prima + calcShiftMinutes(s);
+    cumulo.set(settimana, dopo);
+    const extra = minutesInBand(prima, dopo, sogliaMin, Infinity);
+    if (extra > 0) esito.set(s.id, extra);
+  }
+  return esito;
+}
+
 // Serve l'insieme completo dei turni per raggruppare correttamente.
 // Ritorna una mappa { [shiftId]: { base, surcharge, overtimeMinutes, ... } }.
 export function computePayByShift(allShifts, settings) {
@@ -165,12 +187,16 @@ export function computePayByShift(allShifts, settings) {
     : mensile
       ? monthlyContractHours(settings) * 60
       : (Number(settings?.expectedWeeklyHours) || 0) * 60;
-  const fullTimeThresholdMin = onCall ? 0
-    : mensile
-      ? monthlyFullTimeHours(settings) * 60
-      : (Number(settings?.fullTimeWeeklyHours) || 0) * 60;
+  // Lo STRAORDINARIO è sempre a settimana: lavoro oltre l'orario normale di
+  // 40 ore settimanali (D.Lgs. 66/2003, art. 1 e 3). Sul mensilizzato si contava
+  // sul mese (40 × 4,3 = 172 h), e chi faceva 45 ore in una settimana e poche
+  // nelle altre non ne vedeva nessuna. Il SUPPLEMENTARE resta mensile: quello
+  // lo dicono le buste. → check-straordinario-settimanale.mjs
+  const fullTimeThresholdMin = onCall ? 0 : (Number(settings?.fullTimeWeeklyHours) || 0) * 60;
   const applyOvertime = thresholdMin > 0 && otPct > 0;
   const applyExtra = !onCall && fullTimeThresholdMin > 0 && extraPct > 0;
+  const straordinarioSett = mensile && applyExtra
+    ? straordinarioPerSettimana(allShifts, settings, fullTimeThresholdMin) : null;
 
   // La carenza si conta per EVENTO di malattia, quindi va ricavata da tutti i
   // turni in una volta: un giorno isolato non sa di che evento fa parte.
@@ -260,20 +286,24 @@ export function computePayByShift(allShifts, settings) {
       // ore rientrerebbero di nascosto fra le supplementari.
       const festivoLavorato = !assenza && isHoliday(s.date, settings);
 
+      // Sul mensilizzato lo straordinario è già deciso a settimana, e le sue ore
+      // non riempiono il monte ore del mese: sono oltre, per definizione.
+      const straordSett = straordinarioSett?.get(s.id) || 0;
       const before = cumMin;
-      const after = cumMin + (festivoLavorato ? 0 : m);
+      const after = cumMin + (festivoLavorato ? 0 : m - straordSett);
       // Le assenze RIEMPIONO la soglia contrattuale — è così che la busta
       // arriva comunque alle ore del mese quando ci sono ferie — ma non
       // possono essere supplementari o straordinarie: in un giorno di ferie
       // non si lavora, e pagarle in più sarebbe un guadagno per essere stati
       // assenti.
       const supplementareMin = (!assenza && !festivoLavorato && applyOvertime)
-        ? minutesInBand(before, after, thresholdMin, applyExtra ? fullTimeThresholdMin : Infinity)
+        ? minutesInBand(before, after, thresholdMin, applyExtra && !mensile ? fullTimeThresholdMin : Infinity)
         : 0;
-      // Fascia straordinaria: oltre la soglia-full-time.
-      const straordinarioMin = (!assenza && !festivoLavorato && applyExtra)
-        ? minutesInBand(before, after, fullTimeThresholdMin, Infinity)
-        : 0;
+      // Fascia straordinaria: oltre la soglia-full-time della settimana.
+      const straordinarioMin = straordinarioSett ? straordSett
+        : (!assenza && !festivoLavorato && applyExtra)
+          ? minutesInBand(before, after, fullTimeThresholdMin, Infinity)
+          : 0;
 
       const shiftBase = m * ratePerMin * (pctAssenza / 100);
       // Quota di `base` che spetta alle ore oltre soglia. Serve al riepilogo per

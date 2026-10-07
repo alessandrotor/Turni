@@ -511,7 +511,6 @@ export default function Settings({ settings, onSave }) {
   const fasciaDiversaDalCcnl = !!fasciaCcnl
     && (form.nightStart !== fasciaCcnl.inizio || form.nightEnd !== fasciaCcnl.fine);
   const fullTimeWeeklyHours = parseNum(form.fullTimeWeeklyHours);
-  const oreMensiliFullTime = (fullTimeWeeklyHours * ccnlPreset.monthlyHoursFactor).toFixed(2).replace('.', ',');
   // Soglia degli straordinari attiva solo se il full-time supera davvero le
   // ore da contratto: altrimenti (già full-time) non c'è fascia intermedia.
   const haStraordinari = !form.onCall && fullTimeWeeklyHours > weeklyHours;
@@ -996,7 +995,7 @@ export default function Settings({ settings, onSave }) {
             {avvisoMagg('straordinarioSurchargePct')}
               <p className="form-hint">
                 {haStraordinari
-                  ? `Applicata alle ore oltre le ${mensilizzato ? `${oreMensiliFullTime}h del mese` : `${fullTimeWeeklyHours || 0}h settimanali`} full-time.`
+                  ? `Applicata alle ore oltre le ${fullTimeWeeklyHours || 0}h della settimana, anche col contratto mensilizzato.`
                   : 'Imposta le ore full-time sopra per attivare questa soglia.'}
                 {' '}Vuoto = stessa aliquota dei supplementari.
               </p>
