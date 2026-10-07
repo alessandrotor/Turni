@@ -116,6 +116,39 @@ assert(formatDeltaMinutes(-45) === '−45m', 'formatDeltaMinutes negativo solo m
     'e la striscia del bonus dice la stessa cosa');
 }
 
+// IL MONTE ORE DATO PER SCONTATO (Turismo, 24 h → 103,20 h al mese).
+// Un turno in più, a metà mese, vale già da supplementare: il datore le ore da
+// contratto le deve comunque. Ma solo nel mese in corso e con almeno una
+// settimana segnata; il prima e il dopo hanno lo stesso monte presunto, quindi
+// il delta è tutto del turno. Chi mantiene il progetto, ottobre 2026.
+{
+  const ST = { hourlyRate: 10, expectedWeeklyHours: 24, fullTimeWeeklyHours: 40, ccnl: 'turismo',
+    overtimeSurchargePct: 30, periodoConteggio: 'calendario' };
+  const OGGI = new Date(2026, 9, 7);
+  const giorni = (n) => Array.from({ length: n }, (_, i) => {
+    const d = `2026-10-${String(i + 1).padStart(2, '0')}`;
+    return { id: d, date: d, startTime: '08:00', endTime: '14:00' };
+  });
+  const otto = { date: '2026-10-20', startTime: '08:00', endTime: '16:00' };
+  const prova = (n, oggi = OGGI) => calcolaCosaCambia({ candidateShift: otto, allShifts: giorni(n), settings: ST, oggi });
+
+  const vuota = prova(2);
+  assert(vuota.montePresunto === null && vuota.deltaLordo === 80, `griglia quasi vuota: ordinario, trovato ${vuota.deltaLordo}`);
+  const avviata = prova(6);
+  assert(avviata.montePresunto && Math.abs(avviata.deltaLordo - 104) < 0.01,
+    `36 h segnate: le 8 ore valgono già il 130%, trovato ${avviata.deltaLordo}`);
+  assert(avviata.deltaSupplementareMin === 480 && avviata.testoDiCui === 'di cui 8h supplementari',
+    `e lo dice: «${avviata.testoDiCui}»`);
+  assert(/103,2 h/.test(avviata.testoMonte || '') && /36 h/.test(avviata.testoMonte || ''),
+    `e dice cosa ha presunto: «${avviata.testoMonte}»`);
+  assert(prova(6, new Date(2026, 11, 7)).montePresunto === null, 'mese già chiuso: conta solo quello segnato');
+  const oltre = prova(18);
+  assert(oltre.montePresunto === null && Math.abs(oltre.deltaLordo - 104) < 0.01, 'mese già oltre: supplementare vero');
+  const togli = calcolaCosaCambia({ candidateShift: null, originalShift: giorni(6)[5], allShifts: giorni(6), settings: ST, oggi: OGGI });
+  assert(togli.montePresunto === null && Math.abs(togli.deltaLordo + 60) < 0.01,
+    `togliere un turno conta sul mese segnato, senza presumere: trovato ${togli.deltaLordo}`);
+}
+
 if (falliti === 0) {
   console.log('OK: tutti i controlli di cosa-cambia.js sono superati.');
   process.exit(0);

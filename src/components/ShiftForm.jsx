@@ -280,9 +280,8 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
     });
   }, [candidate, isEdit, modal.shift, turni, settings]);
 
-  // «Nuovo turno» su una giornata di ferie sarebbe fuorviante: titolo e
-  // pulsanti seguono il tipo scelto. Nomi scritti per esteso invece che
-  // costruiti a pezzi, altrimenti esce «Nuovo malattia».
+  // Titolo e pulsanti seguono il tipo scelto, coi nomi per esteso: costruiti a
+  // pezzi uscirebbe «Nuovo malattia».
   const NOME = {
     [TIPO.LAVORO]: 'turno',
     [TIPO.FERIE]: 'giorno di ferie',
@@ -658,9 +657,10 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
             <div className="cosa-cambia-strip">
               <span className="cosa-cambia-label">Cosa cambia nel mese:</span>
               <strong className="cosa-cambia-cifra">{cosaCambia.testoDeltaNetto} netti</strong>
-              <span className="cosa-cambia-ore">({cosaCambia.testoDeltaOre})</span>
+              <span className="cosa-cambia-ore">({cosaCambia.testoDeltaOre}{cosaCambia.testoDiCui && `, ${cosaCambia.testoDiCui}`})</span>
+              {cosaCambia.testoMonte && <span className="cosa-cambia-nota">{cosaCambia.testoMonte}</span>}
               {cosaCambia.superaSoglia && (
-                <span className="cosa-cambia-avviso">⚠️ Supera la soglia 15.000 € del bonus</span>
+                <span className="cosa-cambia-avviso">⚠️ Supera la tua soglia lorda del tratt. integrativo (~{Math.round(cosaCambia.sogliaLorda).toLocaleString('it-IT')} €, 15.000 € di reddito)</span>
               )}
             </div>
           )}

@@ -392,6 +392,11 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   faceva mai scattare a chi aveva una settimana lunga in un mese corto. Le sue
   ore non riempiono il monte ore. Dalla norma, nessuna busta con una settimana
   oltre le 40. → `check-straordinario-settimanale.mjs`
+  Nel «Cosa cambia nel mese» del modulo il monte ore si **dà per scontato**:
+  il datore le ore da contratto le deve, quindi un turno in più a metà mese
+  vale già da supplementare. Solo nel mese in corso, con almeno una settimana
+  segnata, e lo si scrive accanto («se non ci arrivi, sono ordinarie»). Le
+  cifre del calendario restano sulle ore segnate. → `check-cosa-cambia.mjs`
 - **Le assenze riempiono il monte ore**, anche quando cadono in coda al mese:
   in busta `4,00 ferie + 99,20 retribuzione = 103,20`, e il lavoro eccedente è
   tutto supplementare. Contarle in ordine cronologico faceva perdere ore già

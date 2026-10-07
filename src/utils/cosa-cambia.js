@@ -21,6 +21,47 @@ import { progressiviDellAnno } from './conguaglio.js';
 import { capienzaProgressiva } from './capienza.js';
 import { calcBonusMargin, BONUS_STATUS } from './bonus.js';
 import { getDaysInMonth } from './dates.js';
+import { isMensilizzato, monthlyContractHours } from './ccnl.js';
+import { isHoliday } from './holidays.js';
+import { isAssenza, TIPO } from './assenze.js';
+
+// IL MONTE ORE DATO PER SCONTATO. Sul mensilizzato il supplementare parte oltre
+// le ore del contratto nel MESE (103,20 h a 24 h settimanali). A metà mese le
+// ore segnate sono poche, e un turno in più risultava ordinario: ma il datore
+// le ore da contratto le deve comunque, quindi quel turno, se è in più, a fine
+// mese sarà supplementare. Si presume il monte ore pieno — con un permesso
+// virtuale, che riempie la soglia come le assenze vere (check-assenze) — solo
+// nel mese in corso e solo con almeno una settimana di contratto già segnata:
+// a griglia vuota non si sa ancora niente. Lo si dice accanto alla cifra.
+// → check-cosa-cambia.mjs
+function montePresunto(monthShifts, settings, year, month, oggi) {
+  if (settings.onCall || !isMensilizzato(settings) || !(Number(settings.overtimeSurchargePct) > 0)) return null;
+  if (year !== oggi.getFullYear() || month !== oggi.getMonth()) return null;
+  const contratto = Math.round(monthlyContractHours(settings) * 60);
+  const settimana = (Number(settings.expectedWeeklyHours) || 0) * 60;
+  // Le ore festive lavorate non riempiono il monte ore: stessa regola di pay.js.
+  const segnate = monthShifts.filter((s) => isAssenza(s) || !isHoliday(s.date, settings))
+    .reduce((t, s) => t + calcShiftMinutes(s), 0);
+  if (contratto <= 0 || segnate < settimana || segnate >= contratto) return null;
+  const mese = `${year}-${String(month + 1).padStart(2, '0')}`;
+  return {
+    segnate, contratto,
+    turno: { id: '__monte_ore_presunto', date: `${mese}-15`, type: TIPO.PERMESSO, durationMinutes: contratto - segnate },
+  };
+}
+
+const oreIt = (min) => (Math.round(min / 6) / 10).toLocaleString('it-IT');
+const durata = (min) => formatDeltaMinutes(Math.abs(min)).replace('+', '');
+
+// «di cui 4h 48m supplementari»: le ore pagate in più dentro il delta.
+function testoDiCui(dopo, prima) {
+  const sup = (dopo?.overtimeMinutes || 0) - (prima?.overtimeMinutes || 0);
+  const str = (dopo?.straordinarioMinutes || 0) - (prima?.straordinarioMinutes || 0);
+  const parti = [];
+  if (Math.round(sup)) parti.push(`${durata(sup)} supplementari`);
+  if (Math.round(str)) parti.push(`${durata(str)} straordinarie`);
+  return parti.length ? `di cui ${parti.join(' e ')}` : null;
+}
 
 export function formatDeltaCurrency(val) {
   const n = Number.isFinite(Number(val)) ? Number(val) : 0;
@@ -57,6 +98,7 @@ export function calcolaCosaCambia({
   originalShift = null,
   allShifts = [],
   settings = {},
+  oggi = new Date(),
 }) {
   const targetDate = candidateShift?.date || originalShift?.date;
   if (!targetDate || typeof targetDate !== 'string') return null;
@@ -92,12 +134,16 @@ export function calcolaCosaCambia({
   let payAfter = null;
   let payMapBefore = null;
 
+  // Solo quando si aggiunge o si cambia un turno: lo stesso permesso virtuale
+  // nel prima e nel dopo, così la differenza è tutta del turno.
+  const monte = candidateShift ? montePresunto(monthShiftsBefore, settings, year, month, oggi) : null;
+  const pieno = (lista) => (monte ? [...lista, monte.turno] : lista);
   if (rateAvailable) {
-    payMapBefore = computePayByShift(shiftsBefore, settings);
-    payBefore = calcTotalPay(monthShiftsBefore, settings, shiftsBefore, payMapBefore);
+    payMapBefore = computePayByShift(pieno(shiftsBefore), settings);
+    payBefore = calcTotalPay(pieno(monthShiftsBefore), settings, pieno(shiftsBefore), payMapBefore);
 
-    const payMapAfter = computePayByShift(shiftsAfter, settings);
-    payAfter = calcTotalPay(monthShiftsAfter, settings, shiftsAfter, payMapAfter);
+    const payMapAfter = computePayByShift(pieno(shiftsAfter), settings);
+    payAfter = calcTotalPay(pieno(monthShiftsAfter), settings, pieno(shiftsAfter), payMapAfter);
 
     deltaLordo = (payAfter?.total || 0) - (payBefore?.total || 0);
   }
@@ -132,6 +178,7 @@ export function calcolaCosaCambia({
   let deltaMargineBonus = 0;
   let superaSoglia = false;
   let rientraSottoSoglia = false;
+  let sogliaLorda = null;
 
   if (rateAvailable) {
     payMapBefore = computePayByShift(shiftsBefore, settings);
@@ -155,6 +202,7 @@ export function calcolaCosaCambia({
     deltaMargineBonus = margineBonusAfter - margineBonusBefore;
 
     superaSoglia = sotto(prima) && !sotto(dopo);
+    sogliaLorda = dopo.thresholdFullGross ?? null;
     rientraSottoSoglia = !sotto(prima) && sotto(dopo);
   }
 
@@ -175,5 +223,14 @@ export function calcolaCosaCambia({
     testoDeltaNetto: formatDeltaCurrency(deltaNetto),
     testoDeltaLordo: formatDeltaCurrency(deltaLordo),
     testoDeltaOre: formatDeltaMinutes(deltaMinuti),
+    // Di cui pagate in più: «+8h» da solo non dice se valgono il 100% o il 130%.
+    deltaSupplementareMin: (payAfter?.overtimeMinutes || 0) - (payBefore?.overtimeMinutes || 0),
+    deltaStraordinarioMin: (payAfter?.straordinarioMinutes || 0) - (payBefore?.straordinarioMinutes || 0),
+    montePresunto: monte ? { segnate: monte.segnate, contratto: monte.contratto } : null,
+    testoDiCui: testoDiCui(payAfter, payBefore),
+    testoMonte: monte && Math.round((payAfter?.overtimeMinutes || 0) - (payBefore?.overtimeMinutes || 0))
+      ? `Contate oltre le ${oreIt(monte.contratto)} h del contratto, date per scontate (finora ${oreIt(monte.segnate)} h): se non ci arrivi, sono ordinarie.`
+      : null,
+    sogliaLorda,
   };
 }
