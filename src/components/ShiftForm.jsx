@@ -660,7 +660,7 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
               <span className="cosa-cambia-ore">({cosaCambia.testoDeltaOre}{cosaCambia.testoDiCui && `, ${cosaCambia.testoDiCui}`})</span>
               {cosaCambia.testoMonte && <span className="cosa-cambia-nota">{cosaCambia.testoMonte}</span>}
               {cosaCambia.superaSoglia && (
-                <span className="cosa-cambia-avviso">⚠️ Supera la tua soglia lorda del tratt. integrativo (~{Math.round(cosaCambia.sogliaLorda).toLocaleString('it-IT')} €, 15.000 € di reddito)</span>
+                <span className="cosa-cambia-avviso">⚠️ Superi la soglia del tratt. integrativo: ~{Math.round(cosaCambia.sogliaLorda).toLocaleString('it-IT')} € lordi (15.000 di reddito)</span>
               )}
             </div>
           )}

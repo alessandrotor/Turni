@@ -137,9 +137,9 @@ assert(formatDeltaMinutes(-45) === '−45m', 'formatDeltaMinutes negativo solo m
   const avviata = prova(6);
   assert(avviata.montePresunto && Math.abs(avviata.deltaLordo - 104) < 0.01,
     `36 h segnate: le 8 ore valgono già il 130%, trovato ${avviata.deltaLordo}`);
-  assert(avviata.deltaSupplementareMin === 480 && avviata.testoDiCui === 'di cui 8h supplementari',
+  assert(avviata.deltaSupplementareMin === 480 && avviata.testoDiCui === 'di cui 8h suppl.',
     `e lo dice: «${avviata.testoDiCui}»`);
-  assert(/103,2 h/.test(avviata.testoMonte || '') && /36 h/.test(avviata.testoMonte || ''),
+  assert(/103,2 h/.test(avviata.testoMonte || '') && /ora 36/.test(avviata.testoMonte || ''),
     `e dice cosa ha presunto: «${avviata.testoMonte}»`);
   assert(prova(6, new Date(2026, 11, 7)).montePresunto === null, 'mese già chiuso: conta solo quello segnato');
   const oltre = prova(18);

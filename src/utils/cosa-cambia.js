@@ -58,9 +58,9 @@ function testoDiCui(dopo, prima) {
   const sup = (dopo?.overtimeMinutes || 0) - (prima?.overtimeMinutes || 0);
   const str = (dopo?.straordinarioMinutes || 0) - (prima?.straordinarioMinutes || 0);
   const parti = [];
-  if (Math.round(sup)) parti.push(`${durata(sup)} supplementari`);
-  if (Math.round(str)) parti.push(`${durata(str)} straordinarie`);
-  return parti.length ? `di cui ${parti.join(' e ')}` : null;
+  if (Math.round(sup)) parti.push(`${durata(sup)} suppl.`);
+  if (Math.round(str)) parti.push(`${durata(str)} straord.`);
+  return parti.length ? `di cui ${parti.join(', ')}` : null;
 }
 
 export function formatDeltaCurrency(val) {
@@ -229,7 +229,7 @@ export function calcolaCosaCambia({
     montePresunto: monte ? { segnate: monte.segnate, contratto: monte.contratto } : null,
     testoDiCui: testoDiCui(payAfter, payBefore),
     testoMonte: monte && Math.round((payAfter?.overtimeMinutes || 0) - (payBefore?.overtimeMinutes || 0))
-      ? `Contate oltre le ${oreIt(monte.contratto)} h del contratto, date per scontate (finora ${oreIt(monte.segnate)} h): se non ci arrivi, sono ordinarie.`
+      ? `Se arrivi alle ${oreIt(monte.contratto)} h del contratto (ora ${oreIt(monte.segnate)}).`
       : null,
     sogliaLorda,
   };
