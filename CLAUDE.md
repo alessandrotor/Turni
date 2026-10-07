@@ -4,9 +4,12 @@ PWA (React 18 + Vite, Capacitor per Android) che segna i turni e stima lordo e
 netto secondo le regole della busta paga italiana. Codice, commenti e interfaccia
 sono in italiano: scrivere nella stessa lingua.
 
-Branch di lavoro: `experimental`. **`Beta`** è experimental congelato: lì vanno
-solo le correzioni di difetti prima di passare in produzione, mai funzioni nuove,
-e ogni correzione fatta su `Beta` si riporta anche su `experimental`. I riscontri
+Branch di lavoro: `experimental`. **`Beta`** è experimental congelato, da
+rifinire prima della produzione: lì vanno le correzioni di difetti e i ritocchi
+piccoli — un testo più grande o più piccolo, una riga tolta o aggiunta, una
+parola, un colore. Non ci vanno funzioni nuove, comportamenti nuovi né cambi al
+motore: quelli su `experimental`. Ogni modifica fatta su `Beta` si riporta anche
+su `experimental`. I riscontri
 girano anche su `Beta` (`riscontri-beta.yml`), senza deploy. La produzione è un
 deploy manuale e può essere molto indietro rispetto al repository — prima di
 dire «è online» va guardato il sito, non il codice.
