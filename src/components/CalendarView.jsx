@@ -46,6 +46,7 @@ import { stimaConguaglio } from '../utils/conguaglio';
 import { numeroIt, euroCella, scriviForchetta } from '../utils/formato';
 import { PopupMese, PopupConguaglio, PopupSoglia } from './PopupFiscali';
 import RiquadroTI from './RiquadroTI';
+import NetPillole from './NetPillole';
 import { confrontoMontante } from '../utils/confronto-montante';
 import { lordoMeseMinimoTi } from '../utils/soglia-lorda';
 import { tipoDiErrore, TITOLO_ERRORE } from '../utils/errore-import';
@@ -440,15 +441,21 @@ export default function CalendarView({
   const montanteMismatch = !!confronto?.avvisa;
   const shiftsCovered = confronto?.lordoTurni ?? 0;
 
-  // Netto stimato del mese (beta): calcolo estratto in useMonthlyNet per
-  // leggibilità (logica invariata). Riceve pay del mese e reddito annuo.
+  // Netto stimato del mese (beta), in useMonthlyNet. Il tratt. integrativo si
+  // può simulare presente o assente, mese per mese, dal suo riquadro.
+  const [tiSimulati, setTiSimulati] = useState({});
+  const chiaveMese = `${year}-${String(month + 1).padStart(2, '0')}`;
   const {
     monthKey, perMonthBonus, fixedMonthlyTotal,
     netProjection, netBasis, extraThisMonth, monthGross,
-    netMonth, monthNet, monthTrattenute, monthTfr,
+    netMonth, netMonthSimulato, tiSePresente, monthNet, monthTfr,
     tiInfo, effectiveRatePct, addizionaliPct, showNetPanel: showNetPanelRaw,
     riferimento,
-  } = useMonthlyNet({ year, month, settings, pay, annualGross, annualExtras, daysInMonth, allShifts, payMap: payByShift });
+  } = useMonthlyNet({
+    year, month, settings, pay, annualGross, annualExtras, daysInMonth, allShifts, payMap: payByShift,
+    tiSimulato: tiSimulati[chiaveMese] ?? null,
+  });
+  const netVisto = netMonthSimulato || netMonth; // il riquadro del netto mostra la simulazione
   // Senza nemmeno un turno segnato nel mese non c'è niente da stimare: voci
   // fisse mensili o mensilità aggiuntive maturate da sole (senza turni)
   // farebbero comunque comparire trattamento integrativo/cuneo, dando
@@ -699,10 +706,10 @@ export default function CalendarView({
     setImportParsed(null);
   }
 
-  function handleMonthBonusToggle(e) {
+  function handleMonthBonusToggle() {
     if (!onUpdateSettings) return;
     const map = { ...(settings.monthlyBonus || {}) };
-    if (e.target.checked) map[monthKey] = true;
+    if (!bonusTakenThisMonth) map[monthKey] = true;
     else delete map[monthKey];
     onUpdateSettings({ monthlyBonus: map });
   }
@@ -1162,26 +1169,7 @@ export default function CalendarView({
         {/* Netto stimato del mese — beta (gated dal feature flag) */}
         {showNetPanel && (
           <div className="net-strip">
-            {/* Niente «Lordo del mese» in testa: è il totale della barra in alto,
-                ripeterlo qui era una cifra in più da leggere. */}
-
-            {monthlyBonusAmount > 0 && (
-              <div className="month-bonus-row">
-                <label className="check-row" htmlFor="month-bonus">
-                  <input
-                    id="month-bonus"
-                    type="checkbox"
-                    checked={bonusTakenThisMonth}
-                    onChange={handleMonthBonusToggle}
-                  />
-                  <span>
-                    Prenderò il bonus di {formatMonthYear(currentMonth)}
-                    {' '}<strong>(+{fmt0(monthlyBonusAmount)})</strong>
-                  </span>
-                </label>
-              </div>
-            )}
-
+            {/* Niente «Lordo del mese» in testa: è già nella barra in alto. */}
 
             <div className="net-strip-body">
               <span className="bonus-strip-label">
@@ -1195,39 +1183,19 @@ export default function CalendarView({
                   «Bonus +157» sommava trattamento integrativo e indennità
                   L. 207/24, proprio sotto la casella del premio chiamato
                   «bonus»: tre cose con un nome solo. */}
-              <span className="net-strip-value">{formatCurrency(monthNet)}</span>
-              {/* Il passaggio a pillole, una per voce e ognuna col nome della
-                  busta: Gemini proponeva «Bonus +101» per tratt. integrativo
-                  e indennità insieme, cioè la stessa confusione già tolta
-                  una volta (tre cose con un nome solo). */}
-              <div className="net-pillole">
-                <span className="net-pillola">
-                  <span className="net-pillola-nome">Lordo</span>
-                  <span className="net-pillola-cifra">{formatCurrency(monthGross)}</span>
-                </span>
-                <span className="net-pillola" title={`${effectiveRatePct.toFixed(1)}% del lordo`}>
-                  <span className="net-pillola-nome">Trattenute</span>
-                  <span className="net-pillola-cifra">−{formatCurrency(monthTrattenute)}</span>
-                </span>
-                {netMonth?.trattamentoIntegrativo > 0 && (
-                  <span className="net-pillola net-pillola--piu">
-                    <span className="net-pillola-nome">Tratt. integrativo</span>
-                    <span className="net-pillola-cifra">+{formatCurrency(netMonth.trattamentoIntegrativo)}</span>
-                  </span>
-                )}
-                {netMonth?.bonusCuneo > 0 && (
-                  <span className="net-pillola net-pillola--piu">
-                    <span className="net-pillola-nome">Indennità L. 207/24</span>
-                    <span className="net-pillola-cifra">+{formatCurrency(netMonth.bonusCuneo)}</span>
-                  </span>
-                )}
-                {monthTfr > 0 && (
-                  <span className="net-pillola net-pillola--piu">
-                    <span className="net-pillola-nome">TFR</span>
-                    <span className="net-pillola-cifra">+{formatCurrency(monthTfr)}</span>
-                  </span>
-                )}
-              </div>
+              <span className="net-strip-value">{formatCurrency(netVisto?.net ?? monthNet)}</span>
+              <NetPillole
+                lordo={monthGross} net={netVisto} effectiveRatePct={effectiveRatePct} tfr={monthTfr}
+                bonusImporto={monthlyBonusAmount} bonusPreso={bonusTakenThisMonth} onBonus={handleMonthBonusToggle}
+                tiCifra={tiSePresente} tiSimulato={netMonthSimulato != null}
+                tiAttivo={netVisto?.trattamentoIntegrativo > 0}
+                onTi={() => setTiSimulati((m) => {
+                  const vero = netMonth?.trattamentoIntegrativo > 0;
+                  const ora = m[chiaveMese] ?? vero;
+                  const { [chiaveMese]: _, ...altri } = m;
+                  return !ora === vero ? altri : { ...altri, [chiaveMese]: !ora };
+                })}
+              />
               {/* LA REGOLA DEL MESE, dove si vede il suo effetto. Ad agosto la
                   busta tratteneva 8,38 € di IRPEF e nessuno capiva perché: il
                   lordo × 12 superava i 15.000, e il programma paghe aveva
@@ -1238,7 +1206,8 @@ export default function CalendarView({
                   nel popup di «perché?» per chi lo vuole vedere. */}
               {netMonth?.esitoTi?.proiezione != null && (
                 <span className="bonus-strip-note">
-                  {tiNelMese ? <>Questo mese resti sotto i {numeroIt(TAX_2026.TI_SOGLIA_PIENO / 12)} € lordi: c'è il tratt. integrativo.</>
+                  {netMonthSimulato ? <>Simulazione: tocca il riquadro per tornare al calcolo.</>
+                    : tiNelMese ? <>Questo mese resti sotto i {numeroIt(TAX_2026.TI_SOGLIA_PIENO / 12)} € lordi: c'è il tratt. integrativo.</>
                     : netMonth.esitoTi.spetta ? <>Niente tratt. integrativo: la media dell'anno{netMonth.esitoTi.media != null && <>, ~{numeroIt(Math.round(netMonth.esitoTi.media))} € al mese,</>} è sotto i ~{numeroIt(minimoTi ?? 0)} € lordi che danno IRPEF da compensare.</>
                     : <>Questo mese superi i {numeroIt(TAX_2026.TI_SOGLIA_PIENO / 12)} € lordi: niente tratt. integrativo, ma meno IRPEF.</>}
                   {meseSiInverte && <strong> A dicembre si inverte.</strong>}{' '}
@@ -1276,35 +1245,35 @@ export default function CalendarView({
                       {vociOltreTurni.length > 0 && ' e voci fisse'}
                     </span>
                   </span>
-                  <span className="net-passo-cifra">{fmt0(netMonth.gross)}</span>
+                  <span className="net-passo-cifra">{fmt0(netVisto.gross)}</span>
                 </div>
                 <div className="net-passo">
                   <span className="net-passo-nome">
                     2. Trattenute
                     <span className="net-passo-sotto">contributi INPS e tasse</span>
                   </span>
-                  <span className="net-passo-cifra">−{fmt0(netMonth.trattenute)}</span>
+                  <span className="net-passo-cifra">−{fmt0(netVisto.trattenute)}</span>
                 </div>
-                {netMonth.bonus > 0 || netMonth.tfr > 0 ? (
+                {netVisto.bonus > 0 || netVisto.tfr > 0 ? (
                   <div className="net-passo net-passo--piu">
                     <span className="net-passo-nome">
                       3. In più in busta
                       <span className="net-passo-sotto">
                         {[
-                          netMonth.trattamentoIntegrativo > 0 && 'tratt. integrativo',
-                          netMonth.bonusCuneo > 0 && 'indennità L. 207/24',
-                          netMonth.tfr > 0 && 'anticipo TFR',
+                          netVisto.trattamentoIntegrativo > 0 && 'tratt. integrativo',
+                          netVisto.bonusCuneo > 0 && 'indennità L. 207/24',
+                          netVisto.tfr > 0 && 'anticipo TFR',
                         ].filter(Boolean).join(', ')}
                       </span>
                     </span>
                     <span className="net-passo-cifra">
-                      +{fmt0(netMonth.bonus + netMonth.tfr)}
+                      +{fmt0(netVisto.bonus + netVisto.tfr)}
                     </span>
                   </div>
                 ) : null}
                 <div className="net-passo net-passo--totale">
                   <span className="net-passo-nome">Netto stimato</span>
-                  <span className="net-passo-cifra">{fmt0(netMonth.net)}</span>
+                  <span className="net-passo-cifra">{fmt0(netVisto.net)}</span>
                 </div>
                 {proiezioneParziale && !showNetBusta && (
                   <div className="net-subnote net-subnote--warn">
@@ -1327,49 +1296,49 @@ export default function CalendarView({
               <div className="net-detail">
                 {/* Stile busta paga: un solo lordo in cima */}
                 <div className="net-line net-line--head">
-                  <span>Lordo del mese</span><span>{fmt0(netMonth.gross)}</span>
+                  <span>Lordo del mese</span><span>{fmt0(netVisto.gross)}</span>
                 </div>
 
                 <div className="net-group-label">Trattenute</div>
-                {netMonth.contributiRighe.map(r => (
+                {netVisto.contributiRighe.map(r => (
                   <div className="net-line net-line--ded" key={r.label}>
                     <span>{r.label}{r.pct != null && ` (${fmtPct(r.pct)}%)`}</span>
                     <span>−{fmt0(r.importo)}</span>
                   </div>
                 ))}
                 <div className="net-line net-line--info">
-                  <span>Imponibile fiscale</span><span>{fmt0(netMonth.imponibile)}</span>
+                  <span>Imponibile fiscale</span><span>{fmt0(netVisto.imponibile)}</span>
                 </div>
-                {netMonth.imponibileExtra > 0 && (
+                {netVisto.imponibileExtra > 0 && (
                   <div className="net-subnote">
-                    di cui {fmt0(netMonth.imponibileExtra)} di mensilità aggiuntiva, tassata a parte
-                    (aliquota {(netMonth.irpefExtra / netMonth.imponibileExtra * 100).toFixed(0)}%, senza detrazioni)
+                    di cui {fmt0(netVisto.imponibileExtra)} di mensilità aggiuntiva, tassata a parte
+                    (aliquota {(netVisto.irpefExtra / netVisto.imponibileExtra * 100).toFixed(0)}%, senza detrazioni)
                   </div>
                 )}
 
                 {/* IRPEF come in busta paga: lorda, detrazioni, netta */}
                 <div className="net-irpef-label">IRPEF</div>
                 <div className="net-line net-line--calc">
-                  <span>Lorda ({netMonth.imponibile > 0 ? (netMonth.irpefLorda / netMonth.imponibile * 100).toFixed(0) : 0}% dell'imponibile)</span>
-                  <span>{fmt0(netMonth.irpefLorda)}</span>
+                  <span>Lorda ({netVisto.imponibile > 0 ? (netVisto.irpefLorda / netVisto.imponibile * 100).toFixed(0) : 0}% dell'imponibile)</span>
+                  <span>{fmt0(netVisto.irpefLorda)}</span>
                 </div>
                 {/* Si mostra la quota CAPIENTE: quando la detrazione supera
                     l'imposta il conto resta giusto lo stesso, ma «157 − 161 = 0»
                     si legge come uno sbaglio. In busta compare la parte capiente. */}
                 <div className="net-line net-line--calc">
-                  <span>− Detrazioni lavoro dip.</span><span className="pos">−{fmt0(netMonth.detrazioniApplicate)}</span>
+                  <span>− Detrazioni lavoro dip.</span><span className="pos">−{fmt0(netVisto.detrazioniApplicate)}</span>
                 </div>
-                {netMonth.detrazioni - netMonth.detrazioniApplicate > 0.5 && (
+                {netVisto.detrazioni - netVisto.detrazioniApplicate > 0.5 && (
                   <div className="net-subnote">
-                    ne spetterebbero {fmt0(netMonth.detrazioni)}, ma l'imposta del mese è più
+                    ne spetterebbero {fmt0(netVisto.detrazioni)}, ma l'imposta del mese è più
                     bassa: la parte eccedente non si recupera qui
                   </div>
                 )}
                 <div className="net-line net-line--calc net-line--calc-strong">
-                  <span>= Netta (trattenuta)</span><span>−{fmt0(netMonth.irpefNetta)}</span>
+                  <span>= Netta (trattenuta)</span><span>−{fmt0(netVisto.irpefNetta)}</span>
                 </div>
 
-                {(netMonth.addRegionale + netMonth.addComunale) > 0 && (
+                {(netVisto.addRegionale + netVisto.addComunale) > 0 && (
                   <div className="net-line net-line--ded">
                     <span className="tooltip-wrap">
                       <button type="button" className="linklike" aria-describedby="net-tip-add">Addizionali reg./com.</button>
@@ -1379,25 +1348,25 @@ export default function CalendarView({
                       </span>
                       {' '}({addizionaliPct}%)
                     </span>
-                    <span>−{fmt0(netMonth.addRegionale + netMonth.addComunale)}</span>
+                    <span>−{fmt0(netVisto.addRegionale + netVisto.addComunale)}</span>
                   </div>
                 )}
-                {netMonth.trattenuteFisse > 0 && (
+                {netVisto.trattenuteFisse > 0 && (
                   <div className="net-line net-line--ded">
                     <span>Trattenute fisse</span>
-                    <span>−{fmt0(netMonth.trattenuteFisse)}</span>
+                    <span>−{fmt0(netVisto.trattenuteFisse)}</span>
                   </div>
                 )}
                 <div className="net-line net-line--subtotal">
-                  <span>Totale trattenute ({(netMonth.trattenute / netMonth.gross * 100).toFixed(1)}%)</span>
-                  <span>−{fmt0(netMonth.trattenute)}</span>
+                  <span>Totale trattenute ({(netVisto.trattenute / netVisto.gross * 100).toFixed(1)}%)</span>
+                  <span>−{fmt0(netVisto.trattenute)}</span>
                 </div>
 
                 {/* Competenze aggiuntive (quote mensili) */}
-                {(netMonth.bonus > 0 || netMonth.tfr > 0) && (
+                {(netVisto.bonus > 0 || netVisto.tfr > 0) && (
                   <>
                     <div className="net-group-label">Competenze in busta (a parte)</div>
-                    {netMonth.trattamentoIntegrativo > 0 && (
+                    {netVisto.trattamentoIntegrativo > 0 && (
                       <div className="net-line net-line--bonus">
                         <span className="tooltip-wrap">
                           <button type="button" className="linklike" aria-describedby="net-tip-ti">Trattamento integrativo</button>
@@ -1407,10 +1376,10 @@ export default function CalendarView({
                           </span>
                           {' '}(quota mese)
                         </span>
-                        <span>+{fmt0(netMonth.trattamentoIntegrativo)}</span>
+                        <span>+{fmt0(netVisto.trattamentoIntegrativo)}</span>
                       </div>
                     )}
-                    {netMonth.bonusCuneo > 0 && (
+                    {netVisto.bonusCuneo > 0 && (
                       <div className="net-line net-line--bonus">
                         <span className="tooltip-wrap">
                           <button type="button" className="linklike" aria-describedby="net-tip-cuneo">Indennità 207/2024</button>
@@ -1418,16 +1387,16 @@ export default function CalendarView({
                             Sconto sui contributi (legge di bilancio 2025) per redditi fino
                             a 40.000 €/anno: aumenta il netto senza toccare il lordo.
                           </span>
-                          {' '}({(netMonth.cuneoPct * 100).toFixed(1).replace('.', ',')}% dell'imponibile)
+                          {' '}({(netVisto.cuneoPct * 100).toFixed(1).replace('.', ',')}% dell'imponibile)
                         </span>
-                        <span>+{fmt0(netMonth.bonusCuneo)}</span>
+                        <span>+{fmt0(netVisto.bonusCuneo)}</span>
                       </div>
                     )}
-                    {netMonth.tfr > 0 && (
+                    {netVisto.tfr > 0 && (
                       <>
-                        <div className="net-line net-line--bonus"><span>Anticipo TFR (quota mese)</span><span>+{fmt0(netMonth.tfr)}</span></div>
+                        <div className="net-line net-line--bonus"><span>Anticipo TFR (quota mese)</span><span>+{fmt0(netVisto.tfr)}</span></div>
                         <div className="net-subnote">
-                          lordo {fmt0(netMonth.tfrLordo)} − imposta separata ~{(netMonth.aliqTfr * 100).toFixed(0)}% {fmt0(netMonth.tfrImposta)}
+                          lordo {fmt0(netVisto.tfrLordo)} − imposta separata ~{(netVisto.aliqTfr * 100).toFixed(0)}% {fmt0(netVisto.tfrImposta)}
                         </div>
                       </>
                     )}
@@ -1457,7 +1426,7 @@ export default function CalendarView({
                   </div>
                 )}
 
-                <div className="net-line net-line--total"><span>Netto del mese</span><span>{fmt0(netMonth.net)}</span></div>
+                <div className="net-line net-line--total"><span>Netto del mese</span><span>{fmt0(netVisto.net)}</span></div>
                 <p className="net-disclaimer">
                   Stima indicativa (fiscalità 2026). Le trattenute sono quelle vere della busta paga
                   (contributi + IRPEF netta + addizionali). Il trattamento integrativo (€1.200/anno)

@@ -28,7 +28,7 @@
 
 import { nettoDelMese, TAX_2026, deductibleContribRate } from '../src/utils/net.js';
 import { lordoMeseMinimoTi } from '../src/utils/soglia-lorda.js';
-import { capienzaProgressiva } from '../src/utils/capienza.js';
+import { capienzaProgressiva, nettoSimulandoTi } from '../src/utils/capienza.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {
@@ -79,6 +79,19 @@ const pieno = mese(1000);
 esito(pieno.trattamentoIntegrativo > 0 && !pieno.esitoTi.senzaCapienza, '1.000 €: c\'è', String(pieno.trattamentoIntegrativo));
 const alto = mese(1400);
 esito(!alto.esitoTi.spetta && !alto.esitoTi.senzaCapienza && alto.trattamentoIntegrativo === 0, '1.400 €: sopra la regola, niente');
+
+console.log('\nLa simulazione del riquadro (NetPillole)\n');
+// Toccare il riquadro forza il trattamento presente o assente: il netto deve
+// cambiare ESATTAMENTE della sua quota, e il resto della busta restare uguale.
+for (const lordo of [534.04, 1000, 1400]) {
+  const con = nettoSimulandoTi(lordo, TURISMO, 31, 0, null, true);
+  const senza = nettoSimulandoTi(lordo, TURISMO, 31, 0, null, false);
+  const vero = mese(lordo);
+  esito(con.trattamentoIntegrativo === mese(1000).trattamentoIntegrativo && senza.trattamentoIntegrativo === 0
+    && Math.abs(con.net - senza.net - con.trattamentoIntegrativo) < 0.005
+    && con.trattenute === vero.trattenute && senza.trattenute === vero.trattenute,
+    `${lordo} €: presente o assente, il netto cambia della sola quota`, `${con.net} / ${senza.net}`);
+}
 
 console.log(falliti ? `\n${falliti} riscontro/i FALLITO/I\n` : '\nTutto torna.\n');
 process.exit(falliti ? 1 : 0);

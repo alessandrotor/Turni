@@ -4,7 +4,7 @@ import {
 } from '../utils/net';
 import { ENABLE_NET_CALC } from '../config/features';
 import { progressiviDellAnno } from '../utils/conguaglio';
-import { capienzaProgressiva } from '../utils/capienza';
+import { capienzaProgressiva, nettoSimulandoTi } from '../utils/capienza';
 
 // Netto stimato del mese (beta): calcolato PARTENDO DAL MESE, come una busta
 // paga. Estratto da CalendarView per leggibilità — la logica è identica.
@@ -20,6 +20,7 @@ import { capienzaProgressiva } from '../utils/capienza';
 // tutti i valori derivati usati dal riepilogo.
 export default function useMonthlyNet({
   year, month, settings, pay, annualGross, annualExtras = 0, daysInMonth, allShifts = [], payMap,
+  tiSimulato = null,
 }) {
   const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
   const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
@@ -83,6 +84,21 @@ export default function useMonthlyNet({
       capienzaProgressiva(monthGross, settings, progressivo)) : null),
     [monthGross, settings, daysInMonth, extraThisMonth, progressivo],
   );
+  // UNA SIMULAZIONE del tratt. integrativo, per il solo riquadro del netto:
+  // `tiSimulato` true/false lo forza presente o assente (capienza compresa),
+  // `null` lascia decidere il motore. Tutto il resto — regola del mese,
+  // conguaglio, riquadro della soglia — resta su `netMonth`, quello vero.
+  const forzaTi = (presente) => nettoSimulandoTi(monthGross, settings, daysInMonth, extraThisMonth,
+    capienzaProgressiva(monthGross, settings, progressivo), presente);
+  // Quanto varrebbe, se ci fosse: la cifra del riquadro anche quando è spento.
+  const tiSePresente = useMemo(
+    () => (ENABLE_NET_CALC ? forzaTi(true).trattamentoIntegrativo : 0),
+    [settings, monthGross, daysInMonth, extraThisMonth, progressivo],
+  );
+  const netMonthSimulato = useMemo(
+    () => (ENABLE_NET_CALC && tiSimulato != null ? forzaTi(tiSimulato) : null),
+    [tiSimulato, settings, monthGross, daysInMonth, extraThisMonth, progressivo],
+  );
   const monthNet = netMonth ? netMonth.net : 0;
   const monthTrattenute = netMonth ? netMonth.trattenute : 0;
   const monthBonus = netMonth ? netMonth.bonus : 0;
@@ -100,7 +116,7 @@ export default function useMonthlyNet({
   return {
     monthKey, perMonthBonus, fixedMonthlyTotal,
     netProjection, netBasis, riferimento, extraThisMonth, monthGross,
-    netMonth, monthNet, monthTrattenute, monthBonus, monthTfr,
+    netMonth, netMonthSimulato, tiSePresente, monthNet, monthTrattenute, monthBonus, monthTfr,
     tiInfo, effectiveRatePct, addizionaliPct, showNetPanel,
   };
 }

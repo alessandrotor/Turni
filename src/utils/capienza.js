@@ -15,7 +15,7 @@
 // Indicato da chi mantiene il progetto, NON ancora riscontrato su una busta:
 // serve un mese basso dopo mesi pieni. → check-ti-capienza.mjs
 
-import { redditoComplessivo, irpefLorda, detrazioneLavoro, TAX_2026 } from './net.js';
+import { redditoComplessivo, irpefLorda, detrazioneLavoro, nettoDelMese, TAX_2026 } from './net.js';
 
 /**
  * @param {number} lordoMese lordo del mese
@@ -33,5 +33,25 @@ export function capienzaProgressiva(lordoMese, settings = {}, progressivo = null
   return {
     capiente: irpefLorda(reddito) > detrazioneLavoro(reddito) - TAX_2026.TI_CAPIENZA_SCONTO,
     media: Math.round(media * 100) / 100,
+  };
+}
+
+/**
+ * Il netto del mese col tratt. integrativo FORZATO presente o assente: la
+ * simulazione del suo riquadro nel netto (NetPillole.jsx). Cambia SOLO quella
+ * riga: forzare la decisione mensile spostava anche la fascia delle detrazioni
+ * (`riferimentoAnnuoDelMese`), e il netto si muoveva di 119 € per un
+ * trattamento di 102. La quota è quella che la busta stampa: 1.200 € sui
+ * giorni del mese, troncata. → check-ti-capienza.mjs
+ */
+export function nettoSimulandoTi(lordoMese, settings, giorniMese, extraMese, capienza, presente) {
+  const vero = nettoDelMese(lordoMese, settings, giorniMese, extraMese, capienza);
+  const quota = presente ? Math.floor(TAX_2026.TI_MASSIMO * (giorniMese / 365) * 100) / 100 : 0;
+  const delta = quota - vero.trattamentoIntegrativo;
+  return {
+    ...vero,
+    trattamentoIntegrativo: quota,
+    bonus: Math.round((vero.bonus + delta) * 100) / 100,
+    net: Math.round((vero.net + delta) * 100) / 100,
   };
 }

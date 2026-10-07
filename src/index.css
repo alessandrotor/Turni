@@ -2207,17 +2207,6 @@ input, select, textarea { font: inherit; }
 }
 
 
-.month-bonus-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: .75rem;
-  margin-top: .6rem;
-  padding-top: .6rem;
-  border-top: 1px solid var(--c-border);
-}
-
-
 /* Netto: raggruppamento a "busta paga" */
 .net-line--head {
   font-weight: 700;
@@ -2354,6 +2343,14 @@ input, select, textarea { font: inherit; }
   color: var(--c-text);
 }
 .net-pillola--piu .net-pillola-cifra { color: var(--c-success-text); }
+/* Voci che ci sono o no (NetPillole.jsx): spente, patina del non disponibile. */
+.net-pillola--mobile { font: inherit; cursor: pointer; border-style: dashed; border-color: var(--c-success);
+  transition: opacity .25s, filter .25s, background-color .25s, transform .12s; }
+.net-pillola--mobile:active { transform: scale(.96); }
+.net-pillola--spenta { opacity: .5; filter: grayscale(1); border-color: var(--c-border);
+  background: repeating-linear-gradient(135deg, var(--c-card) 0 6px, var(--c-bg) 6px 12px); }
+.net-pillola--spenta .net-pillola-cifra { text-decoration: line-through; }
+.net-pillola-sim { font-size: .72rem; font-weight: 700; text-transform: uppercase; color: var(--c-warning-text); }
 
 /* I tre passi: prima di «voce per voce». */
 .net-passi {
