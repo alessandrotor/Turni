@@ -116,11 +116,12 @@ assert(formatDeltaMinutes(-45) === '−45m', 'formatDeltaMinutes negativo solo m
     'e la striscia del bonus dice la stessa cosa');
 }
 
-// IL MONTE ORE DATO PER SCONTATO (Turismo, 24 h → 103,20 h al mese).
-// Un turno in più, a metà mese, vale già da supplementare: il datore le ore da
-// contratto le deve comunque. Ma solo nel mese in corso e con almeno una
-// settimana segnata; il prima e il dopo hanno lo stesso monte presunto, quindi
-// il delta è tutto del turno. Chi mantiene il progetto, ottobre 2026.
+// IL MONTE ORE DATO PER SCONTATO (Turismo, 24 h → 103,20 h al mese), ma come
+// SECONDA cifra. La prima resta sulle ore segnate, come la busta: presunta,
+// sommando uno a uno i turni normali di un agosto da 121 h, i riquadri
+// promettevano 93,5 h supplementari contro le 17,8 che la busta paga. La
+// seconda dice quanto vale il turno se a fine mese si superano le 103,20 h:
+// solo nel mese in corso e con almeno una settimana segnata.
 {
   const ST = { hourlyRate: 10, expectedWeeklyHours: 24, fullTimeWeeklyHours: 40, ccnl: 'turismo',
     overtimeSurchargePct: 30, periodoConteggio: 'calendario' };
@@ -133,20 +134,34 @@ assert(formatDeltaMinutes(-45) === '−45m', 'formatDeltaMinutes negativo solo m
   const prova = (n, oggi = OGGI) => calcolaCosaCambia({ candidateShift: otto, allShifts: giorni(n), settings: ST, oggi });
 
   const vuota = prova(2);
-  assert(vuota.montePresunto === null && vuota.deltaLordo === 80, `griglia quasi vuota: ordinario, trovato ${vuota.deltaLordo}`);
+  assert(vuota.testoMonte === null && vuota.deltaLordo === 80, `griglia quasi vuota: ordinario e basta, trovato ${vuota.deltaLordo}`);
   const avviata = prova(6);
-  assert(avviata.montePresunto && Math.abs(avviata.deltaLordo - 104) < 0.01,
-    `36 h segnate: le 8 ore valgono già il 130%, trovato ${avviata.deltaLordo}`);
-  assert(avviata.deltaSupplementareMin === 480 && avviata.testoDiCui === 'di cui 8h suppl.',
-    `e lo dice: «${avviata.testoDiCui}»`);
-  assert(/103,2 h/.test(avviata.testoMonte || '') && /ora 36/.test(avviata.testoMonte || ''),
-    `e dice cosa ha presunto: «${avviata.testoMonte}»`);
-  assert(prova(6, new Date(2026, 11, 7)).montePresunto === null, 'mese già chiuso: conta solo quello segnato');
+  assert(avviata.deltaLordo === 80 && avviata.testoDiCui === null,
+    `36 h segnate: la prima cifra resta ordinaria, come in busta (${avviata.deltaLordo})`);
+  assert(Math.abs(avviata.extraSePieno - 24) < 0.01 && /^\+24,00 € lordi .*103,2 h \(ora 36\)/.test(avviata.testoMonte || ''),
+    `la seconda è la maggiorazione del 30% e dice su cosa: «${avviata.testoMonte}»`);
+  assert(prova(6, new Date(2026, 11, 7)).testoMonte === null, 'mese già chiuso: niente seconda cifra');
   const oltre = prova(18);
-  assert(oltre.montePresunto === null && Math.abs(oltre.deltaLordo - 104) < 0.01, 'mese già oltre: supplementare vero');
-  const togli = calcolaCosaCambia({ candidateShift: null, originalShift: giorni(6)[5], allShifts: giorni(6), settings: ST, oggi: OGGI });
-  assert(togli.montePresunto === null && Math.abs(togli.deltaLordo + 60) < 0.01,
-    `togliere un turno conta sul mese segnato, senza presumere: trovato ${togli.deltaLordo}`);
+  assert(oltre.testoMonte === null && Math.abs(oltre.deltaLordo - 104) < 0.01 && oltre.testoDiCui === 'di cui 8h suppl.',
+    'mese già oltre: supplementare vero, nella prima cifra');
+
+  // Sommando i riquadri di un mese segnato turno per turno si ottiene
+  // esattamente il supplementare di fine mese: la prima cifra non promette
+  // niente che la busta non paghi.
+  const agosto = [];
+  for (let g = 1; g <= 31; g += 1) {
+    const d = new Date(2026, 7, g);
+    if (d.getDay() !== 0 && g !== 15) agosto.push(`2026-08-${String(g).padStart(2, '0')}`);
+  }
+  const turni = agosto.slice(0, 22).map((d) => ({ id: d, date: d, startTime: '10:00', endTime: '15:30' }));
+  let segnati = [];
+  let promesse = 0;
+  for (const t of turni) {
+    promesse += calcolaCosaCambia({ candidateShift: t, allShifts: segnati, settings: ST, oggi: new Date(2026, 7, 1) }).deltaSupplementareMin;
+    segnati = [...segnati, t];
+  }
+  assert(Math.abs(promesse / 60 - (22 * 5.5 - 103.2)) < 0.01,
+    `agosto turno per turno: ${(promesse / 60).toFixed(2)} h supplementari, la busta ne paga ${(22 * 5.5 - 103.2).toFixed(2)}`);
 }
 
 if (falliti === 0) {

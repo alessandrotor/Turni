@@ -127,50 +127,42 @@ export function calcolaCosaCambia({
   const minsAfter = monthShiftsAfter.reduce((acc, s) => acc + calcShiftMinutes(s), 0);
   const deltaMinuti = minsAfter - minsBefore;
 
-  // 4. Retribuzione lorda
+  // 4-5. Lordo e netto del mese, prima e dopo. Con `extra` (il monte ore
+  // presunto) si rifà lo stesso conto su un mese pieno: è la seconda cifra,
+  // «se arrivi alle 103,2 h», mai la prima. La prima resta sulle ore segnate,
+  // come la busta: presunta, sommando i turni normali di agosto uno a uno,
+  // prometteva 93,5 h supplementari contro 17,8 vere. → check-cosa-cambia.mjs
   const rateAvailable = hasAnyRate(settings);
-  let deltaLordo = 0;
-  let payBefore = null;
-  let payAfter = null;
-  let payMapBefore = null;
-
-  // Solo quando si aggiunge o si cambia un turno: lo stesso permesso virtuale
-  // nel prima e nel dopo, così la differenza è tutta del turno.
-  const monte = candidateShift ? montePresunto(monthShiftsBefore, settings, year, month, oggi) : null;
-  const pieno = (lista) => (monte ? [...lista, monte.turno] : lista);
-  if (rateAvailable) {
-    payMapBefore = computePayByShift(pieno(shiftsBefore), settings);
-    payBefore = calcTotalPay(pieno(monthShiftsBefore), settings, pieno(shiftsBefore), payMapBefore);
-
-    const payMapAfter = computePayByShift(pieno(shiftsAfter), settings);
-    payAfter = calcTotalPay(pieno(monthShiftsAfter), settings, pieno(shiftsAfter), payMapAfter);
-
-    deltaLordo = (payAfter?.total || 0) - (payBefore?.total || 0);
-  }
-
-  // 5. Netto del mese
-  let deltaNetto = 0;
-  let deltaTrattenute = 0;
-  let netBefore = null;
-  let netAfter = null;
-
-  if (rateAvailable && payBefore && payAfter) {
-    const daysInMonth = getDaysInMonth(year, month);
+  const daysInMonth = getDaysInMonth(year, month);
+  const conti = (extra = null) => {
+    const con = (lista) => (extra ? [...lista, extra] : lista);
+    const mapPrima = computePayByShift(con(shiftsBefore), settings);
+    const mapDopo = computePayByShift(con(shiftsAfter), settings);
+    const pagaPrima = calcTotalPay(con(monthShiftsBefore), settings, con(shiftsBefore), mapPrima);
+    const pagaDopo = calcTotalPay(con(monthShiftsAfter), settings, con(shiftsAfter), mapDopo);
     // Stessa composizione e stesso netto del pannello di Calendario: vedi
-    // `lordoDelMese` e `nettoDelMese` in net.js. Qui ce n'era una copia, ed era
-    // già rimasta indietro una volta sul formato del bonus.
-    const prima = lordoDelMese(payBefore.total, year, month, settings);
-    const dopo = lordoDelMese(payAfter.total, year, month, settings);
-    // I mesi prima non cambiano: un progressivo solo, per la capienza.
-    const prog = progressiviDellAnno({ anno: year, allShifts: shiftsBefore, settings, payMap: payMapBefore })[month];
-    netBefore = nettoDelMese(prima.lordo, settings, daysInMonth, prima.extraMese, capienzaProgressiva(prima.lordo, settings, prog));
-    netAfter = nettoDelMese(dopo.lordo, settings, daysInMonth, dopo.extraMese, capienzaProgressiva(dopo.lordo, settings, prog));
+    // `lordoDelMese` e `nettoDelMese` in net.js. I mesi prima non cambiano: un
+    // progressivo solo, per la capienza.
+    const prima = lordoDelMese(pagaPrima?.total, year, month, settings);
+    const dopo = lordoDelMese(pagaDopo?.total, year, month, settings);
+    const prog = progressiviDellAnno({ anno: year, allShifts: shiftsBefore, settings, payMap: mapPrima })[month];
+    const netto = (l) => nettoDelMese(l.lordo, settings, daysInMonth, l.extraMese, capienzaProgressiva(l.lordo, settings, prog));
+    return { pagaPrima, pagaDopo, nettoPrima: netto(prima), nettoDopo: netto(dopo) };
+  };
+  const monte = candidateShift ? montePresunto(monthShiftsBefore, settings, year, month, oggi) : null;
+  const vero = rateAvailable ? conti() : null;
+  const pieno = rateAvailable && monte ? conti(monte.turno) : null;
 
-    if (netBefore && netAfter) {
-      deltaNetto = netAfter.net - netBefore.net;
-      deltaTrattenute = netAfter.trattenute - netBefore.trattenute;
-    }
-  }
+  const payBefore = vero?.pagaPrima ?? null;
+  const payAfter = vero?.pagaDopo ?? null;
+  const netBefore = vero?.nettoPrima ?? null;
+  const netAfter = vero?.nettoDopo ?? null;
+  const deltaLordo = (payAfter?.total || 0) - (payBefore?.total || 0);
+  const deltaNetto = netBefore && netAfter ? netAfter.net - netBefore.net : 0;
+  const deltaTrattenute = netBefore && netAfter ? netAfter.trattenute - netBefore.trattenute : 0;
+  // In LORDO: è la sola maggiorazione in più. Il netto di un mese pieno ha
+  // un'altra aliquota, e «+76 € se superi» accanto a «+77 €» sembrava peggio.
+  const extraSePieno = pieno ? (pieno.pagaDopo?.total || 0) - (pieno.pagaPrima?.total || 0) - deltaLordo : 0;
 
   // 6. Proiezione annua e Margine Trattamento Integrativo
   let margineBonusBefore = null;
@@ -181,7 +173,7 @@ export function calcolaCosaCambia({
   let sogliaLorda = null;
 
   if (rateAvailable) {
-    payMapBefore = computePayByShift(shiftsBefore, settings);
+    const payMapBefore = computePayByShift(shiftsBefore, settings);
     const annualBefore = computeAnnualGrossFromShifts(year, shiftsBefore, settings, payMapBefore);
     const projBefore = projectAnnualIncome(annualBefore.total, annualBefore.extras, settings, year);
 
@@ -228,8 +220,9 @@ export function calcolaCosaCambia({
     deltaStraordinarioMin: (payAfter?.straordinarioMinutes || 0) - (payBefore?.straordinarioMinutes || 0),
     montePresunto: monte ? { segnate: monte.segnate, contratto: monte.contratto } : null,
     testoDiCui: testoDiCui(payAfter, payBefore),
-    testoMonte: monte && Math.round((payAfter?.overtimeMinutes || 0) - (payBefore?.overtimeMinutes || 0))
-      ? `Se arrivi alle ${oreIt(monte.contratto)} h del contratto (ora ${oreIt(monte.segnate)}).`
+    extraSePieno,
+    testoMonte: extraSePieno >= 0.01
+      ? `${formatDeltaCurrency(extraSePieno)} lordi se a fine mese superi le ${oreIt(monte.contratto)} h (ora ${oreIt(monte.segnate)})`
       : null,
     sogliaLorda,
   };
