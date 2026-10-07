@@ -128,10 +128,11 @@ export function calcolaCosaCambia({
   const deltaMinuti = minsAfter - minsBefore;
 
   // 4-5. Lordo e netto del mese, prima e dopo. Con `extra` (il monte ore
-  // presunto) si rifà lo stesso conto su un mese pieno: è la seconda cifra,
-  // «se arrivi alle 103,2 h», mai la prima. La prima resta sulle ore segnate,
-  // come la busta: presunta, sommando i turni normali di agosto uno a uno,
-  // prometteva 93,5 h supplementari contro 17,8 vere. → check-cosa-cambia.mjs
+  // presunto) il conto si fa su un mese pieno: è la cifra principale, perché
+  // un turno in più, fino a prova contraria, è supplementare. Accanto si dice
+  // quanto vale in meno se a fine mese le 103,2 h non arrivano. Le cifre del
+  // CALENDARIO restano sulle ore segnate: sono quelle che tornano con la busta.
+  // → check-cosa-cambia.mjs
   const rateAvailable = hasAnyRate(settings);
   const daysInMonth = getDaysInMonth(year, month);
   const conti = (extra = null) => {
@@ -153,16 +154,18 @@ export function calcolaCosaCambia({
   const vero = rateAvailable ? conti() : null;
   const pieno = rateAvailable && monte ? conti(monte.turno) : null;
 
-  const payBefore = vero?.pagaPrima ?? null;
-  const payAfter = vero?.pagaDopo ?? null;
-  const netBefore = vero?.nettoPrima ?? null;
-  const netAfter = vero?.nettoDopo ?? null;
+  const scelto = pieno || vero;
+  const payBefore = scelto?.pagaPrima ?? null;
+  const payAfter = scelto?.pagaDopo ?? null;
+  const netBefore = scelto?.nettoPrima ?? null;
+  const netAfter = scelto?.nettoDopo ?? null;
   const deltaLordo = (payAfter?.total || 0) - (payBefore?.total || 0);
   const deltaNetto = netBefore && netAfter ? netAfter.net - netBefore.net : 0;
   const deltaTrattenute = netBefore && netAfter ? netAfter.trattenute - netBefore.trattenute : 0;
-  // In LORDO: è la sola maggiorazione in più. Il netto di un mese pieno ha
-  // un'altra aliquota, e «+76 € se superi» accanto a «+77 €» sembrava peggio.
-  const extraSePieno = pieno ? (pieno.pagaDopo?.total || 0) - (pieno.pagaPrima?.total || 0) - deltaLordo : 0;
+  // In LORDO: è la sola maggiorazione. Il netto di un mese pieno ha un'altra
+  // aliquota, e due netti accanto si leggevano come una contraddizione.
+  const lordoSoloSegnate = vero ? (vero.pagaDopo?.total || 0) - (vero.pagaPrima?.total || 0) : 0;
+  const menoSeNonArrivi = pieno ? deltaLordo - lordoSoloSegnate : 0;
 
   // 6. Proiezione annua e Margine Trattamento Integrativo
   let margineBonusBefore = null;
@@ -220,9 +223,9 @@ export function calcolaCosaCambia({
     deltaStraordinarioMin: (payAfter?.straordinarioMinutes || 0) - (payBefore?.straordinarioMinutes || 0),
     montePresunto: monte ? { segnate: monte.segnate, contratto: monte.contratto } : null,
     testoDiCui: testoDiCui(payAfter, payBefore),
-    extraSePieno,
-    testoMonte: extraSePieno >= 0.01
-      ? `${formatDeltaCurrency(extraSePieno)} lordi se a fine mese superi le ${oreIt(monte.contratto)} h (ora ${oreIt(monte.segnate)})`
+    menoSeNonArrivi,
+    testoMonte: menoSeNonArrivi >= 0.01
+      ? `Se a fine mese non arrivi a ${oreIt(monte.contratto)} h (ora ${oreIt(monte.segnate)}): ${formatDeltaCurrency(-menoSeNonArrivi)} lordi.`
       : null,
     sogliaLorda,
   };
