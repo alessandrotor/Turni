@@ -1,0 +1,38 @@
+# Il cancello dei riscontri sul branch `Beta`, senza deploy.
+#
+# `Beta` è experimental «congelato»: lì si fanno solo correzioni prima di
+# portarlo in produzione (che resta un deploy manuale da `main`). Una
+# correzione che rompe un riscontro deve diventare rossa qui, prima di
+# arrivare a chi usa l'app. Stessa build e stessi riscontri del sito di prova
+# (deploy-test.yml), compreso il controllo del pacchetto costruito.
+
+name: Riscontri Beta
+
+on:
+  push:
+    branches: [Beta]
+
+permissions:
+  contents: read
+
+jobs:
+  riscontri:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build (come in produzione, telemetria OFF)
+        run: npm run build
+        env:
+          VITE_AI_PROXY_URL: ${{ vars.VITE_AI_PROXY_URL }}
+          VITE_TURNSTILE_SITEKEY: ${{ vars.VITE_TURNSTILE_SITEKEY }}
+
+      - name: Riscontri
+        run: npm run riscontri
