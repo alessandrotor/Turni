@@ -27,7 +27,9 @@ function Mobile({ nome, cifra, attivo, simulato, onTocca, titolo, nelLordo = fal
     >
       <span className="net-pillola-nome">{nome}</span>
       <span className="net-pillola-cifra">{nelLordo ? '' : '+'}{formatCurrency(cifra)}</span>
-      {simulato && <span className="net-pillola-sim">simulato</span>}
+      {/* Solo acceso: spento, la patina dice già tutto, e «simulato» sotto una
+          cifra barrata era una scritta in più da leggere. */}
+      {simulato && attivo && <span className="net-pillola-sim">simulato</span>}
       {nelLordo && <span className="net-pillola-sim">nel lordo</span>}
     </button>
   );
