@@ -23,6 +23,15 @@
 // ripiego senza storico, perché è la regola di legge (D.Lgs. 66/2003, art. 9).
 // Il giorno tolto resta nell'elenco con scritto «riposo», e si rispunta.
 //
+// LE FESTIVITÀ, uguale e per la stessa ragione: il CCNL Turismo esclude dal
+// computo delle ferie «le giornate di riposo settimanale e le festività
+// nazionali e infrasettimanali», e le ferie si allungano di altrettanti giorni
+// (art. 134 nel testo Fipe/Federalberghi, 116 nella versione Confsal). In busta
+// quel giorno è una festività, un giustificativo a sé (check-festivita.mjs), e
+// l'app la propone da sola dove non c'è un turno (festivita-non-lavorate.js).
+// Le ex festività soppresse NON si toccano: non è chiaro che ogni versione del
+// contratto le escluda, e `isHoliday` non le conosce.
+//
 // QUANTO VALE UNA GIORNATA
 // Le ore da contratto, uguali per ogni giorno — non le ore di un turno che
 // verrebbe convertito: un turnista in ferie non ha turni segnati che diventano
@@ -35,6 +44,7 @@
 // Estensioni esplicite: senza, Node puro non importa il modulo e i riscontri in
 // `scripts/` non partono.
 import { isIsoDate, parseDate, formatDate, dayNumber } from './dates.js';
+import { isHoliday } from './holidays.js';
 import { minutiGiornoAssenza, isAssenza, GIORNI_LAVORATIVI_DEFAULT } from './assenze.js';
 
 // Turni sotto cui lo storico non dice niente: meno di quattro settimane da sei
@@ -112,8 +122,9 @@ export function proponiPeriodo({ dal, al, turni = [], settings = {} } = {}) {
 
   const riposi = giorniDiRiposo(turni, settings);
   return giorniPeriodo(dal, al).map(data => {
-    const riposo = riposi.includes(parseDate(data).getDay());
-    return { data, minuti, turnoEsistente: perData.get(data) || null, selezionato: !riposo, riposo };
+    const festivita = isHoliday(data, settings);
+    const riposo = !festivita && riposi.includes(parseDate(data).getDay());
+    return { data, minuti, turnoEsistente: perData.get(data) || null, selezionato: !riposo && !festivita, riposo, festivita };
   });
 }
 

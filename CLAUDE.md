@@ -427,7 +427,9 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   di riposo ogni settimana già tolto, il giorno in cui lo storico lavora meno
   (la domenica solo senza storico: nel Turismo chi fa turni la lavora spesso).
   Tutti selezionati, settembre 2026 contava 13 giorni di ferie invece di 11 e
-  il netto stimato usciva 53 € sopra la busta. `giorniDiRiposo()`,
+  il netto stimato usciva 53 € sopra la busta. Lo stesso per le **festività**:
+  il CCNL Turismo le esclude dal computo delle ferie (art. 134
+  Fipe/Federalberghi), e in busta sono una festività. `giorniDiRiposo()`,
   → `check-periodo-assenza.mjs`
 - **Malattia**: la carenza si conta per EVENTO, non per anno. Percentuali e
   giorni NON sono verificati su nessun cedolino, e **le buste che la contengono
