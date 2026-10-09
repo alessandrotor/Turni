@@ -120,6 +120,21 @@ const settembre = ferie.filter(r => r.selezionato && r.data >= '2026-09-01');
 verifica('31 ago – 13 set: giorni di ferie a settembre', settembre.length, 11, 'due riposi, uno a settimana');
 verifica('  e non sono le domeniche', ferie.filter(r => r.riposo).map(r => r.data), ['2026-09-01', '2026-09-08'], 'i martedì, come nello storico');
 
+// LE FESTIVITÀ dentro le ferie: CCNL Turismo, «dal computo delle ferie si
+// escludono le giornate di riposo settimanale e le festività nazionali e
+// infrasettimanali» (art. 134 Fipe/Federalberghi, 116 Confsal). In busta sono
+// una festività, giustificativo a sé (check-festivita.mjs).
+console.log('\nLe festività dentro le ferie\n');
+const agosto = proponiPeriodo({ dal: '2026-08-10', al: '2026-08-23', turni: storico, settings });
+verifica('10–23 agosto: Ferragosto non è ferie', agosto.find(r => r.data === '2026-08-15')?.selezionato, false, 'festività nazionale');
+verifica('  e si dice perché', agosto.find(r => r.data === '2026-08-15')?.festivita, true, '');
+verifica('  ferie: 14 giorni − 2 riposi − Ferragosto', agosto.filter(r => r.selezionato).length, 11, '');
+const patrono = proponiPeriodo({ dal: '2026-06-29', al: '2026-06-29', turni: [], settings: { ...settings, patronSaintDate: '06-29' } });
+verifica('il santo patrono impostato conta', patrono[0].selezionato, false, '29 giugno a Roma');
+const conRiposo = proponiPeriodo({ dal: '2026-12-21', al: '2026-12-27', turni: [], settings });
+verifica('settimana di Natale: due festività e il riposo', conRiposo.filter(r => !r.selezionato).map(r => r.data),
+  ['2026-12-25', '2026-12-26', '2026-12-27'], 'Natale, S. Stefano e la domenica');
+
 
 
 
