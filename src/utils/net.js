@@ -480,7 +480,7 @@ export function lordoDelMese(pagaTurni, anno, mese, settings = {}, { enableNetCa
           ? extraMonthAccrual('tredicesima', anno, settings) : 0)
       )
     : 0;
-  return { lordo: (Number(pagaTurni) || 0) + extraMese + vociFisse + bonus, extraMese };
+  return { lordo: (Number(pagaTurni) || 0) + extraMese + vociFisse + bonus, extraMese, premioMese: settings.bonusPremioRisultato ? bonus : 0 };
 }
 
 /**

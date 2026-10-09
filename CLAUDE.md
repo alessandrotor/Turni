@@ -267,6 +267,11 @@ diceva «superi i 15.000» e l'altro «resti sotto».
 - **Se sembra necessario fare altrimenti, si chiede prima a chi mantiene il
   progetto.** Non si decide da soli.
 
+**Il motore deve poter uscire da qui**: in un'altra app, senza il Turismo, lo
+Zucchetti, il 2026 o i dati di una persona. Il piano è in
+`docs/motore-portabile.md`; finché non è fatto, non aggiungere al motore import
+dal browser o da `src/config`, né nuovi `new Date()` predefiniti.
+
 ## La regola che conta più di tutte
 
 **Nessun numero di dominio entra nel motore senza un riscontro.** Ogni fatto

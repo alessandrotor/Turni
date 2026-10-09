@@ -45,7 +45,11 @@ export function capienzaProgressiva(lordoMese, settings = {}, progressivo = null
  * giorni del mese, troncata. → check-ti-capienza.mjs
  */
 export function nettoSimulandoTi(lordoMese, settings, giorniMese, extraMese, capienza, presente) {
-  const vero = nettoDelMese(lordoMese, settings, giorniMese, extraMese, capienza);
+  return simulaTi(nettoDelMese(lordoMese, settings, giorniMese, extraMese, capienza), giorniMese, presente);
+}
+
+/** Lo stesso, partendo da un netto già calcolato (anche col premio di risultato). */
+export function simulaTi(vero, giorniMese, presente) {
   const quota = presente ? Math.floor(TAX_2026.TI_MASSIMO * (giorniMese / 365) * 100) / 100 : 0;
   const delta = quota - vero.trattamentoIntegrativo;
   return {

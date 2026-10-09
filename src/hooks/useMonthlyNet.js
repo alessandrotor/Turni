@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 import {
-  nettoDelMese, lordoDelMese, riferimentoAnnuoDelMese, TAX_2026, tiDecision, projectAnnualIncome,
+  lordoDelMese, riferimentoAnnuoDelMese, TAX_2026, tiDecision, projectAnnualIncome,
 } from '../utils/net';
 import { ENABLE_NET_CALC } from '../config/features';
 import { progressiviDellAnno } from '../utils/conguaglio';
-import { capienzaProgressiva, nettoSimulandoTi } from '../utils/capienza';
+import { capienzaProgressiva, simulaTi } from '../utils/capienza';
+import { nettoDelMeseConPremio } from '../utils/premio-risultato';
 
 // Netto stimato del mese (beta): calcolato PARTENDO DAL MESE, come una busta
 // paga. Estratto da CalendarView per leggibilità — la logica è identica.
@@ -54,9 +55,10 @@ export default function useMonthlyNet({
   // in `lordoDelMese`, la stessa di Statistiche, di «cosa cambia» e del
   // confronto con la busta. Voci fisse e bonus restano calcolati qui sopra
   // perché il riepilogo li mostra uno per uno.
-  const { lordo: monthGross, extraMese: extraThisMonth } = lordoDelMese(
+  const meseLordo = lordoDelMese(
     pay?.total, year, month, settings, { enableNetCalc: ENABLE_NET_CALC },
   );
+  const { lordo: monthGross, extraMese: extraThisMonth, premioMese } = meseLordo;
   // IL RIFERIMENTO DEL MESE, non quello dell'anno.
   //
   // Il software paghe non proietta l'anno: prende il lordo del mese, lo
@@ -78,26 +80,25 @@ export default function useMonthlyNet({
     () => (ENABLE_NET_CALC ? progressiviDellAnno({ anno: year, allShifts, settings, payMap: payMap || {} })[month] : null),
     [year, month, allShifts, settings, payMap],
   );
-  // Statistiche passa dalla stessa funzione: vedi `nettoDelMese`.
+  // Statistiche passa dalla stessa funzione: vedi `nettoDelMeseConPremio`.
   const netMonth = useMemo(
-    () => (ENABLE_NET_CALC ? nettoDelMese(monthGross, settings, daysInMonth, extraThisMonth,
-      capienzaProgressiva(monthGross, settings, progressivo)) : null),
-    [monthGross, settings, daysInMonth, extraThisMonth, progressivo],
+    () => (ENABLE_NET_CALC ? nettoDelMeseConPremio({ lordo: monthGross, extraMese: extraThisMonth, premioMese },
+      settings, daysInMonth, year, capienzaProgressiva(monthGross - premioMese, settings, progressivo)) : null),
+    [monthGross, extraThisMonth, premioMese, settings, daysInMonth, year, progressivo],
   );
   // UNA SIMULAZIONE del tratt. integrativo, per il solo riquadro del netto:
   // `tiSimulato` true/false lo forza presente o assente (capienza compresa),
   // `null` lascia decidere il motore. Tutto il resto — regola del mese,
   // conguaglio, riquadro della soglia — resta su `netMonth`, quello vero.
-  const forzaTi = (presente) => nettoSimulandoTi(monthGross, settings, daysInMonth, extraThisMonth,
-    capienzaProgressiva(monthGross, settings, progressivo), presente);
+  const forzaTi = (presente) => (netMonth ? simulaTi(netMonth, daysInMonth, presente) : null);
   // Quanto varrebbe, se ci fosse: la cifra del riquadro anche quando è spento.
   const tiSePresente = useMemo(
-    () => (ENABLE_NET_CALC ? forzaTi(true).trattamentoIntegrativo : 0),
-    [settings, monthGross, daysInMonth, extraThisMonth, progressivo],
+    () => (ENABLE_NET_CALC ? forzaTi(true)?.trattamentoIntegrativo || 0 : 0),
+    [netMonth, daysInMonth],
   );
   const netMonthSimulato = useMemo(
     () => (ENABLE_NET_CALC && tiSimulato != null ? forzaTi(tiSimulato) : null),
-    [tiSimulato, settings, monthGross, daysInMonth, extraThisMonth, progressivo],
+    [tiSimulato, netMonth, daysInMonth],
   );
   const monthNet = netMonth ? netMonth.net : 0;
   const monthTrattenute = netMonth ? netMonth.trattenute : 0;

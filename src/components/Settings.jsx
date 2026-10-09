@@ -6,7 +6,7 @@ import { isTelemetryEnabled, setTelemetryEnabled, telemetriaDisponibile } from '
 import { esportaBackup, leggiBackup, applicaBackup, contaTurniSalvati } from '../services/backup';
 import { ESITO } from '../services/export';
 import CcnlPicker from './CcnlPicker';
-import SezionePrevidenza, { formPrevidenza, salvaPrevidenza } from './SezionePrevidenza';
+import SezionePrevidenza, { formPrevidenza, salvaPrevidenza, PremioRisultato } from './SezionePrevidenza';
 import { statoConfigurazione } from '../utils/configurazione';
 import { modoTrattamentoIntegrativo } from '../utils/net';
 import { elencoOrariDaCorreggere, applicaCorrezioneOrari } from '../services/correzioni';
@@ -1808,6 +1808,7 @@ export default function Settings({ settings, onSave }) {
               scaglioni): l'importo è sempre lo stesso, imposta qui una volta sola. Dal calendario
               poi spunti i mesi in cui l'hai preso.
             </p>
+            {Number(parseNum(form.monthlyBonusAmount)) > 0 && <PremioRisultato form={form} setCheck={setCheck} />}
           </div>
         </details>
 

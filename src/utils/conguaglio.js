@@ -51,8 +51,9 @@
 
 import { calcTotalPay } from './pay.js';
 import { capienzaProgressiva } from './capienza.js';
+import { nettoDelMeseConPremio } from './premio-risultato.js';
 import {
-  nettoDelMese, lordoDelMese, calcNetAnnual, monthlyBaseGross, TAX_2026,
+  lordoDelMese, calcNetAnnual, monthlyBaseGross, TAX_2026,
   tiSpettaQuestoMese, modoTrattamentoIntegrativo,
 } from './net.js';
 import { getDaysInMonth, parseDate } from './dates.js';
@@ -70,19 +71,22 @@ const r2 = (n) => Math.round(n * 100) / 100;
  *   `lordo` 0 fuori dal rapporto di lavoro.
  * @param {object} settings
  */
-export function saldoConguaglio(mesi, settings = {}, { tiMontanteNoto = null, irpefMontanteNota = null } = {}) {
+export function saldoConguaglio(mesi, settings = {}, { tiMontanteNoto = null, irpefMontanteNota = null, anno = new Date().getFullYear() } = {}) {
   let cuneo = 0, lordoAnno = 0, giorni = 0, conLordo = 0;
   const irpefMesi = [];
   const tiMesi = mesi.map((m, i) => {
     irpefMesi[i] = 0;
     if (!(m.lordo > 0)) return 0;
     // La capienza sul progressivo, come nel calendario (capienza.js).
-    const cap = capienzaProgressiva(m.lordo, settings, { lordo: lordoAnno, mesi: conLordo });
-    const n = nettoDelMese(m.lordo, settings, m.giorni, m.extra || 0, cap);
+    // Il premio di risultato è tassato a parte (premio-risultato.js): fuori
+    // dall'IRPEF dell'anno e dal reddito su cui si misura la capienza.
+    const premio = Number(m.premio) || 0;
+    const cap = capienzaProgressiva(m.lordo - premio, settings, { lordo: lordoAnno, mesi: conLordo });
+    const n = nettoDelMeseConPremio({ lordo: m.lordo, extraMese: m.extra || 0, premioMese: premio }, settings, m.giorni, anno, cap);
     conLordo += 1;
     irpefMesi[i] = n.irpefNetta;
     cuneo += n.bonusCuneo;
-    lordoAnno += m.lordo;
+    lordoAnno += m.lordo - premio;
     giorni += m.giorni;
     return n.trattamentoIntegrativo;
   });
@@ -216,8 +220,8 @@ export function mesiDellAnno({
     const paga = pagaDi(m);
     const effettiva = m < meseOggi ? paga : Math.max(paga, futuro);
     if (m < meseOggi && paga === 0) mesiVuoti += 1;
-    const { lordo, extraMese } = lordoDelMese(effettiva, anno, m, settings);
-    mesi.push({ lordo, extra: extraMese, giorni: lordo > 0 ? giorni : 0 });
+    const { lordo, extraMese, premioMese } = lordoDelMese(effettiva, anno, m, settings);
+    mesi.push({ lordo, extra: extraMese, premio: premioMese, giorni: lordo > 0 ? giorni : 0 });
   }
   // LA PROIEZIONE DEL MOTORE, non una somma rifatta qui. Con `totaleAnno` (il
   // valore di `projectAnnualIncome`, lo stesso del riquadro del bonus) i mesi
@@ -307,7 +311,7 @@ export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi = new 
         totaleAnno: scenario === 'proiezione' ? proiezioneAnnua : null,
       });
       ({ mesiVuoti, meseOggi, cutoffIdx } = esito);
-      const s = saldoConguaglio(esito.mesi, settings, { tiMontanteNoto: noto, irpefMontanteNota: irpefNota });
+      const s = saldoConguaglio(esito.mesi, settings, { tiMontanteNoto: noto, irpefMontanteNota: irpefNota, anno });
       if (s.lordoAnno <= 0) return null;
       casi.push(s.saldo);
       if (scenario === centro && !montanteAlterno) { centrale = s; mesiCentrale = esito.mesi; }

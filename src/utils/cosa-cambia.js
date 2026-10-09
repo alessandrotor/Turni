@@ -12,13 +12,13 @@
 
 import { calcShiftMinutes, calcTotalPay, computePayByShift, hasAnyRate } from './pay.js';
 import {
-  nettoDelMese,
   lordoDelMese,
   computeAnnualGrossFromShifts,
   projectAnnualIncome,
 } from './net.js';
 import { progressiviDellAnno } from './conguaglio.js';
 import { capienzaProgressiva } from './capienza.js';
+import { nettoDelMeseConPremio } from './premio-risultato.js';
 import { calcBonusMargin, BONUS_STATUS } from './bonus.js';
 import { getDaysInMonth } from './dates.js';
 import { isMensilizzato, monthlyContractHours } from './ccnl.js';
@@ -147,7 +147,7 @@ export function calcolaCosaCambia({
     const prima = lordoDelMese(pagaPrima?.total, year, month, settings);
     const dopo = lordoDelMese(pagaDopo?.total, year, month, settings);
     const prog = progressiviDellAnno({ anno: year, allShifts: shiftsBefore, settings, payMap: mapPrima })[month];
-    const netto = (l) => nettoDelMese(l.lordo, settings, daysInMonth, l.extraMese, capienzaProgressiva(l.lordo, settings, prog));
+    const netto = (l) => nettoDelMeseConPremio(l, settings, daysInMonth, year, capienzaProgressiva(l.lordo - l.premioMese, settings, prog));
     return { pagaPrima, pagaDopo, nettoPrima: netto(prima), nettoDopo: netto(dopo) };
   };
   const monte = candidateShift ? montePresunto(monthShiftsBefore, settings, year, month, oggi) : null;
