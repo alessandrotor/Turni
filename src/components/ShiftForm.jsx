@@ -411,7 +411,7 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
                           <span className="periodo-giorno-nota">
                             {r.turnoEsistente
                               ? `sostituisce ${r.turnoEsistente.startTime ?? ''}${r.turnoEsistente.startTime ? '–' : ''}${r.turnoEsistente.endTime ?? 'turno'}`
-                              : ''}
+                              : (r.riposo ? 'riposo' : '')}
                           </span>
                         </li>
                       );
