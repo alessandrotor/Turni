@@ -33,6 +33,15 @@ const FIXED = [
   [12, 26], // Santo Stefano
 ];
 
+// FESTIVITÀ CON UN ANNO D'INIZIO: [mese, giorno, primo anno].
+// San Francesco d'Assisi, 4 ottobre: L. 8 ottobre 2025 n. 151 (G.U. n. 236 del
+// 10 ottobre 2025), che la aggiunge all'art. 2 della L. 260/1949 dal 2026.
+// Con l'anno scritto accanto: un 4 ottobre 2025 segnato prima non diventa
+// festivo a posteriori. → check-festivita.mjs
+const DAL_ANNO = [
+  [10, 4, 2026], // San Francesco d'Assisi, patrono d'Italia
+];
+
 // True se la data ISO 'YYYY-MM-DD' è una festività (nazionale, Pasqua/Pasquetta,
 // o santo patrono locale se impostato in settings.patronSaintDate come 'MM-DD').
 export function isHoliday(dateStr, settings = {}) {
@@ -43,6 +52,7 @@ export function isHoliday(dateStr, settings = {}) {
   const day = Number(s.slice(8, 10));
 
   if (FIXED.some(([mo, dd]) => mo === month && dd === day)) return true;
+  if (DAL_ANNO.some(([mo, dd, da]) => mo === month && dd === day && year >= da)) return true;
 
   // Pasqua (domenica) e Pasquetta (lunedì dell'Angelo = Pasqua + 1 giorno).
   const e = easterSunday(year);
