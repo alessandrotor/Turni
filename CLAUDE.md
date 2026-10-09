@@ -423,6 +423,12 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
 - **Ferie e permessi** stanno DENTRO la voce «Retribuzione»; la **malattia** è
   una voce a sé; la **festività non lavorata** è un giustificativo a sé.
   → `check-assenze.mjs`, `check-festivita.mjs`
+  **Il riposo settimanale non è ferie**: un periodo di ferie propone un giorno
+  di riposo ogni settimana già tolto, il giorno in cui lo storico lavora meno
+  (la domenica solo senza storico: nel Turismo chi fa turni la lavora spesso).
+  Tutti selezionati, settembre 2026 contava 13 giorni di ferie invece di 11 e
+  il netto stimato usciva 53 € sopra la busta. `giorniDiRiposo()`,
+  → `check-periodo-assenza.mjs`
 - **Malattia**: la carenza si conta per EVENTO, non per anno. Percentuali e
   giorni NON sono verificati su nessun cedolino, e **le buste che la contengono
   non fanno testo**: due mesi mostrano una scomposizione completa e invitante,

@@ -10,7 +10,7 @@
 //     quanto cinque inserimenti singoli. Se il periodo spezzasse l'evento, la
 //     carenza ripartirebbe da capo e la paga sarebbe sbagliata.
 
-import { giorniPeriodo, proponiPeriodo, totalePeriodo, MAX_GIORNI_PERIODO } from '../src/utils/periodo-assenza.js';
+import { giorniPeriodo, proponiPeriodo, totalePeriodo, giorniDiRiposo, MAX_GIORNI_PERIODO } from '../src/utils/periodo-assenza.js';
 import { minutiGiornoAssenza } from '../src/utils/assenze.js';
 import { computePayByShift } from '../src/utils/pay.js';
 
@@ -61,15 +61,16 @@ const turni = [{ id: 't1', date: '2026-08-05', startTime: '06:00', endTime: '14:
 const proposta = proponiPeriodo({ dal: '2026-08-03', al: '2026-08-09', turni, settings });
 
 verifica('giorni proposti', proposta.length, 7, 'la settimana intera');
-verifica('tutti selezionati', proposta.every(r => r.selezionato), true, 'i riposi li toglie l utente');
+verifica('sei selezionati, il riposo no', proposta.filter(r => r.selezionato).length, 6, 'un riposo ogni sette giorni');
+verifica('  senza storico, la domenica', proposta.find(r => r.riposo)?.data, '2026-08-09', 'la regola di legge');
 verifica('ore uguali per ogni giorno', new Set(proposta.map(r => r.minuti)).size, 1, 'sempre quelle da contratto');
 verifica('ore proposte', proposta[0].minuti, oreGiorno, '');
 verifica('turno esistente segnalato', proposta.find(r => r.data === '2026-08-05').turnoEsistente?.id, 't1', 'verra sostituito');
 verifica('gli altri giorni sono liberi', proposta.filter(r => r.turnoEsistente).length, 1, '');
 
 console.log('\nTotale mostrato prima di salvare\n');
-verifica('settimana intera', totalePeriodo(proposta).minuti, 7 * 240, '28h: una di troppo');
-const senzaRiposo = proposta.map((r, i) => i === 6 ? { ...r, selezionato: false } : r);
+verifica('settimana intera', totalePeriodo(proposta).minuti, 6 * 240, '24h, l orario settimanale');
+const senzaRiposo = proposta;
 verifica('tolto il riposo', totalePeriodo(senzaRiposo).giorni, 6, '');
 verifica('  e le ore tornano', totalePeriodo(senzaRiposo).minuti, 24 * 60,
   'esattamente l orario settimanale: e la prova che il conto e giusto');
@@ -98,6 +99,29 @@ verifica('stessi euro degli inserimenti singoli', somma(daPeriodo), somma(aMano)
   'il periodo non spezza l evento, la carenza non riparte');
 verifica('  e la carenza morde davvero', somma(aMano) < 5 * 4 * 10, true,
   'i primi 3 giorni non sono pagati: il confronto sopra non e banale');
+
+// ── Il riposo settimanale, dallo storico ───────────────────────────────────
+// Settembre 2026: ferie dal 31 agosto al 13 settembre segnate tutte, 13 giorni
+// a settembre invece di 11. Il riposo non è ferie (D.Lgs. 66/2003 art. 9, e la
+// settimana di sei del Turismo), e nel Turismo chi fa turni lavora spesso la
+// domenica: il giorno si prende da quello in cui si lavora meno.
+console.log('\nIl riposo settimanale\n');
+const storico = [];
+for (let g = 1; g <= 31; g++) {
+  const d = new Date(2026, 6, g);
+  if (d.getDay() !== 2) storico.push({ id: `l${g}`, date: `2026-07-${String(g).padStart(2, '0')}`, startTime: '10:00', endTime: '15:00' });
+}
+verifica('storico col martedì libero', giorniDiRiposo(storico, settings), [2], 'si lavora di domenica');
+verifica('poco storico: la domenica', giorniDiRiposo(storico.slice(0, 5), settings), [0], 'non abbastanza per dirlo');
+verifica('settimana corta: due riposi', giorniDiRiposo([], { workingDaysPerWeek: 5 }), [0, 6], 'domenica e sabato');
+verifica('sette giorni su sette: nessuno', giorniDiRiposo([], { workingDaysPerWeek: 7 }), [], '');
+const ferie = proponiPeriodo({ dal: '2026-08-31', al: '2026-09-13', turni: storico, settings });
+const settembre = ferie.filter(r => r.selezionato && r.data >= '2026-09-01');
+verifica('31 ago – 13 set: giorni di ferie a settembre', settembre.length, 11, 'due riposi, uno a settimana');
+verifica('  e non sono le domeniche', ferie.filter(r => r.riposo).map(r => r.data), ['2026-09-01', '2026-09-08'], 'i martedì, come nello storico');
+
+
+
 
 console.log();
 if (falliti) {

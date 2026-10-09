@@ -10,10 +10,18 @@
 // legge dice «di regola la domenica» ragionando sull'ufficio, mentre chi lavora
 // a turni riposa in un giorno qualunque, diverso ogni settimana.
 //
-// Quindi NON si indovina: si propongono tutti i giorni, tutti selezionati, e i
-// riposi li toglie chi sta guardando il proprio calendario. La difesa contro
-// l'errore non è una regola automatica, è il totale mostrato prima di salvare:
-// una settimana di ferie deve valere esattamente l'orario settimanale.
+// Per un po' quindi non si indovinava: tutti i giorni selezionati, e i riposi
+// li toglieva chi guardava. Nessuno lo faceva: settembre 2026 aveva 13 giorni
+// di ferie invece di 11, cioè 8 ore in più a riempire il monte ore, 8 ore di
+// lavoro in più al 130% e il mese spinto sopra i 1.250 € — il netto stimato
+// era 53 € sopra la busta. Il riposo spetta comunque (uno ogni sette giorni con
+// la settimana di sei del Turismo), quindi il NUMERO dei riposi non è un'ipotesi.
+// Lo è solo QUALE giorno: lo si prende dallo storico, il giorno della settimana
+// in cui si lavora meno. NON la domenica per principio: nel Turismo chi lavora
+// a turni riposa spesso in un altro giorno (la domenica lavorata da chi riposa
+// altrove costa al datore una maggiorazione piccola). La domenica resta il
+// ripiego senza storico, perché è la regola di legge (D.Lgs. 66/2003, art. 9).
+// Il giorno tolto resta nell'elenco con scritto «riposo», e si rispunta.
 //
 // QUANTO VALE UNA GIORNATA
 // Le ore da contratto, uguali per ogni giorno — non le ore di un turno che
@@ -27,7 +35,28 @@
 // Estensioni esplicite: senza, Node puro non importa il modulo e i riscontri in
 // `scripts/` non partono.
 import { isIsoDate, parseDate, formatDate, dayNumber } from './dates.js';
-import { minutiGiornoAssenza } from './assenze.js';
+import { minutiGiornoAssenza, isAssenza, GIORNI_LAVORATIVI_DEFAULT } from './assenze.js';
+
+// Turni sotto cui lo storico non dice niente: meno di quattro settimane da sei
+// giorni, e un giorno vuoto può essere un caso.
+const STORICO_MINIMO = 24;
+// A parità di turni, prima la domenica e poi il sabato: è il riposo più comune.
+const PREFERENZA = [0, 6, 1, 2, 3, 4, 5];
+
+/**
+ * I giorni della settimana (0 = domenica) di riposo: quanti sono lo dice il
+ * contratto (7 meno i giorni lavorativi), quali lo storico. → check-periodo-assenza.mjs
+ */
+export function giorniDiRiposo(turni = [], settings = {}) {
+  const lavorativi = Math.min(7, Math.max(1, Number(settings.workingDaysPerWeek) || GIORNI_LAVORATIVI_DEFAULT));
+  const quanti = 7 - lavorativi;
+  if (quanti === 0) return [];
+  const date = new Set((turni || []).filter((t) => t?.date && !isAssenza(t)).map((t) => t.date));
+  const conta = [0, 0, 0, 0, 0, 0, 0];
+  for (const d of date) conta[parseDate(d).getDay()] += 1;
+  if (date.size < STORICO_MINIMO) return PREFERENZA.slice(0, quanti);
+  return [...PREFERENZA].sort((a, b) => conta[a] - conta[b] || PREFERENZA.indexOf(a) - PREFERENZA.indexOf(b)).slice(0, quanti);
+}
 
 // Tetto sul numero di giornate generabili in un colpo solo. Non è una regola di
 // contratto: è una rete contro il refuso nell'anno (2026 scritto 2036 farebbe
@@ -81,12 +110,11 @@ export function proponiPeriodo({ dal, al, turni = [], settings = {} } = {}) {
     if (t?.date && !perData.has(t.date)) perData.set(t.date, t);
   }
 
-  return giorniPeriodo(dal, al).map(data => ({
-    data,
-    minuti,
-    turnoEsistente: perData.get(data) || null,
-    selezionato: true,
-  }));
+  const riposi = giorniDiRiposo(turni, settings);
+  return giorniPeriodo(dal, al).map(data => {
+    const riposo = riposi.includes(parseDate(data).getDay());
+    return { data, minuti, turnoEsistente: perData.get(data) || null, selezionato: !riposo, riposo };
+  });
 }
 
 /** Quante giornate e quanti minuti valgono le righe spuntate. */
