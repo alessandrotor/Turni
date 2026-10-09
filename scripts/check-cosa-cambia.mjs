@@ -129,8 +129,10 @@ assert(formatDeltaMinutes(-45) === '−45m', 'formatDeltaMinutes negativo solo m
   const ST = { hourlyRate: 10, expectedWeeklyHours: 24, fullTimeWeeklyHours: 40, ccnl: 'turismo',
     overtimeSurchargePct: 30, periodoConteggio: 'calendario' };
   const OGGI = new Date(2026, 9, 7);
+  // Senza il 4 ottobre: dal 2026 è San Francesco, festa nazionale, e le ore
+  // festive lavorate non riempiono il monte ore (check-festivo-supplementare).
   const giorni = (n) => Array.from({ length: n }, (_, i) => {
-    const d = `2026-10-${String(i + 1).padStart(2, '0')}`;
+    const d = `2026-10-${String(i + (i >= 3 ? 2 : 1)).padStart(2, '0')}`;
     return { id: d, date: d, startTime: '08:00', endTime: '14:00' };
   });
   const otto = { date: '2026-10-20', startTime: '08:00', endTime: '16:00' };

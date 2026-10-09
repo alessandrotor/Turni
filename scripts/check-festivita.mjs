@@ -100,6 +100,15 @@ verifica('il festivo LAVORATO prende la maggiorazione',
   Math.round(lavorato.surchargeHoliday * 100) / 100, Math.round(4 * 10 * 0.20 * 100) / 100,
   '4 ore × 10 € × 20%');
 
+// SAN FRANCESCO, 4 ottobre: festa nazionale dal 2026 (L. 8 ottobre 2025 n.
+// 151, G.U. n. 236 del 10 ottobre 2025, nell'art. 2 della L. 260/1949). Nel
+// 2026 cade di domenica: non lavorata, è una festività che coincide col
+// riposo, e la busta la paga come giornata in più — quindi si propone.
+console.log('\nSan Francesco, 4 ottobre\n');
+verifica('ottobre 2026: proposto', festivitaSenzaTurno(2026, 9, [], S), ['2026-10-04'], 'festa nazionale dal 2026');
+verifica('ottobre 2025: no', festivitaSenzaTurno(2025, 9, [], S), [], 'la legge vale dal 2026, non prima');
+verifica('ottobre 2027: sì', festivitaSenzaTurno(2027, 9, [], S), ['2027-10-04'], 'ogni anno');
+
 console.log();
 if (falliti) {
   console.error(`${falliti} caso/i su ${totale} non tornano.`);
