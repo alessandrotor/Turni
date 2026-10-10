@@ -245,16 +245,31 @@ nemmeno la maggiorazione domenicale lo comprendeva.
   premio di produttività non torna ogni mese, e a settembre tre bonus da 120 €
   ne promettevano quattro. → `check-montante-mensilita.mjs`,
   `check-proiezione.mjs`
-- **La soglia del supplementare resta MENSILE** (103,20 h = 24 × 4,3), non
-  settimanale: questo lo avevano stabilito giugno e luglio, e non cambia.
-  → `check-mese-paga-2026.mjs`
-- **Le assenze riempiono il monte ore**, anche quando cadono in coda al mese:
-  in busta `4,00 ferie + 99,20 retribuzione = 103,20`, e il lavoro eccedente è
-  tutto supplementare. Contarle in ordine cronologico faceva perdere ore già
-  maturate a chi andava in ferie a fine mese. → `check-assenze.mjs`
-- **La busta arrotonda l'eccedenza al quarto d'ora**: il monte ore 103,20 non è
-  un multiplo di 15 minuti (è 103h12min), quindi l'eccedenza vera di agosto era
-  17,55 h e il cedolino stampa 17,50.
+- **Il supplementare si conta a SETTIMANA, le ore ordinarie sono il MONTE
+  ORE.** Due regole insieme, decise dalla busta di **settembre 2026** coi turni
+  veri, al centesimo. Supplementare: le ore oltre le 24 del contratto in ogni
+  settimana lun-dom, nel giorno in cui si superano; una settimana a cavallo
+  resta una e ogni ora va nel mese del suo giorno. Ordinarie: 103,20 h al mese
+  (24 × 4,3) comunque distribuite — luglio ne aveva 109,5 lavorate, settembre
+  100,5 con le ferie, e la busta ne paga 103,20 tutte e due le volte. Un mese
+  ancora a metà mostra le ore segnate (`quotaOrdinaria()` in `pay.js`).
+  La regola mensile di prima veniva da giugno e luglio letti sulle ore della
+  BUSTA: «ore − 103,20 = supplementari» tornava per costruzione. Coi turni,
+  settembre dava 11,55 h contro 14,25. → `check-supplementare-settimanale.mjs`
+  **Le ferie riempiono la settimana per prime; la festività non lavorata no**
+  (è già dentro il monte ore: contarla dava ad agosto 22,5 h contro 17,5).
+  **La domenicale non si cumula col supplementare**: la maggiore assorbe la
+  minore, come fra domenica e festivo. La domenica chiude la settimana, quindi
+  è spesso proprio lei a passare le 24: settembre ne pagava 5,75 su 15,5.
+  Lo **straordinario** si conta a SETTIMANA, oltre le 40 ore (D.Lgs.
+  66/2003); il supplementare sta fra 24 e 40. Dalla norma, nessuna busta con
+  una settimana oltre le 40. → `check-straordinario-settimanale.mjs`
+- **Le assenze riempiono la settimana**, anche quando cadono in coda: in busta
+  `4,00 ferie + 99,20 retribuzione = 103,20`. Contarle in ordine cronologico
+  faceva perdere ore già maturate a chi andava in ferie a fine periodo.
+  → `check-assenze.mjs`
+- **La busta arrotonda al quarto d'ora**: le ore stampate sono multipli di
+  0,25 (agosto 2026: 17,50).
 - **Ore oltre soglia**: la busta scrive l'ora INTERA al 130%, non il solo +30%.
   → `check-busta-luglio-2026.mjs`
 - **Maggiorazioni Turismo** (17 cedolini 2024-2025): notturno, domenicale,

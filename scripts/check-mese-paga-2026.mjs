@@ -10,19 +10,16 @@
 //   giugno         131,45              103,20                   28,25
 //   luglio         109,70              103,20                    6,50
 //
-// Da qui si ricavano le due regole implementate, senza doverle scegliere a caso:
+// Ne venivano due regole. La SECONDA resta: la settimana a cavallo appartiene
+// al mese di paga del LUNEDÌ (1° giugno 2026 lunedì: giugno vale 5 settimane,
+// luglio 4). Il mese di paga resta un'opzione; la busta di agosto 2026 ha
+// deciso per il calendario (check-busta-agosto-2026.mjs).
 //
-//  1. La soglia del supplementare è MENSILE. Non può essere settimanale:
-//     quattro settimane con tetto a 24 ore farebbero 96 ore ordinarie, non
-//     103,20 — e la voce "Retribuzione" vale 103,20 h in ENTRAMBE le buste,
-//     indipendentemente dai giorni di calendario.
-//
-//  2. La settimana a cavallo appartiene al mese del LUNEDÌ. Il 1° giugno 2026 è
-//     lunedì: con questa regola giugno vale 5 settimane (1/6 → 5/7) e luglio 4
-//     (6/7 → 2/8), e il rapporto fra le ore in busta — 131,45/109,70 = 1,198 —
-//     è appunto ≈ 5/4. Con la convenzione opposta (mese della domenica) giugno
-//     varrebbe 4 settimane e luglio 5, quindi giugno dovrebbe risultare MINORE
-//     di luglio: il contrario di quel che è stampato.
+// La PRIMA — «la soglia del supplementare è MENSILE» — è caduta a ottobre 2026.
+// Quella tabella non la dimostrava: «ore attribuite» erano le righe della busta
+// sommate, quindi ore − 103,20 = supplementari tornava per costruzione. Coi
+// turni veri di luglio, agosto e settembre il supplementare è a SETTIMANA, e le
+// 103,20 h sono le ore ordinarie pagate comunque: check-supplementare-settimanale.mjs.
 
 import { payrollMonthKey, payrollMonthRange, formatDate, parseDate, getWeekStart } from '../src/utils/dates.js';
 import { calcTotalPay, calcShiftMinutes, computePayByShift } from '../src/utils/pay.js';
@@ -138,16 +135,12 @@ console.log('\nOre e supplementari del mese di paga\n');
   eq('ore attribuite a giugno', ore(giugno), 131.45);
   eq('ore attribuite a luglio', ore(luglio), 109.70);
 
-  const payG = calcTotalPay(giugno, SETTINGS, TUTTI);
-  const payL = calcTotalPay(luglio, SETTINGS, TUTTI);
-  eq('supplementari giugno (h)', payG.overtimeMinutes / 60, 28.25);
-  eq('supplementari luglio (h)', payL.overtimeMinutes / 60, 6.50);
-
-  // Voci della busta di luglio: 951,30 (103,20 h) + 77,89 (6,50 h al 30%).
-  eq('lordo luglio da turni', payL.total, 951.30 + 77.89, 0.02);
-  eq('  di cui maggiorazione supplementare', payL.surcharge, 6.50 * RATE * 0.30, 0.01);
-  // Giugno: 103,20 h ordinarie + 28,25 h al 30%.
-  eq('lordo giugno da turni', payG.total, (103.20 + 28.25) * RATE + 28.25 * RATE * 0.30, 0.02);
+  // Le ore ordinarie pagate sono il monte ore, comunque il mese sia lungo:
+  // cinque settimane a giugno e quattro a luglio, 103,20 in tutte e due.
+  for (const [nome, lista] of [['giugno', giugno], ['luglio', luglio]]) {
+    const pay = calcTotalPay(lista, SETTINGS, TUTTI);
+    eq(`ore ordinarie pagate a ${nome}: il monte ore`, (pay.base - pay.overtimeBase) / RATE, 103.20, 0.01);
+  }
 }
 
 console.log('\nContratti NON mensilizzati: regola settimanale invariata\n');
@@ -182,40 +175,20 @@ console.log('\nContratti NON mensilizzati: regola settimanale invariata\n');
   eq('a chiamata: soglia giornaliera, non mensile', payChiamata.overtimeMinutes / 60, attesoGiornaliero, 0.01);
 }
 
-// ── Il periodo scelto governa ANCHE la soglia, non solo la vista ───────────
-// Il difetto che questo blocco impedisce di tornare: `computePayByShift`
-// raggruppava sempre a settimane intere, anche per chi aveva scelto il mese di
-// calendario. Il risultato era un ibrido — turni di un periodo, soglia di un
-// altro — con una ripartizione fra ordinarie e supplementari che non
-// corrispondeva a nessuna delle due regole, e quindi a nessuna busta.
-console.log('\nIl periodo scelto governa la soglia, non solo quali turni si vedono\n');
+// ── Il periodo scelto governa il monte ore, non il supplementare ─────────
+// Il supplementare è a settimana: un turno del 1° agosto, a cavallo fra il
+// mese di paga di luglio e il calendario di agosto, ha le stesse ore oltre le
+// 24 in tutte e due le modalità. Cambia solo il mese di cui riempie il monte.
+console.log('\nIl periodo sceglie il monte ore, il supplementare resta della settimana\n');
 {
-  // Il caso che distingue le due regole è un turno A CAVALLO del confine.
-  // Il mese di paga di luglio 2026 arriva al 2 agosto: un turno del 1° agosto
-  // appartiene a luglio per una regola e ad agosto per l'altra. Qui luglio è
-  // già oltre il monte ore, agosto è vuoto — quindi quel turno è supplementare
-  // in un caso e ordinario nell'altro.
-  const luglioPieno = generaTurni('2026-07-06', 110 * 60, 'x');   // oltre le 103,20 h
-  const aCavallo = {
-    id: 'cavallo', date: '2026-08-01', startTime: '09:00', endTime: '15:00', breakMinutes: 0,
-  };
-  const serie = [...luglioPieno, aCavallo];
-
+  const settimana = generaTurni('2026-07-27', 30 * 60, 'x');   // lun 27/7 → sab 1/8
   const suCavallo = (modo) => {
-    const map = computePayByShift(serie, { ...SETTINGS, periodoConteggio: modo });
-    return (map.cavallo?.overtimeMinutes || 0) / 60;
+    const map = computePayByShift(settimana, { ...SETTINGS, periodoConteggio: modo });
+    return settimana.reduce((s, t) => s + (map[t.id]?.overtimeMinutes || 0), 0) / 60;
   };
-
-  const aPaga = suCavallo('paga');
-  const aCalendario = suCavallo('calendario');
-
-  check('mese di paga: il turno del 1 agosto cade nel gruppo di LUGLIO',
-        aPaga > 0, `${aPaga.toFixed(2)} h supplementari, perche luglio ha gia superato il monte ore`);
-  check('calendario: lo stesso turno apre AGOSTO, quindi e ordinario',
-        aCalendario === 0, `${aCalendario.toFixed(2)} h supplementari`);
-  check('  e le due modalita non danno lo stesso risultato',
-        Math.abs(aPaga - aCalendario) > 0.01, '');
+  eq('mese di paga: 6 h oltre le 24 della settimana', suCavallo('paga'), 6);
+  eq('calendario: le stesse 6 h', suCavallo('calendario'), 6);
 }
 
-console.log(fail === 0 ? '\n✓ mese di paga e supplementari coerenti con le buste\n' : `\n✗ ${fail} riscontri falliti\n`);
+console.log(fail === 0 ? '\n✓ mese di paga coerente con le buste\n' : `\n✗ ${fail} riscontri falliti\n`);
 process.exit(fail === 0 ? 0 : 1);
