@@ -490,6 +490,22 @@ Chiusi dopo la revisione, con lo stesso criterio: ognuno ha il suo riscontro.
 
 ---
 
+# J. Supplementare e domenicale — 10/10/2026
+
+| # | Difetto | Riscontro che lo tiene chiuso |
+|---|---|---|
+| J1 | **Il supplementare si contava sul mese** (oltre 103,20 h): settembre 2026 dava 11,55 h contro le 14,25 della busta, e il lordo 1.234 € contro 1.257,36. La busta lo conta a settimana, oltre le 24 h, e paga le ore ordinarie come monte ore (103,20) comunque distribuite. Ora torna al centesimo; luglio e agosto entro mezz'ora e un'ora, lo scarto degli orari segnati | `check-supplementare-settimanale.mjs` (nuovo) |
+| J2 | **La domenicale si sommava al supplementare** sulle stesse ore: settembre ne contava 15,5 h, la busta 5,75. La maggiore assorbe la minore, come già fra domenica e festivo | `check-supplementare-settimanale.mjs` |
+
+- **J3. Un mese di quattro settimane esatte** (febbraio, o un mese di paga a
+  settimane intere) arriva al massimo a 96 h ordinarie: se le supplementari
+  non bastano a coprire il resto, l'app mostra meno delle 103,20 che la busta
+  paga comunque. Per sapere che il mese è finito il motore dovrebbe ricevere
+  la data di oggi, che oggi non riceve.
+  Nessuna busta lo mostra ancora.
+
+---
+
 ## Dove mettere questo elenco
 
 `RILASCIO.md` va lasciato com'è: sette domande sulla **pubblicazione**, con un

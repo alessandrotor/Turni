@@ -163,7 +163,7 @@ export function lordoAppPerVoce(delMese, settings, payMap, anno, mese, pagaTotal
     per.supplementari.euro += suppl;
     per.supplementari.ore += oreSuppl;
     per.domenicale.euro += p.surchargeSunday;
-    if (p.surchargeSunday > 0) per.domenicale.ore += ore;
+    per.domenicale.ore += p.sundayMinutes / 60;
     per.notturno.euro += p.surchargeNight;
     per.notturno.ore += p.nightMinutes / 60;
     per.manuali.euro += p.surchargeManual;
@@ -173,7 +173,7 @@ export function lordoAppPerVoce(delMese, settings, payMap, anno, mese, pagaTotal
     } else {
       per.festivo.euro += p.surchargeHoliday;
       per.ordinarie.euro += p.base - p.overtimeBase - p.straordinarioBase;
-      per.ordinarie.ore += ore - oreSuppl;
+      per.ordinarie.ore += p.ordinariPagatiMinutes / 60;
     }
   }
   const { lordo, extraMese } = lordoDelMese(pagaTotale, anno, mese, settings);

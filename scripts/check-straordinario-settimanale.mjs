@@ -5,9 +5,8 @@
 // DA DOVE VIENE
 // D.Lgs. 66/2003: l'orario normale è di 40 ore settimanali (art. 3), e lo
 // straordinario è il lavoro prestato oltre quell'orario (art. 1, c. 2, lett. c).
-// Il supplementare del part-time è un'altra cosa: oltre l'orario del contratto,
-// e sul Turismo si conta sul MESE (103,20 h = 24 × 4,3), come stampano le buste
-// di giugno e luglio 2026 (check-mese-paga-2026.mjs).
+// Il supplementare del part-time è un'altra cosa: oltre l'orario del contratto
+// e fino alle 40, anche lui a settimana (check-supplementare-settimanale.mjs).
 //
 // IL DIFETTO
 // Sul mensilizzato anche lo straordinario si contava sul mese: oltre le
@@ -17,11 +16,10 @@
 // 40 ore; tutte quelle che ci sono tornano come prima (gli altri riscontri).
 //
 // COSA SI VERIFICA
-// Una settimana da 45 ore in un mese basso: 5 ore di straordinario, e nessuna
-// supplementare. Un mese oltre il monte ore senza settimane oltre le 40: solo
-// supplementare. La settimana a cavallo di due mesi resta una. Le ferie non
-// sono lavoro prestato. E le ore straordinarie non riempiono il monte ore del
-// mese: il totale ordinario + supplementare + straordinario è il lavorato.
+// Una settimana da 45 ore: 5 ore di straordinario, e 16 di supplementare (da
+// 24 a 40). Settimane sotto le 40: solo supplementare. La settimana a cavallo
+// di due mesi resta una. Le ferie non sono lavoro prestato. E le ore
+// straordinarie non si contano due volte: non sono anche supplementari.
 
 import { computePayByShift } from '../src/utils/pay.js';
 
@@ -45,7 +43,7 @@ console.log('\nUna settimana da 45 ore in un mese basso\n');
 const settimana = ['05', '06', '07', '08', '09'].map((g) => turno(`2026-10-${g}`, 9));
 const a = computePayByShift(settimana, S);
 esito(somma(a, 'straordinarioMinutes') === 5, '5 ore di straordinario', `${somma(a, 'straordinarioMinutes')} h`);
-esito(somma(a, 'overtimeMinutes') === 0, 'e nessuna supplementare: il mese è sotto il monte ore');
+esito(somma(a, 'overtimeMinutes') === 16, 'e 16 di supplementare, da 24 a 40', `${somma(a, 'overtimeMinutes')} h`);
 esito(a['2026-10-09'].straordinarioMinutes === 300, 'sono le ultime, quelle di venerdì');
 
 console.log('\nUn mese oltre il monte ore, settimane sotto le 40\n');
@@ -56,8 +54,20 @@ for (let g = 1; g <= 30; g += 1) {
 }
 const b = computePayByShift(mese, S);
 const lavorate = mese.length * 5.5;
+// Riconteggio indipendente: per ogni settimana lun-dom, le ore oltre le 24
+// fino alle 40.
+const oltre24 = (turni, oreDi) => {
+  const sett = new Map();
+  for (const t of turni) {
+    const d = new Date(`${t.date}T12:00`);
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    const k = d.toISOString().slice(0, 10);
+    sett.set(k, (sett.get(k) || 0) + oreDi(t));
+  }
+  return [...sett.values()].reduce((x, h) => x + Math.max(0, Math.min(h, 40) - 24), 0);
+};
 esito(somma(b, 'straordinarioMinutes') === 0, 'nessuno straordinario', `${lavorate} h su ${mese.length} giorni`);
-esito(Math.abs(somma(b, 'overtimeMinutes') - (lavorate - 103.2)) < 0.01, 'supplementare = lavorate − 103,20',
+esito(Math.abs(somma(b, 'overtimeMinutes') - oltre24(mese, () => 5.5)) < 0.01, 'supplementare = ore oltre le 24 di ogni settimana',
   `${somma(b, 'overtimeMinutes').toFixed(2)} h`);
 
 console.log('\nLa settimana a cavallo di due mesi resta una\n');
@@ -79,8 +89,9 @@ const ore = lungo.reduce((t, s) => t + (s.date >= '2026-10-19' && s.date <= '202
 const str = somma(d, 'straordinarioMinutes');
 const sup = somma(d, 'overtimeMinutes');
 esito(str === 5, 'la settimana da 45 dà 5 ore di straordinario', `${str} h`);
-esito(Math.abs(sup - (ore - str - 103.2)) < 0.01, 'il supplementare è il resto oltre il monte ore',
-  `${sup.toFixed(2)} = ${ore} − ${str} − 103,20`);
+const oreDi = (s) => (s.date >= '2026-10-19' && s.date <= '2026-10-23' ? 9 : 5.5);
+esito(Math.abs(sup - oltre24(lungo, oreDi)) < 0.01, 'il supplementare sta fra 24 e 40, lo straordinario oltre',
+  `${sup.toFixed(2)} h su ${ore} lavorate`);
 
 console.log(falliti ? `\n${falliti} riscontro/i FALLITO/I\n` : '\nTutto torna.\n');
 process.exit(falliti ? 1 : 0);

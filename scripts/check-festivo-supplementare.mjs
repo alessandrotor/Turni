@@ -12,26 +12,21 @@
 //                              ─────────
 //                               145,20 h
 //
-// e il conto che le lega e' esatto al centesimo:
+// Le ore festive stanno fuori da tutto il resto: non riempiono le 24 ore della
+// settimana e non diventano supplementari. Sono pagate a parte, al 120% totale.
 //
-//   145,20 − 13,75 (festive) = 131,45  →  131,45 − 103,20 = 28,25
+// PERCHE' IL FESTIVO IN TESTA ALLA SETTIMANA E' IL CUORE DEL RISCONTRO
+// C'e' un'ipotesi alternativa che sembra equivalente: «le ore festive contano
+// per le 24 della settimana, ma non possono essere supplementari». Con il
+// festivo in coda alla settimana le due regole danno lo stesso numero.
+// Il 2 giugno 2026 e' un martedi', il 29 un lunedi': con l'ipotesi alternativa
+// le loro 13,75 ore riempirebbero la soglia di due settimane, e altrettante ore
+// di lavoro diventerebbero supplementari — 42,00 invece di 28,25.
 //
-// Cioe': le ore festive si mettono da parte PRIMA di tutto. Non riempiono la
-// soglia e non diventano supplementari. Sono pagate a parte, al 120% totale.
-//
-// PERCHE' IL FESTIVO IN TESTA AL MESE E' IL CUORE DEL RISCONTRO
-// C'e' un'ipotesi alternativa che sembra equivalente: «le ore festive restano
-// nel monte ore, ma non possono essere supplementari». Con i festivi tutti a
-// fine mese le due regole danno lo stesso numero e il riscontro non
-// distinguerebbe niente.
-//
-// Giugno 2026 le distingue perche' ha un festivo il 2 — quasi all'inizio — e uno
-// il 29. Con l'ipotesi alternativa le 6,75 ore del 2 giugno riempirebbero parte
-// della soglia, lasciando piu' ore a sforare: verrebbero 35,00 supplementari
-// invece di 28,25. La busta dice 28,25.
-//
-// Per questo i turni qui sotto tengono un festivo in testa: senza, il riscontro
-// passerebbe anche col motore sbagliato.
+// I turni qui sotto NON sono quelli veri (il backup di giugno e' incompleto):
+// sono cinque settimane con le cifre della busta, 28,25 h oltre le 24 e i due
+// festivi. Il supplementare si conta a settimana, le ore ordinarie pagate sono
+// il monte ore: vedi check-supplementare-settimanale.mjs.
 //
 // Il mese di paga di giugno 2026 va dal 1 giugno al 5 luglio (giugno comincia di
 // lunedi', quindi vale cinque settimane — vedi utils/dates.js).
@@ -66,7 +61,8 @@ const check = (label, avuto, atteso, tol = 0.005) => {
 
 // ── I turni, costruiti sui totali della busta ──────────────────────────────
 const FESTIVI = [['2026-06-02', 405], ['2026-06-29', 420]];   // 6,75 + 7,00 = 13,75 h
-const MIN_ORDINARI = 7887;                                     // 131,45 h
+const SETTIMANE = ['2026-06-01', '2026-06-08', '2026-06-15', '2026-06-22', '2026-06-29'];
+const MIN_SETTIMANA = 24 * 60 + 339;                           // 29,65 h: 5,65 oltre le 24
 
 function turniGiugno() {
   const hhmm = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
@@ -77,17 +73,19 @@ function turniGiugno() {
 
   for (const [d, m] of FESTIVI) push(d, m);
 
-  // I giorni feriali del mese di paga, domeniche e festivi esclusi: le domeniche
-  // prenderebbero il domenicale e sposterebbero l'attenzione dalla cosa in esame.
-  const giorni = [];
-  for (const d = new Date(2026, 5, 1); d <= new Date(2026, 6, 5); d.setDate(d.getDate() + 1)) {
-    const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    if (d.getDay() !== 0 && !isHoliday(iso, S)) giorni.push(iso);
+  // Da lunedi' a sabato, festivi esclusi: le domeniche prenderebbero il
+  // domenicale e sposterebbero l'attenzione dalla cosa in esame.
+  for (const lunedi of SETTIMANE) {
+    const giorni = [];
+    for (let i = 0; i < 6; i += 1) {
+      const d = new Date(`${lunedi}T12:00`);
+      d.setDate(d.getDate() + i);
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      if (!isHoliday(iso, S)) giorni.push(iso);
+    }
+    const base = Math.floor(MIN_SETTIMANA / giorni.length);
+    giorni.forEach((g, i) => push(g, i === giorni.length - 1 ? MIN_SETTIMANA - base * (giorni.length - 1) : base));
   }
-
-  const n = 26;
-  const base = Math.floor(MIN_ORDINARI / n);
-  for (let i = 0; i < n; i += 1) push(giorni[i], i === n - 1 ? MIN_ORDINARI - base * (n - 1) : base);
   return shifts;
 }
 
@@ -109,18 +107,17 @@ const feriali = TURNI.filter((t) => !isHoliday(t.date, S));
 
 check('soglia contrattuale (h)', monthlyContractHours(S), 103.20, 0.01);
 check('ore festive', oreDi(festivi), 13.75);
-check('ore non festive', oreDi(feriali), 131.45);
-check('ore totali', oreDi(TURNI), 145.20);
+check('ore non festive: cinque settimane da 29,65', oreDi(feriali), 148.25);
 check('tutti nel mese di paga 2026-06',
   TURNI.every((t) => payrollMonthKey(t.date) === '2026-06'), true);
-check('un festivo sta in TESTA al mese', festivi[0].date, '2026-06-02');
+check('i festivi stanno in TESTA alla settimana', festivi.map((t) => t.date).join(' '), '2026-06-02 2026-06-29');
 
 // ── La regola ──────────────────────────────────────────────────────────────
 console.log('\nQuello che il motore deve calcolare\n');
 
 const p = calcTotalPay(TURNI, S, TURNI);
 
-check('supplementari (131,45 − 103,20)', p.overtimeMinutes / 60, 28.25);
+check('supplementari (5 × 5,65 oltre le 24)', p.overtimeMinutes / 60, 28.25);
 check('  in euro, al 130%', p.overtimeBase + p.surchargeOvertime,
   28.25 * S.hourlyRate * 1.30, 0.02);
 
@@ -137,8 +134,9 @@ check('  e le festive restano al 120% in tutto',
 // ── Il totale, come lo compone la busta ────────────────────────────────────
 console.log('\nRicomposto come le righe del cedolino\n');
 
-const ordinarie = (oreDi(feriali) * 60 - p.overtimeMinutes) / 60;
-check('Retribuzione (ore ordinarie)', ordinarie, 103.20);
+const baseFestive = festivi.reduce((s, t) => s + perTurno[t.id].base, 0);
+const ordinarie = (p.base - p.overtimeBase - baseFestive) / S.hourlyRate;
+check('Retribuzione (ore ordinarie): il monte ore', ordinarie, 103.20);
 check('Supplementare 30%', p.overtimeMinutes / 60, 28.25);
 check('Lavoro festivo ordinario', oreDi(festivi), 13.75);
 check('le tre righe fanno il totale', ordinarie + p.overtimeMinutes / 60 + oreDi(festivi), 145.20);
