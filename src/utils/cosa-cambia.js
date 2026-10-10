@@ -25,15 +25,16 @@ import { isMensilizzato, monthlyContractHours } from './ccnl.js';
 import { isHoliday } from './holidays.js';
 import { isAssenza, TIPO } from './assenze.js';
 
-// IL MONTE ORE DATO PER SCONTATO. Sul mensilizzato il supplementare parte oltre
-// le ore del contratto nel MESE (103,20 h a 24 h settimanali). A metà mese le
-// ore segnate sono poche, e un turno in più risultava ordinario: ma il datore
-// le ore da contratto le deve comunque, quindi quel turno, se è in più, a fine
-// mese sarà supplementare. Si presume il monte ore pieno — con un permesso
-// virtuale, che riempie la soglia come le assenze vere (check-assenze) — solo
-// nel mese in corso e solo con almeno una settimana di contratto già segnata:
-// a griglia vuota non si sa ancora niente. Lo si dice accanto alla cifra.
-// → check-cosa-cambia.mjs
+// IL MONTE ORE DATO PER SCONTATO. Sul mensilizzato le ore ordinarie pagate
+// sono il monte ore del mese (103,20 h a 24 h settimanali), comunque siano
+// distribuite, e il supplementare si conta a settimana (pay.js). A metà mese le
+// ore segnate sono poche, ma il datore le ore da contratto le deve comunque:
+// quindi un turno in più vale solo per le ore oltre le 24 della sua settimana,
+// e uno in una settimana più corta non cambia il lordo. Si presume il monte ore
+// pieno con un permesso virtuale (`presunto`: riempie il mese, non la
+// settimana) solo nel mese in corso e con almeno una settimana di contratto già
+// segnata: a griglia vuota non si sa ancora niente. Lo si dice accanto alla
+// cifra. → check-cosa-cambia.mjs
 function montePresunto(monthShifts, settings, year, month, oggi) {
   if (settings.onCall || !isMensilizzato(settings) || !(Number(settings.overtimeSurchargePct) > 0)) return null;
   if (year !== oggi.getFullYear() || month !== oggi.getMonth()) return null;
@@ -46,7 +47,7 @@ function montePresunto(monthShifts, settings, year, month, oggi) {
   const mese = `${year}-${String(month + 1).padStart(2, '0')}`;
   return {
     segnate, contratto,
-    turno: { id: '__monte_ore_presunto', date: `${mese}-15`, type: TIPO.PERMESSO, durationMinutes: contratto - segnate },
+    turno: { id: '__monte_ore_presunto', date: `${mese}-15`, type: TIPO.PERMESSO, durationMinutes: contratto - segnate, presunto: true },
   };
 }
 
@@ -129,9 +130,9 @@ export function calcolaCosaCambia({
 
   // 4-5. Lordo e netto del mese, prima e dopo. Con `extra` (il monte ore
   // presunto) il conto si fa su un mese pieno: è la cifra principale, perché
-  // un turno in più, fino a prova contraria, è supplementare. Accanto si dice
-  // quanto vale in meno se a fine mese le 103,2 h non arrivano. Le cifre del
-  // CALENDARIO restano sulle ore segnate: sono quelle che tornano con la busta.
+  // le ore del contratto sono pagate comunque. Accanto si dice perché un turno
+  // vale meno delle sue ore. Le cifre del CALENDARIO restano sulle ore
+  // segnate: sono quelle che tornano con la busta.
   // → check-cosa-cambia.mjs
   const rateAvailable = hasAnyRate(settings);
   const daysInMonth = getDaysInMonth(year, month);
@@ -165,7 +166,8 @@ export function calcolaCosaCambia({
   // In LORDO: è la sola maggiorazione. Il netto di un mese pieno ha un'altra
   // aliquota, e due netti accanto si leggevano come una contraddizione.
   const lordoSoloSegnate = vero ? (vero.pagaDopo?.total || 0) - (vero.pagaPrima?.total || 0) : 0;
-  const menoSeNonArrivi = pieno ? deltaLordo - lordoSoloSegnate : 0;
+  const giaPagato = pieno ? lordoSoloSegnate - deltaLordo : 0;
+  const settimanali = Number(settings.expectedWeeklyHours) || 0;
 
   // 6. Proiezione annua e Margine Trattamento Integrativo
   let margineBonusBefore = null;
@@ -223,9 +225,9 @@ export function calcolaCosaCambia({
     deltaStraordinarioMin: (payAfter?.straordinarioMinutes || 0) - (payBefore?.straordinarioMinutes || 0),
     montePresunto: monte ? { segnate: monte.segnate, contratto: monte.contratto } : null,
     testoDiCui: testoDiCui(payAfter, payBefore),
-    menoSeNonArrivi,
-    testoMonte: menoSeNonArrivi >= 0.01
-      ? `Se a fine mese non arrivi a ${oreIt(monte.contratto)} h (ora ${oreIt(monte.segnate)}): ${formatDeltaCurrency(-menoSeNonArrivi)} lordi.`
+    giaPagato,
+    testoMonte: giaPagato >= 0.01
+      ? `Fino a ${oreIt(settimanali * 60)} h a settimana sei già pagato: le ${oreIt(monte.contratto)} h del mese spettano comunque.`
       : null,
     sogliaLorda,
   };

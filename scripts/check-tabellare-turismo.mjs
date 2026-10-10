@@ -107,8 +107,8 @@ eq('scarto retribuzione − base EBT = terzo elemento riproporzionato',
 //    la stessa voce «Retribuzione» e cambiano solo il supplementare.
 console.log('\nLa tabella verifica la paga oraria, non il periodo\n');
 // Dal 6 luglio: le giornate devono stare tutte DENTRO lo stesso mese di paga
-// (6 lug – 2 ago 2026), altrimenti la soglia mensile si applica due volte e il
-// confronto non è più fra due monte ore, ma fra due mesi diversi.
+// (6 lug – 2 ago 2026), altrimenti il confronto non è più fra due monte ore,
+// ma fra due mesi diversi. Il supplementare si conta a settimana, oltre le 24.
 const turni = (giorni, minutiAlGiorno) => Array.from({ length: giorni }, (_, i) => ({
   id: `t${i}`,
   date: `2026-07-${String(i + 6).padStart(2, '0')}`,
@@ -120,10 +120,13 @@ for (const [nome, giorni, minuti] of [['periodo lungo', 26, 300], ['periodo cort
   const t = turni(giorni, minuti);
   const p = calcTotalPay(t, SETTINGS);
   const oreTotali = (giorni * minuti) / 60;
-  const ordinarie = (giorni * minuti - p.overtimeMinutes) / 60;
+  const ordinarie = (p.base - p.overtimeBase) / RATE;
+  const perSettimana = [0, 0, 0, 0];
+  t.forEach((_, i) => { perSettimana[Math.floor(i / 7)] += minuti / 60; });
+  const oltre24 = perSettimana.reduce((s, h) => s + Math.max(0, h - 24), 0);
   eq(`${nome}: ${oreTotali} h totali → ordinarie sempre 103,20`, ordinarie, ORE_MESE);
   eq(`${nome}: e valgono sempre ${RETRIBUZIONE} €`, ordinarie * RATE, RETRIBUZIONE);
-  eq(`${nome}: a cambiare è il supplementare`, p.overtimeMinutes / 60, oreTotali - ORE_MESE);
+  eq(`${nome}: a cambiare è il supplementare, oltre le 24 a settimana`, p.overtimeMinutes / 60, oltre24);
 }
 
 console.log(fail === 0

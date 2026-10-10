@@ -23,7 +23,6 @@
 
 import { calcNetMonthly, round2, trunc2 } from '../src/utils/net.js';
 import { calcTotalPay } from '../src/utils/pay.js';
-import { payrollMonthKey } from '../src/utils/dates.js';
 
 const BASE_SETTINGS = {
   hourlyRate: 9.21802,
@@ -91,7 +90,7 @@ check('Lordo del mese', LORDO_LUGLIO, 1173.48, CENT);
 // Fin qui le competenze sono gli importi letti dal cedolino. Ma in app quegli
 // importi nascono dai turni, ed è proprio lì che si era aperto lo scarto: il
 // riepilogo contava meno ore di quelle realmente pagate in busta. Le ore
-// mancanti valevano più del previsto perché, oltre la soglia mensile, ogni
+// mancanti valevano più del previsto perché, oltre la soglia del contratto, ogni
 // ora è supplementare al 130% e non al solo +30%.
 //
 // Con un totale unico di «maggiorazioni» quella voce non si vedeva. Qui si
@@ -103,33 +102,34 @@ const PAY_SETTINGS = {
   holidaySurchargePct: 30, // nessuna festività fra il 6 lug e il 2 ago: resta a zero
   overtimeSurchargePct: 30,
   onCall: false,
+  periodoConteggio: 'calendario',
 };
 
-// Turni ricostruiti: 109,70 h nel mese di paga (6 lug – 2 ago 2026), di cui
-// 15,50 di domenica. NON sono i turni veri — il cedolino non li stampa — ma una
-// distribuzione qualunque con quei due totali, che è tutto ciò che serve al
-// calcolo: le maggiorazioni dipendono dalle ore e dai giorni, non dagli orari.
+// Turni ricostruiti sul mese di calendario. NON sono i turni veri — il
+// cedolino non li stampa — ma una distribuzione con le tre cifre che la busta
+// dice: 6,50 h oltre le 24 a settimana, 15,50 h di domenica NON supplementari,
+// e abbastanza ore da riempire il monte ore (103,20 pagate comunque).
+// La domenica chiude la settimana: se la settimana passa le 24 h, le ore della
+// domenica sono supplementari e non domenicali. Per questo le 6,50 h stanno
+// nella settimana del 27 luglio, che a luglio non ha domeniche.
 function turniLuglio() {
   const hhmm = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
   const shifts = [];
   const push = (date, minuti) => {
     shifts.push({ id: `t${shifts.length + 1}`, date, startTime: '09:00', endTime: hhmm(9 * 60 + minuti) });
   };
-
-  // 15,50 h sulle quattro domeniche del mese di paga.
-  [['2026-07-12', 240], ['2026-07-19', 240], ['2026-07-26', 240], ['2026-08-02', 210]]
-    .forEach(([d, m]) => push(d, m));
-
-  // 94,20 h (5.652 min) sui feriali: 18 turni da 5 h più un resto da 4h 12m.
-  const feriali = [];
-  for (let d = new Date(2026, 6, 6); d <= new Date(2026, 7, 2); d.setDate(d.getDate() + 1)) {
-    if (d.getDay() !== 0) {
-      feriali.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
-    }
+  const g = (d) => `2026-07-${String(d).padStart(2, '0')}`;
+  // 1-5 luglio (mer-dom): 15 h + 4 di domenica.
+  [1, 2, 3].forEach((d) => push(g(d), 300));
+  push(g(5), 240);
+  // Tre settimane piene: 20 h da lunedì a venerdì, 4 la domenica (l'ultima 3,5).
+  for (const [lun, domMin] of [[6, 240], [13, 240], [20, 210]]) {
+    for (let d = lun; d < lun + 5; d++) push(g(d), d === lun ? 240 + (240 - domMin) : 240);
+    push(g(lun + 6), domMin);
   }
-  feriali.slice(0, 18).forEach(d => push(d, 300));
-  push(feriali[18], 252);
-
+  // 27-31 luglio: 30,50 h, le ultime 6,50 oltre le 24.
+  [27, 28, 29, 30].forEach((d) => push(g(d), 360));
+  push(g(31), 390);
   return shifts;
 }
 
@@ -144,11 +144,11 @@ const oreTurni = TURNI.reduce((s, t) => {
 console.log('\nDai turni alle competenze\n');
 // Se un turno finisse in un altro mese di paga le ore non tornerebbero e tutto
 // il resto del blocco scivolerebbe: meglio accorgersene qui.
-check('Turni tutti nel mese di paga 2026-07',
-  TURNI.every(t => payrollMonthKey(t.date) === '2026-07') ? 1 : 0, 1, CENT);
-check('Ore contate', oreTurni, 109.70, CENT);
-check('Ore supplementari (oltre 103,20)', p.overtimeMinutes / 60, 6.50, CENT);
-check('Base (109,70 h × 9,21802)', p.base, 1011.22, CENT);
+check('Turni tutti nel mese di calendario',
+  TURNI.every(t => t.date.startsWith('2026-07')) ? 1 : 0, 1, CENT);
+check('Ore segnate: oltre il monte ore', oreTurni, 121.50, CENT);
+check('Ore supplementari (oltre 24 a settimana)', p.overtimeMinutes / 60, 6.50, CENT);
+check('Base (103,20 + 6,50 h × 9,21802)', p.base, 1011.22, CENT);
 check('  di cui magg. domenicali 10%', p.surchargeSunday, 14.29, CENT);
 check('  di cui magg. supplementari 30%', p.surchargeOvertime, 17.98, CENT);
 check('  festive e manuali: nessuna', p.surchargeHoliday + p.surchargeManual, 0, CENT);
@@ -169,7 +169,7 @@ const RETRIBUZIONE_ORDINARIA = p.base - p.overtimeBase;
 const SUPPLEMENTARE_INTERO = p.overtimeBase + p.surchargeOvertime;
 
 console.log('\nLe righe stampate in busta, ricomposte dai turni\n');
-check('Ore ordinarie (109,70 − 6,50)', (oreTurni * 60 - p.overtimeMinutes) / 60, 103.20, CENT);
+check('Ore ordinarie pagate: il monte ore', (p.base - p.overtimeBase) / PAY_SETTINGS.hourlyRate, 103.20, CENT);
 check('Retribuzione', RETRIBUZIONE_ORDINARIA, 951.30, CENT);
 check('Lavoro supplementare 30%', SUPPLEMENTARE_INTERO, 77.89, CENT);
 check('Magg. domenicale 10%', p.surchargeSunday, 14.29, CENT);
