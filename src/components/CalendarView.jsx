@@ -272,9 +272,11 @@ export default function CalendarView({
     const otPct = Number(settings.overtimeSurchargePct) || 0;
     const extraPctRaw = settings.straordinarioSurchargePct;
     const extraPct = (extraPctRaw === '' || extraPctRaw == null) ? otPct : (Number(extraPctRaw) || 0);
-    // Chi lavora a chiamata non ha una soglia part-time/full-time da
-    // distinguere: resta un'unica fascia, chiamata straordinario come sempre.
+    // A chiamata non c'è soglia part-time/full-time: una fascia, lo straordinario.
     const tier1Label = settings.onCall ? 'Straordinario' : 'Supplementare';
+    const ore = (h) => `${String(Number(h) || 0).replace('.', ',')} h`;
+    const tier1Tip = settings.onCall ? `Ore oltre le ${ore(settings.dailyOvertimeThreshold)} della giornata.`
+      : `Ore oltre le ${ore(settings.expectedWeeklyHours)} settimanali del contratto, fino a ${ore(settings.fullTimeWeeklyHours)}.`;
     return [
       {
         // Ferie e permessi restano DENTRO questa riga: è così che li scrive la
@@ -290,11 +292,11 @@ export default function CalendarView({
         ].filter(Boolean).join(' · ') : null,
       },
       {
-        label: `${tier1Label} +${fmtPct(otPct)}%`, tag: 'overtime',
+        label: `${tier1Label} +${fmtPct(otPct)}%`, tag: 'overtime', tip: tier1Tip,
         value: pay.overtimeBase + pay.surchargeOvertime, minutes: pay.overtimeMinutes,
       },
       {
-        label: `Straordinario +${fmtPct(extraPct)}%`, tag: 'overtime',
+        label: `Straordinario +${fmtPct(extraPct)}%`, tag: 'overtime', tip: `Ore oltre le ${ore(settings.fullTimeWeeklyHours)} della settimana.`,
         value: pay.straordinarioBase + pay.surchargeStraordinario, minutes: pay.straordinarioMinutes,
       },
       { label: 'Malattia', value: pay.malattiaBase, minutes: pay.malattiaMinutes },
@@ -1113,13 +1115,8 @@ export default function CalendarView({
                 <span className="summary-sublabel" key={v.label}>
                   {v.tag === 'overtime' ? (
                     <span className="tooltip-wrap">
-                      <button type="button" className="linklike" aria-describedby={`ot-tip-${v.label}`}>
-                        {v.label}
-                      </button>
-                      <span className="tooltip-bubble" role="tooltip" id={`ot-tip-${v.label}`}>
-                        Le ore di straordinari sono chiamate "supplementari" se non
-                        superano quelle di un full-time.
-                      </span>
+                      <button type="button" className="linklike" aria-describedby={`ot-tip-${v.label}`}>{v.label}</button>
+                      <span className="tooltip-bubble" role="tooltip" id={`ot-tip-${v.label}`}>{v.tip}</span>
                     </span>
                   ) : v.label}
                   {v.minutes > 0 && ` (${formatMinutesShort(v.minutes)})`}
