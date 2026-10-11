@@ -238,3 +238,35 @@ export function pctNotturnoAggiuntiva(settings = {}, pctGiorno = 0) {
   // la notturna e non si aggiunge nulla.
   return Math.max(0, notte - pctGiorno);
 }
+
+/**
+ * Lo STRAORDINARIO NOTTURNO del contratto: ore straordinarie che cadono in una
+ * fascia sua, pagate con una percentuale sua che assorbe tutte le altre. Nel
+ * CCNL Turismo 60% fra le 24 e le 6, contro il 30% di giorno (art. 13 e
+ * lavoro straordinario, schede dei pubblici esercizi e delle aziende
+ * alberghiere). Dal contratto, NON riscontrato su una busta: nessuna ha uno
+ * straordinario. Un contratto che non lo dichiara non ha la regola.
+ * → check-straordinario-notturno.mjs
+ *
+ * Le ore straordinarie sono le ULTIME del turno (la settimana si conta in
+ * ordine), quindi si guarda la coda: gli ultimi `minutiStraordinari` minuti.
+ *
+ * @returns {{minuti:number, pct:number}} minuti della coda in fascia e la
+ *   percentuale; zero minuti se il contratto non ha la regola.
+ */
+export function straordinarioNotturno(shift, minutiStraordinari, settings = {}) {
+  const regola = getCcnl(settings.ccnl).straordinarioNotturno;
+  const partenza = parseTime(shift?.startTime);
+  const lunghezza = minutesDiff(shift?.startTime, shift?.endTime);
+  const inizio = parseTime(regola?.inizio);
+  const fine = parseTime(regola?.fine);
+  if (!regola || !(minutiStraordinari > 0) || partenza === null || lunghezza <= 0 || inizio === null || fine === null) {
+    return { minuti: 0, pct: 0 };
+  }
+  const durata = ((fine - inizio) % GIORNO + GIORNO) % GIORNO;
+  const arrivo = partenza + lunghezza;
+  const da = arrivo - Math.min(minutiStraordinari, lunghezza);
+  let minuti = 0;
+  for (const giorno of [-GIORNO, 0, GIORNO]) minuti += sovrapposizione(da, arrivo, giorno + inizio, giorno + inizio + durata);
+  return { minuti: Math.min(minuti, minutiStraordinari), pct: Number(regola.pct) || 0 };
+}

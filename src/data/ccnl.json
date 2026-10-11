@@ -38,6 +38,11 @@
     "fasciaNotturna": {
       "inizio": "23:00",
       "fine": "06:00"
+    },
+    "straordinarioNotturno": {
+      "pct": 60,
+      "inizio": "00:00",
+      "fine": "06:00"
     }
   },
   {

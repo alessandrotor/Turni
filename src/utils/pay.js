@@ -4,7 +4,7 @@ import { minutesDiff, parseDate, getWeekStart, formatDate, payrollMonthKey } fro
 import { isHoliday } from './holidays.js';
 import { isMensilizzato, monthlyContractHours } from './ccnl.js';
 import { isAssenza, tipoTurno, percentualeAssenza, giorniEventoMalattia, TIPO } from './assenze.js';
-import { minutiNotturniPagati, pctNotturnoAggiuntiva } from './notturno.js';
+import { minutiNotturniPagati, pctNotturnoAggiuntiva, straordinarioNotturno } from './notturno.js';
 
 // UNA SOLA STRADA PER LA PAGA, e non è una preferenza di stile.
 //
@@ -391,7 +391,11 @@ export function computePayByShift(allShifts, settings) {
       const surchargeHoliday = orarioMin * m * (parts.holiday / 100);
       const surchargeManual = orarioMin * m * (parts.manual / 100);
       const surchargeOvertime = overtimeBase * (otPct / 100);
-      const surchargeStraordinario = straordinarioBase * (extraPct / 100);
+      // Straordinario NOTTURNO (Turismo: 60% fra le 24 e le 6): sostituisce il
+      // 30% e assorbe la maggiorazione notturna ordinaria su quei minuti.
+      const notteStraord = assenza ? { minuti: 0, pct: 0 } : straordinarioNotturno(s, straordinarioMin, settings);
+      const surchargeStraordinario = (straordinarioBase * extraPct
+        + notteStraord.minuti * ratePerMin * Math.max(0, notteStraord.pct - extraPct)) / 100;
 
       // Notturno: si paga sui MINUTI in fascia, non sul turno intero — un
       // 20:00–02:00 ha quattro ore notturne e due diurne. E si aggiunge come
@@ -404,7 +408,7 @@ export function computePayByShift(allShifts, settings) {
       // interfaccia usano la stessa regola invece di due copie che divergono.
       const notteMin = assenza ? 0 : minutiNotturniPagati(s, settings, m);
       const nightBase = notteMin * ratePerMin;
-      const surchargeNight = nightBase
+      const surchargeNight = Math.max(0, notteMin - notteStraord.minuti) * ratePerMin
         * (pctNotturnoAggiuntiva(settings, parts.sunday + parts.holiday + parts.manual) / 100);
 
       result[s.id] = {

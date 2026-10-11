@@ -414,6 +414,9 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   Lo **straordinario** si conta a SETTIMANA, oltre le 40 ore (D.Lgs.
   66/2003); il supplementare sta fra 24 e 40. Dalla norma, nessuna busta con
   una settimana oltre le 40. → `check-straordinario-settimanale.mjs`
+  Di notte il Turismo lo paga al 60% fra le 24 e le 6, e assorbe il notturno
+  ordinario: è un dato del contratto (`straordinarioNotturno` in `ccnl.json`),
+  dal CCNL e non da una busta. → `check-straordinario-notturno.mjs`
   Nel «Cosa cambia nel mese» del modulo il monte ore si presume pieno (nel
   mese in corso, con almeno una settimana segnata): un turno vale solo per le
   ore oltre le 24 della sua settimana, e accanto si dice perché. Le cifre del
