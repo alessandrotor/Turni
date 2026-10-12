@@ -510,6 +510,8 @@ Chiusi dopo la revisione, con lo stesso criterio: ognuno ha il suo riscontro.
 
 L'app Android (Capacitor) è uscita dal repository: cartella `android`, configurazione, dipendenze, `deploy.bat` e la guida alla pubblicazione su Play. Turni è solo la PWA; un'app nativa, se servirà, si rifà da zero. Chiuse per questo, senza riscontro perché non c'è più niente da riscontrare: **B2** (l'AAB con la telemetria accesa), **F1** (il versionCode), **F9** (la firma), **F14** (la guida di Play), **G1** (R8), **G3** (il FileProvider). Il worker accetta ancora l'origine `https://localhost` che serviva all'APK: va tolta al prossimo deploy del worker.
 
+Tolta anche la telemetria, che funzionava solo nell'APK: chiuse **F11** (il messaggio non filtrato) e **G10** (opt-out invece di opt-in). I browser che l'avevano usata conservano le chiavi `turni_install_id` e `turni_telemetry_off`, che nessuno legge più.
+
 ---
 
 ## Dove mettere questo elenco

@@ -25,7 +25,7 @@ const DISMISS_KEY = 'turni_install_dismissed';
 // avviene dentro un useEffect e in App non c'è error boundary a monte: senza
 // protezione l'eccezione smonterebbe l'intero albero, cioè schermo bianco al
 // posto di un banner mancante. Stesso trattamento del resto del repo
-// (useLocalStorage, telemetry, backup).
+// (useLocalStorage, backup).
 const leggiFlag = (k) => {
   try { return localStorage.getItem(k); } catch { return null; }
 };

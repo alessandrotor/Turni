@@ -33,7 +33,6 @@ const PROJECTION_LABEL = {
   manuale: 'inserita a mano',
 };
 import { exportShiftsExcel, exportShiftsPDF } from '../services/export';
-import { sendImportTelemetry } from '../services/telemetry';
 import ImportModal from './ImportModal';
 import TimelineView from './TimelineView';
 import ShareWeekModal from './ShareWeekModal';
@@ -639,7 +638,6 @@ export default function CalendarView({
   async function runImport(file, name) {
     setImportLoading(true);
     setImportError(null);
-    const meta = { named: !!name, imageBytes: file?.size ?? null, imageType: file?.type ?? null };
     try {
       // Client del proxy caricato on-demand: serve solo a chi importa da
       // immagine, non deve pesare sull'avvio (come services/export.js).
@@ -647,12 +645,10 @@ export default function CalendarView({
       const { shifts: parsed, usage } = await parseShiftsFromImage(file, name);
       setImportUsage(usage);
       setImportParsed(parsed);
-      sendImportTelemetry({ ok: true, ...usage, shifts: parsed.length, ...meta });
     } catch (err) {
       // Due famiglie, due gesti: rifare la foto o controllare la rete.
       const tipo = tipoDiErrore(err);
       setImportError({ tipo, messaggio: err.message || 'Il riconoscimento non è riuscito.' });
-      sendImportTelemetry({ ok: false, error: String(err.message || err), tipo, ...meta });
     } finally {
       setImportLoading(false);
     }

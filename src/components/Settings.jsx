@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { formatCurrency, parseNum } from '../utils/pay';
 import { getCcnl } from '../utils/ccnl';
 import { FASCE_DIPENDENTI, FASCIA_DEFAULT, contributiDiLegge } from '../utils/contributi-legge';
-import { isTelemetryEnabled, setTelemetryEnabled, telemetriaDisponibile } from '../services/telemetry';
 import { esportaBackup, leggiBackup, applicaBackup, contaTurniSalvati } from '../services/backup';
 import { ESITO } from '../services/export';
 import CcnlPicker from './CcnlPicker';
@@ -92,8 +91,6 @@ export default function Settings({ settings, onSave }) {
     malattiaCarenzaPct: toInput(settings.malattiaCarenzaPct ?? 0),
     malattiaPct: toInput(settings.malattiaPct ?? 100),
     ...formPrevidenza(settings),
-    // Non passa da `onSave`: vive in localStorage, gestito da services/telemetry.
-    telemetry: isTelemetryEnabled(),
   });
   const [saved, setSaved] = useState(false);
   // Backup: stato locale alla sezione, non passa da onSave (agisce direttamente
@@ -1247,32 +1244,10 @@ export default function Settings({ settings, onSave }) {
             te lo chiede l'app al primo import da immagine (e potrai cambiarlo da lì).
           </p>
 
-          {/* L'interruttore compare SOLO dove la telemetria esiste davvero (una
-              build con l'endpoint). Nel sito non c'è endpoint: mostrarlo lo stesso sarebbe un
-              comando che non governa niente e che lascia credere che qualcosa
-              parta. Vedi `telemetriaDisponibile` in services/telemetry.js. */}
-          {telemetriaDisponibile ? (
-            <>
-              <label className="check-row">
-                <input
-                  type="checkbox"
-                  checked={form.telemetry}
-                  onChange={(e) => { setTelemetryEnabled(e.target.checked); setForm(f => ({ ...f, telemetry: e.target.checked })); }}
-                />
-                <span>Invia statistiche anonime d'uso dell'import</span>
-              </label>
-              <p className="form-hint">
-                Solo il numero di token consumati e un identificativo casuale dell'installazione:
-                nessun turno, nessuna immagine, niente che ti identifichi. Serve a capire quanto
-                costa la funzione durante la beta.
-              </p>
-            </>
-          ) : (
-            <p className="form-hint">
-              Di questa app non viene raccolta nessuna statistica d'uso: né quante volte
-              importi, né quanto costa. Non c'è niente da spegnere.
-            </p>
-          )}
+          <p className="form-hint">
+            Di questa app non viene raccolta nessuna statistica d'uso: né quante volte
+            importi, né quanto costa. Non c'è niente da spegnere.
+          </p>
         </details>
 
         {/* Backup e ripristino: i dati vivono solo in localStorage */}

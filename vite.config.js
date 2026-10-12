@@ -40,7 +40,7 @@ export default defineConfig({
       // perde quello che stava scrivendo. Vedi services/aggiornamento.js.
       registerType: 'prompt',
       // Precache dei soli asset di build (same-origin). Le POST cross-origin al
-      // proxy AI e alla telemetria non vengono intercettate.
+      // proxy AI non vengono intercettate.
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallback: '/index.html',

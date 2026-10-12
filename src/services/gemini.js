@@ -11,8 +11,7 @@ import { ENABLE_DEBUG } from '../config/features';
 //
 // Prima qui viaggiava `installId()`, che è generato al PRIMO avvio e resta in
 // localStorage per sempre: un filo che collegava tutti gli import di una stessa
-// persona nel tempo, per un bisogno che dura un minuto. `installId` esiste
-// ancora, ma in telemetry.js, dove distinguere le installazioni è lo scopo.
+// persona nel tempo, per un bisogno che dura un minuto.
 const sessionId = 'ses_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 
 // ── Avvertenza sull'invio della foto ──────────────────────────────────────

@@ -148,11 +148,10 @@ Tre riscontri non parlano di buste ma di come il codice resta leggibile:
   La documentazione invecchia in silenzio; così invecchia a voce alta.
 - **`check-codice-morto.mjs`**: classi CSS ed export senza nessuno che li usi.
 
-`check-dati-in-uscita.mjs` ispeziona `dist/`, e su una build locale fallisce
-senza che ci sia niente di rotto: `.env.local` imposta `VITE_TELEMETRY_URL`,
-quindi in `dist/` finisce `script.google.com`. La CI non la imposta
-(`deploy-test.yml`). Vuole anche il proxy AI nel bundle. È l'unico falso
-allarme noto.
+`check-dati-in-uscita.mjs` ispeziona `dist/` e vuole il proxy AI nel bundle:
+su una build locale senza `VITE_AI_PROXY_URL` fallisce senza che ci sia niente
+di rotto. È l'unico falso allarme noto. La telemetria non c'è più (12/10/2026):
+nessun dato d'uso esce dall'app.
 
 `COSE-NUOVE.md` è l'inventario dei difetti noti, e invecchia in silenzio se
 nessuno lo tocca: quando una voce si chiude va marcata lì, col riscontro che la

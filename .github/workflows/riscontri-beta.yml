@@ -28,7 +28,7 @@ jobs:
 
       - run: npm ci
 
-      - name: Build (come in produzione, telemetria OFF)
+      - name: Build (come in produzione)
         run: npm run build
         env:
           VITE_AI_PROXY_URL: ${{ vars.VITE_AI_PROXY_URL }}
