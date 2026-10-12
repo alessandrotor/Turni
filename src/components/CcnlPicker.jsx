@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useId } from 'react';
-import { CCNL_LIST, getCcnl } from '../utils/ccnl';
+import { CCNL_LIST, getCcnl } from '../motore/ccnl';
 
 // Scelta del contratto, con la tendina di ricerca.
 //

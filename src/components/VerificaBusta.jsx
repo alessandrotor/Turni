@@ -4,7 +4,7 @@ import { leggiCedolinoDaRighe } from '../utils/leggi-cedolino';
 import {
   confronta, confrontaAMano, testoDaCondividere, scartoScritto, spiegaScarto,
 } from '../utils/verifica-busta';
-import { formatCurrency } from '../utils/pay';
+import { formatCurrency } from '../motore/pay';
 
 const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
   'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];

@@ -32,7 +32,7 @@
 // IRPEF, il punto in cui scattano si sposta e il primo controllo fallisce. È
 // il punto: è lì che l'avviso sulla buca andrebbe rifatto.
 
-import { calcNetAnnual, redditoComplessivo, TAX_2026 } from '../src/utils/net.js';
+import { calcNetAnnual, redditoComplessivo, TAX_2026 } from '../src/motore/net.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

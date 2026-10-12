@@ -12,7 +12,7 @@ import { getCcnl, monthlyContractHours } from './ccnl.js';
 import { contributiDiLegge } from './contributi-legge.js';
 import { trattenuteFuoriReddito } from './previdenza.js';
 import { calcTotalPay } from './pay.js';
-import { parseDate } from './dates.js';
+import { parseDate } from './date.js';
 
 // Arrotondamenti della busta paga. Non sono un dettaglio estetico: il cedolino
 // chiude ogni voce a due decimali e le somme partono da quelle, quindi tenere

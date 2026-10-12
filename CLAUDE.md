@@ -178,13 +178,13 @@ quanto costa scoprire a dicembre che non spettava.
   1329,86: tre cifre per una domanda. Gli euro sul singolo turno sono un'opzione
   (`mostraEuroPerTurno`), spenta di default: chi non l'accende trova il
   calendario di prima.
-- **Il lordo di un turno si chiede a `lordoTurno`** (`utils/pay.js`), mai
+- **Il lordo di un turno si chiede a `lordoTurno`** (`motore/pay.js`), mai
   sommando a mano `base + surcharge` dentro un componente. Il riscontro
   (`check-lordo-turno.mjs`) verifica che la somma dei turni faccia esattamente
   il totale del mese: se la cella e il riepilogo dicessero cifre diverse,
   nessuna delle due sarebbe più credibile.
 - **Il rischio di restituzione è una CIFRA, non uno stato**
-  (`utils/restituzione.js`). «Bonus ridotto: reddito oltre i 15.000» descriveva
+  (`motore/restituzione.js`). «Bonus ridotto: reddito oltre i 15.000» descriveva
   una condizione; «di questo passo devi restituire ~805 €» dice cosa costa.
   **Ma quella cifra è cassa, non perdita**, e per un anno l'app le ha confuse.
   Superare i 15.000 costa **~129 € l'anno**, non 1.200: la detrazione da lavoro
@@ -209,7 +209,7 @@ quanto costa scoprire a dicembre che non spettava.
   di fine anno e lasciava fermo dicembre. Simula solo da questo mese a
   dicembre: i mesi passati sono andati come sono andati.
 
-- **Il conguaglio di dicembre è una forchetta, mai una cifra** (`utils/conguaglio.js`).
+- **Il conguaglio di dicembre è una forchetta, mai una cifra** (`motore/conguaglio.js`).
   È la differenza fra quanto il datore trattiene mese per mese (lordo × 12) e
   quanto è dovuto sull'anno vero: stesso motore, nessuna regola nuova. L'anno
   è la proiezione del motore anche agli estremi, che variano solo come erano i
@@ -251,8 +251,8 @@ Confonderli faceva dire «devi restituire 805 €» a chi guadagna 2.150 € l'a
 
 ## Il motore è il cuore: i numeri escono da lì
 
-**Ogni cifra a schermo viene da una funzione del motore** (`utils/net.js`,
-`utils/pay.js` e i moduli che li usano), mai da un conto rifatto dentro un
+**Ogni cifra a schermo viene da una funzione del motore** (`motore/net.js`,
+`motore/pay.js` e i moduli che li usano), mai da un conto rifatto dentro un
 componente o un modulo nuovo. È così apposta: due schermate che fanno lo stesso
 conto per strade diverse prima o poi dicono cifre diverse, e allora nessuna delle
 due è più credibile. Già capitato: il conguaglio sommava l'anno per conto suo,
@@ -328,7 +328,7 @@ barra divideva per l'aliquota (16.622) e il popup cercava sul reddito vero
 (16.596): due lordi per la stessa soglia. Fondo pensione e cassa sanitaria
 trattenuti in busta escono dal reddito come l'INPS (art. 51 c. 2 lett. h e a),
 quindi alzano la soglia: si chiedono in Impostazioni e li toglie
-`calcContributi` (`utils/previdenza.js`, → `check-previdenza.mjs`, dalla
+`calcContributi` (`motore/previdenza.js`, → `check-previdenza.mjs`, dalla
 norma, non da una busta). Cosa quel lordo NON sa, e va detto se serve: altri
 redditi o altri datori (la soglia in lordo scende), aliquote diverse dalla
 9,19% (apprendisti), voci esenti.
@@ -491,7 +491,7 @@ Discendono tutte dalla parola d'ordine qui sopra.
 - Le giornate pagate ma non lavorate **non si chiamano «assenza»** a schermo:
   ferie, permesso, malattia, festività, ognuna col suo nome. Se da orario non era
   previsto andare a lavoro, non è un buco da giustificare. Gli identificatori nel
-  codice (`isAssenza`, `assenzaMinutes`, `utils/assenze.js`) restano come sono.
+  codice (`isAssenza`, `assenzaMinutes`, `motore/assenze.js`) restano come sono.
 - Quando i conteggi non coprono il mese visualizzato (mese di paga), il periodo
   si **dichiara sopra i numeri**. Non si allunga il calendario per farceli stare:
   provato, era brutto e si perdeva di vista che mese si stava guardando.

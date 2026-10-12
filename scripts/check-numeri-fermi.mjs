@@ -21,15 +21,15 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { computePayByShift, calcTotalPay } from '../src/utils/pay.js';
-import { lordoDelMese, nettoDelMese, calcNetAnnual, tiDecision } from '../src/utils/net.js';
-import { capienzaProgressiva } from '../src/utils/capienza.js';
-import { progressiviDellAnno, stimaConguaglio } from '../src/utils/conguaglio.js';
-import { nettoDelMeseConPremio } from '../src/utils/premio-risultato.js';
-import { rischioRestituzione, costoSoglia } from '../src/utils/restituzione.js';
-import { calcBonusMargin } from '../src/utils/bonus.js';
-import { lordoPerReddito, lordoMeseMinimoTi } from '../src/utils/soglia-lorda.js';
-import { proponiPeriodo } from '../src/utils/periodo-assenza.js';
+import { computePayByShift, calcTotalPay } from '../src/motore/pay.js';
+import { lordoDelMese, nettoDelMese, calcNetAnnual, tiDecision } from '../src/motore/net.js';
+import { capienzaProgressiva } from '../src/motore/capienza.js';
+import { progressiviDellAnno, stimaConguaglio } from '../src/motore/conguaglio.js';
+import { nettoDelMeseConPremio } from '../src/motore/premio-risultato.js';
+import { rischioRestituzione, costoSoglia } from '../src/motore/restituzione.js';
+import { calcBonusMargin } from '../src/motore/bonus.js';
+import { lordoPerReddito, lordoMeseMinimoTi } from '../src/motore/soglia-lorda.js';
+import { proponiPeriodo } from '../src/motore/periodo-assenza.js';
 
 const FILE = join(dirname(fileURLToPath(import.meta.url)), 'numeri-fermi.json');
 const ANNO = 2026;

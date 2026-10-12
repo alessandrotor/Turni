@@ -11,8 +11,8 @@
 // un'indennità nell'imponibile normale (agosto 2026). Per questo il default è
 // spento, e il primo controllo dice che spento non cambia niente.
 
-import { nettoDelMese, lordoDelMese } from '../src/utils/net.js';
-import { nettoDelMeseConPremio, aliquotaPremio } from '../src/utils/premio-risultato.js';
+import { nettoDelMese, lordoDelMese } from '../src/motore/net.js';
+import { nettoDelMeseConPremio, aliquotaPremio } from '../src/motore/premio-risultato.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

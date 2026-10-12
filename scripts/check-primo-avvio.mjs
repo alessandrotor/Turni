@@ -25,7 +25,7 @@ import {
   datiMinimiMancanti, haDatiMinimi, contrattoMancante,
   maggiorazioneDaChiedere, consigliatiMancanti, statoConfigurazione,
 } from '../src/utils/configurazione.js';
-import { FASCIA_NOTTURNA_DEFAULT, FASCIA_NOTTURNA_POSSIBILE } from '../src/utils/notturno.js';
+import { FASCIA_NOTTURNA_DEFAULT, FASCIA_NOTTURNA_POSSIBILE } from '../src/motore/notturno.js';
 import ccnl from '../src/data/ccnl.json' with { type: 'json' };
 
 let falliti = 0;

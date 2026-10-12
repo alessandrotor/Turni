@@ -13,7 +13,7 @@
 // 60%, e la maggiorazione notturna ordinaria su quei minuti non si aggiunge.
 // Senza CCNL la regola non c'è. E di giorno resta il 30%.
 
-import { computePayByShift } from '../src/utils/pay.js';
+import { computePayByShift } from '../src/motore/pay.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

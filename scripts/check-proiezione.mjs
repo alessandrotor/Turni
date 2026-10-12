@@ -22,7 +22,7 @@
 // previsione. Confermano che il netto non e' cambiato, non che la previsione
 // sia giusta.
 
-import { projectAnnualIncome, monthlyBaseGross } from '../src/utils/net.js';
+import { projectAnnualIncome, monthlyBaseGross } from '../src/motore/net.js';
 
 let falliti = 0;
 let totale = 0;

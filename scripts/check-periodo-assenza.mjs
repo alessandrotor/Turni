@@ -10,9 +10,9 @@
 //     quanto cinque inserimenti singoli. Se il periodo spezzasse l'evento, la
 //     carenza ripartirebbe da capo e la paga sarebbe sbagliata.
 
-import { giorniPeriodo, proponiPeriodo, totalePeriodo, giorniDiRiposo, MAX_GIORNI_PERIODO } from '../src/utils/periodo-assenza.js';
-import { minutiGiornoAssenza } from '../src/utils/assenze.js';
-import { computePayByShift } from '../src/utils/pay.js';
+import { giorniPeriodo, proponiPeriodo, totalePeriodo, giorniDiRiposo, MAX_GIORNI_PERIODO } from '../src/motore/periodo-assenza.js';
+import { minutiGiornoAssenza } from '../src/motore/assenze.js';
+import { computePayByShift } from '../src/motore/pay.js';
 
 let falliti = 0;
 let totale = 0;

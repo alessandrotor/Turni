@@ -2,9 +2,9 @@
 // Verifica che il calcolo del delta ore, lordo, netto e soglie sia esatto.
 
 import { calcolaCosaCambia, formatDeltaCurrency, formatDeltaMinutes } from '../src/utils/cosa-cambia.js';
-import { computePayByShift } from '../src/utils/pay.js';
-import { computeAnnualGrossFromShifts, projectAnnualIncome } from '../src/utils/net.js';
-import { calcBonusMargin } from '../src/utils/bonus.js';
+import { computePayByShift } from '../src/motore/pay.js';
+import { computeAnnualGrossFromShifts, projectAnnualIncome } from '../src/motore/net.js';
+import { calcBonusMargin } from '../src/motore/bonus.js';
 
 let falliti = 0;
 function assert(cond, msg) {

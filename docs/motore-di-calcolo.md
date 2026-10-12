@@ -39,17 +39,17 @@ aritmetica: se un numero non torna, il bug è in `utils/`.
 | File | Responsabilità | Righe |
 |---|---|---|
 | `utils/dates.js` | date ISO, settimane lun–dom, **mese di paga**, parsing orari | 194 |
-| `utils/pay.js` | **cuore**: durata turni, soglie, maggiorazioni, lordo | 378 |
-| `utils/net.js` | **fisco**: contributi, IRPEF, detrazioni, TI, cuneo, TFR, proiezioni | 821 |
-| `utils/ccnl.js` | lettura dei preset contrattuali da `data/ccnl.json` | 109 |
-| `utils/assenze.js` | ferie, permessi, malattia, festività non lavorate | 146 |
-| `utils/notturno.js` | fascia notturna, minuti in fascia, cumulo | 196 |
-| `utils/holidays.js` | festività italiane, Pasqua (computus di Meeus) | 62 |
-| `utils/contributi-legge.js` | FIS / CIGS in base alla **dimensione azienda** | 76 |
-| `utils/bonus.js` | margini rispetto alle soglie del trattamento integrativo | 70 |
+| `motore/pay.js` | **cuore**: durata turni, soglie, maggiorazioni, lordo | 378 |
+| `motore/net.js` | **fisco**: contributi, IRPEF, detrazioni, TI, cuneo, TFR, proiezioni | 821 |
+| `motore/ccnl.js` | lettura dei preset contrattuali da `data/ccnl.json` | 109 |
+| `motore/assenze.js` | ferie, permessi, malattia, festività non lavorate | 146 |
+| `motore/notturno.js` | fascia notturna, minuti in fascia, cumulo | 196 |
+| `motore/holidays.js` | festività italiane, Pasqua (computus di Meeus) | 62 |
+| `motore/contributi-legge.js` | FIS / CIGS in base alla **dimensione azienda** | 76 |
+| `motore/bonus.js` | margini rispetto alle soglie del trattamento integrativo | 70 |
 | `utils/stats.js` | aggregazione annuale (nessuna formula nuova) | 274 |
 | `utils/maggiorazioni.js` | normalizza le % copiate dal cedolino (120 → 20) | 85 |
-| `utils/periodo-assenza.js` | «dal … al …» → giornate da creare | 99 |
+| `motore/periodo-assenza.js` | «dal … al …» → giornate da creare | 99 |
 | `utils/festivita-non-lavorate.js` | propone le festività senza turno | 67 |
 | `utils/orari.js` | correzione degli orari `HH:50` → `HH:30` (import da foto) | 54 |
 | `hooks/useMonthlyNet.js` | orchestrazione del pannello netto mensile | 82 |
@@ -394,7 +394,7 @@ Chi scrive 120 dove andava 20 si ritrova un giorno festivo gonfiato dell'83%.
 
 ## 8. Fase 5 — Assenze
 
-`utils/assenze.js`. Quattro tipi oltre a `lavoro`: `ferie`, `permesso`,
+`motore/assenze.js`. Quattro tipi oltre a `lavoro`: `ferie`, `permesso`,
 `malattia`, `festivita` (festività **non** lavorata, giustificativo a sé in
 busta — da non confondere con il festivo lavorato, che resta di tipo `lavoro`).
 
@@ -585,7 +585,7 @@ elemento in Impostazioni: un campo in più per meno di un centesimo, non si fa.
 `ebtBase` resta l'appiglio per i riscontri, che il numero preciso lo leggono dal
 cedolino; in Impostazioni non c'è, di proposito.
 
-**FIS e CIGS non sono parametri del CCNL** (`utils/contributi-legge.js`).
+**FIS e CIGS non sono parametri del CCNL** (`motore/contributi-legge.js`).
 L'aliquota dipende da **quanti dipendenti ha l'azienda** — un bar con quattro
 persone e una catena con duecento applicano lo stesso CCNL Turismo e pagano
 contributi diversi. Del contratto dipende solo *a quale fondo* si è iscritti
@@ -619,12 +619,12 @@ Addizionali default          regionale 1,23% · comunale 0%
 Le soglie sono definite sul **reddito complessivo**, non sul lordo: per un
 dipendente è il lordo al netto dei contributi (art. 51 TUIR; riscontro su una
 CU in `check-cu-2025.mjs`). Il lordo che corrisponde a una soglia lo dà
-`lordoPerReddito()` (`utils/soglia-lorda.js`): l'ultimo euro lordo che resta
+`lordoPerReddito()` (`motore/soglia-lorda.js`): l'ultimo euro lordo che resta
 entro il reddito, cercato col reddito vero (`redditoComplessivo()`). Dipende dal
 contratto: senza CCNL ~16.518 € e ~30.833 €, nel Turismo ~16.621 € e ~31.027 €.
 A schermo si dice prima il lordo, da confrontare con la busta, e i 15.000 tra
 parentesi: «La tua soglia lorda è ~16.621 € l'anno (15.000 € di reddito)».
-Fondo pensione e cassa sanitaria trattenuti in busta (`utils/previdenza.js`)
+Fondo pensione e cassa sanitaria trattenuti in busta (`motore/previdenza.js`)
 entrano in `calcContributi` come contributi deducibili: abbassano il reddito e
 alzano la soglia lorda (1,5% al fondo nel Turismo: da ~16.596 a ~16.876 €).
 
@@ -841,7 +841,7 @@ Non sono bug, e vanno capite prima di «correggerle»:
 - **Ore dell'app vs ore in busta.** La busta include ferie, permessi e festività
   non lavorate come ore retribuite. Se non sono state segnate nell'app, il
   totale dell'app resta sotto. È esattamente lo scarto per cui esistono
-  `utils/assenze.js`, `utils/periodo-assenza.js` e
+  `motore/assenze.js`, `motore/periodo-assenza.js` e
   `utils/festivita-non-lavorate.js`.
 
 ---

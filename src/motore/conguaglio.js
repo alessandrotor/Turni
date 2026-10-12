@@ -56,7 +56,7 @@ import {
   lordoDelMese, calcNetAnnual, monthlyBaseGross, TAX_2026,
   modoTrattamentoIntegrativo,
 } from './net.js';
-import { getDaysInMonth, parseDate } from './dates.js';
+import { getDaysInMonth, parseDate } from './date.js';
 
 /** Sotto questa cifra, da entrambi gli estremi, si dice «circa in pari». */
 export const SOGLIA_PARI = 20;

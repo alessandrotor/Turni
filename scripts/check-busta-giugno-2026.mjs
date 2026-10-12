@@ -16,7 +16,7 @@
 // busta, proiezione sotto i 15.000 €, e si verifica che il motore segua la
 // fascia invece di inseguire un numero.
 
-import { calcNetMonthly, extraMonthAccrual, monthlyBaseGross, round2 } from '../src/utils/net.js';
+import { calcNetMonthly, extraMonthAccrual, monthlyBaseGross, round2 } from '../src/motore/net.js';
 
 const BASE_SETTINGS = {
   hourlyRate: 9.21802,

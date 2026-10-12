@@ -1,11 +1,11 @@
 // Impostazioni: fondo pensione e cassa sanitaria trattenuti in busta.
 //
 // Sta in un file a sé perché Settings.jsx è congelato alla sua misura
-// (check-dimensioni). Il conto lo fa il motore (utils/previdenza.js): qui si
+// (check-dimensioni). Il conto lo fa il motore (motore/previdenza.js): qui si
 // leggono e si salvano due numeri, e si dice cosa cambiano.
 
-import { parseNum } from '../utils/pay';
-import { TETTO_FONDO_PENSIONE } from '../utils/previdenza';
+import { parseNum } from '../motore/pay';
+import { TETTO_FONDO_PENSIONE } from '../motore/previdenza';
 
 const comeTesto = (n) => (Number(n) ? String(Number(n)).replace('.', ',') : '');
 
@@ -21,7 +21,7 @@ export const salvaPrevidenza = (form) => ({
   bonusPremioRisultato: !!form.bonusPremioRisultato,
 });
 
-// Il bonus come premio di risultato (utils/premio-risultato.js): sta qui per
+// Il bonus come premio di risultato (motore/premio-risultato.js): sta qui per
 // la stessa ragione della sezione sotto, Settings.jsx non può crescere.
 export function PremioRisultato({ form, setCheck }) {
   return (

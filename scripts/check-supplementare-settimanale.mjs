@@ -28,7 +28,7 @@
 // Uno scarto da orari segnati, non da regola: con la regola mensile erano
 // 12,3 e 22,8. Giugno non si può provare, il backup ha 28 ore in meno.
 
-import { computePayByShift, calcTotalPay } from '../src/utils/pay.js';
+import { computePayByShift, calcTotalPay } from '../src/motore/pay.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

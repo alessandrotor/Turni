@@ -190,13 +190,13 @@ che sta dentro il riquadro dell'avviso (campo `noTrattamentoIntegrativo`).
 | `TAX_2026.TI_MASSIMO` = 1200 | importo annuo, D.L. 3/2020 art. 1 c. 1 |
 | `TAX_2026.TI_CAPIENZA_SCONTO` = 75 | la riduzione di 75 € nel test di capienza |
 | `TAX_2026.DETR_LAV_FISSA` = 1955 | detrazione art. 13 c. 1 TUIR fino a 15.000 € |
-| `trattamentoIntegrativo()` in `utils/net.js` | le tre fasce e i due test (capienza sotto i 15.000, differenza detrazioni−imposta sopra) |
-| `tiDecision()` in `utils/net.js` | la decisione «spetta adesso?», come la prende un software paghe sulla proiezione annua |
-| `calcNetMonthly()` in `utils/net.js` | il ragguaglio ai giorni del mese (`÷365`) |
-| `utils/restituzione.js` | quanto è stato incassato, quanto spetta davvero, differenza da restituire, soglia dei 60 € per la rateizzazione |
-| `quotaPotenziale()` in `utils/restituzione.js` | quanto si rischia di restituire **prima** di superare la soglia (l'avviso in anticipo) |
-| `redditoComplessivo()` in `utils/net.js` | il reddito su cui si misurano le soglie, **in un solo posto**: lo usano sia il pannello del netto sia la striscia del bonus, così non possono contraddirsi |
-| `utils/bonus.js` | lo stato (pieno / ridotto / niente) deciso sull'imponibile come nel testo, e le soglie convertite in **lordo** per dire quanto manca — perché il lordo è la cifra che l'utente somma dai turni |
+| `trattamentoIntegrativo()` in `motore/net.js` | le tre fasce e i due test (capienza sotto i 15.000, differenza detrazioni−imposta sopra) |
+| `tiDecision()` in `motore/net.js` | la decisione «spetta adesso?», come la prende un software paghe sulla proiezione annua |
+| `calcNetMonthly()` in `motore/net.js` | il ragguaglio ai giorni del mese (`÷365`) |
+| `motore/restituzione.js` | quanto è stato incassato, quanto spetta davvero, differenza da restituire, soglia dei 60 € per la rateizzazione |
+| `quotaPotenziale()` in `motore/restituzione.js` | quanto si rischia di restituire **prima** di superare la soglia (l'avviso in anticipo) |
+| `redditoComplessivo()` in `motore/net.js` | il reddito su cui si misurano le soglie, **in un solo posto**: lo usano sia il pannello del netto sia la striscia del bonus, così non possono contraddirsi |
+| `motore/bonus.js` | lo stato (pieno / ridotto / niente) deciso sull'imponibile come nel testo, e le soglie convertite in **lordo** per dire quanto manca — perché il lordo è la cifra che l'utente somma dai turni |
 | `settings.noTrattamentoIntegrativo` | la rinuncia di §5 |
 
 Riscontri: `scripts/check-bonus.mjs` (soglie e margini),

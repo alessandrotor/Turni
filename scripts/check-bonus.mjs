@@ -18,9 +18,9 @@
 // Questo file non poteva esistere finche' `bonus.js` importava `./net` senza
 // estensione: Node non riusciva a caricarlo.
 
-import { calcBonusMargin, BONUS_CONST, BONUS_STATUS } from '../src/utils/bonus.js';
-import { redditoComplessivo, tiDecision } from '../src/utils/net.js';
-import { costoSoglia } from '../src/utils/restituzione.js';
+import { calcBonusMargin, BONUS_CONST, BONUS_STATUS } from '../src/motore/bonus.js';
+import { redditoComplessivo, tiDecision } from '../src/motore/net.js';
+import { costoSoglia } from '../src/motore/restituzione.js';
 
 let falliti = 0;
 let totale = 0;

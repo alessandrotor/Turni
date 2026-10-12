@@ -16,7 +16,7 @@
 //
 // Estensioni esplicite sugli import: come negli altri moduli di `utils/`, così
 // il file resta importabile da Node puro per i riscontri in `scripts/`.
-import { dayNumber } from './dates.js';
+import { dayNumber } from './date.js';
 
 export const TIPO = {
   LAVORO: 'lavoro',

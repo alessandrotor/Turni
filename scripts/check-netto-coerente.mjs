@@ -15,11 +15,11 @@
 // che Statistiche lo faccia davvero, riga per riga.
 
 import { monthlyBreakdown } from '../src/utils/stats.js';
-import { computePayByShift } from '../src/utils/pay.js';
-import { nettoDelMese, calcNetMonthly } from '../src/utils/net.js';
+import { computePayByShift } from '../src/motore/pay.js';
+import { nettoDelMese, calcNetMonthly } from '../src/motore/net.js';
 import { getDaysInMonth } from '../src/utils/dates.js';
-import { progressiviDellAnno } from '../src/utils/conguaglio.js';
-import { capienzaProgressiva } from '../src/utils/capienza.js';
+import { progressiviDellAnno } from '../src/motore/conguaglio.js';
+import { capienzaProgressiva } from '../src/motore/capienza.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

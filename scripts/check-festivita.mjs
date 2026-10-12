@@ -15,8 +15,8 @@
 //     come uno lavorato in un giorno festivo.
 
 import { festivitaSenzaTurno, giornateFestive } from '../src/utils/festivita-non-lavorate.js';
-import { minutiGiornoAssenza, tipoTurno, isAssenza, TIPO } from '../src/utils/assenze.js';
-import { computePayByShift } from '../src/utils/pay.js';
+import { minutiGiornoAssenza, tipoTurno, isAssenza, TIPO } from '../src/motore/assenze.js';
+import { computePayByShift } from '../src/motore/pay.js';
 
 let falliti = 0;
 let totale = 0;

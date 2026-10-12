@@ -21,7 +21,7 @@
 //    cioè i ratei orari di 13ª, ferie, ROL e 14ª sono GIÀ dentro la paga oraria.
 //    Per questo, a chiamata, le caselle 13ª/14ª devono restare spente.
 
-import { calcNetMonthly, calcNetAnnual, tiDecision, TAX_2026 } from '../src/utils/net.js';
+import { calcNetMonthly, calcNetAnnual, tiDecision, TAX_2026 } from '../src/motore/net.js';
 
 const SETTINGS = {
   hourlyRate: 9.43022,

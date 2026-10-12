@@ -20,8 +20,8 @@
 // buste (10.358 € a fine agosto). Gennaio, marzo e aprile non sono noti uno per
 // uno: gennaio è la loro media, e febbraio resta lontano dalla soglia.
 
-import { nettoDelMese } from '../src/utils/net.js';
-import { capienzaProgressiva, lordoPresuntoAnno } from '../src/utils/capienza.js';
+import { nettoDelMese } from '../src/motore/net.js';
+import { capienzaProgressiva, lordoPresuntoAnno } from '../src/motore/capienza.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

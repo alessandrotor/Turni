@@ -30,7 +30,7 @@
 // check-ti-mensile.mjs). È una decisione provvisoria: a dicembre il conguaglio
 // rifà il conto sul reddito vero, quello di qui sopra.
 
-import { irpefLorda, detrazioneLavoro, cuneoPercent } from '../src/utils/net.js';
+import { irpefLorda, detrazioneLavoro, cuneoPercent } from '../src/motore/net.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

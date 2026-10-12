@@ -43,7 +43,7 @@
 
 // Estensioni esplicite: senza, Node puro non importa il modulo e i riscontri in
 // `scripts/` non partono.
-import { isIsoDate, parseDate, formatDate, dayNumber } from './dates.js';
+import { isIsoDate, parseDate, formatDate, dayNumber } from './date.js';
 import { isHoliday } from './holidays.js';
 import { minutiGiornoAssenza, isAssenza, GIORNI_LAVORATIVI_DEFAULT } from './assenze.js';
 

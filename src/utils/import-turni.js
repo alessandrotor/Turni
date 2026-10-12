@@ -21,7 +21,7 @@
 //    può contenere il nome di un collega.
 
 import { isIsoDate, parseDate, formatDate } from './dates.js';
-import { isAssenza } from './assenze.js';
+import { isAssenza } from '../motore/assenze.js';
 
 const GIORNO_MS = 86400000;
 const MEZZO_ANNO = 183;

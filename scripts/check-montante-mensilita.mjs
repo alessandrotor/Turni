@@ -34,7 +34,7 @@
 // quando la 14ª non e' ancora arrivata: il riscontro girerebbe verde senza
 // provare niente per meta' anno.
 
-import { computeAnnualGrossFromShifts, projectAnnualIncome, monthlyBaseGross, extraMonthAccrual } from '../src/utils/net.js';
+import { computeAnnualGrossFromShifts, projectAnnualIncome, monthlyBaseGross, extraMonthAccrual } from '../src/motore/net.js';
 
 let falliti = 0;
 let totale = 0;

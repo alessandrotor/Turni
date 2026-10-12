@@ -30,10 +30,10 @@
 //    modificabili in Impostazioni. Se un domani arriva un cedolino con
 //    malattia, i numeri attesi vanno rifatti su quello.
 
-import { computePayByShift, calcTotalPay, calcShiftMinutes } from '../src/utils/pay.js';
+import { computePayByShift, calcTotalPay, calcShiftMinutes } from '../src/motore/pay.js';
 import {
   TIPO, minutiGiornoAssenza, giorniEventoMalattia, percentualeAssenza,
-} from '../src/utils/assenze.js';
+} from '../src/motore/assenze.js';
 
 const R = 9.21802;
 const BASE = {

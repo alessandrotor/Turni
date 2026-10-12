@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import {
   lordoDelMese, riferimentoAnnuoDelMese, TAX_2026, tiDecision, projectAnnualIncome,
-} from '../utils/net';
+} from '../motore/net';
 import { ENABLE_NET_CALC } from '../config/features';
-import { progressiviDellAnno } from '../utils/conguaglio';
-import { capienzaProgressiva, simulaTi } from '../utils/capienza';
-import { nettoDelMeseConPremio } from '../utils/premio-risultato';
+import { progressiviDellAnno } from '../motore/conguaglio';
+import { capienzaProgressiva, simulaTi } from '../motore/capienza';
+import { nettoDelMeseConPremio } from '../motore/premio-risultato';
 
 // Netto stimato del mese (beta): calcolato PARTENDO DAL MESE, come una busta
 // paga. Estratto da CalendarView per leggibilità — la logica è identica.

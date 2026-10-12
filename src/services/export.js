@@ -1,8 +1,8 @@
 // Esportazione dei turni del mese in Excel (.xlsx) e PDF.
 // Librerie pesanti caricate on-demand (dynamic import) per non appesantire l'avvio.
 // Il file si salva col «salva con nome» del browser, o si scarica.
-import { calcShiftMinutes } from '../utils/pay';
-import { tipoTurno, ETICHETTA, TIPO } from '../utils/assenze';
+import { calcShiftMinutes } from '../motore/pay';
+import { tipoTurno, ETICHETTA, TIPO } from '../motore/assenze';
 import { parseDate, formatMonthYear } from '../utils/dates';
 
 const GIORNI = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];

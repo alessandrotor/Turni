@@ -15,7 +15,7 @@
 // — che chiede «quanto in piu'» — si ritrova quel giorno gonfiato dell'83%.
 
 import { normalizzaMaggiorazione, messaggioMaggiorazione, MAGGIORAZIONE_MASSIMA_NOTA } from '../src/utils/maggiorazioni.js';
-import { computePayByShift } from '../src/utils/pay.js';
+import { computePayByShift } from '../src/motore/pay.js';
 
 let falliti = 0;
 let totale = 0;

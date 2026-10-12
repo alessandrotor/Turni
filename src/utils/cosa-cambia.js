@@ -10,20 +10,20 @@
 // usando lo stesso motore di calcolo già collaudato (pay.js e net.js).
 // È una funzione pura, senza React e senza dipendenze dal DOM.
 
-import { calcShiftMinutes, calcTotalPay, computePayByShift, hasAnyRate } from './pay.js';
+import { calcShiftMinutes, calcTotalPay, computePayByShift, hasAnyRate } from '../motore/pay.js';
 import {
   lordoDelMese,
   computeAnnualGrossFromShifts,
   projectAnnualIncome,
-} from './net.js';
-import { progressiviDellAnno } from './conguaglio.js';
-import { capienzaProgressiva } from './capienza.js';
-import { nettoDelMeseConPremio } from './premio-risultato.js';
-import { calcBonusMargin, BONUS_STATUS } from './bonus.js';
+} from '../motore/net.js';
+import { progressiviDellAnno } from '../motore/conguaglio.js';
+import { capienzaProgressiva } from '../motore/capienza.js';
+import { nettoDelMeseConPremio } from '../motore/premio-risultato.js';
+import { calcBonusMargin, BONUS_STATUS } from '../motore/bonus.js';
 import { getDaysInMonth } from './dates.js';
-import { isMensilizzato, monthlyContractHours } from './ccnl.js';
-import { isHoliday } from './holidays.js';
-import { isAssenza, TIPO } from './assenze.js';
+import { isMensilizzato, monthlyContractHours } from '../motore/ccnl.js';
+import { isHoliday } from '../motore/holidays.js';
+import { isAssenza, TIPO } from '../motore/assenze.js';
 
 // IL MONTE ORE DATO PER SCONTATO. Sul mensilizzato le ore ordinarie pagate
 // sono il monte ore del mese (103,20 h a 24 h settimanali), comunque siano

@@ -4,17 +4,17 @@ import {
   formatDate, formatMonthYear, isToday, isWeekend,
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth, formatPayrollRange,
 } from '../utils/dates';
-import { calcShiftMinutes, calcTotalPay, formatCurrency, lordoTurno } from '../utils/pay';
-import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
-import { isMensilizzato } from '../utils/ccnl';
-import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../utils/bonus';
-import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../utils/restituzione';
+import { calcShiftMinutes, calcTotalPay, formatCurrency, lordoTurno } from '../motore/pay';
+import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../motore/assenze';
+import { isMensilizzato } from '../motore/ccnl';
+import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../motore/bonus';
+import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../motore/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
 import { contrattoMancante } from '../utils/configurazione';
 import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
-import { minutiGiornoAssenza } from '../utils/assenze';
-import { EXTRA_MONTHS, projectAnnualIncome } from '../utils/net';
+import { minutiGiornoAssenza } from '../motore/assenze';
+import { EXTRA_MONTHS, projectAnnualIncome } from '../motore/net';
 import { ENABLE_DEBUG, ENABLE_NET_CALC } from '../config/features';
 import useMonthlyNet from '../hooks/useMonthlyNet';
 
@@ -41,13 +41,13 @@ import useSfoglio from '../hooks/useSfoglio';
 import { KEY_CAL_LAYOUT } from '../services/backup';
 
 import { intervalloCella } from '../utils/orario-cella';
-import { stimaConguaglio } from '../utils/conguaglio';
+import { stimaConguaglio } from '../motore/conguaglio';
 import { numeroIt, euroCella, scriviForchetta } from '../utils/formato';
 import { PopupMese, PopupConguaglio, PopupSoglia } from './PopupFiscali';
 import RiquadroTI from './RiquadroTI';
 import NetPillole from './NetPillole';
 import { confrontoMontante } from '../utils/confronto-montante';
-import { lordoMeseMinimoTi } from '../utils/soglia-lorda';
+import { lordoMeseMinimoTi } from '../motore/soglia-lorda';
 import { tipoDiErrore, TITOLO_ERRORE } from '../utils/errore-import';
 
 // La forchetta a dieci euro: una cifra al centesimo prometterebbe una
@@ -346,8 +346,8 @@ export default function CalendarView({
   // Quanto rischia di dover RIDARE INDIETRO. E' la domanda che la gente si fa
   // davvero, e fino a settembre 2026 l'app non la sfiorava: sapeva dire se il
   // bonus spetta adesso, mai quanto costa scoprire a dicembre che non spettava.
-  // Vedi utils/restituzione.js per il modello e per cosa l'app NON puo' sapere.
-  // Il conguaglio di dicembre, come forchetta (utils/conguaglio.js). Solo per
+  // Vedi motore/restituzione.js per il modello e per cosa l'app NON puo' sapere.
+  // Il conguaglio di dicembre, come forchetta (motore/conguaglio.js). Solo per
   // l'anno in corso: per un anno chiuso il conguaglio è già in busta, e la busta
   // lo sa meglio dell'app. Dal primo momento in cui c'è un reddito da stimare.
   const oggiAnno = new Date().getFullYear();
@@ -516,7 +516,7 @@ export default function CalendarView({
   // «fino ad agosto», «fino a luglio»: la d eufonica davanti ad a-.
   const finoA = (m) => { const n = nomeMese(m); return `fino ${/^a/i.test(n) ? 'ad' : 'a'} ${n}`; };
   // Le cifre delle buste del montante: scritte in `settings` solo quando si
-  // lascia il campo, legate al mese del montante (utils/conguaglio.js).
+  // lascia il campo, legate al mese del montante (motore/conguaglio.js).
   const salvaBuste = (chiave) => {
     const bozza = busteBozza[chiave];
     if (bozza == null || !conguaglio) return;
@@ -600,7 +600,7 @@ export default function CalendarView({
   // COSA FA AL TRATTAMENTO INTEGRATIVO, che è il motivo per cui la domanda
   // viene fatta: il lordo da solo non risponde. La soglia dei 15.000 non è una
   // linea oltre cui si perde tutto — è una buca larga un paio di centinaia di
-  // euro e profonda ~129 (vedi utils/restituzione.js) — e i tre casi vogliono
+  // euro e profonda ~129 (vedi motore/restituzione.js) — e i tre casi vogliono
   // tre risposte diverse, non tre intensità dello stesso allarme.
   const posizioneSimulata = useMemo(
     () => posizioneRispettoSoglia(proiezioneBonusOgniMese.value, settings, costo),

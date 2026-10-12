@@ -75,7 +75,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   calcNetMonthly, taxableToGross, round2, TAX_2026,
-} from '../src/utils/net.js';
+} from '../src/motore/net.js';
 import { lordoDaBusta } from '../src/utils/leggi-cedolino.js';
 
 const CARTELLA = 'dati-buste';

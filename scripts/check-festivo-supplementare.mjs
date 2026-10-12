@@ -31,10 +31,10 @@
 // Il mese di paga di giugno 2026 va dal 1 giugno al 5 luglio (giugno comincia di
 // lunedi', quindi vale cinque settimane — vedi utils/dates.js).
 
-import { computePayByShift, calcTotalPay } from '../src/utils/pay.js';
-import { monthlyContractHours } from '../src/utils/ccnl.js';
+import { computePayByShift, calcTotalPay } from '../src/motore/pay.js';
+import { monthlyContractHours } from '../src/motore/ccnl.js';
 import { payrollMonthKey } from '../src/utils/dates.js';
-import { isHoliday } from '../src/utils/holidays.js';
+import { isHoliday } from '../src/motore/holidays.js';
 
 const S = {
   hourlyRate: 9.21802,

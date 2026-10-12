@@ -57,7 +57,7 @@
 
 // Estensione esplicita: senza, i riscontri in `scripts/` (che girano fuori da
 // Vite, su Node puro) non riescono a importare questo modulo.
-import { parseTime, minutesDiff } from './dates.js';
+import { parseTime, minutesDiff } from './date.js';
 import { getCcnl } from './ccnl.js';
 
 // Ripiego di LEGGE (D.Lgs. 66/2003), per i contratti che non dichiarano una

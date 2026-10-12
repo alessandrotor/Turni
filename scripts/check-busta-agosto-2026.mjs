@@ -36,7 +36,7 @@
 // Le cifre vivono qui sotto come costanti: non vengono ripetute nei commenti,
 // e nel repository non entra nient'altro della busta.
 
-import { calcNetMonthly, tiDecision, cuneoPercent, redditoComplessivo } from '../src/utils/net.js';
+import { calcNetMonthly, tiDecision, cuneoPercent, redditoComplessivo } from '../src/motore/net.js';
 
 // ── I dati della busta ─────────────────────────────────────────────────────
 const RATE = 9.21802;

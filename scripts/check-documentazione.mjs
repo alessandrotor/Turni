@@ -11,7 +11,7 @@
 // in silenzio; questo riscontro la fa invecchiare a voce alta.
 //
 // COSA CONTROLLA, nei testi fra `backtick`:
-//  · un nome di file (`check-x.mjs`, `utils/pay.js`, `ShiftForm.jsx`) deve
+//  · un nome di file (`check-x.mjs`, `motore/pay.js`, `ShiftForm.jsx`) deve
 //    esistere nel repository, col percorso se c'è o almeno col nome;
 //  · una funzione scritta con le parentesi (`costoSoglia()`) deve essere
 //    definita da qualche parte in `src/`, `worker/` o `scripts/`.
@@ -53,7 +53,7 @@ const definita = (fn) => new RegExp(
 ).test(codice);
 
 // Un file citato si cerca col percorso, poi sotto src/ (si scrive
-// `utils/pay.js` per `src/utils/pay.js`), poi col solo nome.
+// `motore/pay.js` per `src/motore/pay.js`), poi col solo nome.
 const esiste = (citato) => existsSync(join(RADICE, citato))
   || existsSync(join(RADICE, 'src', citato))
   || (!citato.includes('/') && nomi.has(citato));

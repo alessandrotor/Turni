@@ -26,9 +26,9 @@
 // mensile che l'app scrive sia proprio il primo euro in cui il netto contiene
 // il trattamento; e che torni col conto a mano sulla norma.
 
-import { nettoDelMese, TAX_2026, deductibleContribRate } from '../src/utils/net.js';
-import { lordoMeseMinimoTi } from '../src/utils/soglia-lorda.js';
-import { capienzaProgressiva, nettoSimulandoTi } from '../src/utils/capienza.js';
+import { nettoDelMese, TAX_2026, deductibleContribRate } from '../src/motore/net.js';
+import { lordoMeseMinimoTi } from '../src/motore/soglia-lorda.js';
+import { capienzaProgressiva, nettoSimulandoTi } from '../src/motore/capienza.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

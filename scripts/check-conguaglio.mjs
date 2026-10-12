@@ -8,11 +8,11 @@
 // che la cifra è giusta, dicono che il modello si comporta come il meccanismo
 // che descrive. Il riscontro sulle buste vere arriverà con dicembre 2026.
 
-import { saldoConguaglio, stimaConguaglio, mesiDellAnno, SOGLIA_PARI } from '../src/utils/conguaglio.js';
-import { nettoDelMese, calcNetAnnual } from '../src/utils/net.js';
-import { rischioRestituzione } from '../src/utils/restituzione.js';
-import { calcBonusMargin } from '../src/utils/bonus.js';
-import { computePayByShift } from '../src/utils/pay.js';
+import { saldoConguaglio, stimaConguaglio, mesiDellAnno, SOGLIA_PARI } from '../src/motore/conguaglio.js';
+import { nettoDelMese, calcNetAnnual } from '../src/motore/net.js';
+import { rischioRestituzione } from '../src/motore/restituzione.js';
+import { calcBonusMargin } from '../src/motore/bonus.js';
+import { computePayByShift } from '../src/motore/pay.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

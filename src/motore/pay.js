@@ -1,6 +1,6 @@
 // Estensioni esplicite: senza, Node puro non riesce a importare questo modulo e
 // i riscontri in `scripts/` (che girano fuori da Vite) non partono.
-import { minutesDiff, parseDate, getWeekStart, formatDate, payrollMonthKey } from './dates.js';
+import { minutesDiff, parseDate, getWeekStart, formatDate, payrollMonthKey } from './date.js';
 import { isHoliday } from './holidays.js';
 import { isMensilizzato, monthlyContractHours } from './ccnl.js';
 import { isAssenza, tipoTurno, percentualeAssenza, giorniEventoMalattia, TIPO } from './assenze.js';
@@ -106,7 +106,7 @@ export function getShiftSurchargeParts(shift, settings) {
 
 // NB: il notturno NON sta qui. Queste sono percentuali che valgono sul turno
 // INTERO perché dipendono dal giorno; il notturno vale solo sui minuti che
-// cadono nella fascia oraria, quindi ha un modulo suo (utils/notturno.js) e
+// cadono nella fascia oraria, quindi ha un modulo suo (motore/notturno.js) e
 // entra nel calcolo più sotto, in computePayByShift.
 
 // Percentuale di maggiorazione totale per un turno: la somma delle tre componenti.
@@ -314,7 +314,7 @@ export function computePayByShift(allShifts, settings) {
       const tipo = tipoTurno(s);
       const assenza = isAssenza(s);
       // Ferie e permessi valgono il 100%; la malattia dipende da quanti giorni
-      // dura l'evento (carenza). Vedi utils/assenze.js.
+      // dura l'evento (carenza). Vedi motore/assenze.js.
       const pctAssenza = assenza
         ? percentualeAssenza(s, settings, eventoMalattia.get(s.date) || 0)
         : 100;

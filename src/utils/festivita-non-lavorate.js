@@ -22,7 +22,7 @@
 // Estensioni esplicite: senza, Node puro non importa il modulo e i riscontri in
 // `scripts/` non partono.
 import { formatDate, getDaysInMonth } from './dates.js';
-import { isHoliday } from './holidays.js';
+import { isHoliday } from '../motore/holidays.js';
 
 /**
  * I giorni festivi del mese senza alcun turno segnato.

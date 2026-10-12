@@ -19,16 +19,16 @@
 // Modulo puro, senza rete: il riscontro controlla che resti così, perché la
 // pagina promette in grande che la busta non va da nessuna parte.
 
-import { calcTotalPay, calcShiftMinutes, computePayByShift, hasAnyRate } from './pay.js';
-import { nettoDelMese, lordoDelMese } from './net.js';
-import { capienzaProgressiva } from './capienza.js';
+import { calcTotalPay, calcShiftMinutes, computePayByShift, hasAnyRate } from '../motore/pay.js';
+import { nettoDelMese, lordoDelMese } from '../motore/net.js';
+import { capienzaProgressiva } from '../motore/capienza.js';
 import {
   lordoDaBusta, incoerenze, ESENTE, FUORI_REDDITO, STORNO, EXTRA_MENSILITA,
 } from './leggi-cedolino.js';
-import { isHoliday } from './holidays.js';
-import { tipoTurno, TIPO } from './assenze.js';
+import { isHoliday } from '../motore/holidays.js';
+import { tipoTurno, TIPO } from '../motore/assenze.js';
 import { parseDate, payrollMonthKey, getDaysInMonth } from './dates.js';
-import { isMensilizzato, getCcnl } from './ccnl.js';
+import { isMensilizzato, getCcnl } from '../motore/ccnl.js';
 
 const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
   'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];

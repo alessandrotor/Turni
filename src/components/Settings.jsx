@@ -1,19 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
-import { formatCurrency, parseNum } from '../utils/pay';
-import { getCcnl } from '../utils/ccnl';
-import { FASCE_DIPENDENTI, FASCIA_DEFAULT, contributiDiLegge } from '../utils/contributi-legge';
+import { formatCurrency, parseNum } from '../motore/pay';
+import { getCcnl } from '../motore/ccnl';
+import { FASCE_DIPENDENTI, FASCIA_DEFAULT, contributiDiLegge } from '../motore/contributi-legge';
 import { esportaBackup, leggiBackup, applicaBackup, contaTurniSalvati } from '../services/backup';
 import { ESITO } from '../services/export';
 import CcnlPicker from './CcnlPicker';
 import SezionePrevidenza, { formPrevidenza, salvaPrevidenza, PremioRisultato } from './SezionePrevidenza';
 import { statoConfigurazione } from '../utils/configurazione';
-import { modoTrattamentoIntegrativo } from '../utils/net';
+import { modoTrattamentoIntegrativo } from '../motore/net';
 import { elencoOrariDaCorreggere, applicaCorrezioneOrari } from '../services/correzioni';
 import { ENABLE_NET_CALC } from '../config/features';
 import { genId } from '../utils/id';
 import useOccupato from '../hooks/useOccupato';
-import { minutiGiornoAssenza } from '../utils/assenze';
-import { fasciaNotturnaRisolta, CUMULO_DEFAULT } from '../utils/notturno';
+import { minutiGiornoAssenza } from '../motore/assenze';
+import { fasciaNotturnaRisolta, CUMULO_DEFAULT } from '../motore/notturno';
 import { normalizzaMaggiorazione, messaggioMaggiorazione } from '../utils/maggiorazioni';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).

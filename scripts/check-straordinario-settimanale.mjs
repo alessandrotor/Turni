@@ -21,7 +21,7 @@
 // di due mesi resta una. Le ferie non sono lavoro prestato. E le ore
 // straordinarie non si contano due volte: non sono anche supplementari.
 
-import { computePayByShift } from '../src/utils/pay.js';
+import { computePayByShift } from '../src/motore/pay.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

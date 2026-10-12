@@ -434,7 +434,7 @@ luglio **non dimostra nulla** sulle ferie. Riporta 5,50 h di ferie e 4,50 di
 permessi «godute», ma sono montanti che risalgono a marzo, non assenze cadute nel
 periodo 6 lug → 2 ago. Per un po' quelle cifre sono state citate nel codice come
 prova che «le ferie stanno dentro la Retribuzione, verificato nel periodo» —
-corretto il 1° settembre 2026 in `utils/assenze.js` e `check-assenze.mjs`. Il
+corretto il 1° settembre 2026 in `motore/assenze.js` e `check-assenze.mjs`. Il
 comportamento resta quello atteso per un mensilizzato, ma è un'attesa ragionata,
 non un riscontro: agosto è la prima occasione vera di verificarlo.
 

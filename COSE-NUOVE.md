@@ -204,7 +204,7 @@ data+orari.)*
 
 ### C1. Un anno diverso dal 2026 usa la fiscalità 2026 — *misurato*
 
-`src/utils/net.js` ha una sola tabella, `TAX_2026`, usata senza mai guardare
+`src/motore/net.js` ha una sola tabella, `TAX_2026`, usata senza mai guardare
 l'anno. `StatsView.jsx:81-91` lascia sfogliare tutti gli anni con dati.
 
 | mese | app | busta reale | scarto |

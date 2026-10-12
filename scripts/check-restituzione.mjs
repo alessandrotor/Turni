@@ -25,8 +25,8 @@
 
 import {
   rischioRestituzione, giorniTrascorsi, quotaPotenziale, dataDiRiferimento, SOGLIA_RATEIZZAZIONE, CAUSA,
-} from '../src/utils/restituzione.js';
-import { TAX_2026, taxableToGross, patchTiSospeso } from '../src/utils/net.js';
+} from '../src/motore/restituzione.js';
+import { TAX_2026, taxableToGross, patchTiSospeso } from '../src/motore/net.js';
 
 let falliti = 0;
 let totale = 0;

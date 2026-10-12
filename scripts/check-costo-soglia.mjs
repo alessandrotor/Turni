@@ -19,11 +19,11 @@
 // orari e aliquote diverse. Se un giorno cambiano le aliquote statali questo
 // script fallisce, ed è il punto: è lì che l'avviso andrebbe riscritto.
 
-import { calcNetAnnual, redditoComplessivo, TAX_2026 } from '../src/utils/net.js';
+import { calcNetAnnual, redditoComplessivo, TAX_2026 } from '../src/motore/net.js';
 import {
   costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia,
-} from '../src/utils/restituzione.js';
-import { margineInOre } from '../src/utils/bonus.js';
+} from '../src/motore/restituzione.js';
+import { margineInOre } from '../src/motore/bonus.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

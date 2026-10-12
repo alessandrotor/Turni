@@ -29,7 +29,7 @@
 // software paghe. `tiModo: 'sempre'` esiste per chi si trovasse davanti a un
 // datore che decide altrimenti.
 
-import { tiSpettaQuestoMese, modoTrattamentoIntegrativo, patchTiSospeso, riferimentoAnnuoDelMese, calcNetMonthly, monthlyBaseGross } from '../src/utils/net.js';
+import { tiSpettaQuestoMese, modoTrattamentoIntegrativo, patchTiSospeso, riferimentoAnnuoDelMese, calcNetMonthly, monthlyBaseGross } from '../src/motore/net.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

@@ -24,10 +24,10 @@
 // pezzo. Servono a rendere la richiesta ragionevole invece che burocratica: «ti
 // conto 45 € in più del vero» si capisce, «configura il CCNL» no.
 
-import { isSunday } from './pay.js';
-import { isHoliday } from './holidays.js';
-import { toccaFasciaNotturnaPossibile, fasciaNotturnaPossibile } from './notturno.js';
-import { isAssenza } from './assenze.js';
+import { isSunday } from '../motore/pay.js';
+import { isHoliday } from '../motore/holidays.js';
+import { toccaFasciaNotturnaPossibile, fasciaNotturnaPossibile } from '../motore/notturno.js';
+import { isAssenza } from '../motore/assenze.js';
 
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 

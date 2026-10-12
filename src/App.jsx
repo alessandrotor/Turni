@@ -1,9 +1,9 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import useLocalStorage from './hooks/useLocalStorage';
 import { getMonthStart, parseDate, payrollMonthKey, formatDate } from './utils/dates';
-import { computePayByShift } from './utils/pay';
-import { isMensilizzato } from './utils/ccnl';
-import { computeAnnualGrossFromShifts, projectAnnualIncome } from './utils/net';
+import { computePayByShift } from './motore/pay';
+import { isMensilizzato } from './motore/ccnl';
+import { computeAnnualGrossFromShifts, projectAnnualIncome } from './motore/net';
 import { ENABLE_NET_CALC, ENABLE_STATS, ENABLE_MESE_PAGA } from './config/features';
 import { genId } from './utils/id';
 import CalendarView from './components/CalendarView';
@@ -24,7 +24,7 @@ import { avvisoDaMostrare, DURATA_ANNULLA } from './utils/avvisi';
 import { iscrivitiAggiornamenti, applicaAggiornamento, primaDiRicaricare } from './services/aggiornamento';
 import useOccupato from './hooks/useOccupato';
 import { iscrivitiOccupato } from './utils/occupato';
-import { isAssenza } from './utils/assenze';
+import { isAssenza } from './motore/assenze';
 import { turniDaImportare } from './utils/import-turni';
 import { haDatiMinimi, maggiorazioneDaChiedere, promemoriaHaDaDire, KEY_PROMEMORIA_CHIUSO } from './utils/configurazione';
 
@@ -38,7 +38,7 @@ const DEFAULT_SETTINGS = {
   holidaySurchargePct: 0,        // maggiorazione festivi (%)
   holidaySundayMode: 'max',      // festivo+domenica: 'max' | 'sum' | 'holiday'
   // Notturno: si paga sui soli minuti in fascia, non sul turno intero (vedi
-  // utils/notturno.js). 0 = spento, ed e' il default: chi non lo imposta ha il
+  // motore/notturno.js). 0 = spento, ed e' il default: chi non lo imposta ha il
   // motore identico a prima che esistesse.
   nightSurchargePct: 0,
   // Vuoto = la fascia la decide il CCNL (vedi `fasciaNotturnaRisolta`), e solo
@@ -64,7 +64,7 @@ const DEFAULT_SETTINGS = {
   noTrattamentoIntegrativo: false,  // storico: oggi lo tiene allineato a tiModo
   // Trattamento integrativo: 'auto' decide mese per mese come fa il software
   // paghe (lordo del mese × 12 contro i 15.000), 'sempre' lo include comunque,
-  // 'mai' lo esclude. Vedi tiSpettaQuestoMese in utils/net.js.
+  // 'mai' lo esclude. Vedi tiSpettaQuestoMese in motore/net.js.
   tiModo: 'auto',
   tiProjectionMode: 'stimato',      // 'stimato' | 'ytd' — proiezione per la decisione TI
   // Mensilità aggiuntive (dipendono dal CCNL)

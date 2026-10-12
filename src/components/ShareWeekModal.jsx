@@ -3,8 +3,8 @@ import {
   formatDate, formatDayShort, addMonths,
   getWeekStart, formatMinutes, MONTH_NAMES,
 } from '../utils/dates';
-import { calcShiftMinutes } from '../utils/pay';
-import { TIPO, ETICHETTA, tipoTurno } from '../utils/assenze';
+import { calcShiftMinutes } from '../motore/pay';
+import { TIPO, ETICHETTA, tipoTurno } from '../motore/assenze';
 import useModalDismiss from '../hooks/useModalDismiss';
 
 function nomeFascia(shift, tipo) {

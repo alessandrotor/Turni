@@ -5,14 +5,14 @@
 //
 // Estensione esplicita sugli import: stesso motivo di net.js e pay.js — così
 // il modulo resta importabile da Node puro, se in futuro serve un riscontro.
-import { calcShiftMinutes, calcTotalPay, hasAnyRate, isSunday } from './pay.js';
+import { calcShiftMinutes, calcTotalPay, hasAnyRate, isSunday } from '../motore/pay.js';
 import { parseDate, getDaysInMonth, formatDate, dayNumber } from './dates.js';
-import { isHoliday } from './holidays.js';
-import { tipoTurno, TIPO } from './assenze.js';
-import { lordoDelMese } from './net.js';
-import { progressiviDellAnno } from './conguaglio.js';
-import { capienzaProgressiva } from './capienza.js';
-import { nettoDelMeseConPremio } from './premio-risultato.js';
+import { isHoliday } from '../motore/holidays.js';
+import { tipoTurno, TIPO } from '../motore/assenze.js';
+import { lordoDelMese } from '../motore/net.js';
+import { progressiviDellAnno } from '../motore/conguaglio.js';
+import { capienzaProgressiva } from '../motore/capienza.js';
+import { nettoDelMeseConPremio } from '../motore/premio-risultato.js';
 
 // Raggruppa per MESE DI CALENDARIO, non di paga: è la vista d'insieme
 // dell'anno, e l'utente ragiona in mesi solari (stessa scelta già fatta per

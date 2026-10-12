@@ -9,11 +9,11 @@
 
 import { useRef } from 'react';
 import useModalDismiss from '../hooks/useModalDismiss';
-import { formatCurrency } from '../utils/pay';
+import { formatCurrency } from '../motore/pay';
 import { formatMonthYear } from '../utils/dates';
 import { numeroIt, euroCella } from '../utils/formato';
-import { tiMontanteNoto, irpefMontanteNota } from '../utils/conguaglio';
-import { SOGLIA_RATEIZZAZIONE, POSIZIONE } from '../utils/restituzione';
+import { tiMontanteNoto, irpefMontanteNota } from '../motore/conguaglio';
+import { SOGLIA_RATEIZZAZIONE, POSIZIONE } from '../motore/restituzione';
 
 // La cornice comune: velo, Esc, fuoco dentro, «Ho capito». Ognuno dei tre la
 // ripeteva uguale.

@@ -21,7 +21,7 @@
 //
 // Al centesimo, non «circa».
 
-import { computePayByShift, calcTotalPay, lordoTurno } from '../src/utils/pay.js';
+import { computePayByShift, calcTotalPay, lordoTurno } from '../src/motore/pay.js';
 
 let falliti = 0;
 let totale = 0;
