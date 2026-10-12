@@ -1,0 +1,7277 @@
+{
+ "turismo": {
+  "mesi": [
+   {
+    "paga": {
+     "base": 1246.25,
+     "surcharge": 109.09,
+     "total": 1355.33,
+     "surchargeSunday": 9.33,
+     "surchargeHoliday": 24.57,
+     "surchargeManual": 0,
+     "surchargeOvertime": 55.28,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 19.91,
+     "overtimeBase": 184.28,
+     "straordinarioBase": 0,
+     "nightBase": 84.18,
+     "overtimeMinutes": 1215,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 555,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1365.33,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": null,
+     "lordoPresunto": 17749.31
+    },
+    "netto": {
+     "gross": 1365.33,
+     "contributi": 135.08,
+     "imponibile": 1234.05,
+     "imponibileOrdinario": 1234.05,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 283.83,
+     "detrazioni": 255.2,
+     "detrazioniApplicate": 255.2,
+     "irpefNetta": 28.63,
+     "addRegionale": 0,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 163.71,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 59.23,
+     "bonus": 59.23,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 16040,
+      "lordoPresunto": 17749,
+      "motivo": "reddito presunto dell'anno 16040 €, sopra i 15.000",
+      "media": null,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1260.85
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1365,
+      "importo": 125.44,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1365,
+      "importo": 3.64,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1365,
+      "importo": 4.1,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1260.85
+   },
+   {
+    "paga": {
+     "base": 1098.37,
+     "surcharge": 60.17,
+     "total": 1158.54,
+     "surchargeSunday": 7.28,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 47.78,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 5.12,
+     "overtimeBase": 159.25,
+     "straordinarioBase": 0,
+     "nightBase": 20.48,
+     "overtimeMinutes": 1050,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 135,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1168.54,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1266.94,
+     "lordoPresunto": 15387.86
+    },
+    "netto": {
+     "gross": 1168.54,
+     "contributi": 115.96,
+     "imponibile": 1056.38,
+     "imponibileOrdinario": 1056.38,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 242.97,
+     "detrazioni": 149.97,
+     "detrazioniApplicate": 149.97,
+     "irpefNetta": 93,
+     "addRegionale": 0,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 208.96,
+     "trattamentoIntegrativo": 92.05,
+     "bonusCuneo": 55.98,
+     "bonus": 148.03,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 13909,
+      "lordoPresunto": 15388,
+      "motivo": "reddito presunto dell'anno 13909 €, sotto i 15.000",
+      "media": 1266.94,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1107.61
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1169,
+      "importo": 107.43,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1169,
+      "importo": 3.12,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1169,
+      "importo": 3.51,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1107.61
+   },
+   {
+    "paga": {
+     "base": 1103.4,
+     "surcharge": 86.42,
+     "total": 1189.82,
+     "surchargeSunday": 3.46,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 78.81,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 4.15,
+     "overtimeBase": 262.71,
+     "straordinarioBase": 0,
+     "nightBase": 27.65,
+     "overtimeMinutes": 1710,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 180,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 960,
+     "malattiaBase": 36.87,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1319.82,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1284.56,
+     "lordoPresunto": 17051.85
+    },
+    "netto": {
+     "gross": 1319.82,
+     "contributi": 130.69,
+     "imponibile": 1192.93,
+     "imponibileOrdinario": 1192.93,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 274.37,
+     "detrazioni": 260.09,
+     "detrazioniApplicate": 260.09,
+     "irpefNetta": 14.28,
+     "addRegionale": 0,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 144.97,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 57.26,
+     "bonus": 57.26,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 15411,
+      "lordoPresunto": 17052,
+      "motivo": "reddito presunto dell'anno 15411 €, sopra i 15.000",
+      "media": 1284.56,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1232.11
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1320,
+      "importo": 121.31,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1320,
+      "importo": 3.52,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1320,
+      "importo": 3.96,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1232.11
+   },
+   {
+    "paga": {
+     "base": 1030.57,
+     "surcharge": 72.82,
+     "total": 1103.4,
+     "surchargeSunday": 6.45,
+     "surchargeHoliday": 24.89,
+     "surchargeManual": 0,
+     "surchargeOvertime": 37.33,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 4.15,
+     "overtimeBase": 124.44,
+     "straordinarioBase": 0,
+     "nightBase": 27.65,
+     "overtimeMinutes": 810,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 180,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1113.4,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1241.77,
+     "lordoPresunto": 14987.66
+    },
+    "netto": {
+     "gross": 1113.4,
+     "contributi": 110.49,
+     "imponibile": 1006.71,
+     "imponibileOrdinario": 1006.71,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 231.54,
+     "detrazioni": 160.68,
+     "detrazioniApplicate": 160.68,
+     "irpefNetta": 70.86,
+     "addRegionale": 0,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 181.35,
+     "trattamentoIntegrativo": 98.63,
+     "bonusCuneo": 53.35,
+     "bonus": 151.98,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 13548,
+      "lordoPresunto": 14988,
+      "motivo": "reddito presunto dell'anno 13548 €, sotto i 15.000",
+      "media": 1241.77,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1084.03
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1113,
+      "importo": 102.28,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1113,
+      "importo": 2.97,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1113,
+      "importo": 3.34,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1084.03
+   },
+   {
+    "paga": {
+     "base": 1184.05,
+     "surcharge": 78.12,
+     "total": 1262.18,
+     "surchargeSunday": 12.91,
+     "surchargeHoliday": 9.22,
+     "surchargeManual": 0,
+     "surchargeOvertime": 56,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 186.66,
+     "straordinarioBase": 0,
+     "nightBase": 0,
+     "overtimeMinutes": 1215,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 0,
+     "ferieMinutes": 0,
+     "permessoMinutes": 240,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1272.18,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1247.85,
+     "lordoPresunto": 16416.68
+    },
+    "netto": {
+     "gross": 1272.18,
+     "contributi": 126.01,
+     "imponibile": 1149.97,
+     "imponibileOrdinario": 1149.97,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 264.49,
+     "detrazioni": 166.04,
+     "detrazioniApplicate": 166.04,
+     "irpefNetta": 98.45,
+     "addRegionale": 0,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 224.46,
+     "trattamentoIntegrativo": 101.91,
+     "bonusCuneo": 60.94,
+     "bonus": 162.85,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 14838,
+      "lordoPresunto": 16417,
+      "motivo": "reddito presunto dell'anno 14838 €, sotto i 15.000",
+      "media": 1247.85,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1210.57
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1272,
+      "importo": 116.9,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1272,
+      "importo": 3.39,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1272,
+      "importo": 3.82,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1210.57
+   },
+   {
+    "paga": {
+     "base": 1181.75,
+     "surcharge": 69.94,
+     "total": 1251.69,
+     "surchargeSunday": 0.46,
+     "surchargeHoliday": 15.67,
+     "surchargeManual": 0,
+     "surchargeOvertime": 45.63,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 8.18,
+     "overtimeBase": 152.1,
+     "straordinarioBase": 0,
+     "nightBase": 53,
+     "overtimeMinutes": 990,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 345,
+     "ferieMinutes": 0,
+     "permessoMinutes": 240,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1737.34,
+     "extraMese": 475.65,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1329.43,
+     "lordoPresunto": 20138
+    },
+    "netto": {
+     "gross": 1737.34,
+     "contributi": 171.37,
+     "imponibile": 1569.77,
+     "imponibileOrdinario": 1140.52,
+     "imponibileExtra": 429.25,
+     "irpefExtra": 98.73,
+     "cuneoPct": 0.05,
+     "irpefLorda": 361.05,
+     "detrazioni": 230.75,
+     "detrazioniApplicate": 230.75,
+     "irpefNetta": 130.3,
+     "addRegionale": 0,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 301.67,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 75.34,
+     "bonus": 75.34,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 18196,
+      "lordoPresunto": 20138,
+      "motivo": "reddito presunto dell'anno 18196 €, sopra i 15.000",
+      "media": 1329.43,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1511.01
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1737,
+      "importo": 159.63,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1737,
+      "importo": 4.63,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1737,
+      "importo": 5.21,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1511.01
+   },
+   {
+    "paga": {
+     "base": 1163.31,
+     "surcharge": 75.7,
+     "total": 1239.02,
+     "surchargeSunday": 0.92,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 63.6,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 11.18,
+     "overtimeBase": 212.01,
+     "straordinarioBase": 0,
+     "nightBase": 48.39,
+     "overtimeMinutes": 1380,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 315,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1369.02,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1335.09,
+     "lordoPresunto": 17559.73
+    },
+    "netto": {
+     "gross": 1369.02,
+     "contributi": 135.47,
+     "imponibile": 1237.35,
+     "imponibileOrdinario": 1237.35,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 284.59,
+     "detrazioni": 256.53,
+     "detrazioniApplicate": 256.53,
+     "irpefNetta": 28.06,
+     "addRegionale": 0,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 163.53,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 59.39,
+     "bonus": 59.39,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 15869,
+      "lordoPresunto": 17560,
+      "motivo": "reddito presunto dell'anno 15869 €, sopra i 15.000",
+      "media": 1335.09,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1264.88
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1369,
+      "importo": 125.81,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1369,
+      "importo": 3.65,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1369,
+      "importo": 4.11,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1264.88
+   },
+   {
+    "paga": {
+     "base": 1135.66,
+     "surcharge": 52.2,
+     "total": 1187.86,
+     "surchargeSunday": 1.15,
+     "surchargeHoliday": 11.98,
+     "surchargeManual": 0,
+     "surchargeOvertime": 37.33,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 1.73,
+     "overtimeBase": 124.44,
+     "straordinarioBase": 0,
+     "nightBase": 6.91,
+     "overtimeMinutes": 810,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 45,
+     "ferieMinutes": 2640,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1197.86,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1317.94,
+     "lordoPresunto": 16532.77
+    },
+    "netto": {
+     "gross": 1197.86,
+     "contributi": 118.78,
+     "imponibile": 1082.88,
+     "imponibileOrdinario": 1082.88,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 249.06,
+     "detrazioni": 166.04,
+     "detrazioniApplicate": 166.04,
+     "irpefNetta": 83.02,
+     "addRegionale": 0,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 201.8,
+     "trattamentoIntegrativo": 101.91,
+     "bonusCuneo": 57.39,
+     "bonus": 159.3,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 14943,
+      "lordoPresunto": 16533,
+      "motivo": "reddito presunto dell'anno 14943 €, sotto i 15.000",
+      "media": 1317.94,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1155.36
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1198,
+      "importo": 110.1,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1198,
+      "importo": 3.19,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1198,
+      "importo": 3.59,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1155.36
+   },
+   {
+    "paga": {
+     "base": 1234.75,
+     "surcharge": 98.17,
+     "total": 1332.93,
+     "surchargeSunday": 3.92,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 85.04,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 9.22,
+     "overtimeBase": 283.45,
+     "straordinarioBase": 0,
+     "nightBase": 36.87,
+     "overtimeMinutes": 1845,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 240,
+     "ferieMinutes": 0,
+     "permessoMinutes": 240,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1462.93,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1334.05,
+     "lordoPresunto": 17858.11
+    },
+    "netto": {
+     "gross": 1462.93,
+     "contributi": 144.64,
+     "imponibile": 1322.09,
+     "imponibileOrdinario": 1322.09,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 304.08,
+     "detrazioni": 246.23,
+     "detrazioniApplicate": 246.23,
+     "irpefNetta": 57.85,
+     "addRegionale": 0,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 202.49,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 63.46,
+     "bonus": 63.46,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 16139,
+      "lordoPresunto": 17858,
+      "motivo": "reddito presunto dell'anno 16139 €, sopra i 15.000",
+      "media": 1334.05,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1323.9
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1463,
+      "importo": 134.45,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1463,
+      "importo": 3.9,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1463,
+      "importo": 4.39,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1323.9
+   },
+   {
+    "paga": {
+     "base": 1278.54,
+     "surcharge": 106.81,
+     "total": 1385.35,
+     "surchargeSunday": 0,
+     "surchargeHoliday": 9.22,
+     "surchargeManual": 0,
+     "surchargeOvertime": 84.34,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 13.25,
+     "overtimeBase": 281.15,
+     "straordinarioBase": 0,
+     "nightBase": 53,
+     "overtimeMinutes": 1830,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 345,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1395.35,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1340.18,
+     "lordoPresunto": 17587.82
+    },
+    "netto": {
+     "gross": 1395.35,
+     "contributi": 138.01,
+     "imponibile": 1261.14,
+     "imponibileOrdinario": 1261.14,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 290.06,
+     "detrazioni": 256.33,
+     "detrazioniApplicate": 256.33,
+     "irpefNetta": 33.73,
+     "addRegionale": 0,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 171.74,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 60.53,
+     "bonus": 60.53,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 15895,
+      "lordoPresunto": 17588,
+      "motivo": "reddito presunto dell'anno 15895 €, sopra i 15.000",
+      "media": 1340.18,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1284.14
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1395,
+      "importo": 128.2,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1395,
+      "importo": 3.72,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1395,
+      "importo": 4.19,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1284.14
+   },
+   {
+    "paga": {
+     "base": 1193.27,
+     "surcharge": 85.27,
+     "total": 1278.54,
+     "surchargeSunday": 5.76,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 72.59,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 6.91,
+     "overtimeBase": 241.97,
+     "straordinarioBase": 0,
+     "nightBase": 27.65,
+     "overtimeMinutes": 1575,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 180,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1288.54,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1335.48,
+     "lordoPresunto": 17267.38
+    },
+    "netto": {
+     "gross": 1288.54,
+     "contributi": 127.67,
+     "imponibile": 1164.67,
+     "imponibileOrdinario": 1164.67,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 267.87,
+     "detrazioni": 250.24,
+     "detrazioniApplicate": 250.24,
+     "irpefNetta": 17.63,
+     "addRegionale": 0,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 145.3,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 55.9,
+     "bonus": 55.9,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 15606,
+      "lordoPresunto": 17267,
+      "motivo": "reddito presunto dell'anno 15606 €, sopra i 15.000",
+      "media": 1335.48,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1199.14
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1289,
+      "importo": 118.46,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1289,
+      "importo": 3.44,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1289,
+      "importo": 3.87,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1199.14
+   },
+   {
+    "paga": {
+     "base": 1239.36,
+     "surcharge": 78.81,
+     "total": 1318.18,
+     "surchargeSunday": 7.6,
+     "surchargeHoliday": 30.42,
+     "surchargeManual": 0,
+     "surchargeOvertime": 40.79,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 135.97,
+     "straordinarioBase": 0,
+     "nightBase": 0,
+     "overtimeMinutes": 885,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 0,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 2279.48,
+     "extraMese": 951.3,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1414.15,
+     "lordoPresunto": 16969.78
+    },
+    "netto": {
+     "gross": 2279.48,
+     "contributi": 224.26,
+     "imponibile": 2059.02,
+     "imponibileOrdinario": 1200.52,
+     "imponibileExtra": 858.5,
+     "irpefExtra": 197.46,
+     "cuneoPct": 0.05,
+     "irpefLorda": 473.58,
+     "detrazioni": 260.67,
+     "detrazioniApplicate": 260.67,
+     "irpefNetta": 212.91,
+     "addRegionale": 0,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 437.17,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 98.83,
+     "bonus": 98.83,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 15337,
+      "lordoPresunto": 16970,
+      "motivo": "reddito presunto dell'anno 15337 €, sopra i 15.000",
+      "media": 1414.15,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1941.14
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 2279,
+      "importo": 209.44,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 2279,
+      "importo": 6.08,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 2279,
+      "importo": 6.84,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1941.14
+   }
+  ],
+  "conguaglio": {
+   "min": 5.54,
+   "max": 5.54,
+   "centrale": {
+    "voci": {
+     "irpef": -410.39,
+     "trattamentoIntegrativo": 394.5,
+     "indennita": 21.43
+    },
+    "dettaglio": {
+     "irpef": {
+      "mesi": 868.72,
+      "anno": 458.33
+     },
+     "trattamentoIntegrativo": {
+      "mesi": 394.5,
+      "anno": 0
+     },
+     "indennita": {
+      "mesi": 757.6,
+      "anno": 736.17
+     }
+    },
+    "annoSottoSoglia": false,
+    "redditoAnno": 15336.91,
+    "saldo": 5.54,
+    "lordoAnno": 16969.78,
+    "tiAccreditato": 394.5,
+    "tiMesi": [
+     0,
+     92.05,
+     0,
+     98.63,
+     101.91,
+     0,
+     0,
+     101.91,
+     0,
+     0,
+     0,
+     0
+    ],
+    "sopraMesi": [
+     true,
+     false,
+     true,
+     false,
+     false,
+     true,
+     true,
+     false,
+     true,
+     true,
+     true,
+     true
+    ],
+    "irpefMesi": [
+     28.63,
+     93,
+     14.28,
+     70.86,
+     98.45,
+     130.3,
+     28.06,
+     83.02,
+     57.85,
+     33.73,
+     17.63,
+     212.91
+    ]
+   },
+   "direzione": "pari",
+   "mesiVuoti": 0,
+   "tiFinora": 394.5,
+   "meseMontante": -1,
+   "tiMontanteNoto": null,
+   "irpefMontanteNota": null,
+   "busteAnno": 12,
+   "mesiSopraSoglia": [
+    0,
+    2,
+    5,
+    6,
+    8,
+    9,
+    10,
+    11
+   ],
+   "mesiSottoSoglia": [
+    1,
+    3,
+    4,
+    7
+   ]
+  },
+  "annuo": {
+   "gross": 16000,
+   "contributi": 1583.9,
+   "contributiRighe": [
+    {
+     "label": "Contributi IVS",
+     "pct": 9.19,
+     "base": 16000,
+     "importo": 1470.4,
+     "deducibile": true
+    },
+    {
+     "label": "FIS D.Lgs. 148/2015",
+     "pct": 0.27,
+     "base": 16000,
+     "importo": 42.67,
+     "deducibile": true
+    },
+    {
+     "label": "Contributo CIGS",
+     "pct": 0.3,
+     "base": 16000,
+     "importo": 48,
+     "deducibile": true
+    },
+    {
+     "label": "Ente Bilaterale Turismo",
+     "pct": 0.2,
+     "base": 11415.6,
+     "importo": 22.83,
+     "deducibile": false
+    }
+   ],
+   "imponibile": 14461.76,
+   "irpefLorda": 3326.2,
+   "detrazioneLavoro": 1955,
+   "detrazioneCuneo": 0,
+   "irpefNetta": 1371.2,
+   "addRegionale": 0,
+   "addComunale": 0,
+   "trattamentoIntegrativo": 1200,
+   "bonusCuneo": 766.47,
+   "net": 15011.37
+  },
+  "ti": {
+   "importoAnnuo": 1200,
+   "incluso": true,
+   "motivo": "reddito stimato ≤ 15.000€ con capienza → incluso",
+   "redditoStimato": 13108.11
+  },
+  "margine": {
+   "income": 15800,
+   "thresholdFullGross": 16596,
+   "thresholdMaxGross": 31001,
+   "taxable": 14281.28,
+   "status": "pieno",
+   "marginToFull": 796,
+   "marginToMax": 15201,
+   "oreResidue": 66,
+   "nearThreshold": true
+  },
+  "rischio": {
+   "erogato": 0,
+   "spettante": 1200,
+   "daRestituire": 0,
+   "rateizzabile": false,
+   "giorni": 258,
+   "unSoloDatore": true,
+   "causa": "nessuna"
+  },
+  "costo": {
+   "tetto": 16596,
+   "nettoTetto": 15454.02,
+   "perditaMax": 129,
+   "pareggio": 16795,
+   "larghezzaBuca": 199,
+   "voci": {
+    "bonus": -1200,
+    "tasse": 1145,
+    "indennita": -75,
+    "altro": 1,
+    "detrazioneSotto": 1955,
+    "detrazioneSopra": 3100
+   }
+  },
+  "soglia": {
+   "lordo": 16596,
+   "minimoTi": 753
+  },
+  "periodo": [
+   {
+    "data": "2026-10-05",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-05",
+     "date": "2026-10-05",
+     "startTime": "09:00",
+     "endTime": "13:45",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-06",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-06",
+     "date": "2026-10-06",
+     "startTime": "20:00",
+     "endTime": "01:30",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-07",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-07",
+     "date": "2026-10-07",
+     "startTime": "13:30",
+     "endTime": "19:30",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-08",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-08",
+     "date": "2026-10-08",
+     "startTime": "15:30",
+     "endTime": "21:30",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-09",
+    "minuti": 240,
+    "turnoEsistente": null,
+    "selezionato": false,
+    "riposo": true,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-10",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-10",
+     "date": "2026-10-10",
+     "startTime": "09:00",
+     "endTime": "15:15",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-11",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-11",
+     "date": "2026-10-11",
+     "startTime": "09:30",
+     "endTime": "13:15",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-12",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-12",
+     "date": "2026-10-12",
+     "startTime": "12:30",
+     "endTime": "16:45",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-13",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-13",
+     "date": "2026-10-13",
+     "startTime": "20:00",
+     "endTime": "02:15",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-14",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-14",
+     "date": "2026-10-14",
+     "startTime": "10:00",
+     "endTime": "14:00",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-15",
+    "minuti": 240,
+    "turnoEsistente": null,
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-16",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-16",
+     "date": "2026-10-16",
+     "startTime": "11:00",
+     "endTime": "15:30",
+     "breakMinutes": 0
+    },
+    "selezionato": false,
+    "riposo": true,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-17",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-17",
+     "date": "2026-10-17",
+     "startTime": "13:30",
+     "endTime": "17:00",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-18",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-18",
+     "date": "2026-10-18",
+     "startTime": "10:30",
+     "endTime": "14:30",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   }
+  ]
+ },
+ "montante": {
+  "mesi": [
+   {
+    "paga": {
+     "base": 1084.96,
+     "surcharge": 34.11,
+     "total": 1119.07,
+     "surchargeSunday": 17.51,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 16.59,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 55.31,
+     "straordinarioBase": 0,
+     "nightBase": 32.26,
+     "overtimeMinutes": 360,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 210,
+     "ferieMinutes": 0,
+     "permessoMinutes": 240,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1119.07,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": null,
+     "lordoPresunto": 14547.88
+    },
+    "netto": {
+     "gross": 1119.07,
+     "contributi": 111.08,
+     "imponibile": 1011.79,
+     "imponibileOrdinario": 1011.79,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 232.71,
+     "detrazioni": 166.04,
+     "detrazioniApplicate": 166.04,
+     "irpefNetta": 66.67,
+     "addRegionale": 17.5,
+     "addComunale": 8.09,
+     "trattenuteFisse": 0,
+     "trattenute": 203.34,
+     "trattamentoIntegrativo": 101.91,
+     "bonusCuneo": 53.62,
+     "bonus": 155.53,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 13151,
+      "lordoPresunto": 14548,
+      "motivo": "reddito presunto dell'anno 13151 €, sotto i 15.000",
+      "media": null,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1071.26
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1119,
+      "importo": 102.84,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1119,
+      "importo": 2.98,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1119,
+      "importo": 3.36,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1071.26
+   },
+   {
+    "paga": {
+     "base": 1032.88,
+     "surcharge": 35.03,
+     "total": 1067.91,
+     "surchargeSunday": 1.15,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 33.88,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 112.92,
+     "straordinarioBase": 0,
+     "nightBase": 62.22,
+     "overtimeMinutes": 735,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 405,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1067.91,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1094.32,
+     "lordoPresunto": 13935.62
+    },
+    "netto": {
+     "gross": 1067.91,
+     "contributi": 106.1,
+     "imponibile": 965.61,
+     "imponibileOrdinario": 965.61,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 222.09,
+     "detrazioni": 149.97,
+     "detrazioniApplicate": 149.97,
+     "irpefNetta": 72.12,
+     "addRegionale": 16.71,
+     "addComunale": 7.72,
+     "trattenuteFisse": 0,
+     "trattenute": 202.65,
+     "trattamentoIntegrativo": 92.05,
+     "bonusCuneo": 51.17,
+     "bonus": 143.22,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 12599,
+      "lordoPresunto": 13936,
+      "motivo": "reddito presunto dell'anno 12599 €, sotto i 15.000",
+      "media": 1094.32,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1008.48
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1068,
+      "importo": 98.15,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1068,
+      "importo": 2.85,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1068,
+      "importo": 3.2,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1008.48
+   },
+   {
+    "paga": {
+     "base": 1239.36,
+     "surcharge": 124.67,
+     "total": 1364.04,
+     "surchargeSunday": 5.07,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 96.79,
+     "surchargeStraordinario": 22.81,
+     "surchargeNight": 0,
+     "overtimeBase": 322.63,
+     "straordinarioBase": 76.05,
+     "nightBase": 71.44,
+     "overtimeMinutes": 2100,
+     "straordinarioMinutes": 495,
+     "nightMinutes": 465,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 960,
+     "malattiaBase": 36.87,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1364.04,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1201.83,
+     "lordoPresunto": 17245.85
+    },
+    "netto": {
+     "gross": 1364.04,
+     "contributi": 134.98,
+     "imponibile": 1232.86,
+     "imponibileOrdinario": 1232.86,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 283.56,
+     "detrazioni": 258.73,
+     "detrazioniApplicate": 258.73,
+     "irpefNetta": 24.83,
+     "addRegionale": 21.33,
+     "addComunale": 9.86,
+     "trattenuteFisse": 0,
+     "trattenute": 191,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 59.17,
+     "bonus": 59.17,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 15586,
+      "lordoPresunto": 17246,
+      "motivo": "reddito presunto dell'anno 15586 €, sopra i 15.000",
+      "media": 1201.83,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1232.21
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1364,
+      "importo": 125.35,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1364,
+      "importo": 3.64,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1364,
+      "importo": 4.09,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1232.21
+   },
+   {
+    "paga": {
+     "base": 1290.06,
+     "surcharge": 69.37,
+     "total": 1359.43,
+     "surchargeSunday": 7.14,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 62.22,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 207.41,
+     "straordinarioBase": 0,
+     "nightBase": 0,
+     "overtimeMinutes": 1350,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 0,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1359.43,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1180.4,
+     "lordoPresunto": 16956.45
+    },
+    "netto": {
+     "gross": 1359.43,
+     "contributi": 134.49,
+     "imponibile": 1228.74,
+     "imponibileOrdinario": 1228.74,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 282.61,
+     "detrazioni": 252.35,
+     "detrazioniApplicate": 252.35,
+     "irpefNetta": 30.26,
+     "addRegionale": 21.26,
+     "addComunale": 9.83,
+     "trattenuteFisse": 0,
+     "trattenute": 195.84,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 58.97,
+     "bonus": 58.97,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 15325,
+      "lordoPresunto": 16956,
+      "motivo": "reddito presunto dell'anno 15325 €, sopra i 15.000",
+      "media": 1180.4,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1222.56
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1359,
+      "importo": 124.89,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1359,
+      "importo": 3.62,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1359,
+      "importo": 4.08,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1222.56
+   },
+   {
+    "paga": {
+     "base": 1402.98,
+     "surcharge": 121.68,
+     "total": 1524.66,
+     "surchargeSunday": 4.15,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 117.53,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 391.77,
+     "straordinarioBase": 0,
+     "nightBase": 92.18,
+     "overtimeMinutes": 2550,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 600,
+     "ferieMinutes": 0,
+     "permessoMinutes": 240,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1524.66,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1201.51,
+     "lordoPresunto": 18204.84
+    },
+    "netto": {
+     "gross": 1524.66,
+     "contributi": 150.7,
+     "imponibile": 1377.76,
+     "imponibileOrdinario": 1377.76,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 316.88,
+     "detrazioni": 252,
+     "detrazioniApplicate": 252,
+     "irpefNetta": 64.88,
+     "addRegionale": 23.84,
+     "addComunale": 11.02,
+     "trattenuteFisse": 0,
+     "trattenute": 250.44,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 66.13,
+     "bonus": 66.13,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 16451,
+      "lordoPresunto": 18205,
+      "motivo": "reddito presunto dell'anno 16451 €, sopra i 15.000",
+      "media": 1201.51,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1340.35
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1525,
+      "importo": 140.15,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1525,
+      "importo": 4.07,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1525,
+      "importo": 4.58,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1340.35
+   },
+   {
+    "paga": {
+     "base": 1137.96,
+     "surcharge": 56,
+     "total": 1193.96,
+     "surchargeSunday": 0,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 56,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 186.66,
+     "straordinarioBase": 0,
+     "nightBase": 6.91,
+     "overtimeMinutes": 1215,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 45,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1669.61,
+     "extraMese": 475.65,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1212.21,
+     "lordoPresunto": 18960.54
+    },
+    "netto": {
+     "gross": 1669.61,
+     "contributi": 164.83,
+     "imponibile": 1508.58,
+     "imponibileOrdinario": 1079.35,
+     "imponibileExtra": 429.23,
+     "irpefExtra": 98.72,
+     "cuneoPct": 0.05,
+     "irpefLorda": 346.97,
+     "detrazioni": 238.74,
+     "detrazioniApplicate": 238.74,
+     "irpefNetta": 108.23,
+     "addRegionale": 26.1,
+     "addComunale": 12.07,
+     "trattenuteFisse": 0,
+     "trattenute": 311.23,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 72.41,
+     "bonus": 72.41,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 17133,
+      "lordoPresunto": 18961,
+      "motivo": "reddito presunto dell'anno 17133 €, sopra i 15.000",
+      "media": 1212.21,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1430.79
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1670,
+      "importo": 153.47,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1670,
+      "importo": 4.45,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1670,
+      "importo": 5.01,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1430.79
+   },
+   {
+    "paga": {
+     "base": 1179.45,
+     "surcharge": 72.36,
+     "total": 1251.81,
+     "surchargeSunday": 3.92,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 68.44,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 228.15,
+     "straordinarioBase": 0,
+     "nightBase": 53,
+     "overtimeMinutes": 1485,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 345,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1251.81,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1207.4,
+     "lordoPresunto": 15962.65
+    },
+    "netto": {
+     "gross": 1251.81,
+     "contributi": 124.06,
+     "imponibile": 1131.55,
+     "imponibileOrdinario": 1131.55,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 260.26,
+     "detrazioni": 166.04,
+     "detrazioniApplicate": 166.04,
+     "irpefNetta": 94.22,
+     "addRegionale": 19.58,
+     "addComunale": 9.05,
+     "trattenuteFisse": 0,
+     "trattenute": 246.91,
+     "trattamentoIntegrativo": 101.91,
+     "bonusCuneo": 59.97,
+     "bonus": 161.88,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 14428,
+      "lordoPresunto": 15963,
+      "motivo": "reddito presunto dell'anno 14428 €, sotto i 15.000",
+      "media": 1207.4,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1166.78
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1252,
+      "importo": 115.06,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1252,
+      "importo": 3.34,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1252,
+      "importo": 3.76,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1166.78
+   },
+   {
+    "paga": {
+     "base": 1181.75,
+     "surcharge": 52.54,
+     "total": 1234.29,
+     "surchargeSunday": 0,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 52.54,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 175.14,
+     "straordinarioBase": 0,
+     "nightBase": 32.26,
+     "overtimeMinutes": 1140,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 210,
+     "ferieMinutes": 2640,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1234.29,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1210.76,
+     "lordoPresunto": 15857.56
+    },
+    "netto": {
+     "gross": 1234.29,
+     "contributi": 122.29,
+     "imponibile": 1115.8,
+     "imponibileOrdinario": 1115.8,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 256.63,
+     "detrazioni": 166.04,
+     "detrazioniApplicate": 166.04,
+     "irpefNetta": 90.59,
+     "addRegionale": 19.3,
+     "addComunale": 8.93,
+     "trattenuteFisse": 0,
+     "trattenute": 241.11,
+     "trattamentoIntegrativo": 101.91,
+     "bonusCuneo": 59.13,
+     "bonus": 161.04,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 14333,
+      "lordoPresunto": 15858,
+      "motivo": "reddito presunto dell'anno 14333 €, sotto i 15.000",
+      "media": 1210.76,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1154.22
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1234,
+      "importo": 113.4,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1234,
+      "importo": 3.29,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1234,
+      "importo": 3.7,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1154.22
+   },
+   {
+    "paga": {
+     "base": 1216.32,
+     "surcharge": 83.88,
+     "total": 1300.2,
+     "surchargeSunday": 4.38,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 73.28,
+     "surchargeStraordinario": 6.22,
+     "surchargeNight": 0,
+     "overtimeBase": 244.28,
+     "straordinarioBase": 20.74,
+     "nightBase": 46.09,
+     "overtimeMinutes": 1590,
+     "straordinarioMinutes": 135,
+     "nightMinutes": 300,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1300.2,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1220.7,
+     "lordoPresunto": 16187.11
+    },
+    "netto": {
+     "gross": 1300.2,
+     "contributi": 128.74,
+     "imponibile": 1175.26,
+     "imponibileOrdinario": 1175.26,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 270.31,
+     "detrazioni": 160.68,
+     "detrazioniApplicate": 160.68,
+     "irpefNetta": 109.63,
+     "addRegionale": 20.33,
+     "addComunale": 9.4,
+     "trattenuteFisse": 0,
+     "trattenute": 268.1,
+     "trattamentoIntegrativo": 98.63,
+     "bonusCuneo": 62.28,
+     "bonus": 160.91,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 14631,
+      "lordoPresunto": 16187,
+      "motivo": "reddito presunto dell'anno 14631 €, sotto i 15.000",
+      "media": 1220.7,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1193.01
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1300,
+      "importo": 119.47,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1300,
+      "importo": 3.47,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1300,
+      "importo": 3.9,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1193.01
+   },
+   {
+    "paga": {
+     "base": 1151.79,
+     "surcharge": 52.31,
+     "total": 1204.1,
+     "surchargeSunday": 3.92,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 48.39,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 161.32,
+     "straordinarioBase": 0,
+     "nightBase": 18.44,
+     "overtimeMinutes": 1050,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 120,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1204.1,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1219.04,
+     "lordoPresunto": 15802.72
+    },
+    "netto": {
+     "gross": 1204.1,
+     "contributi": 119.37,
+     "imponibile": 1088.53,
+     "imponibileOrdinario": 1088.53,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 250.36,
+     "detrazioni": 166.04,
+     "detrazioniApplicate": 166.04,
+     "irpefNetta": 84.32,
+     "addRegionale": 18.83,
+     "addComunale": 8.71,
+     "trattenuteFisse": 0,
+     "trattenute": 231.23,
+     "trattamentoIntegrativo": 101.91,
+     "bonusCuneo": 57.69,
+     "bonus": 159.6,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 14284,
+      "lordoPresunto": 15803,
+      "motivo": "reddito presunto dell'anno 14284 €, sotto i 15.000",
+      "media": 1219.04,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1132.47
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1204,
+      "importo": 110.65,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1204,
+      "importo": 3.21,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1204,
+      "importo": 3.61,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1132.47
+   },
+   {
+    "paga": {
+     "base": 1241.67,
+     "surcharge": 81.58,
+     "total": 1323.25,
+     "surchargeSunday": 7.6,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 73.28,
+     "surchargeStraordinario": 0.69,
+     "surchargeNight": 0,
+     "overtimeBase": 244.28,
+     "straordinarioBase": 2.3,
+     "nightBase": 96.79,
+     "overtimeMinutes": 1590,
+     "straordinarioMinutes": 15,
+     "nightMinutes": 630,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1323.25,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1228.51,
+     "lordoPresunto": 16160.15
+    },
+    "netto": {
+     "gross": 1323.25,
+     "contributi": 130.98,
+     "imponibile": 1196.07,
+     "imponibileOrdinario": 1196.07,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 275.1,
+     "detrazioni": 160.68,
+     "detrazioniApplicate": 160.68,
+     "irpefNetta": 114.42,
+     "addRegionale": 20.69,
+     "addComunale": 9.57,
+     "trattenuteFisse": 0,
+     "trattenute": 275.66,
+     "trattamentoIntegrativo": 98.63,
+     "bonusCuneo": 63.39,
+     "bonus": 162.02,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 14606,
+      "lordoPresunto": 16160,
+      "motivo": "reddito presunto dell'anno 14606 €, sotto i 15.000",
+      "media": 1228.51,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1209.61
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1323,
+      "importo": 121.58,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1323,
+      "importo": 3.53,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1323,
+      "importo": 3.97,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1209.61
+   },
+   {
+    "paga": {
+     "base": 1209.4,
+     "surcharge": 48.39,
+     "total": 1257.8,
+     "surchargeSunday": 8.3,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 40.1,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 133.66,
+     "straordinarioBase": 0,
+     "nightBase": 71.44,
+     "overtimeMinutes": 870,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 465,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 2209.1,
+     "extraMese": 951.3,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1310.23,
+     "lordoPresunto": 15722.75
+    },
+    "netto": {
+     "gross": 2209.1,
+     "contributi": 217.43,
+     "imponibile": 1995.47,
+     "imponibileOrdinario": 1136.98,
+     "imponibileExtra": 858.49,
+     "irpefExtra": 197.45,
+     "cuneoPct": 0.05,
+     "irpefLorda": 458.96,
+     "detrazioni": 166.04,
+     "detrazioniApplicate": 166.04,
+     "irpefNetta": 292.92,
+     "addRegionale": 34.52,
+     "addComunale": 15.96,
+     "trattenuteFisse": 0,
+     "trattenute": 560.83,
+     "trattamentoIntegrativo": 101.91,
+     "bonusCuneo": 105.75,
+     "bonus": 207.66,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 14212,
+      "lordoPresunto": 15723,
+      "motivo": "reddito presunto dell'anno 14212 €, sotto i 15.000",
+      "media": 1310.23,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1855.93
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 2209,
+      "importo": 203.01,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 2209,
+      "importo": 5.89,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 2209,
+      "importo": 6.63,
+      "deducibile": true
+     },
+     {
+      "label": "Ente Bilaterale Turismo",
+      "pct": 0.2,
+      "base": 951.3,
+      "importo": 1.9,
+      "deducibile": false
+     }
+    ],
+    "conPremio": 1855.93
+   }
+  ],
+  "conguaglio": {
+   "min": -48.64,
+   "max": -33.61,
+   "centrale": {
+    "voci": {
+     "irpef": 72.34,
+     "trattamentoIntegrativo": -98.69,
+     "indennita": -7.26
+    },
+    "dettaglio": {
+     "irpef": {
+      "mesi": 1241.31,
+      "anno": 1313.65
+     },
+     "trattamentoIntegrativo": {
+      "mesi": 1101.31,
+      "anno": 1200
+     },
+     "indennita": {
+      "mesi": 745.95,
+      "anno": 753.21
+     }
+    },
+    "annoSottoSoglia": true,
+    "redditoAnno": 14211.54,
+    "saldo": -33.61,
+    "lordoAnno": 15722.75,
+    "tiAccreditato": 1101.31,
+    "tiMesi": [
+     101.91,
+     92.05,
+     101.91,
+     98.63,
+     101.91,
+     0,
+     101.91,
+     101.91,
+     98.63,
+     101.91,
+     98.63,
+     101.91
+    ],
+    "sopraMesi": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     true,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ],
+    "irpefMesi": [
+     67.01,
+     83.08,
+     67.01,
+     72.37,
+     67.01,
+     98.73,
+     94.22,
+     90.59,
+     109.63,
+     84.32,
+     114.42,
+     292.92
+    ]
+   },
+   "direzione": "credito",
+   "mesiVuoti": 0,
+   "tiFinora": 700.23,
+   "meseMontante": 5,
+   "tiMontanteNoto": null,
+   "irpefMontanteNota": null,
+   "busteAnno": 12,
+   "mesiSopraSoglia": [
+    5
+   ],
+   "mesiSottoSoglia": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ]
+  },
+  "annuo": {
+   "gross": 16000,
+   "contributi": 1583.9,
+   "contributiRighe": [
+    {
+     "label": "Contributi IVS",
+     "pct": 9.19,
+     "base": 16000,
+     "importo": 1470.4,
+     "deducibile": true
+    },
+    {
+     "label": "FIS D.Lgs. 148/2015",
+     "pct": 0.27,
+     "base": 16000,
+     "importo": 42.67,
+     "deducibile": true
+    },
+    {
+     "label": "Contributo CIGS",
+     "pct": 0.3,
+     "base": 16000,
+     "importo": 48,
+     "deducibile": true
+    },
+    {
+     "label": "Ente Bilaterale Turismo",
+     "pct": 0.2,
+     "base": 11415.6,
+     "importo": 22.83,
+     "deducibile": false
+    }
+   ],
+   "imponibile": 14461.76,
+   "irpefLorda": 3326.2,
+   "detrazioneLavoro": 1955,
+   "detrazioneCuneo": 0,
+   "irpefNetta": 1371.2,
+   "addRegionale": 250.19,
+   "addComunale": 115.69,
+   "trattamentoIntegrativo": 1200,
+   "bonusCuneo": 766.47,
+   "net": 14645.49
+  },
+  "ti": {
+   "importoAnnuo": 1200,
+   "incluso": true,
+   "motivo": "reddito stimato ≤ 15.000€ con capienza → incluso",
+   "redditoStimato": 13108.11
+  },
+  "margine": {
+   "income": 15800,
+   "thresholdFullGross": 16596,
+   "thresholdMaxGross": 31001,
+   "taxable": 14281.28,
+   "status": "pieno",
+   "marginToFull": 796,
+   "marginToMax": 15201,
+   "oreResidue": 66,
+   "nearThreshold": true
+  },
+  "rischio": {
+   "erogato": 0,
+   "spettante": 1200,
+   "daRestituire": 0,
+   "rateizzabile": false,
+   "giorni": 258,
+   "unSoloDatore": true,
+   "causa": "nessuna"
+  },
+  "costo": {
+   "tetto": 16596,
+   "nettoTetto": 15074.53,
+   "perditaMax": 129,
+   "pareggio": 16802,
+   "larghezzaBuca": 206,
+   "voci": {
+    "bonus": -1200,
+    "tasse": 1145,
+    "indennita": -75,
+    "altro": 1,
+    "detrazioneSotto": 1955,
+    "detrazioneSopra": 3100
+   }
+  },
+  "soglia": {
+   "lordo": 16596,
+   "minimoTi": 753
+  },
+  "periodo": [
+   {
+    "data": "2026-10-05",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-05",
+     "date": "2026-10-05",
+     "startTime": "15:30",
+     "endTime": "19:30",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-06",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "p2026-10-06",
+     "date": "2026-10-06",
+     "type": "permesso",
+     "durationMinutes": 120
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-07",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-07",
+     "date": "2026-10-07",
+     "startTime": "15:30",
+     "endTime": "22:00",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-08",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-08",
+     "date": "2026-10-08",
+     "startTime": "10:30",
+     "endTime": "17:45",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-09",
+    "minuti": 240,
+    "turnoEsistente": null,
+    "selezionato": false,
+    "riposo": true,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-10",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-10",
+     "date": "2026-10-10",
+     "startTime": "11:00",
+     "endTime": "18:30",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-11",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-11",
+     "date": "2026-10-11",
+     "startTime": "15:00",
+     "endTime": "22:45",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-12",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-12",
+     "date": "2026-10-12",
+     "startTime": "10:30",
+     "endTime": "15:15",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-13",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-13",
+     "date": "2026-10-13",
+     "startTime": "13:00",
+     "endTime": "18:15",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-14",
+    "minuti": 240,
+    "turnoEsistente": null,
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-15",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-15",
+     "date": "2026-10-15",
+     "startTime": "08:30",
+     "endTime": "14:45",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-16",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-16",
+     "date": "2026-10-16",
+     "startTime": "15:30",
+     "endTime": "22:30",
+     "breakMinutes": 30
+    },
+    "selezionato": false,
+    "riposo": true,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-17",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-17",
+     "date": "2026-10-17",
+     "startTime": "08:30",
+     "endTime": "12:45",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-18",
+    "minuti": 240,
+    "turnoEsistente": {
+     "id": "t2026-10-18",
+     "date": "2026-10-18",
+     "startTime": "09:30",
+     "endTime": "16:00",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   }
+  ]
+ },
+ "commercio": {
+  "mesi": [
+   {
+    "paga": {
+     "base": 2046.3,
+     "surcharge": 73.53,
+     "total": 2119.83,
+     "surchargeSunday": 32.49,
+     "surchargeHoliday": 41.04,
+     "surchargeManual": 0,
+     "surchargeOvertime": 0,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 0,
+     "straordinarioBase": 0,
+     "nightBase": 236.55,
+     "overtimeMinutes": 0,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 1245,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 2119.83,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": null,
+     "lordoPresunto": 27557.79
+    },
+    "netto": {
+     "gross": 2119.83,
+     "contributi": 241.7,
+     "imponibile": 1878.13,
+     "imponibileOrdinario": 1878.13,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0,
+     "irpefLorda": 431.97,
+     "detrazioni": 275,
+     "detrazioniApplicate": 275,
+     "irpefNetta": 156.97,
+     "addRegionale": 23.1,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 421.77,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 0,
+     "bonus": 0,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 24418,
+      "lordoPresunto": 27558,
+      "motivo": "reddito presunto dell'anno 24418 €, sopra i 15.000",
+      "media": null,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1698.06
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 2120,
+      "importo": 194.83,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 2120,
+      "importo": 5.65,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 2120,
+      "importo": 6.36,
+      "deducibile": true
+     },
+     {
+      "label": "Fondo pensione",
+      "pct": 1.55,
+      "base": 2119.83,
+      "importo": 32.86,
+      "deducibile": true
+     },
+     {
+      "label": "Cassa sanitaria",
+      "base": 2119.83,
+      "importo": 2,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1698.06
+   },
+   {
+    "paga": {
+     "base": 1806.9,
+     "surcharge": 57.29,
+     "total": 1864.19,
+     "surchargeSunday": 4.28,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 0,
+     "surchargeStraordinario": 53.01,
+     "surchargeNight": 0,
+     "overtimeBase": 0,
+     "straordinarioBase": 176.7,
+     "nightBase": 185.25,
+     "overtimeMinutes": 0,
+     "straordinarioMinutes": 930,
+     "nightMinutes": 975,
+     "ferieMinutes": 0,
+     "permessoMinutes": 240,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1864.19,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1992.01,
+     "lordoPresunto": 24490.05
+    },
+    "netto": {
+     "gross": 1864.19,
+     "contributi": 212.75,
+     "imponibile": 1651.44,
+     "imponibileOrdinario": 1651.44,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0,
+     "irpefLorda": 379.83,
+     "detrazioni": 267.49,
+     "detrazioniApplicate": 267.49,
+     "irpefNetta": 112.34,
+     "addRegionale": 20.31,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 345.4,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 0,
+     "bonus": 0,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 21697,
+      "lordoPresunto": 24490,
+      "motivo": "reddito presunto dell'anno 21697 €, sopra i 15.000",
+      "media": 1992.01,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1518.79
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1864,
+      "importo": 171.3,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1864,
+      "importo": 4.97,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1864,
+      "importo": 5.59,
+      "deducibile": true
+     },
+     {
+      "label": "Fondo pensione",
+      "pct": 1.55,
+      "base": 1864.19,
+      "importo": 28.89,
+      "deducibile": true
+     },
+     {
+      "label": "Cassa sanitaria",
+      "base": 1864.19,
+      "importo": 2,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1518.79
+   },
+   {
+    "paga": {
+     "base": 1578.9,
+     "surcharge": 62.42,
+     "total": 1641.32,
+     "surchargeSunday": 33.35,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 0,
+     "surchargeStraordinario": 29.07,
+     "surchargeNight": 0,
+     "overtimeBase": 0,
+     "straordinarioBase": 96.9,
+     "nightBase": 213.75,
+     "overtimeMinutes": 0,
+     "straordinarioMinutes": 510,
+     "nightMinutes": 1125,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 960,
+     "malattiaBase": 45.6,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1641.32,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1875.11,
+     "lordoPresunto": 22038.48
+    },
+    "netto": {
+     "gross": 1641.32,
+     "contributi": 187.55,
+     "imponibile": 1453.77,
+     "imponibileOrdinario": 1453.77,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 334.37,
+     "detrazioni": 228.13,
+     "detrazioniApplicate": 228.13,
+     "irpefNetta": 106.24,
+     "addRegionale": 17.88,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 311.67,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 69.78,
+     "bonus": 69.78,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 19523,
+      "lordoPresunto": 22038,
+      "motivo": "reddito presunto dell'anno 19523 €, sopra i 15.000",
+      "media": 1875.11,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1399.43
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1641,
+      "importo": 150.81,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1641,
+      "importo": 4.38,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1641,
+      "importo": 4.92,
+      "deducibile": true
+     },
+     {
+      "label": "Fondo pensione",
+      "pct": 1.55,
+      "base": 1641.32,
+      "importo": 25.44,
+      "deducibile": true
+     },
+     {
+      "label": "Cassa sanitaria",
+      "base": 1641.32,
+      "importo": 2,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1399.43
+   },
+   {
+    "paga": {
+     "base": 1670.1,
+     "surcharge": 82.08,
+     "total": 1752.18,
+     "surchargeSunday": 55.58,
+     "surchargeHoliday": 19.67,
+     "surchargeManual": 0,
+     "surchargeOvertime": 0,
+     "surchargeStraordinario": 6.84,
+     "surchargeNight": 0,
+     "overtimeBase": 0,
+     "straordinarioBase": 22.8,
+     "nightBase": 14.25,
+     "overtimeMinutes": 0,
+     "straordinarioMinutes": 120,
+     "nightMinutes": 75,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1752.18,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1844.38,
+     "lordoPresunto": 23147.13
+    },
+    "netto": {
+     "gross": 1752.18,
+     "contributi": 200.1,
+     "imponibile": 1552.08,
+     "imponibileOrdinario": 1552.08,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0,
+     "irpefLorda": 356.98,
+     "detrazioni": 295.56,
+     "detrazioniApplicate": 295.56,
+     "irpefNetta": 61.42,
+     "addRegionale": 19.09,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 280.61,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 0,
+     "bonus": 0,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 20506,
+      "lordoPresunto": 23147,
+      "motivo": "reddito presunto dell'anno 20506 €, sopra i 15.000",
+      "media": 1844.38,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1471.57
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1752,
+      "importo": 161.01,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1752,
+      "importo": 4.67,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1752,
+      "importo": 5.26,
+      "deducibile": true
+     },
+     {
+      "label": "Fondo pensione",
+      "pct": 1.55,
+      "base": 1752.18,
+      "importo": 27.16,
+      "deducibile": true
+     },
+     {
+      "label": "Cassa sanitaria",
+      "base": 1752.18,
+      "importo": 2,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1471.57
+   },
+   {
+    "paga": {
+     "base": 2128.95,
+     "surcharge": 146.21,
+     "total": 2275.15,
+     "surchargeSunday": 53.01,
+     "surchargeHoliday": 17.95,
+     "surchargeManual": 0,
+     "surchargeOvertime": 0,
+     "surchargeStraordinario": 75.24,
+     "surchargeNight": 0,
+     "overtimeBase": 0,
+     "straordinarioBase": 250.8,
+     "nightBase": 165.3,
+     "overtimeMinutes": 0,
+     "straordinarioMinutes": 1320,
+     "nightMinutes": 870,
+     "ferieMinutes": 0,
+     "permessoMinutes": 240,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 2275.15,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1930.53,
+     "lordoPresunto": 27853.91
+    },
+    "netto": {
+     "gross": 2275.15,
+     "contributi": 259.23,
+     "imponibile": 2015.92,
+     "imponibileOrdinario": 2015.92,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0,
+     "irpefLorda": 463.66,
+     "detrazioni": 272.96,
+     "detrazioniApplicate": 272.96,
+     "irpefNetta": 190.7,
+     "addRegionale": 24.8,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 474.73,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 0,
+     "bonus": 0,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 24681,
+      "lordoPresunto": 27854,
+      "motivo": "reddito presunto dell'anno 24681 €, sopra i 15.000",
+      "media": 1930.53,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1800.42
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 2275,
+      "importo": 209.07,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 2275,
+      "importo": 6.07,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 2275,
+      "importo": 6.83,
+      "deducibile": true
+     },
+     {
+      "label": "Fondo pensione",
+      "pct": 1.55,
+      "base": 2275.15,
+      "importo": 35.26,
+      "deducibile": true
+     },
+     {
+      "label": "Cassa sanitaria",
+      "base": 2275.15,
+      "importo": 2,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1800.42
+   },
+   {
+    "paga": {
+     "base": 2174.55,
+     "surcharge": 122.26,
+     "total": 2296.82,
+     "surchargeSunday": 43.61,
+     "surchargeHoliday": 18.81,
+     "surchargeManual": 0,
+     "surchargeOvertime": 0,
+     "surchargeStraordinario": 59.85,
+     "surchargeNight": 0,
+     "overtimeBase": 0,
+     "straordinarioBase": 199.5,
+     "nightBase": 213.75,
+     "overtimeMinutes": 0,
+     "straordinarioMinutes": 1050,
+     "nightMinutes": 1125,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 4212.02,
+     "extraMese": 1915.2,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 2310.78,
+     "lordoPresunto": 43348.79
+    },
+    "netto": {
+     "gross": 4212.02,
+     "contributi": 478.24,
+     "imponibile": 3733.78,
+     "imponibileOrdinario": 2036.04,
+     "imponibileExtra": 1697.74,
+     "irpefExtra": 560.26,
+     "cuneoPct": 0,
+     "irpefLorda": 1083.78,
+     "detrazioni": 98.8,
+     "detrazioniApplicate": 98.8,
+     "irpefNetta": 984.98,
+     "addRegionale": 45.93,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 1509.15,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 0,
+     "bonus": 0,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 38423,
+      "lordoPresunto": 43349,
+      "motivo": "reddito presunto dell'anno 38423 €, sopra i 15.000",
+      "media": 2310.78,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 2702.87
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 4212,
+      "importo": 387.08,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 4212,
+      "importo": 11.23,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 4212,
+      "importo": 12.64,
+      "deducibile": true
+     },
+     {
+      "label": "Fondo pensione",
+      "pct": 1.55,
+      "base": 4212.02,
+      "importo": 65.29,
+      "deducibile": true
+     },
+     {
+      "label": "Cassa sanitaria",
+      "base": 4212.02,
+      "importo": 2,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 2702.87
+   },
+   {
+    "paga": {
+     "base": 2003.55,
+     "surcharge": 105.17,
+     "total": 2108.71,
+     "surchargeSunday": 67.55,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 0,
+     "surchargeStraordinario": 37.62,
+     "surchargeNight": 0,
+     "overtimeBase": 0,
+     "straordinarioBase": 125.4,
+     "nightBase": 111.15,
+     "overtimeMinutes": 0,
+     "straordinarioMinutes": 660,
+     "nightMinutes": 585,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 2108.71,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 2281.91,
+     "lordoPresunto": 28625.69
+    },
+    "netto": {
+     "gross": 2108.71,
+     "contributi": 240.46,
+     "imponibile": 1868.25,
+     "imponibileOrdinario": 1868.25,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0,
+     "irpefLorda": 429.7,
+     "detrazioni": 273.16,
+     "detrazioniApplicate": 273.16,
+     "irpefNetta": 156.54,
+     "addRegionale": 22.98,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 419.98,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 0,
+     "bonus": 0,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 25365,
+      "lordoPresunto": 28626,
+      "motivo": "reddito presunto dell'anno 25365 €, sopra i 15.000",
+      "media": 2281.91,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1688.73
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 2109,
+      "importo": 193.82,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 2109,
+      "importo": 5.62,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 2109,
+      "importo": 6.33,
+      "deducibile": true
+     },
+     {
+      "label": "Fondo pensione",
+      "pct": 1.55,
+      "base": 2108.71,
+      "importo": 32.69,
+      "deducibile": true
+     },
+     {
+      "label": "Cassa sanitaria",
+      "base": 2108.71,
+      "importo": 2,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1688.73
+   },
+   {
+    "paga": {
+     "base": 1804.05,
+     "surcharge": 100.04,
+     "total": 1904.08,
+     "surchargeSunday": 66.69,
+     "surchargeHoliday": 18.81,
+     "surchargeManual": 0,
+     "surchargeOvertime": 0,
+     "surchargeStraordinario": 14.54,
+     "surchargeNight": 0,
+     "overtimeBase": 0,
+     "straordinarioBase": 48.45,
+     "nightBase": 122.55,
+     "overtimeMinutes": 0,
+     "straordinarioMinutes": 255,
+     "nightMinutes": 645,
+     "ferieMinutes": 2640,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1904.08,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 2234.69,
+     "lordoPresunto": 27397.91
+    },
+    "netto": {
+     "gross": 1904.08,
+     "contributi": 217.28,
+     "imponibile": 1686.8,
+     "imponibileOrdinario": 1686.8,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0,
+     "irpefLorda": 387.96,
+     "detrazioni": 276.1,
+     "detrazioniApplicate": 276.1,
+     "irpefNetta": 111.86,
+     "addRegionale": 20.75,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 349.89,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 0,
+     "bonus": 0,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 24276,
+      "lordoPresunto": 27398,
+      "motivo": "reddito presunto dell'anno 24276 €, sopra i 15.000",
+      "media": 2234.69,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1554.19
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1904,
+      "importo": 174.98,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1904,
+      "importo": 5.08,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1904,
+      "importo": 5.71,
+      "deducibile": true
+     },
+     {
+      "label": "Fondo pensione",
+      "pct": 1.55,
+      "base": 1904.08,
+      "importo": 29.51,
+      "deducibile": true
+     },
+     {
+      "label": "Cassa sanitaria",
+      "base": 1904.08,
+      "importo": 2,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1554.19
+   },
+   {
+    "paga": {
+     "base": 1738.5,
+     "surcharge": 17.95,
+     "total": 1756.46,
+     "surchargeSunday": 17.95,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 0,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 0,
+     "straordinarioBase": 0,
+     "nightBase": 111.15,
+     "overtimeMinutes": 0,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 585,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1756.46,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 2181.55,
+     "lordoPresunto": 26659.75
+    },
+    "netto": {
+     "gross": 1756.46,
+     "contributi": 200.56,
+     "imponibile": 1555.9,
+     "imponibileOrdinario": 1555.9,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0,
+     "irpefLorda": 357.86,
+     "detrazioni": 272.12,
+     "detrazioniApplicate": 272.12,
+     "irpefNetta": 85.74,
+     "addRegionale": 19.14,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 305.44,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 0,
+     "bonus": 0,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 23621,
+      "lordoPresunto": 26660,
+      "motivo": "reddito presunto dell'anno 23621 €, sopra i 15.000",
+      "media": 2181.55,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1451.02
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1756,
+      "importo": 161.38,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 1756,
+      "importo": 4.68,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 1756,
+      "importo": 5.27,
+      "deducibile": true
+     },
+     {
+      "label": "Fondo pensione",
+      "pct": 1.55,
+      "base": 1756.46,
+      "importo": 27.23,
+      "deducibile": true
+     },
+     {
+      "label": "Cassa sanitaria",
+      "base": 1756.46,
+      "importo": 2,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1451.02
+   },
+   {
+    "paga": {
+     "base": 2223,
+     "surcharge": 102.6,
+     "total": 2325.6,
+     "surchargeSunday": 16.25,
+     "surchargeHoliday": 36.77,
+     "surchargeManual": 0,
+     "surchargeOvertime": 0,
+     "surchargeStraordinario": 49.59,
+     "surchargeNight": 0,
+     "overtimeBase": 0,
+     "straordinarioBase": 165.3,
+     "nightBase": 171,
+     "overtimeMinutes": 0,
+     "straordinarioMinutes": 870,
+     "nightMinutes": 900,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 2325.6,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 2211.83,
+     "lordoPresunto": 29095.08
+    },
+    "netto": {
+     "gross": 2325.6,
+     "contributi": 264.99,
+     "imponibile": 2060.61,
+     "imponibileOrdinario": 2060.61,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0,
+     "irpefLorda": 473.94,
+     "detrazioni": 269.92,
+     "detrazioniApplicate": 269.92,
+     "irpefNetta": 204.02,
+     "addRegionale": 25.35,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 494.36,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 0,
+     "bonus": 0,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 25781,
+      "lordoPresunto": 29095,
+      "motivo": "reddito presunto dell'anno 25781 €, sopra i 15.000",
+      "media": 2211.83,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1831.24
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 2326,
+      "importo": 213.76,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 2326,
+      "importo": 6.2,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 2326,
+      "importo": 6.98,
+      "deducibile": true
+     },
+     {
+      "label": "Fondo pensione",
+      "pct": 1.55,
+      "base": 2325.6,
+      "importo": 36.05,
+      "deducibile": true
+     },
+     {
+      "label": "Cassa sanitaria",
+      "base": 2325.6,
+      "importo": 2,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1831.24
+   },
+   {
+    "paga": {
+     "base": 2197.35,
+     "surcharge": 154.75,
+     "total": 2352.11,
+     "surchargeSunday": 17.1,
+     "surchargeHoliday": 32.49,
+     "surchargeManual": 0,
+     "surchargeOvertime": 0,
+     "surchargeStraordinario": 105.17,
+     "surchargeNight": 0,
+     "overtimeBase": 0,
+     "straordinarioBase": 350.55,
+     "nightBase": 131.1,
+     "overtimeMinutes": 0,
+     "straordinarioMinutes": 1845,
+     "nightMinutes": 690,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 2352.11,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 2224.58,
+     "lordoPresunto": 29174.6
+    },
+    "netto": {
+     "gross": 2352.11,
+     "contributi": 267.94,
+     "imponibile": 2084.17,
+     "imponibileOrdinario": 2084.17,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0,
+     "irpefLorda": 479.36,
+     "detrazioni": 260.68,
+     "detrazioniApplicate": 260.68,
+     "irpefNetta": 218.68,
+     "addRegionale": 25.64,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 512.26,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 0,
+     "bonus": 0,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 25852,
+      "lordoPresunto": 29175,
+      "motivo": "reddito presunto dell'anno 25852 €, sopra i 15.000",
+      "media": 2224.58,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1839.85
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 2352,
+      "importo": 216.15,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 2352,
+      "importo": 6.27,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 2352,
+      "importo": 7.06,
+      "deducibile": true
+     },
+     {
+      "label": "Fondo pensione",
+      "pct": 1.55,
+      "base": 2352.11,
+      "importo": 36.46,
+      "deducibile": true
+     },
+     {
+      "label": "Cassa sanitaria",
+      "base": 2352.11,
+      "importo": 2,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1839.85
+   },
+   {
+    "paga": {
+     "base": 1918.05,
+     "surcharge": 115.43,
+     "total": 2033.48,
+     "surchargeSunday": 52.16,
+     "surchargeHoliday": 63.27,
+     "surchargeManual": 0,
+     "surchargeOvertime": 0,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 0,
+     "straordinarioBase": 0,
+     "nightBase": 179.55,
+     "overtimeMinutes": 0,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 945,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 3948.68,
+     "extraMese": 1915.2,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 2368.25,
+     "lordoPresunto": 28419.06
+    },
+    "netto": {
+     "gross": 3948.68,
+     "contributi": 448.49,
+     "imponibile": 3500.19,
+     "imponibileOrdinario": 1802.52,
+     "imponibileExtra": 1697.67,
+     "irpefExtra": 390.46,
+     "cuneoPct": 0,
+     "irpefLorda": 805.04,
+     "detrazioni": 274.58,
+     "detrazioniApplicate": 274.58,
+     "irpefNetta": 530.46,
+     "addRegionale": 43.05,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 1022,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 0,
+     "bonus": 0,
+     "esitoTi": {
+      "spetta": false,
+      "presunto": true,
+      "proiezione": 25182,
+      "lordoPresunto": 28419,
+      "motivo": "reddito presunto dell'anno 25182 €, sopra i 15.000",
+      "media": 2368.25,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 2926.68
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 3949,
+      "importo": 362.91,
+      "deducibile": true
+     },
+     {
+      "label": "FIS D.Lgs. 148/2015",
+      "pct": 0.27,
+      "base": 3949,
+      "importo": 10.53,
+      "deducibile": true
+     },
+     {
+      "label": "Contributo CIGS",
+      "pct": 0.3,
+      "base": 3949,
+      "importo": 11.85,
+      "deducibile": true
+     },
+     {
+      "label": "Fondo pensione",
+      "pct": 1.55,
+      "base": 3948.68,
+      "importo": 61.2,
+      "deducibile": true
+     },
+     {
+      "label": "Cassa sanitaria",
+      "base": 3948.68,
+      "importo": 2,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 2926.68
+   }
+  ],
+  "conguaglio": {
+   "min": -329,
+   "max": -326.8,
+   "centrale": {
+    "voci": {
+     "irpef": -398.78,
+     "trattamentoIntegrativo": 0,
+     "indennita": 69.78
+    },
+    "dettaglio": {
+     "irpef": {
+      "mesi": 2957.62,
+      "anno": 2558.84
+     },
+     "trattamentoIntegrativo": {
+      "mesi": 0,
+      "anno": 0
+     },
+     "indennita": {
+      "mesi": 69.78,
+      "anno": 0
+     }
+    },
+    "annoSottoSoglia": false,
+    "redditoAnno": 25181.81,
+    "saldo": -329,
+    "lordoAnno": 28419.06,
+    "tiAccreditato": 0,
+    "tiMesi": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "sopraMesi": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ],
+    "irpefMesi": [
+     156.97,
+     112.34,
+     106.24,
+     61.42,
+     190.7,
+     984.98,
+     156.54,
+     111.86,
+     123.41,
+     204.02,
+     218.68,
+     530.46
+    ]
+   },
+   "direzione": "credito",
+   "mesiVuoti": 0,
+   "tiFinora": 0,
+   "meseMontante": -1,
+   "tiMontanteNoto": null,
+   "irpefMontanteNota": null,
+   "busteAnno": 12,
+   "mesiSopraSoglia": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ],
+   "mesiSottoSoglia": []
+  },
+  "annuo": {
+   "gross": 16000,
+   "contributi": 1833.07,
+   "contributiRighe": [
+    {
+     "label": "Contributi IVS",
+     "pct": 9.19,
+     "base": 16000,
+     "importo": 1470.4,
+     "deducibile": true
+    },
+    {
+     "label": "FIS D.Lgs. 148/2015",
+     "pct": 0.27,
+     "base": 16000,
+     "importo": 42.67,
+     "deducibile": true
+    },
+    {
+     "label": "Contributo CIGS",
+     "pct": 0.3,
+     "base": 16000,
+     "importo": 48,
+     "deducibile": true
+    },
+    {
+     "label": "Fondo pensione",
+     "pct": 1.55,
+     "base": 16000,
+     "importo": 248,
+     "deducibile": true
+    },
+    {
+     "label": "Cassa sanitaria",
+     "base": 16000,
+     "importo": 24,
+     "deducibile": true
+    }
+   ],
+   "imponibile": 14166.93,
+   "irpefLorda": 3258.39,
+   "detrazioneLavoro": 1955,
+   "detrazioneCuneo": 0,
+   "irpefNetta": 1303.39,
+   "addRegionale": 174.25,
+   "addComunale": 0,
+   "trattamentoIntegrativo": 1200,
+   "bonusCuneo": 750.85,
+   "net": 14640.13
+  },
+  "ti": {
+   "importoAnnuo": 1200,
+   "incluso": true,
+   "motivo": "reddito stimato ≤ 15.000€ con capienza → incluso",
+   "redditoStimato": 12836.53
+  },
+  "margine": {
+   "income": 15800,
+   "thresholdFullGross": 16939,
+   "thresholdMaxGross": 31596,
+   "taxable": 13989.55,
+   "status": "pieno",
+   "marginToFull": 1139,
+   "marginToMax": 15796,
+   "oreResidue": 86,
+   "nearThreshold": false
+  },
+  "rischio": {
+   "erogato": 0,
+   "spettante": 1200,
+   "daRestituire": 0,
+   "rateizzabile": false,
+   "giorni": 258,
+   "unSoloDatore": true,
+   "causa": "nessuna"
+  },
+  "costo": {
+   "tetto": 16939,
+   "nettoTetto": 15315.31,
+   "perditaMax": 129,
+   "pareggio": 17145,
+   "larghezzaBuca": 206,
+   "voci": {
+    "bonus": -1200,
+    "tasse": 1145,
+    "indennita": -75,
+    "altro": 1,
+    "detrazioneSotto": 1955,
+    "detrazioneSopra": 3100
+   }
+  },
+  "soglia": {
+   "lordo": 16939,
+   "minimoTi": 771
+  },
+  "periodo": [
+   {
+    "data": "2026-10-05",
+    "minuti": 400,
+    "turnoEsistente": {
+     "id": "t2026-10-05",
+     "date": "2026-10-05",
+     "startTime": "20:00",
+     "endTime": "03:30",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-06",
+    "minuti": 400,
+    "turnoEsistente": {
+     "id": "t2026-10-06",
+     "date": "2026-10-06",
+     "startTime": "11:00",
+     "endTime": "19:45",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-07",
+    "minuti": 400,
+    "turnoEsistente": {
+     "id": "t2026-10-07",
+     "date": "2026-10-07",
+     "startTime": "10:30",
+     "endTime": "18:30",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-08",
+    "minuti": 400,
+    "turnoEsistente": {
+     "id": "t2026-10-08",
+     "date": "2026-10-08",
+     "startTime": "09:30",
+     "endTime": "17:30",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-09",
+    "minuti": 400,
+    "turnoEsistente": {
+     "id": "t2026-10-09",
+     "date": "2026-10-09",
+     "startTime": "20:00",
+     "endTime": "05:30",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-10",
+    "minuti": 400,
+    "turnoEsistente": {
+     "id": "p2026-10-10",
+     "date": "2026-10-10",
+     "type": "permesso",
+     "durationMinutes": 120
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-11",
+    "minuti": 400,
+    "turnoEsistente": {
+     "id": "t2026-10-11",
+     "date": "2026-10-11",
+     "startTime": "10:30",
+     "endTime": "15:30",
+     "breakMinutes": 0
+    },
+    "selezionato": false,
+    "riposo": true,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-12",
+    "minuti": 400,
+    "turnoEsistente": {
+     "id": "t2026-10-12",
+     "date": "2026-10-12",
+     "startTime": "14:00",
+     "endTime": "23:45",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-13",
+    "minuti": 400,
+    "turnoEsistente": null,
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-14",
+    "minuti": 400,
+    "turnoEsistente": {
+     "id": "t2026-10-14",
+     "date": "2026-10-14",
+     "startTime": "12:00",
+     "endTime": "19:00",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-15",
+    "minuti": 400,
+    "turnoEsistente": {
+     "id": "t2026-10-15",
+     "date": "2026-10-15",
+     "startTime": "09:30",
+     "endTime": "15:45",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-16",
+    "minuti": 400,
+    "turnoEsistente": {
+     "id": "t2026-10-16",
+     "date": "2026-10-16",
+     "startTime": "10:00",
+     "endTime": "19:30",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-17",
+    "minuti": 400,
+    "turnoEsistente": null,
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-18",
+    "minuti": 400,
+    "turnoEsistente": {
+     "id": "t2026-10-18",
+     "date": "2026-10-18",
+     "startTime": "13:00",
+     "endTime": "17:45",
+     "breakMinutes": 0
+    },
+    "selezionato": false,
+    "riposo": true,
+    "festivita": false
+   }
+  ]
+ },
+ "senzaCcnl": {
+  "mesi": [
+   {
+    "paga": {
+     "base": 939.25,
+     "surcharge": 69.7,
+     "total": 1008.95,
+     "surchargeSunday": 0,
+     "surchargeHoliday": 54.19,
+     "surchargeManual": 0,
+     "surchargeOvertime": 7.23,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 8.29,
+     "overtimeBase": 72.25,
+     "straordinarioBase": 0,
+     "nightBase": 55.25,
+     "overtimeMinutes": 510,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 390,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1008.95,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": null,
+     "lordoPresunto": 12107.4
+    },
+    "netto": {
+     "gross": 1008.95,
+     "contributi": 92.73,
+     "imponibile": 916.22,
+     "imponibileOrdinario": 916.22,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 210.73,
+     "detrazioni": 166.04,
+     "detrazioniApplicate": 166.04,
+     "irpefNetta": 44.69,
+     "addRegionale": 11.27,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 148.69,
+     "trattamentoIntegrativo": 101.91,
+     "bonusCuneo": 48.55,
+     "bonus": 150.46,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 10995,
+      "lordoPresunto": 12107,
+      "motivo": "reddito presunto dell'anno 10995 €, sotto i 15.000",
+      "media": null,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1010.72
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1009,
+      "importo": 92.73,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1010.72
+   },
+   {
+    "paga": {
+     "base": 692.75,
+     "surcharge": 20.82,
+     "total": 713.58,
+     "surchargeSunday": 0,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 8.71,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 12.11,
+     "overtimeBase": 87.13,
+     "straordinarioBase": 0,
+     "nightBase": 80.75,
+     "overtimeMinutes": 615,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 570,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 713.58,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 861.26,
+     "lordoPresunto": 8858.28
+    },
+    "netto": {
+     "gross": 713.58,
+     "contributi": 65.62,
+     "imponibile": 647.96,
+     "imponibileOrdinario": 647.96,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.07,
+     "irpefLorda": 149.03,
+     "detrazioni": 149.97,
+     "detrazioniApplicate": 149.03,
+     "irpefNetta": 0,
+     "addRegionale": 0,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 65.62,
+     "trattamentoIntegrativo": 92.05,
+     "bonusCuneo": 46,
+     "bonus": 138.05,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 8044,
+      "lordoPresunto": 8858,
+      "motivo": "reddito presunto dell'anno 8044 €, sotto i 15.000",
+      "media": 861.26,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 786.01
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 714,
+      "importo": 65.62,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 786.01
+   },
+   {
+    "paga": {
+     "base": 805.38,
+     "surcharge": 16.79,
+     "total": 822.16,
+     "surchargeSunday": 0,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 16.79,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 167.88,
+     "straordinarioBase": 0,
+     "nightBase": 0,
+     "overtimeMinutes": 1185,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 0,
+     "ferieMinutes": 0,
+     "permessoMinutes": 240,
+     "malattiaMinutes": 960,
+     "malattiaBase": 34,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 822.16,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 848.23,
+     "lordoPresunto": 9944.15
+    },
+    "netto": {
+     "gross": 822.16,
+     "contributi": 75.54,
+     "imponibile": 746.62,
+     "imponibileOrdinario": 746.62,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 171.72,
+     "detrazioni": 166.04,
+     "detrazioniApplicate": 166.04,
+     "irpefNetta": 5.68,
+     "addRegionale": 9.18,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 90.4,
+     "trattamentoIntegrativo": 101.91,
+     "bonusCuneo": 39.57,
+     "bonus": 141.48,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 9030,
+      "lordoPresunto": 9944,
+      "motivo": "reddito presunto dell'anno 9030 €, sotto i 15.000",
+      "media": 848.23,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 873.24
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 822,
+      "importo": 75.54,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 873.24
+   },
+   {
+    "paga": {
+     "base": 969,
+     "surcharge": 46.96,
+     "total": 1015.96,
+     "surchargeSunday": 0,
+     "surchargeHoliday": 32.94,
+     "surchargeManual": 0,
+     "surchargeOvertime": 14.02,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 140.25,
+     "straordinarioBase": 0,
+     "nightBase": 0,
+     "overtimeMinutes": 990,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 0,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1015.96,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 890.16,
+     "lordoPresunto": 11688.35
+    },
+    "netto": {
+     "gross": 1015.96,
+     "contributi": 93.37,
+     "imponibile": 922.59,
+     "imponibileOrdinario": 922.59,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 212.2,
+     "detrazioni": 160.68,
+     "detrazioniApplicate": 160.68,
+     "irpefNetta": 51.52,
+     "addRegionale": 11.35,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 156.24,
+     "trattamentoIntegrativo": 98.63,
+     "bonusCuneo": 48.89,
+     "bonus": 147.52,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 10614,
+      "lordoPresunto": 11688,
+      "motivo": "reddito presunto dell'anno 10614 €, sotto i 15.000",
+      "media": 890.16,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1007.24
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1016,
+      "importo": 93.37,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1007.24
+   },
+   {
+    "paga": {
+     "base": 728.88,
+     "surcharge": 30.6,
+     "total": 759.48,
+     "surchargeSunday": 0,
+     "surchargeHoliday": 15.94,
+     "surchargeManual": 0,
+     "surchargeOvertime": 9.56,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 5.1,
+     "overtimeBase": 95.63,
+     "straordinarioBase": 0,
+     "nightBase": 34,
+     "overtimeMinutes": 675,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 240,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 959.48,
+     "extraMese": 0,
+     "premioMese": 200
+    },
+    "cap": {
+     "capiente": true,
+     "media": 864.03,
+     "lordoPresunto": 9636.45
+    },
+    "netto": {
+     "gross": 959.48,
+     "contributi": 88.13,
+     "imponibile": 871.35,
+     "imponibileOrdinario": 871.35,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 200.41,
+     "detrazioni": 166.04,
+     "detrazioniApplicate": 166.04,
+     "irpefNetta": 34.37,
+     "addRegionale": 10.72,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 133.22,
+     "trattamentoIntegrativo": 101.91,
+     "bonusCuneo": 46.18,
+     "bonus": 148.09,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 8751,
+      "lordoPresunto": 9636,
+      "motivo": "reddito presunto dell'anno 8751 €, sotto i 15.000",
+      "media": 864.03,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 974.35
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 959,
+      "importo": 88.13,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 999.51
+   },
+   {
+    "paga": {
+     "base": 799,
+     "surcharge": 39.95,
+     "total": 838.95,
+     "surchargeSunday": 0,
+     "surchargeHoliday": 22.31,
+     "surchargeManual": 0,
+     "surchargeOvertime": 9.35,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 8.29,
+     "overtimeBase": 93.5,
+     "straordinarioBase": 0,
+     "nightBase": 55.25,
+     "overtimeMinutes": 660,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 390,
+     "ferieMinutes": 0,
+     "permessoMinutes": 240,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 838.95,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 893.18,
+     "lordoPresunto": 10392.78
+    },
+    "netto": {
+     "gross": 838.95,
+     "contributi": 77.1,
+     "imponibile": 761.85,
+     "imponibileOrdinario": 761.85,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 175.23,
+     "detrazioni": 160.68,
+     "detrazioniApplicate": 160.68,
+     "irpefNetta": 14.55,
+     "addRegionale": 9.37,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 101.02,
+     "trattamentoIntegrativo": 98.63,
+     "bonusCuneo": 40.37,
+     "bonus": 139,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 9438,
+      "lordoPresunto": 10393,
+      "motivo": "reddito presunto dell'anno 9438 €, sotto i 15.000",
+      "media": 893.18,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 876.93
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 839,
+      "importo": 77.1,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 876.93
+   },
+   {
+    "paga": {
+     "base": 850,
+     "surcharge": 9.88,
+     "total": 859.88,
+     "surchargeSunday": 0,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 8.29,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 1.59,
+     "overtimeBase": 82.88,
+     "straordinarioBase": 0,
+     "nightBase": 10.63,
+     "overtimeMinutes": 585,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 75,
+     "ferieMinutes": 0,
+     "permessoMinutes": 240,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 859.88,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 888.42,
+     "lordoPresunto": 10518.36
+    },
+    "netto": {
+     "gross": 859.88,
+     "contributi": 79.03,
+     "imponibile": 780.85,
+     "imponibileOrdinario": 780.85,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 179.6,
+     "detrazioni": 166.04,
+     "detrazioniApplicate": 166.04,
+     "irpefNetta": 13.56,
+     "addRegionale": 9.6,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 102.19,
+     "trattamentoIntegrativo": 101.91,
+     "bonusCuneo": 41.38,
+     "bonus": 143.29,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 9552,
+      "lordoPresunto": 10518,
+      "motivo": "reddito presunto dell'anno 9552 €, sotto i 15.000",
+      "media": 888.42,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 900.98
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 860,
+      "importo": 79.03,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 900.98
+   },
+   {
+    "paga": {
+     "base": 1007.25,
+     "surcharge": 50.26,
+     "total": 1057.51,
+     "surchargeSunday": 0,
+     "surchargeHoliday": 21.25,
+     "surchargeManual": 0,
+     "surchargeOvertime": 21.04,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 7.97,
+     "overtimeBase": 210.38,
+     "straordinarioBase": 0,
+     "nightBase": 53.13,
+     "overtimeMinutes": 1485,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 375,
+     "ferieMinutes": 2640,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1057.51,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 909.56,
+     "lordoPresunto": 11506.49
+    },
+    "netto": {
+     "gross": 1057.51,
+     "contributi": 97.23,
+     "imponibile": 960.28,
+     "imponibileOrdinario": 960.28,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 220.86,
+     "detrazioni": 166.04,
+     "detrazioniApplicate": 166.04,
+     "irpefNetta": 54.82,
+     "addRegionale": 11.81,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 163.86,
+     "trattamentoIntegrativo": 101.91,
+     "bonusCuneo": 50.89,
+     "bonus": 152.8,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 10449,
+      "lordoPresunto": 11506,
+      "motivo": "reddito presunto dell'anno 10449 €, sotto i 15.000",
+      "media": 909.56,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1046.45
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1058,
+      "importo": 97.23,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1046.45
+   },
+   {
+    "paga": {
+     "base": 926.5,
+     "surcharge": 27.52,
+     "total": 954.02,
+     "surchargeSunday": 0,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 23.38,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 4.14,
+     "overtimeBase": 233.75,
+     "straordinarioBase": 0,
+     "nightBase": 27.63,
+     "overtimeMinutes": 1650,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 195,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 954.02,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 914.5,
+     "lordoPresunto": 11092.54
+    },
+    "netto": {
+     "gross": 954.02,
+     "contributi": 87.67,
+     "imponibile": 866.35,
+     "imponibileOrdinario": 866.35,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 199.26,
+     "detrazioni": 160.68,
+     "detrazioniApplicate": 160.68,
+     "irpefNetta": 38.58,
+     "addRegionale": 10.66,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 136.91,
+     "trattamentoIntegrativo": 98.63,
+     "bonusCuneo": 45.91,
+     "bonus": 144.54,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 10073,
+      "lordoPresunto": 11093,
+      "motivo": "reddito presunto dell'anno 10073 €, sotto i 15.000",
+      "media": 914.5,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 961.65
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 954,
+      "importo": 87.67,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 961.65
+   },
+   {
+    "paga": {
+     "base": 690.63,
+     "surcharge": 35.17,
+     "total": 725.79,
+     "surchargeSunday": 0,
+     "surchargeHoliday": 26.56,
+     "surchargeManual": 0,
+     "surchargeOvertime": 5.74,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 2.87,
+     "overtimeBase": 57.38,
+     "straordinarioBase": 0,
+     "nightBase": 19.13,
+     "overtimeMinutes": 405,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 135,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 725.79,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 895.63,
+     "lordoPresunto": 10407.86
+    },
+    "netto": {
+     "gross": 725.79,
+     "contributi": 66.72,
+     "imponibile": 659.07,
+     "imponibileOrdinario": 659.07,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 151.59,
+     "detrazioni": 166.04,
+     "detrazioniApplicate": 151.59,
+     "irpefNetta": 0,
+     "addRegionale": 8.11,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 74.83,
+     "trattamentoIntegrativo": 101.91,
+     "bonusCuneo": 34.93,
+     "bonus": 136.84,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 9451,
+      "lordoPresunto": 10408,
+      "motivo": "reddito presunto dell'anno 9451 €, sotto i 15.000",
+      "media": 895.63,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 787.8
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 726,
+      "importo": 66.72,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 787.8
+   },
+   {
+    "paga": {
+     "base": 981.75,
+     "surcharge": 47.71,
+     "total": 1029.46,
+     "surchargeSunday": 0,
+     "surchargeHoliday": 18.06,
+     "surchargeManual": 0,
+     "surchargeOvertime": 22.95,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 6.69,
+     "overtimeBase": 229.5,
+     "straordinarioBase": 0,
+     "nightBase": 44.63,
+     "overtimeMinutes": 1620,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 315,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1229.46,
+     "extraMese": 0,
+     "premioMese": 200
+    },
+    "cap": {
+     "capiente": true,
+     "media": 908.78,
+     "lordoPresunto": 11026.06
+    },
+    "netto": {
+     "gross": 1229.46,
+     "contributi": 112.95,
+     "imponibile": 1116.51,
+     "imponibileOrdinario": 1116.51,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 256.8,
+     "detrazioni": 160.68,
+     "detrazioniApplicate": 160.68,
+     "irpefNetta": 96.12,
+     "addRegionale": 13.73,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 222.8,
+     "trattamentoIntegrativo": 98.63,
+     "bonusCuneo": 59.17,
+     "bonus": 157.8,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 10013,
+      "lordoPresunto": 11026,
+      "motivo": "reddito presunto dell'anno 10013 €, sotto i 15.000",
+      "media": 908.78,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1164.46
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1229,
+      "importo": 112.95,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1197.02
+   },
+   {
+    "paga": {
+     "base": 850,
+     "surcharge": 57.38,
+     "total": 907.38,
+     "surchargeSunday": 0,
+     "surchargeHoliday": 47.81,
+     "surchargeManual": 0,
+     "surchargeOvertime": 9.56,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 95.63,
+     "straordinarioBase": 0,
+     "nightBase": 0,
+     "overtimeMinutes": 675,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 0,
+     "ferieMinutes": 0,
+     "permessoMinutes": 360,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 907.38,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 925.33,
+     "lordoPresunto": 11103.98
+    },
+    "netto": {
+     "gross": 907.38,
+     "contributi": 83.35,
+     "imponibile": 824.03,
+     "imponibileOrdinario": 824.03,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 189.53,
+     "detrazioni": 166.04,
+     "detrazioniApplicate": 166.04,
+     "irpefNetta": 23.49,
+     "addRegionale": 10.14,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 116.98,
+     "trattamentoIntegrativo": 101.91,
+     "bonusCuneo": 43.67,
+     "bonus": 145.58,
+     "esitoTi": {
+      "spetta": true,
+      "presunto": true,
+      "proiezione": 10084,
+      "lordoPresunto": 11104,
+      "motivo": "reddito presunto dell'anno 10084 €, sotto i 15.000",
+      "media": 925.33,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 935.98
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 907,
+      "importo": 83.35,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 935.98
+   }
+  ],
+  "conguaglio": {
+   "min": -9.03,
+   "max": 3.16,
+   "centrale": {
+    "voci": {
+     "irpef": -20.57,
+     "trattamentoIntegrativo": -0.06,
+     "indennita": 11.6
+    },
+    "dettaglio": {
+     "irpef": {
+      "mesi": 301.23,
+      "anno": 280.66
+     },
+     "trattamentoIntegrativo": {
+      "mesi": 1199.94,
+      "anno": 1200
+     },
+     "indennita": {
+      "mesi": 526.77,
+      "anno": 515.17
+     }
+    },
+    "annoSottoSoglia": true,
+    "redditoAnno": 9720.28,
+    "saldo": -9.03,
+    "lordoAnno": 10703.98,
+    "tiAccreditato": 1199.94,
+    "tiMesi": [
+     101.91,
+     92.05,
+     101.91,
+     98.63,
+     101.91,
+     98.63,
+     101.91,
+     101.91,
+     98.63,
+     101.91,
+     98.63,
+     101.91
+    ],
+    "sopraMesi": [
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false,
+     false
+    ],
+    "irpefMesi": [
+     44.69,
+     0,
+     5.68,
+     51.52,
+     0,
+     14.55,
+     13.56,
+     54.82,
+     38.58,
+     0,
+     54.34,
+     23.49
+    ]
+   },
+   "direzione": "pari",
+   "mesiVuoti": 0,
+   "tiFinora": 798.86,
+   "meseMontante": -1,
+   "tiMontanteNoto": null,
+   "irpefMontanteNota": null,
+   "busteAnno": 12,
+   "mesiSopraSoglia": [],
+   "mesiSottoSoglia": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ]
+  },
+  "annuo": {
+   "gross": 16000,
+   "contributi": 1470.4,
+   "contributiRighe": [
+    {
+     "label": "Contributi IVS",
+     "pct": 9.19,
+     "base": 16000,
+     "importo": 1470.4,
+     "deducibile": true
+    }
+   ],
+   "imponibile": 14529.6,
+   "irpefLorda": 3341.81,
+   "detrazioneLavoro": 1955,
+   "detrazioneCuneo": 0,
+   "irpefNetta": 1386.81,
+   "addRegionale": 178.71,
+   "addComunale": 0,
+   "trattamentoIntegrativo": 1200,
+   "bonusCuneo": 770.07,
+   "net": 14934.15
+  },
+  "ti": {
+   "importoAnnuo": 1200,
+   "incluso": true,
+   "motivo": "reddito stimato ≤ 15.000€ con capienza → incluso",
+   "redditoStimato": 13167.45
+  },
+  "margine": {
+   "income": 15800,
+   "thresholdFullGross": 16518,
+   "thresholdMaxGross": 30833,
+   "taxable": 14347.98,
+   "status": "pieno",
+   "marginToFull": 718,
+   "marginToMax": 15033,
+   "oreResidue": 76,
+   "nearThreshold": true
+  },
+  "rischio": {
+   "erogato": 0,
+   "spettante": 1200,
+   "daRestituire": 0,
+   "rateizzabile": false,
+   "giorni": 258,
+   "unSoloDatore": true,
+   "causa": "nessuna"
+  },
+  "costo": {
+   "tetto": 16518,
+   "nettoTetto": 15315.5,
+   "perditaMax": 129,
+   "pareggio": 16719,
+   "larghezzaBuca": 201,
+   "voci": {
+    "bonus": -1200,
+    "tasse": 1145,
+    "indennita": -75,
+    "altro": 1,
+    "detrazioneSotto": 1955,
+    "detrazioneSopra": 3100
+   }
+  },
+  "soglia": {
+   "lordo": 16518,
+   "minimoTi": 751
+  },
+  "periodo": [
+   {
+    "data": "2026-10-05",
+    "minuti": 200,
+    "turnoEsistente": {
+     "id": "t2026-10-05",
+     "date": "2026-10-05",
+     "startTime": "12:00",
+     "endTime": "15:30",
+     "breakMinutes": 0
+    },
+    "selezionato": false,
+    "riposo": true,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-06",
+    "minuti": 200,
+    "turnoEsistente": {
+     "id": "t2026-10-06",
+     "date": "2026-10-06",
+     "startTime": "11:00",
+     "endTime": "14:30",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-07",
+    "minuti": 200,
+    "turnoEsistente": {
+     "id": "t2026-10-07",
+     "date": "2026-10-07",
+     "startTime": "09:30",
+     "endTime": "13:30",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-08",
+    "minuti": 200,
+    "turnoEsistente": null,
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-09",
+    "minuti": 200,
+    "turnoEsistente": null,
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-10",
+    "minuti": 200,
+    "turnoEsistente": {
+     "id": "t2026-10-10",
+     "date": "2026-10-10",
+     "startTime": "10:30",
+     "endTime": "14:30",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-11",
+    "minuti": 200,
+    "turnoEsistente": {
+     "id": "t2026-10-11",
+     "date": "2026-10-11",
+     "startTime": "13:00",
+     "endTime": "17:00",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-12",
+    "minuti": 200,
+    "turnoEsistente": {
+     "id": "t2026-10-12",
+     "date": "2026-10-12",
+     "startTime": "09:30",
+     "endTime": "13:30",
+     "breakMinutes": 0
+    },
+    "selezionato": false,
+    "riposo": true,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-13",
+    "minuti": 200,
+    "turnoEsistente": {
+     "id": "t2026-10-13",
+     "date": "2026-10-13",
+     "startTime": "12:00",
+     "endTime": "14:30",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-14",
+    "minuti": 200,
+    "turnoEsistente": {
+     "id": "t2026-10-14",
+     "date": "2026-10-14",
+     "startTime": "15:00",
+     "endTime": "20:15",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-15",
+    "minuti": 200,
+    "turnoEsistente": {
+     "id": "t2026-10-15",
+     "date": "2026-10-15",
+     "startTime": "12:00",
+     "endTime": "15:15",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-16",
+    "minuti": 200,
+    "turnoEsistente": null,
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-17",
+    "minuti": 200,
+    "turnoEsistente": {
+     "id": "t2026-10-17",
+     "date": "2026-10-17",
+     "startTime": "14:00",
+     "endTime": "18:30",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-18",
+    "minuti": 200,
+    "turnoEsistente": {
+     "id": "t2026-10-18",
+     "date": "2026-10-18",
+     "startTime": "11:00",
+     "endTime": "14:45",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   }
+  ]
+ },
+ "aChiamata": {
+  "mesi": [
+   {
+    "paga": {
+     "base": 1487.5,
+     "surcharge": 79.25,
+     "total": 1566.75,
+     "surchargeSunday": 16.13,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 63.13,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 252.5,
+     "straordinarioBase": 0,
+     "nightBase": 172.5,
+     "overtimeMinutes": 1515,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 1035,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1566.75,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": null,
+     "lordoPresunto": 18801
+    },
+    "netto": {
+     "gross": 1566.75,
+     "contributi": 144.01,
+     "imponibile": 1422.74,
+     "imponibileOrdinario": 1422.74,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 327.23,
+     "detrazioni": 247.17,
+     "detrazioniApplicate": 247.17,
+     "irpefNetta": 80.06,
+     "addRegionale": 17.5,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 241.57,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 68.29,
+     "bonus": 68.29,
+     "esitoTi": {
+      "spetta": false,
+      "motivo": "escluso a mano",
+      "media": null,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1393.47
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1567,
+      "importo": 144.01,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1393.47
+   },
+   {
+    "paga": {
+     "base": 1427.5,
+     "surcharge": 52.25,
+     "total": 1479.75,
+     "surchargeSunday": 24.75,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 27.5,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 110,
+     "straordinarioBase": 0,
+     "nightBase": 132.5,
+     "overtimeMinutes": 660,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 795,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1479.75,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1523.25,
+     "lordoPresunto": 17844
+    },
+    "netto": {
+     "gross": 1479.75,
+     "contributi": 136.01,
+     "imponibile": 1343.74,
+     "imponibileOrdinario": 1343.74,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 309.06,
+     "detrazioni": 229.35,
+     "detrazioniApplicate": 229.35,
+     "irpefNetta": 79.71,
+     "addRegionale": 16.53,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 232.25,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 64.49,
+     "bonus": 64.49,
+     "esitoTi": {
+      "spetta": false,
+      "motivo": "escluso a mano",
+      "media": 1523.25,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1311.99
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1480,
+      "importo": 136.01,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1311.99
+   },
+   {
+    "paga": {
+     "base": 1187.5,
+     "surcharge": 47.63,
+     "total": 1235.13,
+     "surchargeSunday": 21.38,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 26.25,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 105,
+     "straordinarioBase": 0,
+     "nightBase": 22.5,
+     "overtimeMinutes": 630,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 135,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 960,
+     "malattiaBase": 40,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1235.13,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1427.21,
+     "lordoPresunto": 15397.75
+    },
+    "netto": {
+     "gross": 1235.13,
+     "contributi": 113.5,
+     "imponibile": 1121.63,
+     "imponibileOrdinario": 1121.63,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 257.97,
+     "detrazioni": 166.04,
+     "detrazioniApplicate": 166.04,
+     "irpefNetta": 91.93,
+     "addRegionale": 13.8,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 219.23,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 59.44,
+     "bonus": 59.44,
+     "esitoTi": {
+      "spetta": false,
+      "motivo": "escluso a mano",
+      "media": 1427.21,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1075.34
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1235,
+      "importo": 113.5,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1075.34
+   },
+   {
+    "paga": {
+     "base": 1535,
+     "surcharge": 67,
+     "total": 1602,
+     "surchargeSunday": 32.63,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 34.38,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 137.5,
+     "straordinarioBase": 0,
+     "nightBase": 95,
+     "overtimeMinutes": 825,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 570,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1602,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1470.91,
+     "lordoPresunto": 18699.63
+    },
+    "netto": {
+     "gross": 1602,
+     "contributi": 147.22,
+     "imponibile": 1454.78,
+     "imponibileOrdinario": 1454.78,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 334.6,
+     "detrazioni": 239.89,
+     "detrazioniApplicate": 239.89,
+     "irpefNetta": 94.71,
+     "addRegionale": 17.89,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 259.82,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 69.82,
+     "bonus": 69.82,
+     "esitoTi": {
+      "spetta": false,
+      "motivo": "escluso a mano",
+      "media": 1470.91,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1412
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1602,
+      "importo": 147.22,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1412
+   },
+   {
+    "paga": {
+     "base": 1532.5,
+     "surcharge": 60.38,
+     "total": 1592.88,
+     "surchargeSunday": 39.75,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 20.63,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 82.5,
+     "straordinarioBase": 0,
+     "nightBase": 127.5,
+     "overtimeMinutes": 495,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 765,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1592.88,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1495.3,
+     "lordoPresunto": 18626.63
+    },
+    "netto": {
+     "gross": 1592.88,
+     "contributi": 146.4,
+     "imponibile": 1446.48,
+     "imponibileOrdinario": 1446.48,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 332.69,
+     "detrazioni": 248.4,
+     "detrazioniApplicate": 248.4,
+     "irpefNetta": 84.29,
+     "addRegionale": 17.79,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 248.48,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 69.43,
+     "bonus": 69.43,
+     "esitoTi": {
+      "spetta": false,
+      "motivo": "escluso a mano",
+      "media": 1495.3,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1413.83
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1593,
+      "importo": 146.4,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1413.83
+   },
+   {
+    "paga": {
+     "base": 1340,
+     "surcharge": 49.38,
+     "total": 1389.38,
+     "surchargeSunday": 26.25,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 23.13,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 92.5,
+     "straordinarioBase": 0,
+     "nightBase": 185,
+     "overtimeMinutes": 555,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 1110,
+     "ferieMinutes": 0,
+     "permessoMinutes": 360,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1389.38,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1477.65,
+     "lordoPresunto": 17202.13
+    },
+    "netto": {
+     "gross": 1389.38,
+     "contributi": 127.65,
+     "imponibile": 1261.72,
+     "imponibileOrdinario": 1261.72,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 290.2,
+     "detrazioni": 250.12,
+     "detrazioniApplicate": 250.12,
+     "irpefNetta": 40.08,
+     "addRegionale": 15.52,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 183.25,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 60.56,
+     "bonus": 60.56,
+     "esitoTi": {
+      "spetta": false,
+      "motivo": "escluso a mano",
+      "media": 1477.65,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1266.69
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1389,
+      "importo": 127.65,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1266.69
+   },
+   {
+    "paga": {
+     "base": 1300,
+     "surcharge": 63.25,
+     "total": 1363.25,
+     "surchargeSunday": 30.75,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 32.5,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 130,
+     "straordinarioBase": 0,
+     "nightBase": 55,
+     "overtimeMinutes": 780,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 330,
+     "ferieMinutes": 0,
+     "permessoMinutes": 480,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1363.25,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1461.3,
+     "lordoPresunto": 17045.38
+    },
+    "netto": {
+     "gross": 1363.25,
+     "contributi": 125.26,
+     "imponibile": 1237.99,
+     "imponibileOrdinario": 1237.99,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 284.74,
+     "detrazioni": 259.56,
+     "detrazioniApplicate": 259.56,
+     "irpefNetta": 25.18,
+     "addRegionale": 15.23,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 165.67,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 59.42,
+     "bonus": 59.42,
+     "esitoTi": {
+      "spetta": false,
+      "motivo": "escluso a mano",
+      "media": 1461.3,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1257
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1363,
+      "importo": 125.26,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1257
+   },
+   {
+    "paga": {
+     "base": 1197.5,
+     "surcharge": 42.63,
+     "total": 1240.13,
+     "surchargeSunday": 23.25,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 19.38,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 77.5,
+     "straordinarioBase": 0,
+     "nightBase": 17.5,
+     "overtimeMinutes": 465,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 105,
+     "ferieMinutes": 2640,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1240.13,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1433.66,
+     "lordoPresunto": 16429.75
+    },
+    "netto": {
+     "gross": 1240.13,
+     "contributi": 113.96,
+     "imponibile": 1126.17,
+     "imponibileOrdinario": 1126.17,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 259.02,
+     "detrazioni": 166.04,
+     "detrazioniApplicate": 166.04,
+     "irpefNetta": 92.98,
+     "addRegionale": 13.85,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 220.79,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 59.68,
+     "bonus": 59.68,
+     "esitoTi": {
+      "spetta": false,
+      "motivo": "escluso a mano",
+      "media": 1433.66,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1079.02
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1240,
+      "importo": 113.96,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1079.02
+   },
+   {
+    "paga": {
+     "base": 1117.5,
+     "surcharge": 19.25,
+     "total": 1136.75,
+     "surchargeSunday": 6.75,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 12.5,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 50,
+     "straordinarioBase": 0,
+     "nightBase": 97.5,
+     "overtimeMinutes": 300,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 585,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1136.75,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1400.67,
+     "lordoPresunto": 16016.25
+    },
+    "netto": {
+     "gross": 1136.75,
+     "contributi": 104.49,
+     "imponibile": 1032.26,
+     "imponibileOrdinario": 1032.26,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 237.42,
+     "detrazioni": 160.68,
+     "detrazioniApplicate": 160.68,
+     "irpefNetta": 76.74,
+     "addRegionale": 12.7,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 193.93,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 54.7,
+     "bonus": 54.7,
+     "esitoTi": {
+      "spetta": false,
+      "motivo": "escluso a mano",
+      "media": 1400.67,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 997.52
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1137,
+      "importo": 104.49,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 997.52
+   },
+   {
+    "paga": {
+     "base": 1357.5,
+     "surcharge": 65.5,
+     "total": 1423,
+     "surchargeSunday": 25.5,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 40,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 160,
+     "straordinarioBase": 0,
+     "nightBase": 77.5,
+     "overtimeMinutes": 960,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 465,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1423,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1402.9,
+     "lordoPresunto": 16875
+    },
+    "netto": {
+     "gross": 1423,
+     "contributi": 130.77,
+     "imponibile": 1292.23,
+     "imponibileOrdinario": 1292.23,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 297.21,
+     "detrazioni": 260.77,
+     "detrazioniApplicate": 260.77,
+     "irpefNetta": 36.44,
+     "addRegionale": 15.89,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 183.1,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 62.02,
+     "bonus": 62.02,
+     "esitoTi": {
+      "spetta": false,
+      "motivo": "escluso a mano",
+      "media": 1402.9,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1301.92
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1423,
+      "importo": 130.77,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1301.92
+   },
+   {
+    "paga": {
+     "base": 1415,
+     "surcharge": 96,
+     "total": 1511,
+     "surchargeSunday": 34.13,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 61.88,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 247.5,
+     "straordinarioBase": 0,
+     "nightBase": 107.5,
+     "overtimeMinutes": 1485,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 645,
+     "ferieMinutes": 0,
+     "permessoMinutes": 120,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1511,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1412.73,
+     "lordoPresunto": 17051
+    },
+    "netto": {
+     "gross": 1511,
+     "contributi": 138.86,
+     "imponibile": 1372.14,
+     "imponibileOrdinario": 1372.14,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 315.59,
+     "detrazioni": 251.15,
+     "detrazioniApplicate": 251.15,
+     "irpefNetta": 64.44,
+     "addRegionale": 16.88,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 220.18,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 65.86,
+     "bonus": 65.86,
+     "esitoTi": {
+      "spetta": false,
+      "motivo": "escluso a mano",
+      "media": 1412.73,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1356.68
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1511,
+      "importo": 138.86,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1356.68
+   },
+   {
+    "paga": {
+     "base": 1377.5,
+     "surcharge": 34.63,
+     "total": 1412.13,
+     "surchargeSunday": 9,
+     "surchargeHoliday": 0,
+     "surchargeManual": 0,
+     "surchargeOvertime": 25.63,
+     "surchargeStraordinario": 0,
+     "surchargeNight": 0,
+     "overtimeBase": 102.5,
+     "straordinarioBase": 0,
+     "nightBase": 60,
+     "overtimeMinutes": 615,
+     "straordinarioMinutes": 0,
+     "nightMinutes": 360,
+     "ferieMinutes": 0,
+     "permessoMinutes": 0,
+     "malattiaMinutes": 0,
+     "malattiaBase": 0,
+     "shiftsWithoutRate": 0
+    },
+    "lordo": {
+     "lordo": 1412.13,
+     "extraMese": 0,
+     "premioMese": 0
+    },
+    "cap": {
+     "capiente": true,
+     "media": 1412.68,
+     "lordoPresunto": 16952.13
+    },
+    "netto": {
+     "gross": 1412.13,
+     "contributi": 129.76,
+     "imponibile": 1282.37,
+     "imponibileOrdinario": 1282.37,
+     "imponibileExtra": 0,
+     "irpefExtra": 0,
+     "cuneoPct": 0.05,
+     "irpefLorda": 294.95,
+     "detrazioni": 260.22,
+     "detrazioniApplicate": 260.22,
+     "irpefNetta": 34.73,
+     "addRegionale": 15.77,
+     "addComunale": 0,
+     "trattenuteFisse": 0,
+     "trattenute": 180.26,
+     "trattamentoIntegrativo": 0,
+     "bonusCuneo": 61.55,
+     "bonus": 61.55,
+     "esitoTi": {
+      "spetta": false,
+      "motivo": "escluso a mano",
+      "media": 1412.68,
+      "senzaCapienza": false
+     },
+     "tfrLordo": 0,
+     "tfrImposta": 0,
+     "aliqTfr": 0.23,
+     "tfr": 0,
+     "net": 1293.42
+    },
+    "contributiRighe": [
+     {
+      "label": "Contributi IVS",
+      "pct": 9.19,
+      "base": 1412,
+      "importo": 129.76,
+      "deducibile": true
+     }
+    ],
+    "conPremio": 1293.42
+   }
+  ],
+  "conguaglio": {
+   "min": -308.19,
+   "max": -203.26,
+   "centrale": {
+    "voci": {
+     "irpef": -324.53,
+     "trattamentoIntegrativo": 0,
+     "indennita": 16.34
+    },
+    "dettaglio": {
+     "irpef": {
+      "mesi": 801.29,
+      "anno": 476.76
+     },
+     "trattamentoIntegrativo": {
+      "mesi": 0,
+      "anno": 0
+     },
+     "indennita": {
+      "mesi": 755.26,
+      "anno": 738.92
+     }
+    },
+    "annoSottoSoglia": false,
+    "redditoAnno": 15394.24,
+    "saldo": -308.19,
+    "lordoAnno": 16952.13,
+    "tiAccreditato": 0,
+    "tiMesi": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "sopraMesi": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ],
+    "irpefMesi": [
+     80.06,
+     79.71,
+     91.93,
+     94.71,
+     84.29,
+     40.08,
+     25.18,
+     92.98,
+     76.74,
+     36.44,
+     64.44,
+     34.73
+    ]
+   },
+   "direzione": "credito",
+   "mesiVuoti": 0,
+   "tiFinora": 0,
+   "meseMontante": -1,
+   "tiMontanteNoto": null,
+   "irpefMontanteNota": null,
+   "busteAnno": 12,
+   "mesiSopraSoglia": null,
+   "mesiSottoSoglia": null
+  },
+  "annuo": {
+   "gross": 16000,
+   "contributi": 1470.4,
+   "contributiRighe": [
+    {
+     "label": "Contributi IVS",
+     "pct": 9.19,
+     "base": 16000,
+     "importo": 1470.4,
+     "deducibile": true
+    }
+   ],
+   "imponibile": 14529.6,
+   "irpefLorda": 3341.81,
+   "detrazioneLavoro": 1955,
+   "detrazioneCuneo": 0,
+   "irpefNetta": 1386.81,
+   "addRegionale": 178.71,
+   "addComunale": 0,
+   "trattamentoIntegrativo": 1200,
+   "bonusCuneo": 770.07,
+   "net": 14934.15
+  },
+  "ti": {
+   "importoAnnuo": 0,
+   "incluso": false,
+   "motivo": "escluso (forzato, a conguaglio)",
+   "redditoStimato": 13167.45
+  },
+  "margine": {
+   "income": 15800,
+   "thresholdFullGross": 16518,
+   "thresholdMaxGross": 30833,
+   "taxable": 14347.98,
+   "status": "pieno",
+   "marginToFull": 718,
+   "marginToMax": 15033,
+   "oreResidue": 57,
+   "nearThreshold": true
+  },
+  "rischio": {
+   "erogato": 0,
+   "spettante": 0,
+   "daRestituire": 0,
+   "rateizzabile": false,
+   "giorni": 258,
+   "unSoloDatore": true,
+   "causa": "rinunciato"
+  },
+  "costo": {
+   "tetto": 16518,
+   "nettoTetto": 15315.5,
+   "perditaMax": 129,
+   "pareggio": 16719,
+   "larghezzaBuca": 201,
+   "voci": {
+    "bonus": -1200,
+    "tasse": 1145,
+    "indennita": -75,
+    "altro": 1,
+    "detrazioneSotto": 1955,
+    "detrazioneSopra": 3100
+   }
+  },
+  "soglia": {
+   "lordo": 16518,
+   "minimoTi": null
+  },
+  "periodo": [
+   {
+    "data": "2026-10-05",
+    "minuti": 0,
+    "turnoEsistente": {
+     "id": "t2026-10-05",
+     "date": "2026-10-05",
+     "startTime": "11:30",
+     "endTime": "17:00",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-06",
+    "minuti": 0,
+    "turnoEsistente": {
+     "id": "t2026-10-06",
+     "date": "2026-10-06",
+     "startTime": "08:00",
+     "endTime": "16:00",
+     "breakMinutes": 30
+    },
+    "selezionato": false,
+    "riposo": true,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-07",
+    "minuti": 0,
+    "turnoEsistente": {
+     "id": "t2026-10-07",
+     "date": "2026-10-07",
+     "startTime": "09:00",
+     "endTime": "17:00",
+     "breakMinutes": 30
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-08",
+    "minuti": 0,
+    "turnoEsistente": {
+     "id": "p2026-10-08",
+     "date": "2026-10-08",
+     "type": "permesso",
+     "durationMinutes": 120
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-09",
+    "minuti": 0,
+    "turnoEsistente": {
+     "id": "t2026-10-09",
+     "date": "2026-10-09",
+     "startTime": "20:00",
+     "endTime": "00:15",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-10",
+    "minuti": 0,
+    "turnoEsistente": {
+     "id": "t2026-10-10",
+     "date": "2026-10-10",
+     "startTime": "12:30",
+     "endTime": "17:15",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-11",
+    "minuti": 0,
+    "turnoEsistente": {
+     "id": "t2026-10-11",
+     "date": "2026-10-11",
+     "startTime": "15:30",
+     "endTime": "21:15",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-12",
+    "minuti": 0,
+    "turnoEsistente": null,
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-13",
+    "minuti": 0,
+    "turnoEsistente": null,
+    "selezionato": false,
+    "riposo": true,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-14",
+    "minuti": 0,
+    "turnoEsistente": {
+     "id": "t2026-10-14",
+     "date": "2026-10-14",
+     "startTime": "08:30",
+     "endTime": "12:15",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-15",
+    "minuti": 0,
+    "turnoEsistente": null,
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-16",
+    "minuti": 0,
+    "turnoEsistente": {
+     "id": "t2026-10-16",
+     "date": "2026-10-16",
+     "startTime": "11:30",
+     "endTime": "16:30",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-17",
+    "minuti": 0,
+    "turnoEsistente": {
+     "id": "t2026-10-17",
+     "date": "2026-10-17",
+     "startTime": "11:30",
+     "endTime": "16:00",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   },
+   {
+    "data": "2026-10-18",
+    "minuti": 0,
+    "turnoEsistente": {
+     "id": "t2026-10-18",
+     "date": "2026-10-18",
+     "startTime": "08:00",
+     "endTime": "13:15",
+     "breakMinutes": 0
+    },
+    "selezionato": true,
+    "riposo": false,
+    "festivita": false
+   }
+  ]
+ }
+}
