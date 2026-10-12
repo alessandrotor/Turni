@@ -354,15 +354,16 @@ export default function CalendarView({
   const conguaglio = useMemo(
     () => (year === oggiAnno ? stimaConguaglio({
       anno: year, allShifts, settings, payMap: payByShift || {}, proiezioneAnnua: (annualProjection || annualGross) || null,
+      oggi: new Date(),
     }) : null),
     [year, oggiAnno, allShifts, settings, payByShift, annualProjection, annualGross],
   );
   // Il bonus preso finora è UNO per tutte le schermate: quello mese per mese
   // del conguaglio. Per un anno chiuso, la quota piena come prima.
-  const tiFinora = conguaglio ? conguaglio.tiFinora : quotaPotenziale(dataDiRiferimento(year));
+  const tiFinora = conguaglio ? conguaglio.tiFinora : quotaPotenziale(dataDiRiferimento(year, new Date()));
   const rischio = useMemo(
     () => rischioRestituzione({
-      settings, proiezioneAnnua: annualProjection || annualGross, oggi: dataDiRiferimento(year),
+      settings, proiezioneAnnua: annualProjection || annualGross, oggi: dataDiRiferimento(year, new Date()),
       erogatoStimato: conguaglio ? conguaglio.tiFinora : null,
     }),
     [settings, annualProjection, annualGross, year, conguaglio],
@@ -574,7 +575,7 @@ export default function CalendarView({
   }, [settings, year, oggiAnno]);
   const proiezioneBonusOgniMese = useMemo(
     () => projectAnnualIncome(annualGross, annualExtras, settingsBonusOgniMese, year, {
-      enableNetCalc: ENABLE_NET_CALC,
+      enableNetCalc: ENABLE_NET_CALC, oggi: new Date(),
     }),
     [annualGross, annualExtras, settingsBonusOgniMese, year],
   );
@@ -589,7 +590,7 @@ export default function CalendarView({
   const conguaglioSimulato = useMemo(
     () => (simulaBonus && year === oggiAnno ? stimaConguaglio({
       anno: year, allShifts, settings: settingsBonusOgniMese, payMap: payByShift || {},
-      proiezioneAnnua: proiezioneBonusOgniMese.value,
+      proiezioneAnnua: proiezioneBonusOgniMese.value, oggi: new Date(),
     }) : null),
     [simulaBonus, year, oggiAnno, allShifts, settingsBonusOgniMese, payByShift, proiezioneBonusOgniMese],
   );

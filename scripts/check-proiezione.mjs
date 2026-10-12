@@ -206,7 +206,7 @@ for (const [nome, ag, ae, st] of casiVoci) {
 
 // Ogni voce deve avere un'etichetta: una riga senza nome nel pannello e' una
 // cifra che compare dal nulla.
-const senzaEtichetta = projectAnnualIncome(13000, 900, S, ANNO).voci.filter(v => !v.label).length;
+const senzaEtichetta = projectAnnualIncome(13000, 900, S, ANNO, { oggi: OGGI }).voci.filter(v => !v.label).length;
 verifica('tutte le voci hanno un nome', senzaEtichetta, 0, '');
 
 // ── Il montante contiene già voci fisse e premi dei suoi mesi ─────────────

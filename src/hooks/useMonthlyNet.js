@@ -45,7 +45,7 @@ export default function useMonthlyNet({
   // e soglie del bonus di tutto l'anno.
   const netProjection = useMemo(
     () => projectAnnualIncome(annualGross, annualExtras, settings, year, {
-      enableNetCalc: ENABLE_NET_CALC,
+      enableNetCalc: ENABLE_NET_CALC, oggi: new Date(),
     }),
     [annualGross, annualExtras, settings, year],
   );
@@ -77,7 +77,7 @@ export default function useMonthlyNet({
   // La capienza del trattamento integrativo si costruisce sull'anno: il
   // progressivo dei mesi prima di questo (capienza.js).
   const progressivo = useMemo(
-    () => (ENABLE_NET_CALC ? progressiviDellAnno({ anno: year, allShifts, settings, payMap: payMap || {} })[month] : null),
+    () => (ENABLE_NET_CALC ? progressiviDellAnno({ anno: year, allShifts, settings, payMap: payMap || {}, oggi: new Date() })[month] : null),
     [year, month, allShifts, settings, payMap],
   );
   // Statistiche passa dalla stessa funzione: vedi `nettoDelMeseConPremio`.

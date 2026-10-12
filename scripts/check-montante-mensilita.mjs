@@ -73,8 +73,8 @@ console.log(`\nMensilita' base ${arr(MENSILE)} €/mese · anno concluso ${PASSA
 // ── 1. Il montante non si fa risommare cio' che contiene gia' ──────────────
 console.log('Il montante non si fa risommare le mensilita che contiene\n');
 
-const aMaggio = computeAnnualGrossFromShifts(PASSATO, [], conMontante(5));
-const aLuglio = computeAnnualGrossFromShifts(PASSATO, [], conMontante(7));
+const aMaggio = computeAnnualGrossFromShifts(PASSATO, [], conMontante(5), null, new Date());
+const aLuglio = computeAnnualGrossFromShifts(PASSATO, [], conMontante(7), null, new Date());
 
 // Montante fermato a maggio: la 14ª di giugno NON c'e' dentro, va aggiunta,
 // insieme alla 13ª di dicembre. Due mensilita' intere.
@@ -104,7 +104,7 @@ verifica('montante a luglio → extras = 2 mensilita', arr(aLuglio.extras), arr(
 // in Impostazioni e' un <input type="month"> senza tetto. Chi riporta a ottobre
 // un progressivo di dicembre ha un montante che contiene piu' mensilita' di
 // quante ne risultino incassate — e il montante fa fede per il suo periodo.
-const aDicembre = computeAnnualGrossFromShifts(PASSATO, [], conMontante(12));
+const aDicembre = computeAnnualGrossFromShifts(PASSATO, [], conMontante(12), null, new Date());
 verifica('montante a dicembre → non aggiunge nulla', arr(aDicembre.total), MONTANTE, 'le ha gia tutte');
 verifica('  e le dichiara comunque', arr(aDicembre.extras), arr(2 * MENSILE), '');
 
@@ -114,16 +114,16 @@ console.log('\nDove cade il confine del montante non cambia il risultato\n');
 // Stesso reddito reale, due modi leciti di dichiararlo. Chi ferma il montante
 // a luglio deve scriverci dentro anche la 14ª: e' quello che fa il progressivo
 // del cedolino.
-const primaDella14 = computeAnnualGrossFromShifts(PASSATO, [], conMontante(5, MONTANTE));
-const dopoLa14 = computeAnnualGrossFromShifts(PASSATO, [], conMontante(7, MONTANTE + MENSILE));
+const primaDella14 = computeAnnualGrossFromShifts(PASSATO, [], conMontante(5, MONTANTE), null, new Date());
+const dopoLa14 = computeAnnualGrossFromShifts(PASSATO, [], conMontante(7, MONTANTE + MENSILE), null, new Date());
 
 verifica('stesso reddito, confine diverso → stesso maturato',
   arr(primaDella14.total), arr(dopoLa14.total), 'maggio+app contro luglio-gia-dentro');
 verifica('  e stesse una-tantum dichiarate',
   arr(primaDella14.extras), arr(dopoLa14.extras), '');
 verifica('  e stessa stima di fine anno',
-  arr(projectAnnualIncome(primaDella14.total, primaDella14.extras, S, PASSATO).value),
-  arr(projectAnnualIncome(dopoLa14.total, dopoLa14.extras, S, PASSATO).value), '');
+  arr(projectAnnualIncome(primaDella14.total, primaDella14.extras, S, PASSATO, { oggi: new Date() }).value),
+  arr(projectAnnualIncome(dopoLa14.total, dopoLa14.extras, S, PASSATO, { oggi: new Date() }).value), '');
 
 // ── 4. Quanto costava l'errore: l'annualizzazione ──────────────────────────
 //
@@ -146,20 +146,20 @@ if (MESE > 6) {
   const quota14 = MENSILE * extraMonthAccrual('quattordicesima', ANNO, S);
   const sMaggio = { ...YTD, priorTaxableIncome: MONTANTE, priorIncomeDate: `${ANNO}-05-01` };
   const sLuglio = { ...YTD, priorTaxableIncome: MONTANTE + quota14, priorIncomeDate: `${ANNO}-07-01` };
-  const rMaggio = computeAnnualGrossFromShifts(ANNO, [], sMaggio);
-  const rLuglio = computeAnnualGrossFromShifts(ANNO, [], sLuglio);
+  const rMaggio = computeAnnualGrossFromShifts(ANNO, [], sMaggio, null, new Date());
+  const rLuglio = computeAnnualGrossFromShifts(ANNO, [], sLuglio, null, new Date());
 
   verifica('ytd: stesso reddito, confine diverso → stesso maturato',
     arr(rMaggio.total), arr(rLuglio.total), '');
 
-  const stimaM = projectAnnualIncome(rMaggio.total, rMaggio.extras, sMaggio, ANNO).value;
-  const stimaL = projectAnnualIncome(rLuglio.total, rLuglio.extras, sLuglio, ANNO).value;
+  const stimaM = projectAnnualIncome(rMaggio.total, rMaggio.extras, sMaggio, ANNO, { oggi: new Date() }).value;
+  const stimaL = projectAnnualIncome(rLuglio.total, rLuglio.extras, sLuglio, ANNO, { oggi: new Date() }).value;
   verifica('  e stessa stima di fine anno', arr(stimaM), arr(stimaL),
     `il fattore in gioco e 12/${MESE}`);
 
   // La prova diretta del danno evitato: non dichiarare la mensilita' la fa
   // passare per reddito ricorrente, e la stima si gonfia del moltiplicatore.
-  const senzaDichiarare = projectAnnualIncome(rLuglio.total, 0, sLuglio, ANNO).value;
+  const senzaDichiarare = projectAnnualIncome(rLuglio.total, 0, sLuglio, ANNO, { oggi: new Date() }).value;
   verifica('  non dichiararla la gonfia', senzaDichiarare > stimaL, true,
     `+${arr(senzaDichiarare - stimaL)} € sulla stima`);
 } else {
@@ -169,13 +169,13 @@ if (MESE > 6) {
 // ── 5. Nessuna regressione senza montante ─────────────────────────────────
 console.log('\nSenza montante nulla cambia\n');
 
-const senzaMontante = computeAnnualGrossFromShifts(PASSATO, [], S);
+const senzaMontante = computeAnnualGrossFromShifts(PASSATO, [], S, null, new Date());
 verifica('senza montante → due mensilita intere', arr(senzaMontante.total), arr(2 * MENSILE), '');
 verifica('  tutte dichiarate', arr(senzaMontante.extras), arr(2 * MENSILE), '');
 
 // Chi non ha 13ª ne' 14ª non deve vedere comparire niente.
 const senzaExtra = { ...S, hasTredicesima: false, hasQuattordicesima: false };
-const nessuna = computeAnnualGrossFromShifts(PASSATO, [], { ...senzaExtra, priorTaxableIncome: MONTANTE, priorIncomeDate: `${PASSATO}-07-01` });
+const nessuna = computeAnnualGrossFromShifts(PASSATO, [], { ...senzaExtra, priorTaxableIncome: MONTANTE, priorIncomeDate: `${PASSATO}-07-01` }, null, new Date());
 verifica('senza 13ª/14ª → solo il montante', arr(nessuna.total), MONTANTE, '');
 verifica('  e nessuna una-tantum', arr(nessuna.extras), 0, '');
 
@@ -197,7 +197,7 @@ verifica('13ª del 2026 e intera', extraMonthAccrual('tredicesima', 2026, REALE)
 // di dicembre deve ancora arrivare. Il maturato e' il montante e basta.
 const caso = computeAnnualGrossFromShifts(2026, [], {
   ...REALE, priorTaxableIncome: MONTANTE, priorIncomeDate: '2026-07-01',
-});
+}, null, new Date());
 // A dicembre la 13ª è arrivata ed è fuori dal montante: si somma, intera.
 // Il riscontro non lo prevedeva, e il 31 dicembre sarebbe diventato rosso con
 // un motore che faceva la cosa giusta (provato con l'orologio spostato).

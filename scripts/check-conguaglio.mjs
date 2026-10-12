@@ -25,18 +25,18 @@ const GIORNI = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 const anno = (lordi) => lordi.map((lordo, i) => ({ lordo, extra: 0, giorni: lordo > 0 ? GIORNI[i] : 0 }));
 
 console.log('\nIl meccanismo\n');
-const stabile = saldoConguaglio(anno(Array(12).fill(1100)), S);
+const stabile = saldoConguaglio(anno(Array(12).fill(1100)), S, { anno: 2026 });
 esito(Math.abs(stabile.saldo) < 1, 'reddito uguale tutti i mesi → nessun conguaglio', `${stabile.saldo} €`);
 
 // Mesi sotto 1.250 (bonus accreditato) e mesi sopra, con l'anno oltre 15.000:
 // il bonus preso nei mesi bassi non spettava, e torna indietro.
-const sale = saldoConguaglio(anno([1100, 1100, 1100, 1100, 1100, 1100, 1900, 1900, 1900, 1900, 1900, 1900]), S);
+const sale = saldoConguaglio(anno([1100, 1100, 1100, 1100, 1100, 1100, 1900, 1900, 1900, 1900, 1900, 1900]), S, { anno: 2026 });
 esito(sale.voci.trattamentoIntegrativo > 0, 'mesi bassi poi alti, anno oltre soglia → il bonus torna indietro',
   `${sale.voci.trattamentoIntegrativo} €`);
 
 // Il caso opposto, verificato in busta a giugno 2026: un mese sopra 1.250 perde
 // il bonus, ma se l'anno resta sotto 15.000 a dicembre lo si riceve.
-const picco = saldoConguaglio(anno([1100, 1100, 1100, 1100, 1100, 2000, 1100, 1100, 1100, 1100, 1100, 1100]), S);
+const picco = saldoConguaglio(anno([1100, 1100, 1100, 1100, 1100, 2000, 1100, 1100, 1100, 1100, 1100, 1100]), S, { anno: 2026 });
 esito(picco.voci.trattamentoIntegrativo < 0, 'un mese sopra 1.250, anno sotto soglia → bonus a credito',
   `${picco.voci.trattamentoIntegrativo} €`);
 
@@ -45,7 +45,7 @@ esito(picco.voci.trattamentoIntegrativo < 0, 'un mese sopra 1.250, anno sotto so
 // devono tornare in pari. L'indennità L. 207/24 invece NO, ed è giusto: è una
 // percentuale che dipende dalla fascia di reddito dell'anno, e i 6.600 € veri
 // stanno in una fascia più generosa dei 13.200 che il datore vede ogni mese.
-const luglio = saldoConguaglio(anno([0, 0, 0, 0, 0, 0, 1100, 1100, 1100, 1100, 1100, 1100]), S);
+const luglio = saldoConguaglio(anno([0, 0, 0, 0, 0, 0, 1100, 1100, 1100, 1100, 1100, 1100]), S, { anno: 2026 });
 // Resta qualche euro: il calcolo annuo tassa la quota Ente Bilaterale del
 // datore (un fringe benefit) su dodici mesi anche per chi ne ha lavorati sei.
 // Noto, sotto la soglia «circa in pari»: tollerato, non nascosto.
@@ -67,14 +67,14 @@ esito(Math.abs(meta.detrazioneLavoro - calcNetAnnual(6600, S).detrazioneLavoro *
 // senza progressivo, il datore il trattamento lo dà. Da febbraio la media dice
 // che non c'è IRPEF da compensare e smette: a dicembre torna indietro SOLO
 // gennaio, mai l'anno intero (il difetto di prima: 805 € a chi ne guadagna 2.150).
-const poco = saldoConguaglio(anno([180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180]), S);
+const poco = saldoConguaglio(anno([180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180, 180]), S, { anno: 2026 });
 esito(poco.tiMesi[0] > 0 && poco.tiMesi.slice(1).every((v) => v === 0),
   'sotto la no tax area → solo gennaio, poi smette', `gennaio ${poco.tiMesi[0]} €`);
 esito(Math.abs(poco.voci.trattamentoIntegrativo - poco.tiMesi[0]) <= 0.01,
   '… e a dicembre torna indietro solo quello', `${poco.voci.trattamentoIntegrativo} €`);
 
 // Bonus sospeso su richiesta e anno sotto soglia: a dicembre lo si riceve tutto.
-const sospeso = saldoConguaglio(anno(Array(12).fill(1100)), { ...S, noTrattamentoIntegrativo: true, tiModo: 'mai' });
+const sospeso = saldoConguaglio(anno(Array(12).fill(1100)), { ...S, noTrattamentoIntegrativo: true, tiModo: 'mai' }, { anno: 2026 });
 esito(sospeso.voci.trattamentoIntegrativo < -1000, 'bonus sospeso e anno sotto soglia → a credito a dicembre',
   `${sospeso.voci.trattamentoIntegrativo} €`);
 

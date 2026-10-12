@@ -96,3 +96,14 @@ export function payrollMonthRange(year, month) {
 export function getDaysInMonth(year, month) {
   return new Date(year, month + 1, 0).getDate();
 }
+
+// IL MOTORE NON LEGGE L'OROLOGIO: la data di oggi la passa chi chiama. Una
+// data presa da sola qui dentro ha già fatto diventare rosso un riscontro il
+// primo ottobre, e un motore portato in un'altra app non sa che giorno è.
+// → check-confine-motore.mjs
+export function richiediOggi(oggi, chi) {
+  if (!(oggi instanceof Date) || Number.isNaN(oggi.getTime())) {
+    throw new TypeError(`${chi}: serve la data di oggi (oggi: Date)`);
+  }
+  return oggi;
+}

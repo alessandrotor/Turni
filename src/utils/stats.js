@@ -52,7 +52,7 @@ export function monthlyBreakdown(year, allShifts, settings = {}, payByShift = nu
   const canPay = hasAnyRate(settings);
 
   // La capienza del trattamento integrativo sul progressivo, come in Calendario.
-  const progressivi = enableNetCalc && canPay ? progressiviDellAnno({ anno: year, allShifts, settings, payMap: payByShift || {} }) : [];
+  const progressivi = enableNetCalc && canPay ? progressiviDellAnno({ anno: year, allShifts, settings, payMap: payByShift || {}, oggi: new Date() }) : [];
   const rows = [];
   for (let m = 0; m < 12; m += 1) {
     const monthShifts = shiftsByMonth.get(m);

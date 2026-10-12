@@ -93,7 +93,7 @@ assert(formatDeltaMinutes(-45) === '−45m', 'formatDeltaMinutes negativo solo m
   }
   const annoCon = (n) => feriali.slice(0, n).map((date, i) => ({ id: `a${i}`, date, startTime: '09:00', endTime: '16:00', breakMinutes: 0 }));
   const proiezione = (turni) => projectAnnualIncome(
-    computeAnnualGrossFromShifts(2025, turni, S6, computePayByShift(turni, S6)).total, 0, S6, 2025).value;
+    computeAnnualGrossFromShifts(2025, turni, S6, computePayByShift(turni, S6), new Date()).total, 0, S6, 2025, { oggi: new Date() }).value;
   const sogliaLorda = calcBonusMargin(1, S6).thresholdFullGross;
   const candidato = { date: feriali[feriali.length - 1], startTime: '09:00', endTime: '18:00', breakMinutes: 0 };
 

@@ -55,6 +55,7 @@
 // Modulo puro, senza React e senza browser: `node scripts/check-restituzione.mjs`.
 
 import { TAX_2026, tiDecision, calcNetAnnual, tiSospeso } from './net.js';
+import { richiediOggi } from './date.js';
 import { lordoPerReddito } from './soglia-lorda.js';
 
 /**
@@ -102,7 +103,8 @@ export function giorniTrascorsi(data) {
  * aprisse: gennaio dell'anno dopo mostrava ~870 € «già erogati» su un anno in
  * cui non era ancora arrivato un euro. → check-restituzione.mjs
  */
-export function dataDiRiferimento(anno, oggi = new Date()) {
+export function dataDiRiferimento(anno, oggi) {
+  richiediOggi(oggi, 'dataDiRiferimento');
   const corrente = oggi.getFullYear();
   if (anno === corrente || anno == null) return oggi;
   return anno < corrente ? new Date(anno, 11, 31) : null;
@@ -121,7 +123,8 @@ export function dataDiRiferimento(anno, oggi = new Date()) {
  * solo quando `bonus.nearThreshold` è vero, cioè a un soffio dai 15.000 — lì la
  * capienza c'è sempre, quindi l'ipotesi è realistica.
  */
-export function quotaPotenziale(oggi = new Date()) {
+export function quotaPotenziale(oggi) {
+  if (oggi !== null) richiediOggi(oggi, 'quotaPotenziale'); // null: anno non cominciato
   return trunc2((TAX_2026.TI_MASSIMO * giorniTrascorsi(oggi)) / 365);
 }
 
@@ -136,7 +139,8 @@ export function quotaPotenziale(oggi = new Date()) {
  *   regola mensile (`stimaConguaglio().tiFinora`). Senza, la quota piena.
  * @returns {{erogato, spettante, daRestituire, rateizzabile, causa, giorni, unSoloDatore}}
  */
-export function rischioRestituzione({ settings = {}, proiezioneAnnua = 0, oggi = new Date(), erogatoStimato = null } = {}) {
+export function rischioRestituzione({ settings = {}, proiezioneAnnua = 0, oggi, erogatoStimato = null } = {}) {
+  if (oggi !== null) richiediOggi(oggi, 'rischioRestituzione'); // null: anno non cominciato
   const T = TAX_2026;
   const giorni = giorniTrascorsi(oggi);
   const vuoto = {

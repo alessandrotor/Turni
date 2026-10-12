@@ -363,7 +363,7 @@ export default function App() {
   // per anni diversi: un'unica fonte evita che le due pagine mostrino cifre
   // diverse per lo stesso anno (vedi `computeAnnualGrossFromShifts` in net.js).
   const annualGross = useMemo(
-    () => computeAnnualGrossFromShifts(year, allShifts, settings, payByShift),
+    () => computeAnnualGrossFromShifts(year, allShifts, settings, payByShift, new Date()),
     [allShifts, settings, year, payByShift],
   );
 
@@ -376,7 +376,7 @@ export default function App() {
   // qui è ciò che impedisce alle due schermate di dire numeri diversi.
   const annualProjection = useMemo(
     () => projectAnnualIncome(annualGross.total, annualGross.extras, settings, year, {
-      enableNetCalc: ENABLE_NET_CALC,
+      enableNetCalc: ENABLE_NET_CALC, oggi: new Date(),
     }),
     [annualGross, settings, year],
   );

@@ -147,7 +147,7 @@ export function calcolaCosaCambia({
     // progressivo solo, per la capienza.
     const prima = lordoDelMese(pagaPrima?.total, year, month, settings);
     const dopo = lordoDelMese(pagaDopo?.total, year, month, settings);
-    const prog = progressiviDellAnno({ anno: year, allShifts: shiftsBefore, settings, payMap: mapPrima })[month];
+    const prog = progressiviDellAnno({ anno: year, allShifts: shiftsBefore, settings, payMap: mapPrima, oggi })[month];
     const netto = (l) => nettoDelMeseConPremio(l, settings, daysInMonth, year, capienzaProgressiva(l.lordo - l.premioMese, settings, prog));
     return { pagaPrima, pagaDopo, nettoPrima: netto(prima), nettoDopo: netto(dopo) };
   };
@@ -179,12 +179,12 @@ export function calcolaCosaCambia({
 
   if (rateAvailable) {
     const payMapBefore = computePayByShift(shiftsBefore, settings);
-    const annualBefore = computeAnnualGrossFromShifts(year, shiftsBefore, settings, payMapBefore);
-    const projBefore = projectAnnualIncome(annualBefore.total, annualBefore.extras, settings, year);
+    const annualBefore = computeAnnualGrossFromShifts(year, shiftsBefore, settings, payMapBefore, oggi);
+    const projBefore = projectAnnualIncome(annualBefore.total, annualBefore.extras, settings, year, { oggi });
 
     const payMapAfter = computePayByShift(shiftsAfter, settings);
-    const annualAfter = computeAnnualGrossFromShifts(year, shiftsAfter, settings, payMapAfter);
-    const projAfter = projectAnnualIncome(annualAfter.total, annualAfter.extras, settings, year);
+    const annualAfter = computeAnnualGrossFromShifts(year, shiftsAfter, settings, payMapAfter, oggi);
+    const projAfter = projectAnnualIncome(annualAfter.total, annualAfter.extras, settings, year, { oggi });
 
     // La soglia dei 15.000 vale sul REDDITO COMPLESSIVO, e la proiezione è un
     // LORDO: confrontarli direttamente faceva gridare «supera la soglia» con

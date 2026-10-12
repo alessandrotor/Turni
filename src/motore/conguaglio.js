@@ -54,9 +54,9 @@ import { capienzaProgressiva } from './capienza.js';
 import { nettoDelMeseConPremio } from './premio-risultato.js';
 import {
   lordoDelMese, calcNetAnnual, monthlyBaseGross, TAX_2026,
-  modoTrattamentoIntegrativo,
+  modoTrattamentoIntegrativo
 } from './net.js';
-import { getDaysInMonth, parseDate } from './date.js';
+import { getDaysInMonth, parseDate, richiediOggi } from './date.js';
 
 /** Sotto questa cifra, da entrambi gli estremi, si dice «circa in pari». */
 export const SOGLIA_PARI = 20;
@@ -71,7 +71,8 @@ const r2 = (n) => Math.round(n * 100) / 100;
  *   `lordo` 0 fuori dal rapporto di lavoro.
  * @param {object} settings
  */
-export function saldoConguaglio(mesi, settings = {}, { tiMontanteNoto = null, irpefMontanteNota = null, anno = new Date().getFullYear() } = {}) {
+export function saldoConguaglio(mesi, settings = {}, { tiMontanteNoto = null, irpefMontanteNota = null, anno } = {}) {
+  if (!Number.isInteger(anno)) throw new TypeError('saldoConguaglio: serve l\'anno');
   let cuneo = 0, lordoAnno = 0, giorni = 0, conLordo = 0;
   const irpefMesi = [];
   const sopraMesi = [];
@@ -169,9 +170,10 @@ function inizioRapporto(anno, settings) {
  * @returns {{ mesi: Array, meseOggi: number, mesiVuoti: number }}
  */
 export function mesiDellAnno({
-  anno, allShifts = [], settings = {}, payMap, oggi = new Date(), scenario = 'contratto', montanteAlterno = false,
+  anno, allShifts = [], settings = {}, payMap, oggi, scenario = 'contratto', montanteAlterno = false,
   totaleAnno = null,
 }) {
+  richiediOggi(oggi, 'mesiDellAnno');
   const meseOggi = anno === oggi.getFullYear() ? oggi.getMonth() : (anno < oggi.getFullYear() ? 12 : 0);
   const inizio = inizioRapporto(anno, settings);
 
@@ -285,7 +287,8 @@ export const irpefMontanteNota = (settings = {}) => notoDelMontante(settings, 'i
  * La stima da mostrare: forchetta, stima centrale per voce, e cosa non si sa.
  * `null` se non c'è niente su cui stimare (nessun reddito nell'anno).
  */
-export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi = new Date(), proiezioneAnnua = null }) {
+export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi, proiezioneAnnua = null }) {
+  richiediOggi(oggi, 'stimaConguaglio');
   const casi = [];
   let centrale = null;
   let mesiVuoti = 0;

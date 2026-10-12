@@ -94,12 +94,12 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
   const [showCalcolo, setShowCalcolo] = useState(false);
 
   const annualGross = useMemo(
-    () => computeAnnualGrossFromShifts(year, allShifts, settings, payByShift),
+    () => computeAnnualGrossFromShifts(year, allShifts, settings, payByShift, new Date()),
     [year, allShifts, settings, payByShift],
   );
   const projection = useMemo(
     () => projectAnnualIncome(annualGross.total, annualGross.extras, settings, year, {
-      enableNetCalc: ENABLE_NET_CALC,
+      enableNetCalc: ENABLE_NET_CALC, oggi: new Date(),
     }),
     [annualGross, settings, year],
   );

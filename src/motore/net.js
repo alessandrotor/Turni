@@ -6,13 +6,15 @@
 // ATTENZIONE: è una STIMA a scopo indicativo, non sostituisce la busta paga
 // né il conguaglio. Parametri verificati per il 2026.
 
-// Estensione esplicita: così `scripts/check-busta-giugno-2026.mjs` può
-// importare questo modulo con Node puro, senza passare dal bundler.
 import { getCcnl, monthlyContractHours } from './ccnl.js';
 import { contributiDiLegge } from './contributi-legge.js';
 import { trattenuteFuoriReddito } from './previdenza.js';
 import { calcTotalPay } from './pay.js';
-import { parseDate } from './date.js';
+import { parseDate, richiediOggi } from './date.js';
+// Le regole fiscali dell'anno stanno in `fisco/`, un file per anno.
+import { TAX_2026 } from './fisco/index.js';
+
+export { TAX_2026 };
 
 // Arrotondamenti della busta paga. Non sono un dettaglio estetico: il cedolino
 // chiude ogni voce a due decimali e le somme partono da quelle, quindi tenere
@@ -22,11 +24,6 @@ import { parseDate } from './date.js';
 // luglio 2026: 1.200 × 31/365 = 101,9178 in busta è 101,91, non 101,92.
 export const round2 = (x) => Math.round(x * 100) / 100;
 export const trunc2 = (x) => Math.floor(x * 100 + 1e-9) / 100;
-
-// Le regole fiscali dell'anno stanno in `fisco/`, un file per anno.
-import { TAX_2026 } from './fisco/index.js';
-
-export { TAX_2026 };
 
 export function irpefLorda(imponibile) {
   const T = TAX_2026;
@@ -493,7 +490,7 @@ export function extraMonthAccrual(kind, year, settings = {}) {
 // Mensilità aggiuntive GIÀ arrivate entro il mese indicato (indice 0-11),
 // espresse in mensilità equivalenti: una 14ª maturata a metà pesa 0,5.
 // A luglio (6) la quattordicesima di giugno (5) è già arrivata; la tredicesima no.
-export function receivedExtraMonthsCount(settings = {}, monthIndex = 11, year = new Date().getFullYear()) {
+export function receivedExtraMonthsCount(settings, monthIndex, year) {
   let n = 0;
   if (settings.hasQuattordicesima && monthIndex >= EXTRA_MONTHS.quattordicesima) {
     n += extraMonthAccrual('quattordicesima', year, settings);
@@ -505,7 +502,7 @@ export function receivedExtraMonthsCount(settings = {}, monthIndex = 11, year = 
 }
 
 // Mensilità aggiuntive previste nell'INTERO anno, in mensilità equivalenti.
-export function extraMonthsAccrued(settings = {}, year = new Date().getFullYear()) {
+export function extraMonthsAccrued(settings, year) {
   return (settings.hasTredicesima ? extraMonthAccrual('tredicesima', year, settings) : 0)
     + (settings.hasQuattordicesima ? extraMonthAccrual('quattordicesima', year, settings) : 0);
 }
@@ -528,7 +525,8 @@ export function extraMonthsAccrued(settings = {}, year = new Date().getFullYear(
  * @returns {{ total: number, extras: number }} extras = quota di mensilità
  *   aggiuntive già incassate, inclusa in total.
  */
-export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, payByShift = null) {
+export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, payByShift = null, oggi) {
+  richiediOggi(oggi, 'computeAnnualGrossFromShifts');
   const y = year;
   const yearShifts = (allShifts || []).filter(s => parseDate(s.date).getFullYear() === y);
   // Confine automatico a granularità MESE: il montante rappresenta il reddito fino
@@ -551,7 +549,7 @@ export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, pay
   // tredicesima già presa, cambiando reddito annuo, aliquota e soglie bonus.
   // Contano per il RATEO maturato, non per una mensilità piena: chi è assunto
   // da sei mesi prende mezza quattordicesima.
-  const now = new Date();
+  const now = oggi;
   // `extras` dichiara quante mensilità aggiuntive stanno DENTRO `total`, non
   // quante ne somma questa funzione: le due cose divergono quando c'è un
   // montante, e chi chiama ha bisogno della prima. `projectAnnualIncome` ci
@@ -621,9 +619,10 @@ export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, pay
 const fmtMesi = (n) => `${n} mes${n === 1 ? 'e' : 'i'}`;
 
 export function projectAnnualIncome(
-  annualGross, annualExtras, settings = {}, year = new Date().getFullYear(),
-  { enableNetCalc = true, oggi = new Date() } = {},
+  annualGross, annualExtras, settings = {}, year,
+  { enableNetCalc = true, oggi } = {},
 ) {
+  richiediOggi(oggi, 'projectAnnualIncome');
   const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
     .reduce((s, v) => s + (Number(v.amount) || 0), 0);
   // IL MONTANTE CONTIENE GIÀ voci fisse e premi dei suoi mesi: è l'imponibile

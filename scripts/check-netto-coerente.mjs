@@ -63,7 +63,7 @@ console.log('\nStatistiche usa il netto del mese, non quello dell\'anno\n');
 esito(righe.length === 3, 'tre mesi con turni, tre righe', `${righe.length}`);
 // Calendario passa il progressivo dell'anno (useMonthlyNet): reddito presunto
 // e capienza. Lo stesso qui.
-const progressivi = progressiviDellAnno({ anno: 2026, allShifts: TURNI, settings: S, payMap: pay });
+const progressivi = progressiviDellAnno({ anno: 2026, allShifts: TURNI, settings: S, payMap: pay, oggi: new Date() });
 for (const r of righe) {
   const cap = capienzaProgressiva(r.gross, S, progressivi[r.monthIndex]);
   const atteso = nettoDelMese(r.gross, S, getDaysInMonth(2026, r.monthIndex), 0, cap).net;
