@@ -16,7 +16,7 @@
 // serve un mese basso dopo mesi pieni. → check-ti-capienza.mjs
 
 import { redditoComplessivo, irpefLorda, detrazioneLavoro, nettoDelMese } from './net.js';
-import { fiscoDi, FISCO_ULTIMO } from './fisco/index.js';
+import { fiscoDi } from './fisco/index.js';
 import { programmaPaghe } from './programmi-paghe/index.js';
 
 /**
@@ -32,7 +32,7 @@ import { programmaPaghe } from './programmi-paghe/index.js';
 export function capienzaProgressiva(lordoMese, settings = {}, progressivo = null) {
   const mesi = Number(progressivo?.mesi) || 0;
   const lordoPresunto = lordoPresuntoAnno(lordoMese, settings, progressivo);
-  if (mesi === 0) return { capiente: true, media: null, lordoPresunto };
+  if (mesi === 0 && programmaPaghe(settings).primoMeseConcesso) return { capiente: true, media: null, lordoPresunto };
   const media = ((Number(progressivo.lordo) || 0) + (Number(lordoMese) || 0)) / (mesi + 1);
   const reddito = redditoComplessivo(media * 12, settings);
   return {
@@ -62,12 +62,13 @@ export function lordoPresuntoAnno(lordoMese, settings = {}, progressivo = null) 
  * giorni del mese, troncata. → check-ti-capienza.mjs
  */
 export function nettoSimulandoTi(lordoMese, settings, giorniMese, extraMese, capienza, presente) {
-  return simulaTi(nettoDelMese(lordoMese, settings, giorniMese, extraMese, capienza), giorniMese, presente, fiscoDi(settings));
+  return simulaTi(nettoDelMese(lordoMese, settings, giorniMese, extraMese, capienza), giorniMese, presente, settings);
 }
 
 /** Lo stesso, partendo da un netto già calcolato (anche col premio di risultato). */
-export function simulaTi(vero, giorniMese, presente, T = FISCO_ULTIMO) {
-  const quota = presente ? Math.floor(T.TI_MASSIMO * (giorniMese / 365) * 100) / 100 : 0;
+export function simulaTi(vero, giorniMese, presente, impostazioni = {}) {
+  const T = fiscoDi(impostazioni);
+  const quota = presente ? programmaPaghe(impostazioni).quota(T.TI_MASSIMO * (giorniMese / 365)) : 0;
   const delta = quota - vero.trattamentoIntegrativo;
   return {
     ...vero,

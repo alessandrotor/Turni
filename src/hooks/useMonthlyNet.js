@@ -5,6 +5,7 @@ import {
 import { ENABLE_NET_CALC } from '../config/features';
 import { progressiviDellAnno } from '../motore/conguaglio';
 import { capienzaProgressiva, simulaTi } from '../motore/capienza';
+import { conFisco } from '../motore/fisco/index.js';
 import { nettoDelMeseConPremio } from '../motore/premio-risultato';
 
 // Netto stimato del mese (beta): calcolato PARTENDO DAL MESE, come una busta
@@ -90,15 +91,15 @@ export default function useMonthlyNet({
   // `tiSimulato` true/false lo forza presente o assente (capienza compresa),
   // `null` lascia decidere il motore. Tutto il resto — regola del mese,
   // conguaglio, riquadro della soglia — resta su `netMonth`, quello vero.
-  const forzaTi = (presente) => (netMonth ? simulaTi(netMonth, daysInMonth, presente) : null);
+  const forzaTi = (presente) => (netMonth ? simulaTi(netMonth, daysInMonth, presente, conFisco(settings, year)) : null);
   // Quanto varrebbe, se ci fosse: la cifra del riquadro anche quando è spento.
   const tiSePresente = useMemo(
     () => (ENABLE_NET_CALC ? forzaTi(true)?.trattamentoIntegrativo || 0 : 0),
-    [netMonth, daysInMonth],
+    [netMonth, daysInMonth, settings, year],
   );
   const netMonthSimulato = useMemo(
     () => (ENABLE_NET_CALC && tiSimulato != null ? forzaTi(tiSimulato) : null),
-    [tiSimulato, netMonth, daysInMonth],
+    [tiSimulato, netMonth, daysInMonth, settings, year],
   );
   const monthNet = netMonth ? netMonth.net : 0;
   const monthTrattenute = netMonth ? netMonth.trattenute : 0;

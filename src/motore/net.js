@@ -13,6 +13,8 @@ import { calcTotalPay } from './pay.js';
 import { parseDate, richiediOggi } from './date.js';
 // Le regole fiscali dell'anno stanno in `fisco/`, un file per anno.
 import { TAX_2026, FISCO_ULTIMO, fiscoDi } from './fisco/index.js';
+import { EXTRA_MONTHS } from './mensilita.js';
+import { programmaPaghe } from './programmi-paghe/index.js';
 
 export { TAX_2026 };
 
@@ -146,7 +148,7 @@ export function calcContributi(gross, settings = {}, ebBase = 0, mesi = 1) {
     totale += importo;
     // La quota ditta è un fringe benefit: tassato pur non essendo trattenuto.
     // In busta è TRONCATA (948,05 × 0,20% = 1,8961 → 1,89).
-    fringeImponibile += trunc2(base * ((Number(eb.quotaDitta) || 0) / 100));
+    fringeImponibile += programmaPaghe(settings).quota(base * ((Number(eb.quotaDitta) || 0) / 100));
   }
 
   // Fondo pensione e cassa sanitaria in busta: fuori dal reddito come l'INPS.
@@ -297,10 +299,8 @@ export function tiSpettaQuestoMese(lordoMese, settings = {}, lordoPresunto = nul
       motivo: `reddito presunto dell'anno ${reddito} €, ${spetta ? 'sotto' : 'sopra'} i 15.000`,
     };
   }
-  // L'imponibile previdenziale è il lordo arrotondato all'euro: è la stessa
-  // base su cui la busta calcola l'IVS (vedi calcContributi).
-  const baseMese = Math.round(Math.max(0, Number(lordoMese) || 0));
-  const proiezione = baseMese * 12;
+  // Senza progressivo decide la regola del programma paghe (programmi-paghe/).
+  const { baseMese, proiezione } = programmaPaghe(settings).annoSenzaProgressivo(lordoMese);
   const spetta = proiezione <= fiscoDi(settings).TI_SOGLIA_PIENO;
   return {
     spetta,
@@ -360,7 +360,7 @@ export function riferimentoAnnuoDelMese(lordoMese, settings = {}, lordoPresunto 
     return esito.spetta ? Math.min(lordoPresunto, taxableToGross(fiscoDi(settings).TI_SOGLIA_PIENO, settings)) : lordoPresunto;
   }
   if (esito.spetta) {
-    const base = Math.round(Math.max(0, Number(lordoMese) || 0)) * 12;
+    const base = programmaPaghe(settings).annoSenzaProgressivo(lordoMese).proiezione;
     return Math.min(base, taxableToGross(fiscoDi(settings).TI_SOGLIA_PIENO, settings));
   }
   // Sopra soglia, senza progressivo: appena oltre i 15.000 di reddito, dentro
@@ -416,11 +416,7 @@ export function taxableToGross(taxable, settings = {}) {
   return Math.max(0, Number(taxable) || 0) / (1 - deductibleContribRate(settings));
 }
 
-// Mesi (indice 0-11) in cui arrivano le mensilità aggiuntive.
-export const EXTRA_MONTHS = {
-  quattordicesima: 5,  // giugno
-  tredicesima: 11,     // dicembre
-};
+export { EXTRA_MONTHS };
 
 // Retribuzione mensile "base" da contratto: ore settimanali × paga oraria ×
 // divisore orario del CCNL. Il divisore NON è sempre 52/12: il CCNL Turismo usa
@@ -984,12 +980,12 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   const esitoTi = { ...tiSpettaQuestoMese(gross, settings, capienza?.lordoPresunto ?? null), media: capienza?.media ?? null };
   esitoTi.senzaCapienza = esitoTi.spetta && !(capienza ? capienza.capiente : ann.trattamentoIntegrativo > 0);
   const trattamentoIntegrativo = esitoTi.spetta && !esitoTi.senzaCapienza
-    ? trunc2((ann.trattamentoIntegrativo || T.TI_MASSIMO) * dayFraction) : 0;
+    ? programmaPaghe(settings).quota((ann.trattamentoIntegrativo || T.TI_MASSIMO) * dayFraction) : 0;
   // L'indennità L. 207/2024 NON è una quota annua spalmata sui giorni: in busta
   // è la percentuale di fascia applicata all'imponibile fiscale DEL MESE, quindi
   // segue le ore effettivamente lavorate (verificato: 4,8% × 1.849,65 = 88,78).
   const cuneoPct = cuneoPercent(ann.imponibile, ann.imponibile, T);
-  const bonusCuneo = trunc2(imponibile * cuneoPct);
+  const bonusCuneo = programmaPaghe(settings).quota(imponibile * cuneoPct);
   const bonus = round2(trattamentoIntegrativo + bonusCuneo);
 
   // Anticipo TFR in busta (opzionale): quota che matura sul lordo (1/13,5 meno lo

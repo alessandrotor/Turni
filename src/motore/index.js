@@ -16,6 +16,7 @@ import { nettoDelMeseConPremio } from './premio-risultato.js';
 import { getDaysInMonth, richiediOggi } from './date.js';
 import { CONTRATTI } from './contratti/index.js';
 import { fiscoDellAnno, conFisco } from './fisco/index.js';
+import { PROGRAMMI } from './programmi-paghe/index.js';
 
 /**
  * Dagli ingressi del motore alle impostazioni che le sue funzioni leggono.
@@ -95,5 +96,5 @@ export function calcolaMese({ periodo, oggi, ...ingressi }) {
 // I pezzi, per chi li vuole uno per uno.
 export {
   computePayByShift, calcTotalPay, lordoTurno, lordoDelMese, projectAnnualIncome,
-  computeAnnualGrossFromShifts, stimaConguaglio, CONTRATTI, fiscoDellAnno,
+  computeAnnualGrossFromShifts, stimaConguaglio, CONTRATTI, fiscoDellAnno, PROGRAMMI,
 };
