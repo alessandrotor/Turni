@@ -1,6 +1,6 @@
 // Riscontro del lavoro notturno, da eseguire con:
 //
-//   node scripts/check-notturno.mjs
+//   node src/motore/riscontri/check-notturno.mjs
 //
 // Due parti. La prima conta i MINUTI in fascia: è la domanda che decide tutto,
 // perché i CCNL pagano «le ore prestate dalle 22 alle 6» e non i turni che le
@@ -12,7 +12,7 @@
 
 import {
   minutiInFasciaNotturna, pctNotturnoAggiuntiva, fasciaNotturna,
-} from '../src/motore/notturno.js';
+} from '../notturno.js';
 
 let falliti = 0;
 let totale = 0;
@@ -115,7 +115,7 @@ verifica('maggiorazione spenta', pctNotturnoAggiuntiva({ nightSurchargePct: 0 },
 // Le parti sopra provano la regola; questa prova che arriva in busta.
 // Paga 10 €/h, turno 20:00–02:00 (6 h, di cui 4 in fascia), notturno 20%.
 
-const { computePayByShift } = await import('../src/motore/pay.js');
+const { computePayByShift } = await import('../pay.js');
 
 function euro(settings, shift) {
   const map = computePayByShift([shift], settings);
@@ -158,8 +158,8 @@ verifica('con cumulo a somma', domSomma.totale, 77, '60 + 9 + 8');
 // 7 e mezza. Motore e interfaccia devono dire lo STESSO numero, altrimenti il
 // riepilogo del mese contraddice il singolo turno.
 
-const { minutiNotturni, minutiNotturniPagati } = await import('../src/motore/notturno.js');
-const { calcShiftMinutes } = await import('../src/motore/pay.js');
+const { minutiNotturni, minutiNotturniPagati } = await import('../notturno.js');
+const { calcShiftMinutes } = await import('../pay.js');
 
 console.log('\nPausa: orologio contro pagato\n');
 const conPausa = { date: '2026-06-10', startTime: '22:00', endTime: '06:00', breakMinutes: 30 };
@@ -179,7 +179,7 @@ verifica('e in euro: minuti usati', euroPausa.minutiNotte, 450, 'non 480');
 // contava un'ora notturna che in busta non c'è — e sbagliava verso l'alto,
 // cioè nella direzione che fa fare conti che poi non arrivano.
 
-const { fasciaNotturnaRisolta } = await import('../src/motore/notturno.js');
+const { fasciaNotturnaRisolta } = await import('../notturno.js');
 
 console.log('\nDa dove arriva la fascia\n');
 

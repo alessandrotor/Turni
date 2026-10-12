@@ -199,8 +199,8 @@ che sta dentro il riquadro dell'avviso (campo `noTrattamentoIntegrativo`).
 | `motore/bonus.js` | lo stato (pieno / ridotto / niente) deciso sull'imponibile come nel testo, e le soglie convertite in **lordo** per dire quanto manca — perché il lordo è la cifra che l'utente somma dai turni |
 | `settings.noTrattamentoIntegrativo` | la rinuncia di §5 |
 
-Riscontri: `scripts/check-bonus.mjs` (soglie e margini),
-`scripts/check-restituzione.mjs` (quanto torna indietro, soglia dei 60 €,
+Riscontri: `src/motore/riscontri/check-bonus.mjs` (soglie e margini),
+`src/motore/riscontri/check-restituzione.mjs` (quanto torna indietro, soglia dei 60 €,
 anteprima), `scripts/check-buste-2026.mjs` e `check-busta-giugno-2026.mjs` /
 `check-busta-luglio-2026.mjs` (il TI come lo stampa il cedolino reale), e
 **`check-busta-agosto-2026.mjs`** — il caso in cui il datore NON lo eroga

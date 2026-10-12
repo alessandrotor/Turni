@@ -39,7 +39,7 @@
 // calcola `minutiGiornoAssenza` (24 ore su sei giorni del part-time 60% CCNL
 // Turismo → quattro ore al giorno), quindi qui non si ricalcola nulla.
 //
-// Riscontro: `node scripts/check-periodo-assenza.mjs`.
+// Riscontro: `node src/motore/riscontri/check-periodo-assenza.mjs`.
 
 // Estensioni esplicite: senza, Node puro non importa il modulo e i riscontri in
 // `scripts/` non partono.

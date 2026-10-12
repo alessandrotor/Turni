@@ -1,6 +1,6 @@
 // Il rischio di restituzione del trattamento integrativo, riscontrato con:
 //
-//   node scripts/check-restituzione.mjs
+//   node src/motore/riscontri/check-restituzione.mjs
 //
 // PERCHÉ ESISTE
 // È l'unico numero dell'app che dice a qualcuno «ti riprendono dei soldi». Se è
@@ -25,8 +25,8 @@
 
 import {
   rischioRestituzione, giorniTrascorsi, quotaPotenziale, dataDiRiferimento, SOGLIA_RATEIZZAZIONE, CAUSA,
-} from '../src/motore/restituzione.js';
-import { TAX_2026, taxableToGross, patchTiSospeso } from '../src/motore/net.js';
+} from '../restituzione.js';
+import { TAX_2026, taxableToGross, patchTiSospeso } from '../net.js';
 
 let falliti = 0;
 let totale = 0;

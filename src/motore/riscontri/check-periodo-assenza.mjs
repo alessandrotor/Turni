@@ -1,6 +1,6 @@
 // Riscontro delle assenze a periodo, da eseguire con:
 //
-//   node scripts/check-periodo-assenza.mjs
+//   node src/motore/riscontri/check-periodo-assenza.mjs
 //
 // Due domande, e la seconda è quella che potrebbe costare soldi veri:
 //
@@ -10,9 +10,9 @@
 //     quanto cinque inserimenti singoli. Se il periodo spezzasse l'evento, la
 //     carenza ripartirebbe da capo e la paga sarebbe sbagliata.
 
-import { giorniPeriodo, proponiPeriodo, totalePeriodo, giorniDiRiposo, MAX_GIORNI_PERIODO } from '../src/motore/periodo-assenza.js';
-import { minutiGiornoAssenza } from '../src/motore/assenze.js';
-import { computePayByShift } from '../src/motore/pay.js';
+import { giorniPeriodo, proponiPeriodo, totalePeriodo, giorniDiRiposo, MAX_GIORNI_PERIODO } from '../periodo-assenza.js';
+import { minutiGiornoAssenza } from '../assenze.js';
+import { computePayByShift } from '../pay.js';
 
 let falliti = 0;
 let totale = 0;

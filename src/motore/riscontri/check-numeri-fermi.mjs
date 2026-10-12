@@ -1,8 +1,8 @@
 // I NUMERI FERMI: l'uscita del motore su casi fissi, confrontata al centesimo
 // con quella salvata.
 //
-//   node scripts/check-numeri-fermi.mjs              confronta
-//   node scripts/check-numeri-fermi.mjs --aggiorna   riscrive numeri-fermi.json
+//   node src/motore/riscontri/check-numeri-fermi.mjs              confronta
+//   node src/motore/riscontri/check-numeri-fermi.mjs --aggiorna   riscrive numeri-fermi.json
 //
 // PERCHÉ ESISTE: è la rete per spostare il motore (docs/motore-portabile.md).
 // Spostare un file, separare un contratto, cambiare una firma: nessuno di
@@ -21,15 +21,16 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { computePayByShift, calcTotalPay } from '../src/motore/pay.js';
-import { lordoDelMese, nettoDelMese, calcNetAnnual, tiDecision } from '../src/motore/net.js';
-import { capienzaProgressiva } from '../src/motore/capienza.js';
-import { progressiviDellAnno, stimaConguaglio } from '../src/motore/conguaglio.js';
-import { nettoDelMeseConPremio } from '../src/motore/premio-risultato.js';
-import { rischioRestituzione, costoSoglia } from '../src/motore/restituzione.js';
-import { calcBonusMargin } from '../src/motore/bonus.js';
-import { lordoPerReddito, lordoMeseMinimoTi } from '../src/motore/soglia-lorda.js';
-import { proponiPeriodo } from '../src/motore/periodo-assenza.js';
+import { computePayByShift, calcTotalPay } from '../pay.js';
+import { lordoDelMese, nettoDelMese, calcNetAnnual, tiDecision } from '../net.js';
+import { capienzaProgressiva } from '../capienza.js';
+import { progressiviDellAnno, stimaConguaglio } from '../conguaglio.js';
+import { nettoDelMeseConPremio } from '../premio-risultato.js';
+import { rischioRestituzione, costoSoglia } from '../restituzione.js';
+import { calcBonusMargin } from '../bonus.js';
+import { lordoPerReddito, lordoMeseMinimoTi } from '../soglia-lorda.js';
+import { proponiPeriodo } from '../periodo-assenza.js';
+import { calcolaMese } from '../index.js';
 
 const FILE = join(dirname(fileURLToPath(import.meta.url)), 'numeri-fermi.json');
 const ANNO = 2026;
@@ -180,10 +181,29 @@ function confronta(a, b, via) {
 }
 confronta(adesso, salvato, 'uscita');
 
+// LA PORTA DEL MOTORE (`calcolaMese` in index.js) dà gli stessi numeri delle
+// funzioni che usa l'app: un profilo scritto coi suoi ingressi, mese per mese.
+const porta = (m) => calcolaMese({
+  contratto: 'turismo',
+  lavoratore: {
+    pagaOraria: 9.21802, oreSettimanali: 24, oreTempoPieno: 40, assunzione: '2025-12-29',
+    tredicesima: true, quattordicesima: true, maggiorazioni: { supplementare: 30, domenicale: 10 },
+    addizionali: { regionale: 1.73, comunale: 0.8 }, montante: { importo: 7200, fino: '2026-06-30' },
+  },
+  periodo: { anno: ANNO, mese: m, turni: PROFILI.montante.turni },
+  oggi: OGGI,
+});
+for (let m = 0; m < 12; m += 1) {
+  const r = porta(m);
+  confronta(pulito({ lordo: r.lordo.lordo, netto: r.netto.net }),
+    { lordo: salvato.montante.mesi[m].lordo.lordo, netto: salvato.montante.mesi[m].conPremio }, `porta.mese${m + 1}`);
+}
+
 console.log('\nI numeri fermi\n');
 if (differenze.length) {
   for (const d of differenze) console.log(`  FALLITO ${d}`);
   console.log('\nUn numero è cambiato. Se il passo era uno spostamento, è sbagliato.\n');
   process.exit(1);
 }
-console.log(`  ok   ${Object.keys(adesso).length} profili, dodici mesi ciascuno: niente è cambiato.\n`);
+console.log(`  ok   ${Object.keys(adesso).length} profili, dodici mesi ciascuno: niente è cambiato.`);
+console.log('  ok   la porta del motore (calcolaMese) dà gli stessi numeri\n');

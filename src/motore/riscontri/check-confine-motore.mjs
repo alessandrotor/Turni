@@ -1,6 +1,6 @@
 // Il CONFINE del motore: `src/motore/` non importa niente da fuori.
 //
-//   node scripts/check-confine-motore.mjs
+//   node src/motore/riscontri/check-confine-motore.mjs
 //
 // PERCHÉ ESISTE: il motore deve poter uscire da qui, in un'altra app, senza
 // portarsi dietro React, il browser, le impostazioni dello schermo o i dati di
@@ -8,7 +8,8 @@
 // una lettura di `localStorage` per legarlo di nuovo all'app, e non se ne
 // accorge nessuno finché qualcuno non prova a portarlo via.
 //
-// Si guarda il codice, non i commenti: tre regole.
+// Si guarda il codice, non i commenti, e non i riscontri (che girano su
+// Node e leggono file): tre regole.
 //  1. Gli import sono relativi e restano dentro `src/motore/`. Niente pacchetti
 //     npm: il motore non ne usa nessuno, e il primo andrebbe dichiarato.
 //  2. Niente del browser: window, document, localStorage, navigator, fetch.
@@ -20,14 +21,14 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, dirname, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const RADICE = join(dirname(fileURLToPath(import.meta.url)), '..');
-const MOTORE = join(RADICE, 'src', 'motore');
+const MOTORE = join(dirname(fileURLToPath(import.meta.url)), '..');
+const RADICE = join(MOTORE, '..', '..');
 
 const file = [];
 const visita = (d) => {
   for (const n of readdirSync(d)) {
     const p = join(d, n);
-    if (statSync(p).isDirectory()) visita(p);
+    if (statSync(p).isDirectory()) { if (n !== 'riscontri') visita(p); }
     else if (/\.(m?js)$/.test(n)) file.push(p);
   }
 };

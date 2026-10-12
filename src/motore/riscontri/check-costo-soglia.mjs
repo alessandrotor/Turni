@@ -1,7 +1,7 @@
 // Quanto costa DAVVERO superare i 15.000 € — il numero su cui si decide se
 // vale la pena accettare un turno in più.
 //
-//   node scripts/check-costo-soglia.mjs
+//   node src/motore/riscontri/check-costo-soglia.mjs
 //
 // PERCHÉ ESISTE
 // L'avviso del bonus diceva «di questo passo devi restituire ~805 €», e lo
@@ -19,11 +19,11 @@
 // orari e aliquote diverse. Se un giorno cambiano le aliquote statali questo
 // script fallisce, ed è il punto: è lì che l'avviso andrebbe riscritto.
 
-import { calcNetAnnual, redditoComplessivo, TAX_2026 } from '../src/motore/net.js';
+import { calcNetAnnual, redditoComplessivo, TAX_2026 } from '../net.js';
 import {
   costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia,
-} from '../src/motore/restituzione.js';
-import { margineInOre } from '../src/motore/bonus.js';
+} from '../restituzione.js';
+import { margineInOre } from '../bonus.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

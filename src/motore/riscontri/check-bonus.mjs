@@ -1,6 +1,6 @@
 // Riscontro delle soglie del trattamento integrativo (ex bonus Renzi):
 //
-//   node scripts/check-bonus.mjs
+//   node src/motore/riscontri/check-bonus.mjs
 //
 // PERCHE' A VIDEO NON COMPARE 15.000
 // Le soglie di legge — 15.000 e 28.000 — sono definite sul REDDITO
@@ -18,9 +18,9 @@
 // Questo file non poteva esistere finche' `bonus.js` importava `./net` senza
 // estensione: Node non riusciva a caricarlo.
 
-import { calcBonusMargin, BONUS_CONST, BONUS_STATUS } from '../src/motore/bonus.js';
-import { redditoComplessivo, tiDecision } from '../src/motore/net.js';
-import { costoSoglia } from '../src/motore/restituzione.js';
+import { calcBonusMargin, BONUS_CONST, BONUS_STATUS } from '../bonus.js';
+import { redditoComplessivo, tiDecision } from '../net.js';
+import { costoSoglia } from '../restituzione.js';
 
 let falliti = 0;
 let totale = 0;

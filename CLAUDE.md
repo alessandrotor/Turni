@@ -266,10 +266,16 @@ diceva «superi i 15.000» e l'altro «resti sotto».
 - **Se sembra necessario fare altrimenti, si chiede prima a chi mantiene il
   progetto.** Non si decide da soli.
 
-**Il motore deve poter uscire da qui**: in un'altra app, senza il Turismo, lo
-Zucchetti, il 2026 o i dati di una persona. Il piano è in
-`docs/motore-portabile.md`; finché non è fatto, non aggiungere al motore import
-dal browser o da `src/config`, né nuovi `new Date()` predefiniti.
+**Il motore sta in `src/motore/` e può uscire da qui**: in un'altra app, senza
+il resto di Turni. Contratti, anni fiscali e programmi paghe sono un file
+ciascuno con un indice di una riga (`contratti/`, `fisco/`, `programmi-paghe/`),
+così si aggiungono e si tolgono a mano; la guida è `src/motore/LEGGIMI.md`, la
+porta d'ingresso `calcolaMese()` in `src/motore/index.js`. Il confine lo tiene
+`check-confine-motore.mjs`: niente import da fuori dalla cartella, niente
+browser, nessuna data di oggi letta da sola (la passa chi chiama). I riscontri
+delle regole stanno in `src/motore/riscontri/`, quelli sulle buste in
+`scripts/`; `check-numeri-fermi.mjs` blocca al centesimo l'uscita del motore,
+e uno spostamento non deve muoverla. Cosa manca: `docs/motore-portabile.md`.
 
 ## La regola che conta più di tutte
 

@@ -1,6 +1,6 @@
 // Lo straordinario notturno del CCNL Turismo:
 //
-//   node scripts/check-straordinario-notturno.mjs
+//   node src/motore/riscontri/check-straordinario-notturno.mjs
 //
 // DA DOVE VIENE: dal contratto, non da una busta — nessuna busta del progetto
 // ha uno straordinario. CCNL Turismo Confcommercio, lavoro straordinario: 30%
@@ -13,7 +13,7 @@
 // 60%, e la maggiorazione notturna ordinaria su quei minuti non si aggiunge.
 // Senza CCNL la regola non c'è. E di giorno resta il 30%.
 
-import { computePayByShift } from '../src/motore/pay.js';
+import { computePayByShift } from '../pay.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

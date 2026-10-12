@@ -53,7 +53,7 @@
 // automatico, è un'impostazione dell'utente — la stessa scelta già presa per
 // festivo e domenicale, scritta nella nota del CCNL vigilanza in ccnl.json.
 //
-// La regola si riscontra con `node scripts/check-notturno.mjs`.
+// La regola si riscontra con `node src/motore/riscontri/check-notturno.mjs`.
 
 // Estensione esplicita: senza, i riscontri in `scripts/` (che girano fuori da
 // Vite, su Node puro) non riescono a importare questo modulo.

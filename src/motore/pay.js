@@ -466,7 +466,7 @@ export function computePayByShift(allShifts, settings) {
  * divergerebbero di qualche centesimo e nessuno saprebbe quale credere. Una
  * somma sola, in un posto solo — è la regola dichiarata in testa a questo file.
  *
- * `scripts/check-lordo-turno.mjs` verifica che la somma dei lordi dei turni di
+ * `src/motore/riscontri/check-lordo-turno.mjs` verifica che la somma dei lordi dei turni di
  * un mese sia identica al totale di quel mese.
  *
  * @param {object} voce una voce di `computePayByShift`

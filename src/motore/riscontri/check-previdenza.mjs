@@ -1,6 +1,6 @@
 // Fondo pensione e cassa sanitaria trattenuti in busta, riscontrati sulla norma:
 //
-//   node scripts/check-previdenza.mjs
+//   node src/motore/riscontri/check-previdenza.mjs
 //
 // DA DOVE VIENE
 // Nessun cedolino del progetto ha queste voci, quindi il riscontro è sulla
@@ -19,9 +19,9 @@
 // 15.000; che i tetti annui valgano anche spezzati per mese; che il netto
 // scenda MENO della trattenuta, perché l'IRPEF cala con lei.
 
-import { redditoComplessivo, calcContributi, calcNetMonthly, monthlyBaseGross } from '../src/motore/net.js';
-import { lordoPerReddito } from '../src/motore/soglia-lorda.js';
-import { TETTO_FONDO_PENSIONE, TETTO_CASSA_SANITARIA } from '../src/motore/previdenza.js';
+import { redditoComplessivo, calcContributi, calcNetMonthly, monthlyBaseGross } from '../net.js';
+import { lordoPerReddito } from '../soglia-lorda.js';
+import { TETTO_FONDO_PENSIONE, TETTO_CASSA_SANITARIA } from '../previdenza.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

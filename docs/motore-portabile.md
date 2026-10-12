@@ -107,6 +107,20 @@ così l'interfaccia non si accorge di niente.
 
 ---
 
+## Stato al 12 ottobre 2026
+
+| Passo | Stato |
+|---|---|
+| 0. Numeri fermi | fatto: `check-numeri-fermi.mjs`, cinque profili, dodici mesi |
+| 1. Il confine | fatto: `src/motore/`, `check-confine-motore.mjs` |
+| 2. L'orologio | fatto: nessuna data di oggi letta dal motore (`richiediOggi`) |
+| 3. Il fisco per anno | a metà: la tabella sta in `motore/fisco/2026.js` e `fiscoDellAnno()` la sceglie, ma i calcoli usano ancora la 2026 per ogni anno |
+| 4. Il programma paghe | a metà: il reddito presunto sta in `motore/programmi-paghe/zucchetti.js`; la regola «lordo × 12» senza progressivo e i troncamenti al centesimo sono ancora nel codice |
+| 5. Il contratto come dati | fatto per i cinque contratti con regole proprie, un file ciascuno; l'archivio CNEL dei nomi resta all'app |
+| 6. I cinque oggetti | a metà: `calcolaMese()` li riceve, ma le funzioni interne leggono ancora un oggetto `impostazioni` coi nomi di Turni |
+| 7. I riscontri in due | fatto: regole in `src/motore/riscontri/`, buste e app in `scripts/` |
+| 8. Il pacchetto | a metà: `package.json` e `LEGGIMI.md` nella cartella; niente workspace npm |
+
 ## 3. I passi, nell'ordine
 
 Ogni passo è un commit, coi riscontri verdi e i numeri identici.

@@ -413,7 +413,7 @@ export default function CalendarView({
   // non copre quei turni: uno «0 €» in cella sembrerebbe un turno non pagato,
   // che è una cosa diversa e falsa. `lordoTurno` sta in pay.js apposta, così
   // questa somma e il totale del riepilogo escono dalla stessa riga di codice
-  // (riscontro: scripts/check-lordo-turno.mjs).
+  // (riscontro: src/motore/riscontri/check-lordo-turno.mjs).
   const euroDelGiorno = useCallback((turni) => {
     if (!payByShift) return null;
     let somma = 0;

@@ -1,6 +1,6 @@
 // Il lordo del singolo turno, riscontrato con:
 //
-//   node scripts/check-lordo-turno.mjs
+//   node src/motore/riscontri/check-lordo-turno.mjs
 //
 // PERCHÉ ESISTE
 // Dal 2 settembre 2026 l'app può mostrare quanto vale ogni turno. Il motore
@@ -21,7 +21,7 @@
 //
 // Al centesimo, non «circa».
 
-import { computePayByShift, calcTotalPay, lordoTurno } from '../src/motore/pay.js';
+import { computePayByShift, calcTotalPay, lordoTurno } from '../pay.js';
 
 let falliti = 0;
 let totale = 0;

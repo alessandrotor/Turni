@@ -1,6 +1,6 @@
 // Sotto i 1.250 € al mese il trattamento integrativo NON spetta sempre:
 //
-//   node scripts/check-ti-capienza.mjs
+//   node src/motore/riscontri/check-ti-capienza.mjs
 //
 // IL DIFETTO, ottobre 2026
 // Mese a metà, 534 € di lordo: il riquadro diceva «resti sotto i 1.250 € lordi:
@@ -26,9 +26,9 @@
 // mensile che l'app scrive sia proprio il primo euro in cui il netto contiene
 // il trattamento; e che torni col conto a mano sulla norma.
 
-import { nettoDelMese, TAX_2026, deductibleContribRate } from '../src/motore/net.js';
-import { lordoMeseMinimoTi } from '../src/motore/soglia-lorda.js';
-import { capienzaProgressiva, nettoSimulandoTi } from '../src/motore/capienza.js';
+import { nettoDelMese, TAX_2026, deductibleContribRate } from '../net.js';
+import { lordoMeseMinimoTi } from '../soglia-lorda.js';
+import { capienzaProgressiva, nettoSimulandoTi } from '../capienza.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

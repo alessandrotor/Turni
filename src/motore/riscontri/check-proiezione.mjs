@@ -1,6 +1,6 @@
 // Riscontro della previsione di reddito annuo:
 //
-//   node scripts/check-proiezione.mjs
+//   node src/motore/riscontri/check-proiezione.mjs
 //
 // LA PROPRIETA' CHE CONTA
 // Un euro guadagnato in piu' deve spostare la previsione di ESATTAMENTE un
@@ -22,7 +22,7 @@
 // previsione. Confermano che il netto non e' cambiato, non che la previsione
 // sia giusta.
 
-import { projectAnnualIncome, monthlyBaseGross } from '../src/motore/net.js';
+import { projectAnnualIncome, monthlyBaseGross } from '../net.js';
 
 let falliti = 0;
 let totale = 0;

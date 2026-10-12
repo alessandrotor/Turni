@@ -1,6 +1,6 @@
 // Il bonus come premio di risultato, tassato a parte:
 //
-//   node scripts/check-premio-risultato.mjs
+//   node src/motore/riscontri/check-premio-risultato.mjs
 //
 // DA DOVE VIENE: dalla norma, non da una busta. L. 30 dicembre 2025 n. 199,
 // art. 1 c. 9: imposta sostitutiva all'1% sui premi di risultato nel 2026 e nel
@@ -11,8 +11,8 @@
 // un'indennità nell'imponibile normale (agosto 2026). Per questo il default è
 // spento, e il primo controllo dice che spento non cambia niente.
 
-import { nettoDelMese, lordoDelMese } from '../src/motore/net.js';
-import { nettoDelMeseConPremio, aliquotaPremio } from '../src/motore/premio-risultato.js';
+import { nettoDelMese, lordoDelMese } from '../net.js';
+import { nettoDelMeseConPremio, aliquotaPremio } from '../premio-risultato.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

@@ -28,7 +28,7 @@ import { join, basename, relative, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const RADICE = join(dirname(fileURLToPath(import.meta.url)), '..');
-const DOCUMENTI = ['CLAUDE.md', 'COSE-NUOVE.md', 'README.md', 'worker/README.md',
+const DOCUMENTI = ['CLAUDE.md', 'COSE-NUOVE.md', 'README.md', 'worker/README.md', 'src/motore/LEGGIMI.md',
   ...readdirSync(join(RADICE, 'docs')).filter((f) => f.endsWith('.md')).map((f) => `docs/${f}`)]
   .filter((f) => existsSync(join(RADICE, f)));
 const SALTA = new Set(['node_modules', 'dist', '.git', 'android', 'ios']);
@@ -54,7 +54,8 @@ const definita = (fn) => new RegExp(
 
 // Un file citato si cerca col percorso, poi sotto src/ (si scrive
 // `motore/pay.js` per `src/motore/pay.js`), poi col solo nome.
-const esiste = (citato) => existsSync(join(RADICE, citato))
+const esiste = (citato, doc = '') => existsSync(join(RADICE, citato))
+  || existsSync(join(RADICE, dirname(doc), citato))
   || existsSync(join(RADICE, 'src', citato))
   || (!citato.includes('/') && nomi.has(citato));
 
@@ -69,7 +70,7 @@ for (const doc of DOCUMENTI) {
     const file = /^[\w.@/-]+\.(mjs|js|jsx|json|yml|yaml|md|css|toml|html|gs)$/.exec(t);
     if (file && !/[*{}]/.test(t)) {
       visti += 1;
-      if (!esiste(t)) { falliti += 1; console.log(`FALLITO ${doc}: \`${t}\` non esiste`); }
+      if (!esiste(t, doc)) { falliti += 1; console.log(`FALLITO ${doc}: \`${t}\` non esiste`); }
       continue;
     }
     const fn = /^([a-zA-Z_$][\w$]*)\(\)$/.exec(t);

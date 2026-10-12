@@ -1,6 +1,6 @@
 // Lo straordinario si conta a SETTIMANA, anche sui contratti mensilizzati:
 //
-//   node scripts/check-straordinario-settimanale.mjs
+//   node src/motore/riscontri/check-straordinario-settimanale.mjs
 //
 // DA DOVE VIENE
 // D.Lgs. 66/2003: l'orario normale è di 40 ore settimanali (art. 3), e lo
@@ -21,7 +21,7 @@
 // di due mesi resta una. Le ferie non sono lavoro prestato. E le ore
 // straordinarie non si contano due volte: non sono anche supplementari.
 
-import { computePayByShift } from '../src/motore/pay.js';
+import { computePayByShift } from '../pay.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

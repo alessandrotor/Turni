@@ -1,6 +1,6 @@
 // Riscontro di ferie, permessi e malattia.
 //
-//   node scripts/check-assenze.mjs
+//   node src/motore/riscontri/check-assenze.mjs
 //
 // COSA È VERIFICATO SU BUSTA E COSA NO — la distinzione conta.
 //
@@ -30,10 +30,10 @@
 //    modificabili in Impostazioni. Se un domani arriva un cedolino con
 //    malattia, i numeri attesi vanno rifatti su quello.
 
-import { computePayByShift, calcTotalPay, calcShiftMinutes } from '../src/motore/pay.js';
+import { computePayByShift, calcTotalPay, calcShiftMinutes } from '../pay.js';
 import {
   TIPO, minutiGiornoAssenza, giorniEventoMalattia, percentualeAssenza,
-} from '../src/motore/assenze.js';
+} from '../assenze.js';
 
 const R = 9.21802;
 const BASE = {

@@ -757,16 +757,16 @@ node scripts/check-busta-giugno-2026-fiduciari.mjs   # secondo CCNL, secondo ges
 node scripts/check-busta-luglio-2026-fiduciari.mjs
 node scripts/check-mese-paga-2026.mjs                # attribuzione settimane → mese di paga
 node scripts/check-festivo-supplementare.mjs         # ore festive fuori dalle eccedenze
-node scripts/check-notturno.mjs                      # minuti in fascia e cumulo
-node scripts/check-assenze.mjs
-node scripts/check-periodo-assenza.mjs
+node src/motore/riscontri/check-notturno.mjs                      # minuti in fascia e cumulo
+node src/motore/riscontri/check-assenze.mjs
+node src/motore/riscontri/check-periodo-assenza.mjs
 node scripts/check-festivita.mjs
 node scripts/check-busta-mensilita-aggiuntive.mjs
 node scripts/check-busta-maggiorazioni-reali.mjs
 node scripts/check-magg-busta.mjs
 node scripts/check-tabellare-turismo.mjs        # composizione della paga oraria
-node scripts/check-bonus.mjs
-node scripts/check-proiezione.mjs
+node src/motore/riscontri/check-bonus.mjs
+node src/motore/riscontri/check-proiezione.mjs
 node scripts/check-correzione-orari.mjs
 node scripts/check-serie-giorni.mjs
 node scripts/check-dati-in-uscita.mjs

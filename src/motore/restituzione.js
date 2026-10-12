@@ -52,7 +52,7 @@
 // spetta davvero. Nell'app è `settings.noTrattamentoIntegrativo`, e quando è
 // acceso qui non c'è più niente da restituire — per costruzione.
 //
-// Modulo puro, senza React e senza browser: `node scripts/check-restituzione.mjs`.
+// Modulo puro, senza React e senza browser: `node src/motore/riscontri/check-restituzione.mjs`.
 
 import { TAX_2026, tiDecision, calcNetAnnual, tiSospeso } from './net.js';
 import { richiediOggi } from './date.js';

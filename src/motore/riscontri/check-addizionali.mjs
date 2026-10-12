@@ -1,7 +1,7 @@
 // Quando scattano le addizionali regionale e comunale — e perché sono un
 // GRADINO, non una curva.
 //
-//   node scripts/check-addizionali.mjs
+//   node src/motore/riscontri/check-addizionali.mjs
 //
 // PERCHÉ ESISTE
 // Il motore ha una riga (`addDovute` in net.js) che decide se le addizionali si
@@ -32,7 +32,7 @@
 // IRPEF, il punto in cui scattano si sposta e il primo controllo fallisce. È
 // il punto: è lì che l'avviso sulla buca andrebbe rifatto.
 
-import { calcNetAnnual, redditoComplessivo, TAX_2026 } from '../src/motore/net.js';
+import { calcNetAnnual, redditoComplessivo, TAX_2026 } from '../net.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {
