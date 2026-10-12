@@ -9,9 +9,8 @@ const ENDPOINT = import.meta.env.VITE_TELEMETRY_URL || '';
 // sicurezza per i deploy manuali su --branch test fatti con la .env.local (che
 // contiene l'endpoint): l'auto-deploy CI non imposta VITE_TELEMETRY_URL, quindi
 // lì è già off via endpoint vuoto.
-// NB: niente 'localhost' — l'APK Capacitor gira su https://localhost, e lì la
-// telemetria (unico build con endpoint) DEVE funzionare. In dev locale, se hai
-// l'endpoint in .env.local, puoi spegnerla dall'interruttore in Impostazioni.
+// In dev locale, se hai l'endpoint in .env.local, puoi spegnerla
+// dall'interruttore in Impostazioni.
 const IS_TEST_ENV = typeof location !== 'undefined' && location.hostname.startsWith('test.');
 
 // SUL WEB QUESTA CHIAMATA NON PARTE COMUNQUE, anche con l'endpoint impostato:

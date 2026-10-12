@@ -45,9 +45,8 @@ export function accettaInvioFoto() {
 
 // La chiamata a Gemini NON avviene più da qui: la fa il proxy in `worker/`.
 // Motivo: Vite sostituisce le `import.meta.env.*` a build time, quindi una
-// chiave lasciata nel client finirebbe in chiaro nel bundle, che Capacitor
-// impacchetta come asset dell'APK — estraibile con un unzip da chiunque scarichi
-// l'app, tester della beta compresi.
+// chiave lasciata nel client finirebbe in chiaro nel bundle, leggibile da
+// chiunque apra il sito.
 //
 // Restano qui il ridimensionamento dell'immagine (va fatto sul telefono, prima
 // di spedire) e la normalizzazione di date e orari, che è pura e già collaudata.

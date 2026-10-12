@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Capacitor } from '@capacitor/core';
 
 // Banner "Installa app", in due nature diverse.
 //
@@ -17,7 +16,7 @@ import { Capacitor } from '@capacitor/core';
 // modo nativo di installare una PWA (scelta di Mozilla, non un'API mancante):
 // lì solo un avviso generico, nessun pulsante che prometta ciò che non può fare.
 //
-// Non compare nell'APK Capacitor né quando l'app è già installata.
+// Non compare quando l'app è già installata.
 
 const DISMISS_KEY = 'turni_install_dismissed';
 
@@ -68,9 +67,9 @@ export default function InstallPrompt({ installaIOS = false, sospeso = false, on
   const [installing, setInstalling] = useState(false);
 
   useEffect(() => {
-    // Mai nell'app nativa, mai se già installata, mai se già rifiutato. iOS ha
-    // il suo avviso, deciso fuori da qui.
-    if (Capacitor.isNativePlatform() || isStandalone() || isIOS()) return;
+    // Mai se già installata, mai se già rifiutato. iOS ha il suo avviso,
+    // deciso fuori da qui.
+    if (isStandalone() || isIOS()) return;
     if (leggiFlag(DISMISS_KEY) === '1') return;
 
     // Android / desktop Chromium: intercetta l'evento e mostra il nostro pulsante.

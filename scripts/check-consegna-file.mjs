@@ -20,19 +20,17 @@
 //
 // COSA SI RISCONTRA QUI
 // La sola decisione, che è logica pura e non ha bisogno di un browser. Il
-// resto — che `showSaveFilePicker` scriva davvero, che Share si comporti come
-// dice — è codice di piattaforma e si prova a mano sui dispositivi (vedi la
+// resto — che `showSaveFilePicker` scriva davvero — è codice di piattaforma e si prova a mano sui dispositivi (vedi la
 // domanda 8 di RILASCIO.md).
 //
-// NOTA: questo file non importa `services/export.js`, che dipende da Capacitor
-// e dal DOM e non è caricabile da Node puro. La funzione è ricopiata qui sotto,
+// NOTA: questo file non importa `services/export.js`, che dipende dal DOM e
+// non è caricabile da Node puro. La funzione è ricopiata qui sotto,
 // ed è il motivo per cui è stata scritta come funzione pura di tre righe: se
 // cambia là, questo riscontro non se ne accorge, ma la copia è abbastanza breve
 // da rendere la divergenza evidente a chi la tocca.
 
 // ── la decisione, come sta in services/export.js ───────────────────────────
-function stradaDiConsegna({ nativo, salvaConNome }) {
-  if (nativo) return 'condivisione';
+function stradaDiConsegna({ salvaConNome }) {
   if (salvaConNome) return 'salvaConNome';
   return 'download';
 }
@@ -40,26 +38,14 @@ function stradaDiConsegna({ nativo, salvaConNome }) {
 // ── casi ───────────────────────────────────────────────────────────────────
 const casi = [
   {
-    nome: 'APK Android: il foglio di condivisione',
-    dato: { nativo: true, salvaConNome: false },
-    atteso: 'condivisione',
-    perche: 'sul nativo il picker del browser non esiste e Share è la via giusta',
-  },
-  {
-    nome: 'APK con entrambe disponibili: vince il nativo',
-    dato: { nativo: true, salvaConNome: true },
-    atteso: 'condivisione',
-    perche: 'dentro la WebView un picker del browser confonderebbe due sistemi di file',
-  },
-  {
     nome: 'Chrome/Edge desktop: salva con nome',
-    dato: { nativo: false, salvaConNome: true },
+    dato: { salvaConNome: true },
     atteso: 'salvaConNome',
     perche: "è l'unica strada in cui sappiamo se il file è stato scritto",
   },
   {
     nome: 'Firefox, Safari, iOS: download semplice',
-    dato: { nativo: false, salvaConNome: false },
+    dato: { salvaConNome: false },
     atteso: 'download',
     perche: 'nessuna API per sapere se è arrivato: l\'esito va dichiarato non verificabile',
   },
@@ -80,11 +66,9 @@ for (const c of casi) {
 // «salvaConNome» deve uscire SOLO quando l'API c'è davvero.
 console.log('');
 let violazioni = 0;
-for (const nativo of [true, false]) {
-  for (const salvaConNome of [true, false]) {
-    const strada = stradaDiConsegna({ nativo, salvaConNome });
-    if (strada === 'salvaConNome' && !salvaConNome) violazioni += 1;
-  }
+for (const salvaConNome of [true, false]) {
+  const strada = stradaDiConsegna({ salvaConNome });
+  if (strada === 'salvaConNome' && !salvaConNome) violazioni += 1;
 }
 const ok = violazioni === 0;
 if (!ok) falliti += 1;

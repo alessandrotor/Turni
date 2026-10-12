@@ -216,8 +216,6 @@ export default function Settings({ settings, onSave }) {
 
       if (esito === ESITO.SALVATO) {
         setBackupMsg({ testo: `Backup salvato: ${turni} turni.` });
-      } else if (esito === ESITO.CONDIVISO) {
-        setBackupMsg({ testo: `Backup di ${turni} turni pronto. Controlla di averlo salvato dove volevi: finché resta solo fra i file temporanei, il telefono può cancellarlo.` });
       } else if (esito === ESITO.ANNULLATO) {
         setBackupMsg({ testo: 'Backup annullato: non è stato salvato nessun file.' });
       } else {
@@ -308,7 +306,7 @@ export default function Settings({ settings, onSave }) {
     setBackupBusy(true);
     try {
       const { turni, esito, testo } = await esportaBackup();
-      if (esito === ESITO.SALVATO || esito === ESITO.CONDIVISO) {
+      if (esito === ESITO.SALVATO) {
         setBackupMsg({ testo: `Dati attuali messi al sicuro: ${turni} turni.` });
       } else if (esito === ESITO.ANNULLATO) {
         setBackupMsg({ testo: 'Nessun file salvato.' });
@@ -1249,8 +1247,8 @@ export default function Settings({ settings, onSave }) {
             te lo chiede l'app al primo import da immagine (e potrai cambiarlo da lì).
           </p>
 
-          {/* L'interruttore compare SOLO dove la telemetria esiste davvero (l'APK
-              di prova). Nel sito non c'è endpoint: mostrarlo lo stesso sarebbe un
+          {/* L'interruttore compare SOLO dove la telemetria esiste davvero (una
+              build con l'endpoint). Nel sito non c'è endpoint: mostrarlo lo stesso sarebbe un
               comando che non governa niente e che lascia credere che qualcosa
               parta. Vedi `telemetriaDisponibile` in services/telemetry.js. */}
           {telemetriaDisponibile ? (

@@ -1,5 +1,4 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Capacitor } from '@capacitor/core';
 import useLocalStorage from './hooks/useLocalStorage';
 import { getMonthStart, parseDate, payrollMonthKey, formatDate } from './utils/dates';
 import { computePayByShift } from './utils/pay';
@@ -287,11 +286,9 @@ export default function App() {
   // pressione di memoria. La richiesta arriva al PRIMO turno inserito, non
   // all'avvio: su Firefox fa comparire un permesso, e chiederlo davanti a
   // un'app vuota significa farlo negare senza aver capito cosa protegge.
-  // Sul nativo non serve, la persistenza la garantisce il sistema.
   const persistenzaChiesta = useRef(false);
   useEffect(() => {
     if (persistenzaChiesta.current || allShifts.length === 0) return;
-    if (Capacitor.isNativePlatform()) return;
     persistenzaChiesta.current = true;
     navigator.storage?.persist?.().catch(() => {});
   }, [allShifts.length]);
@@ -302,7 +299,7 @@ export default function App() {
   // NUOVA di proposito: chi chiudeva il banner di prima lo chiudeva
   // all'apertura, su un'app vuota, per un motivo che non era questo.
   const ambiente = useMemo(() => ({
-    nativo: Capacitor.isNativePlatform(), ios: isIOS(), standalone: isStandalone(),
+    ios: isIOS(), standalone: isStandalone(),
   }), []);
   const [installaIOSRifiutato, setInstallaIOSRifiutato] = useState(() => {
     try { return localStorage.getItem(KEY_INSTALLA_IOS_RIFIUTATO) === '1'; } catch { return false; }

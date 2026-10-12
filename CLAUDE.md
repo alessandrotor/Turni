@@ -1,6 +1,6 @@
 # Turni — note per Claude
 
-PWA (React 18 + Vite, Capacitor per Android) che segna i turni e stima lordo e
+PWA (React 18 + Vite) che segna i turni e stima lordo e
 netto secondo le regole della busta paga italiana. Codice, commenti e interfaccia
 sono in italiano: scrivere nella stessa lingua.
 

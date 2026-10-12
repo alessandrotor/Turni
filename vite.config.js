@@ -22,9 +22,8 @@ export default defineConfig({
       transformIndexHtml: (html) => html.replaceAll('__SITE_URL__', SITE_URL),
     },
     VitePWA({
-      // La registrazione del service worker la facciamo a mano in src/main.jsx,
-      // SOLO su web: nella WebView dell'APK Capacitor un SW servirebbe asset
-      // vecchi dalla cache dopo un aggiornamento del pacchetto.
+      // La registrazione del service worker la facciamo a mano in src/main.jsx
+      // (services/aggiornamento.js).
       injectRegister: null,
       // 'prompt' e NON 'autoUpdate', ed è la differenza fra scaricare una
       // versione nuova e IMPORLA.
@@ -79,8 +78,6 @@ export default defineConfig({
         // Apre il modulo, NON salva niente: un turno scritto senza che nessuno
         // lo veda è un dato che tocca i soldi senza uno sguardo.
         //
-        // Vale per la PWA installata dal web. L'APK Capacitor non legge il
-        // manifest: lì servirebbe `res/xml/shortcuts.xml`, che non c'è.
         shortcuts: [
           {
             name: 'Segna il turno di oggi',

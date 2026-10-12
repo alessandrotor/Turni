@@ -31,12 +31,11 @@ export const KEY_INSTALLA_IOS_RIFIUTATO = 'turni_install_ios_rifiutato';
  * Il browser può cancellare i dati da solo? Vero solo per iOS fuori dalla Home.
  *
  * @param {object} ambiente
- * @param {boolean} ambiente.nativo app Capacitor: lo storage lo garantisce il sistema
  * @param {boolean} ambiente.ios iPhone o iPad, qualunque browser (su iOS sono tutti WebKit)
  * @param {boolean} ambiente.standalone già aperta dalla schermata Home
  */
-export function datiARischio({ nativo = false, ios = false, standalone = false } = {}) {
-  return !nativo && ios && !standalone;
+export function datiARischio({ ios = false, standalone = false } = {}) {
+  return ios && !standalone;
 }
 
 /**
@@ -47,9 +46,9 @@ export function datiARischio({ nativo = false, ios = false, standalone = false }
  * @param {boolean} stato.rifiutato ha già detto di no a QUESTA domanda
  */
 export function chiedereInstallazioneIOS({
-  nativo = false, ios = false, standalone = false, turni = 0, rifiutato = false,
+  ios = false, standalone = false, turni = 0, rifiutato = false,
 } = {}) {
-  return datiARischio({ nativo, ios, standalone }) && turni > 0 && !rifiutato;
+  return datiARischio({ ios, standalone }) && turni > 0 && !rifiutato;
 }
 
 /**

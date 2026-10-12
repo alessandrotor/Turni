@@ -506,6 +506,12 @@ Chiusi dopo la revisione, con lo stesso criterio: ognuno ha il suo riscontro.
 
 ---
 
+# K. App nativa tolta — 12/10/2026
+
+L'app Android (Capacitor) è uscita dal repository: cartella `android`, configurazione, dipendenze, `deploy.bat` e la guida alla pubblicazione su Play. Turni è solo la PWA; un'app nativa, se servirà, si rifà da zero. Chiuse per questo, senza riscontro perché non c'è più niente da riscontrare: **B2** (l'AAB con la telemetria accesa), **F1** (il versionCode), **F9** (la firma), **F14** (la guida di Play), **G1** (R8), **G3** (il FileProvider). Il worker accetta ancora l'origine `https://localhost` che serviva all'APK: va tolta al prossimo deploy del worker.
+
+---
+
 ## Dove mettere questo elenco
 
 `RILASCIO.md` va lasciato com'è: sette domande sulla **pubblicazione**, con un

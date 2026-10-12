@@ -48,7 +48,7 @@ function elenca(dir, filtro, out = []) {
 console.log('\nConfigurazione e contratti fra linguaggi\n');
 
 // ── 1. Ogni JSON si legge ──────────────────────────────────────────────────
-const json = ['capacitor.config.json', 'package.json', 'worker/package.json', 'src/data/ccnl.json']
+const json = ['package.json', 'worker/package.json', 'src/data/ccnl.json']
   .filter(existsSync);
 const jsonRotti = json.filter((f) => {
   try { JSON.parse(readFileSync(f, 'utf8')); return false; } catch { return true; }
