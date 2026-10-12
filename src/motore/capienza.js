@@ -15,7 +15,8 @@
 // Indicato da chi mantiene il progetto, NON ancora riscontrato su una busta:
 // serve un mese basso dopo mesi pieni. → check-ti-capienza.mjs
 
-import { redditoComplessivo, irpefLorda, detrazioneLavoro, nettoDelMese, TAX_2026 } from './net.js';
+import { redditoComplessivo, irpefLorda, detrazioneLavoro, nettoDelMese } from './net.js';
+import { fiscoDi, FISCO_ULTIMO } from './fisco/index.js';
 import { programmaPaghe } from './programmi-paghe/index.js';
 
 /**
@@ -35,7 +36,7 @@ export function capienzaProgressiva(lordoMese, settings = {}, progressivo = null
   const media = ((Number(progressivo.lordo) || 0) + (Number(lordoMese) || 0)) / (mesi + 1);
   const reddito = redditoComplessivo(media * 12, settings);
   return {
-    capiente: irpefLorda(reddito) > detrazioneLavoro(reddito) - TAX_2026.TI_CAPIENZA_SCONTO,
+    capiente: irpefLorda(reddito, fiscoDi(settings)) > detrazioneLavoro(reddito, fiscoDi(settings)) - fiscoDi(settings).TI_CAPIENZA_SCONTO,
     media: Math.round(media * 100) / 100,
     lordoPresunto,
   };
@@ -61,12 +62,12 @@ export function lordoPresuntoAnno(lordoMese, settings = {}, progressivo = null) 
  * giorni del mese, troncata. → check-ti-capienza.mjs
  */
 export function nettoSimulandoTi(lordoMese, settings, giorniMese, extraMese, capienza, presente) {
-  return simulaTi(nettoDelMese(lordoMese, settings, giorniMese, extraMese, capienza), giorniMese, presente);
+  return simulaTi(nettoDelMese(lordoMese, settings, giorniMese, extraMese, capienza), giorniMese, presente, fiscoDi(settings));
 }
 
 /** Lo stesso, partendo da un netto già calcolato (anche col premio di risultato). */
-export function simulaTi(vero, giorniMese, presente) {
-  const quota = presente ? Math.floor(TAX_2026.TI_MASSIMO * (giorniMese / 365) * 100) / 100 : 0;
+export function simulaTi(vero, giorniMese, presente, T = FISCO_ULTIMO) {
+  const quota = presente ? Math.floor(T.TI_MASSIMO * (giorniMese / 365) * 100) / 100 : 0;
   const delta = quota - vero.trattamentoIntegrativo;
   return {
     ...vero,

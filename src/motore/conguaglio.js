@@ -53,10 +53,11 @@ import { calcTotalPay } from './pay.js';
 import { capienzaProgressiva } from './capienza.js';
 import { nettoDelMeseConPremio } from './premio-risultato.js';
 import {
-  lordoDelMese, calcNetAnnual, monthlyBaseGross, TAX_2026,
+  lordoDelMese, calcNetAnnual, monthlyBaseGross,
   modoTrattamentoIntegrativo
 } from './net.js';
 import { getDaysInMonth, parseDate, richiediOggi } from './date.js';
+import { conFisco, fiscoDi } from './fisco/index.js';
 
 /** Sotto questa cifra, da entrambi gli estremi, si dice «circa in pari». */
 export const SOGLIA_PARI = 20;
@@ -71,8 +72,9 @@ const r2 = (n) => Math.round(n * 100) / 100;
  *   `lordo` 0 fuori dal rapporto di lavoro.
  * @param {object} settings
  */
-export function saldoConguaglio(mesi, settings = {}, { tiMontanteNoto = null, irpefMontanteNota = null, anno } = {}) {
+export function saldoConguaglio(mesi, impostazioni = {}, { tiMontanteNoto = null, irpefMontanteNota = null, anno } = {}) {
   if (!Number.isInteger(anno)) throw new TypeError('saldoConguaglio: serve l\'anno');
+  const settings = conFisco(impostazioni, anno);
   let cuneo = 0, lordoAnno = 0, giorni = 0, conLordo = 0;
   const irpefMesi = [];
   const sopraMesi = [];
@@ -133,7 +135,7 @@ export function saldoConguaglio(mesi, settings = {}, { tiMontanteNoto = null, ir
   return {
     voci,
     dettaglio,
-    annoSottoSoglia: a.imponibile <= TAX_2026.TI_SOGLIA_PIENO,
+    annoSottoSoglia: a.imponibile <= fiscoDi(settings).TI_SOGLIA_PIENO,
     // Il reddito su cui si misurano i 15.000 (lordo meno contributi): a
     // schermo va questo accanto alla soglia, non il lordo, o «16.000 €,
     // sotto i 15.000» sembrerebbe un errore.

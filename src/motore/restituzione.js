@@ -54,8 +54,9 @@
 //
 // Modulo puro, senza React e senza browser: `node src/motore/riscontri/check-restituzione.mjs`.
 
-import { TAX_2026, tiDecision, calcNetAnnual, tiSospeso } from './net.js';
+import { tiDecision, calcNetAnnual, tiSospeso } from './net.js';
 import { richiediOggi } from './date.js';
+import { fiscoDi, fiscoDellAnno, conFisco, FISCO_ULTIMO } from './fisco/index.js';
 import { lordoPerReddito } from './soglia-lorda.js';
 
 /**
@@ -125,7 +126,8 @@ export function dataDiRiferimento(anno, oggi) {
  */
 export function quotaPotenziale(oggi) {
   if (oggi !== null) richiediOggi(oggi, 'quotaPotenziale'); // null: anno non cominciato
-  return trunc2((TAX_2026.TI_MASSIMO * giorniTrascorsi(oggi)) / 365);
+  const T = oggi ? fiscoDellAnno(oggi.getFullYear()) : FISCO_ULTIMO;
+  return trunc2((T.TI_MASSIMO * giorniTrascorsi(oggi)) / 365);
 }
 
 /**
@@ -139,9 +141,11 @@ export function quotaPotenziale(oggi) {
  *   regola mensile (`stimaConguaglio().tiFinora`). Senza, la quota piena.
  * @returns {{erogato, spettante, daRestituire, rateizzabile, causa, giorni, unSoloDatore}}
  */
-export function rischioRestituzione({ settings = {}, proiezioneAnnua = 0, oggi, erogatoStimato = null } = {}) {
+export function rischioRestituzione({ settings: impostazioni = {}, proiezioneAnnua = 0, oggi, erogatoStimato = null } = {}) {
   if (oggi !== null) richiediOggi(oggi, 'rischioRestituzione'); // null: anno non cominciato
-  const T = TAX_2026;
+  // Il fisco dell'anno guardato, se chi chiama non l'ha già scelto.
+  const settings = impostazioni.fisco ? impostazioni : conFisco(impostazioni, oggi?.getFullYear());
+  const T = fiscoDi(settings);
   const giorni = giorniTrascorsi(oggi);
   const vuoto = {
     erogato: 0, spettante: 0, daRestituire: 0, rateizzabile: false,
@@ -257,7 +261,7 @@ export function costoSoglia(settings = {}) {
   // GIÀ sopra soglia (imponibile 15.023). Il calcolo della perdita partiva
   // dall'altro lato dello scalino e restituiva zero: nessun errore a schermo,
   // solo un avviso che taceva.
-  const tetto = lordoPerReddito(TAX_2026.TI_SOGLIA_PIENO, settings);
+  const tetto = lordoPerReddito(fiscoDi(settings).TI_SOGLIA_PIENO, settings);
   const nettoTetto = netto(tetto);
 
   // Lo scalino è tutto fra il tetto e l'euro successivo: due valutazioni bastano.

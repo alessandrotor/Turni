@@ -12,7 +12,7 @@ import { trattenuteFuoriReddito } from './previdenza.js';
 import { calcTotalPay } from './pay.js';
 import { parseDate, richiediOggi } from './date.js';
 // Le regole fiscali dell'anno stanno in `fisco/`, un file per anno.
-import { TAX_2026 } from './fisco/index.js';
+import { TAX_2026, FISCO_ULTIMO, fiscoDi } from './fisco/index.js';
 
 export { TAX_2026 };
 
@@ -25,8 +25,7 @@ export { TAX_2026 };
 export const round2 = (x) => Math.round(x * 100) / 100;
 export const trunc2 = (x) => Math.floor(x * 100 + 1e-9) / 100;
 
-export function irpefLorda(imponibile) {
-  const T = TAX_2026;
+export function irpefLorda(imponibile, T = FISCO_ULTIMO) {
   let imposta = 0;
   let prev = 0;
   for (const s of T.IRPEF_SCAGLIONI) {
@@ -41,8 +40,7 @@ export function irpefLorda(imponibile) {
 // Aliquota dello scaglione in cui cade il reddito: serve per le mensilità
 // aggiuntive, che il sostituto d'imposta tassa a parte con l'aliquota marginale
 // invece di spalmarle sull'aliquota media dell'anno.
-export function aliquotaMarginale(imponibile) {
-  const T = TAX_2026;
+export function aliquotaMarginale(imponibile, T = FISCO_ULTIMO) {
   for (const s of T.IRPEF_SCAGLIONI) {
     if (imponibile <= s.fino) return s.aliquota;
   }
@@ -69,7 +67,7 @@ export function aliquotaMarginale(imponibile) {
  * @returns {{ totale, deducibili, fringeImponibile, righe }}
  */
 export function calcContributi(gross, settings = {}, ebBase = 0, mesi = 1) {
-  const T = TAX_2026;
+  const T = fiscoDi(settings);
   const g = Math.max(0, Number(gross) || 0);
   const ccnl = getCcnl(settings.ccnl);
 
@@ -159,8 +157,7 @@ export function calcContributi(gross, settings = {}, ebBase = 0, mesi = 1) {
   return { totale: round2(totale), deducibili: round2(deducibili), fringeImponibile, righe };
 }
 
-export function detrazioneLavoro(reddito) {
-  const T = TAX_2026;
+export function detrazioneLavoro(reddito, T = FISCO_ULTIMO) {
   let d = 0;
   if (reddito <= 15000) {
     d = T.DETR_LAV_FISSA;
@@ -178,8 +175,7 @@ export function detrazioneLavoro(reddito) {
 }
 
 // Ulteriore detrazione "cuneo" per redditi 20.000–40.000
-function detrazioneCuneo(reddito) {
-  const T = TAX_2026;
+function detrazioneCuneo(reddito, T = FISCO_ULTIMO) {
   if (reddito <= T.CUNEO_DETR_SOGLIA_MIN) return 0;
   if (reddito <= T.CUNEO_DETR_SOGLIA_PIENO) return T.CUNEO_DETR_IMPORTO;
   if (reddito <= T.CUNEO_DETR_SOGLIA_MAX) {
@@ -191,8 +187,7 @@ function detrazioneCuneo(reddito) {
 
 // Percentuale della somma "cuneo" (L. 207/2024) spettante a un dato reddito.
 // 0 sopra i 20.000 €.
-export function cuneoPercent(redditoComplessivo, redditoLavoro = redditoComplessivo) {
-  const T = TAX_2026;
+export function cuneoPercent(redditoComplessivo, redditoLavoro = redditoComplessivo, T = FISCO_ULTIMO) {
   if (redditoComplessivo > T.CUNEO_SOGLIA_SOMMA) return 0;
   if (redditoLavoro <= T.CUNEO_PCT_1_SOGLIA) return T.CUNEO_PCT_1;
   if (redditoLavoro <= T.CUNEO_PCT_2_SOGLIA) return T.CUNEO_PCT_2;
@@ -200,8 +195,8 @@ export function cuneoPercent(redditoComplessivo, redditoLavoro = redditoCompless
 }
 
 // Somma "cuneo" non tassata per redditi <= 20.000 (% sul reddito da lavoro)
-function bonusCuneo(redditoComplessivo, redditoLavoro) {
-  return redditoLavoro * cuneoPercent(redditoComplessivo, redditoLavoro);
+function bonusCuneo(redditoComplessivo, redditoLavoro, T = FISCO_ULTIMO) {
+  return redditoLavoro * cuneoPercent(redditoComplessivo, redditoLavoro, T);
 }
 
 // Trattamento integrativo, calcolato sull'imponibile e sulle detrazioni.
@@ -228,8 +223,7 @@ function bonusCuneo(redditoComplessivo, redditoLavoro) {
 // lorda supera la detrazione da lavoro di più di quanto il cuneo possa
 // aggiungere. Si tiene lo stesso, perché è la norma, e perché un domani in cui
 // le due cose si avvicinano arriva senza avvisare.
-export function trattamentoIntegrativo(reddito, irpef, detLavoro) {
-  const T = TAX_2026;
+export function trattamentoIntegrativo(reddito, irpef, detLavoro, T = FISCO_ULTIMO) {
   if (reddito > T.TI_SOGLIA_MAX) return 0;
   if (reddito <= T.TI_SOGLIA_PIENO) {
     return irpef > detLavoro - T.TI_CAPIENZA_SCONTO ? T.TI_MASSIMO : 0;
@@ -247,7 +241,7 @@ export function deductibleContribRate(settings = {}) {
     ...contributiDiLegge(settings, ccnl.ammortizzatori),
     ...(ccnl.contributiExtra || []),
   ].reduce((s, c) => s + (Number(c.pct) || 0), 0) / 100;
-  return TAX_2026.ALIQUOTA_IVS + extra;
+  return fiscoDi(settings).ALIQUOTA_IVS + extra;
 }
 
 // Conversioni lordo ↔ imponibile fiscale. Le soglie di legge (15.000/28.000 per
@@ -297,7 +291,7 @@ export function tiSpettaQuestoMese(lordoMese, settings = {}, lordoPresunto = nul
   if (modo === 'sempre') return { spetta: true, motivo: 'incluso a mano' };
   if (lordoPresunto != null) {
     const reddito = Math.round(redditoComplessivo(lordoPresunto, settings));
-    const spetta = reddito <= TAX_2026.TI_SOGLIA_PIENO;
+    const spetta = reddito <= fiscoDi(settings).TI_SOGLIA_PIENO;
     return {
       spetta, presunto: true, proiezione: reddito, lordoPresunto: Math.round(lordoPresunto),
       motivo: `reddito presunto dell'anno ${reddito} €, ${spetta ? 'sotto' : 'sopra'} i 15.000`,
@@ -307,7 +301,7 @@ export function tiSpettaQuestoMese(lordoMese, settings = {}, lordoPresunto = nul
   // base su cui la busta calcola l'IVS (vedi calcContributi).
   const baseMese = Math.round(Math.max(0, Number(lordoMese) || 0));
   const proiezione = baseMese * 12;
-  const spetta = proiezione <= TAX_2026.TI_SOGLIA_PIENO;
+  const spetta = proiezione <= fiscoDi(settings).TI_SOGLIA_PIENO;
   return {
     spetta,
     proiezione,
@@ -363,15 +357,15 @@ export function riferimentoAnnuoDelMese(lordoMese, settings = {}, lordoPresunto 
   // Col progressivo, il riferimento È il reddito presunto: detrazioni comprese
   // (check-reddito-presunto.mjs). Forzato a «sempre», resta nella fascia bassa.
   if (lordoPresunto != null) {
-    return esito.spetta ? Math.min(lordoPresunto, taxableToGross(TAX_2026.TI_SOGLIA_PIENO, settings)) : lordoPresunto;
+    return esito.spetta ? Math.min(lordoPresunto, taxableToGross(fiscoDi(settings).TI_SOGLIA_PIENO, settings)) : lordoPresunto;
   }
   if (esito.spetta) {
     const base = Math.round(Math.max(0, Number(lordoMese) || 0)) * 12;
-    return Math.min(base, taxableToGross(TAX_2026.TI_SOGLIA_PIENO, settings));
+    return Math.min(base, taxableToGross(fiscoDi(settings).TI_SOGLIA_PIENO, settings));
   }
   // Sopra soglia, senza progressivo: appena oltre i 15.000 di reddito, dentro
   // la fascia 15.000-28.000 della detrazione. Un ripiego, non un dato.
-  return taxableToGross(TAX_2026.TI_SOGLIA_PIENO + 100, settings);
+  return taxableToGross(fiscoDi(settings).TI_SOGLIA_PIENO + 100, settings);
 }
 
 /**
@@ -809,7 +803,7 @@ export function projectAnnualIncome(
  *   Con 365 (il default) il conto è identico a prima. → check-conguaglio.mjs
  */
 export function calcNetAnnual(grossAnnual, settings = {}, { giorni = 365 } = {}) {
-  const T = TAX_2026;
+  const T = fiscoDi(settings);
   const gross = Math.max(0, Number(grossAnnual) || 0);
 
   if (gross <= 0) {
@@ -825,10 +819,10 @@ export function calcNetAnnual(grossAnnual, settings = {}, { giorni = 365 } = {})
   const contributi = cont.totale;
   const imponibile = redditoComplessivo(gross, settings, cont);
 
-  const lorda = irpefLorda(imponibile);
+  const lorda = irpefLorda(imponibile, T);
   const quota = Math.min(1, Math.max(0, Number(giorni) || 0) / 365);
-  const detLav = detrazioneLavoro(imponibile) * quota;
-  const detCuneo = detrazioneCuneo(imponibile) * quota;
+  const detLav = detrazioneLavoro(imponibile, T) * quota;
+  const detCuneo = detrazioneCuneo(imponibile, T) * quota;
   const detrTotali = detLav + detCuneo;
 
   const irpefNetta = Math.max(0, lorda - detrTotali);
@@ -846,9 +840,9 @@ export function calcNetAnnual(grossAnnual, settings = {}, { giorni = 365 } = {})
   // La capienza si misura con la detrazione dei giorni lavorati. Sotto i
   // 15.000 il bonus è 1.200 € rapportati al periodo; sopra, la norma lo lega
   // alla differenza fra detrazione e imposta, che è già dei giorni.
-  const tiPieno = trattamentoIntegrativo(imponibile, lorda, detLav);
+  const tiPieno = trattamentoIntegrativo(imponibile, lorda, detLav, T);
   const ti = imponibile <= T.TI_SOGLIA_PIENO ? tiPieno * quota : tiPieno;
-  const cuneo = bonusCuneo(imponibile, imponibile);
+  const cuneo = bonusCuneo(imponibile, imponibile, T);
 
   const net = gross - contributi - irpefNetta - addRegionale - addComunale + ti + cuneo;
 
@@ -875,7 +869,7 @@ export function calcNetAnnual(grossAnnual, settings = {}, { giorni = 365 } = {})
  * (fasce + capienza) e restituisce importo annuo, se incluso e il motivo (per la UI).
  */
 export function tiDecision(annualGrossRef, settings = {}) {
-  const T = TAX_2026;
+  const T = fiscoDi(settings);
   const ann = calcNetAnnual(annualGrossRef, settings);
   const imp = ann.imponibile;
   const override = tiSospeso(settings);
@@ -916,7 +910,7 @@ export function tiDecision(annualGrossRef, settings = {}) {
  * @param {number} extraMonthGross quota di `monthGross` che è 13ª/14ª (tassata a parte)
  */
 export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthDays = 365 / 12, extraMonthGross = 0, capienza = null) {
-  const T = TAX_2026;
+  const T = fiscoDi(settings);
   const gross = Math.max(0, Number(monthGross) || 0);
   const ann = calcNetAnnual(annualGrossRef, settings);
 
@@ -944,7 +938,7 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   //  - IRPEF sulla mensilità aggiuntiva = aliquota MARGINALE, senza detrazioni.
   const ratio = ann.imponibile > 0 ? imponibileOrdinario / ann.imponibile : 0;
   const irpefLordaOrdinaria = round2(ann.irpefLorda * ratio);
-  const irpefExtra = round2(imponibileExtra * aliquotaMarginale(ann.imponibile));
+  const irpefExtra = round2(imponibileExtra * aliquotaMarginale(ann.imponibile, T));
   const irpefLorda = round2(irpefLordaOrdinaria + irpefExtra);
   const detrazioni = round2((ann.detrazioneLavoro + ann.detrazioneCuneo) * (monthDays / 365));
   // Le detrazioni si scaricano solo sull'ordinario: l'eventuale eccedenza non
@@ -994,7 +988,7 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   // L'indennità L. 207/2024 NON è una quota annua spalmata sui giorni: in busta
   // è la percentuale di fascia applicata all'imponibile fiscale DEL MESE, quindi
   // segue le ore effettivamente lavorate (verificato: 4,8% × 1.849,65 = 88,78).
-  const cuneoPct = cuneoPercent(ann.imponibile);
+  const cuneoPct = cuneoPercent(ann.imponibile, ann.imponibile, T);
   const bonusCuneo = trunc2(imponibile * cuneoPct);
   const bonus = round2(trattamentoIntegrativo + bonusCuneo);
 

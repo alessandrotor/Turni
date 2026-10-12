@@ -2,7 +2,8 @@
 // check-cu-2025.mjs); chi usa l'app vede il LORDO in busta. Questa è l'unica
 // conversione dall'una all'altro: barra, riquadri e popup la chiedono qui.
 
-import { redditoComplessivo, nettoDelMese, TAX_2026 } from './net.js';
+import { redditoComplessivo, nettoDelMese } from './net.js';
+import { fiscoDi } from './fisco/index.js';
 
 /**
  * Il lordo annuo più alto che resta entro un REDDITO dato: «15.000 di reddito,
@@ -34,7 +35,7 @@ export function lordoPerReddito(reddito, settings = {}) {
 export function lordoMeseMinimoTi(settings = {}) {
   const ti = (m) => nettoDelMese(m, settings, 30).trattamentoIntegrativo > 0;
   let lo = 0;
-  let hi = Math.floor(TAX_2026.TI_SOGLIA_PIENO / 12);
+  let hi = Math.floor(fiscoDi(settings).TI_SOGLIA_PIENO / 12);
   if (!ti(hi)) return null;
   while (lo < hi) {
     const mid = Math.floor((lo + hi) / 2);

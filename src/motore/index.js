@@ -15,7 +15,7 @@ import { progressiviDellAnno, stimaConguaglio } from './conguaglio.js';
 import { nettoDelMeseConPremio } from './premio-risultato.js';
 import { getDaysInMonth, richiediOggi } from './date.js';
 import { CONTRATTI } from './contratti/index.js';
-import { fiscoDellAnno } from './fisco/index.js';
+import { fiscoDellAnno, conFisco } from './fisco/index.js';
 
 /**
  * Dagli ingressi del motore alle impostazioni che le sue funzioni leggono.
@@ -80,7 +80,7 @@ export function impostazioniDa({ contratto = '', lavoratore = {}, programmaPaghe
 export function calcolaMese({ periodo, oggi, ...ingressi }) {
   richiediOggi(oggi, 'calcolaMese');
   const { anno, mese, turni = [] } = periodo;
-  const impostazioni = impostazioniDa(ingressi);
+  const impostazioni = conFisco(impostazioniDa(ingressi), anno);
   const payMap = computePayByShift(turni, impostazioni);
   const chiave = `${anno}-${String(mese + 1).padStart(2, '0')}`;
   const delMese = turni.filter((t) => String(t.date).startsWith(chiave));

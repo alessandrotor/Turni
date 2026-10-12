@@ -23,7 +23,7 @@
 // l'anno, lontani dai 5.000. Lo dice il riscontro, non un `Math.min`.
 
 import { nettoDelMese, calcContributi, monthlyBaseGross } from './net.js';
-import { aliquotaPremio } from './fisco/index.js';
+import { aliquotaPremio, conFisco } from './fisco/index.js';
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
@@ -37,7 +37,8 @@ export { aliquotaPremio };
  *
  * @param {{lordo:number, extraMese?:number, premioMese?:number}} mese da `lordoDelMese`
  */
-export function nettoDelMeseConPremio(mese, settings, giorniMese, anno, capienza = null) {
+export function nettoDelMeseConPremio(mese, impostazioni, giorniMese, anno, capienza = null) {
+  const settings = conFisco(impostazioni, anno);
   const premio = Math.min(Math.max(0, Number(mese.premioMese) || 0), Number(mese.lordo) || 0);
   if (!premio) return nettoDelMese(mese.lordo, settings, giorniMese, mese.extraMese || 0, capienza);
   const resto = mese.lordo - premio;
