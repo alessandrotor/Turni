@@ -334,7 +334,7 @@ norma, non da una busta). Cosa quel lordo NON sa, e va detto se serve: altri
 redditi o altri datori (la soglia in lordo scende), aliquote diverse dalla
 9,19% (apprendisti), voci esenti.
 Con la CU dell'utente il conto torna a ~30 € l'anno. Non c'è contraddizione con
-la regola MENSILE del programma paghe (1.250 € *lordi* al mese, più sotto): quella
+la decisione MENSILE del programma paghe (sul reddito presunto, più sotto): quella
 è una decisione provvisoria mese per mese, il conguaglio di dicembre la rifà sul
 reddito vero. Chi propone «15.000 al lordo» va fermato con la CU, non assecondato:
 l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
@@ -350,15 +350,19 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   e la busta ne paga **una** (`Ferie godute 4,00 ORE`). Conferma il totale:
   120,75 h col calendario contro le 120,70 stampate, 138,75 col mese di paga.
   → `check-busta-agosto-2026.mjs`
-- **Tasse e bonus si decidono sul MESE, non sull'anno.** Il software paghe
-  prende il lordo del mese, lo moltiplica per dodici e da lì sceglie in blocco
-  detrazione, indennità L. 207/2024 e trattamento integrativo. L'app faceva come
-  la legge — guardava l'anno — e prometteva ogni mese un bonus che in busta
-  spesso non c'era. Riscontro su quattro cedolini 2026, al centesimo sul TI:
-  febbraio e maggio e luglio sotto soglia col bonus, agosto sopra senza. Per chi
-  legge, la soglia si dice in una cifra sola: **1.250 € di lordo al mese**
-  (15.000 ÷ 12). → `check-ti-mensile.mjs`
-  **Sotto i 1.250 non basta**: serve anche IRPEF da compensare (la capienza).
+- **Tasse e bonus si decidono ogni mese su un REDDITO PRESUNTO dell'anno.**
+  La legge guarda l'anno vero, al conguaglio; mese per mese il datore stima:
+  quanto pagato finora + questo mese per i mesi che restano e per la 13ª
+  (`lordoPresuntoAnno()` in `capienza.js`). Da lì sceglie in blocco detrazione,
+  indennità L. 207/2024 e trattamento integrativo. Non è una formula di legge
+  ma lo schema dei programmi paghe (NoiPA lo documenta), e lo rivelano le
+  detrazioni di agosto e settembre 2026, che sopra i 15.000 cambiano col
+  reddito: tornano al centesimo, e il trattamento integrativo torna su sei buste
+  su sei. Prima l'app usava lordo × 12 (i «1.250 € al mese», una regola
+  Zucchetti) e 15.100 € fissi sopra soglia. La 14ª non si anticipa: nessuna
+  busta lo mostra. Senza l'indice del mese il motore torna a lordo × 12.
+  → `check-reddito-presunto.mjs`, `check-ti-mensile.mjs`
+  **Sotto i 15.000 non basta**: serve anche IRPEF da compensare (la capienza).
   Con poche ore le detrazioni la azzerano già e il trattamento non c'è; il
   riquadro diceva «c'è il tratt. integrativo» su un netto che non l'aveva.
   La capienza però si guarda sul **progressivo dell'anno**, non sul mese da
@@ -369,7 +373,7 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   mantiene il progetto, non ancora visto su una busta. La riga dice la media e
   la soglia, `lordoMeseMinimoTi()` (~750 € nel Turismo). → `check-ti-capienza.mjs`
   **La regola si spiega dove si vede il suo effetto**: il riquadro del netto ha
-  una riga «1.298 × 12 = 15.576 €: sopra i 15.000…» e un «perché?» con IRPEF
+  una riga «Il datore stima ~16.645 € lordi nell'anno (15.044 di reddito)…» e un «perché?» con IRPEF
   lorda, detrazioni, ritenute e trattamento integrativo del mese, coi nomi
   della busta. Ad agosto 2026 la busta tratteneva 8,38 € di IRPEF e non si
   capiva perché: la spiegazione stava in «Come è calcolato?», chiusa. Si dice
@@ -378,8 +382,8 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   finisce dall'altra parte dei 15.000, la riga aggiunge «A dicembre si
   inverte» e il popup dice cosa succede a QUESTO mese al conguaglio, col saldo
   dell'anno di `stimaConguaglio`. L'anno si confronta coi 15.000 sul reddito
-  (`redditoAnno`, lordo meno contributi), il mese sul lordo × 12: sono le due
-  regole vere, e ognuna ha la sua grandezza accanto.
+  (`redditoAnno`, lordo meno contributi), il mese sulla stima del datore: sono
+  le due regole vere, e ognuna ha la sua grandezza accanto.
   Attenzione a non confonderla con la proiezione annua, che RESTA e serve ad
   altro: il margine del bonus e il rischio di restituzione sono domande
   sull'anno. Il pannello del netto le tiene su due righe separate apposta.

@@ -1655,10 +1655,10 @@ export default function Settings({ settings, onSave }) {
               <option value="mai">Non contarlo mai</option>
             </select>
             <p className="form-hint">
-              <strong>Come fa il mio datore</strong>: il bonus compare nei mesi in cui il lordo
-              sta sotto i <strong>1.250 €</strong>, e sparisce in quelli in cui lo supera —
-              perché moltiplicato per dodici uscirebbe dai 15.000 € entro cui spetta. È quello
-              che succede davvero in busta, verificato su cinque cedolini.
+              <strong>Come fa il mio datore</strong>: ogni mese stima il reddito dell'anno — quanto
+              hai preso finora più questo mese fino a dicembre — e il tratt. integrativo compare
+              solo se la stima sta sotto i <strong>15.000 €</strong>. È quello che succede davvero
+              in busta, verificato su sei cedolini.
               <br /><br />
               <strong>Contalo sempre</strong>: se il tuo datore te lo accredita comunque. Alla
               fine dell'anno il conto torna uguale: quello che non hai preso mese per mese

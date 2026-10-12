@@ -18,6 +18,8 @@ import { monthlyBreakdown } from '../src/utils/stats.js';
 import { computePayByShift } from '../src/utils/pay.js';
 import { nettoDelMese, calcNetMonthly } from '../src/utils/net.js';
 import { getDaysInMonth } from '../src/utils/dates.js';
+import { progressiviDellAnno } from '../src/utils/conguaglio.js';
+import { capienzaProgressiva } from '../src/utils/capienza.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {
@@ -59,8 +61,12 @@ const righe = monthlyBreakdown(2026, TURNI, S, pay, true);
 console.log('\nStatistiche usa il netto del mese, non quello dell\'anno\n');
 
 esito(righe.length === 3, 'tre mesi con turni, tre righe', `${righe.length}`);
+// Calendario passa il progressivo dell'anno (useMonthlyNet): reddito presunto
+// e capienza. Lo stesso qui.
+const progressivi = progressiviDellAnno({ anno: 2026, allShifts: TURNI, settings: S, payMap: pay });
 for (const r of righe) {
-  const atteso = nettoDelMese(r.gross, S, getDaysInMonth(2026, r.monthIndex), 0).net;
+  const cap = capienzaProgressiva(r.gross, S, progressivi[r.monthIndex]);
+  const atteso = nettoDelMese(r.gross, S, getDaysInMonth(2026, r.monthIndex), 0, cap).net;
   esito(Math.abs(r.net - atteso) < 0.005, `mese ${r.monthIndex + 1}: stesso netto di Calendario`,
     `${r.net.toFixed(2)} contro ${atteso.toFixed(2)} (lordo ${r.gross.toFixed(2)})`);
 }

@@ -46,7 +46,7 @@ dati. Ma alcune regole del Turismo stanno ancora nel codice:
 Verificate sulle buste Zucchetti, e giustamente nel motore, ma un altro datore
 potrebbe fare diversamente:
 
-- il trattamento integrativo deciso sul lordo del mese × 12 (`tiSpettaQuestoMese`);
+- il reddito presunto dell'anno con la 13ª stimata come il mese (`lordoPresuntoAnno`), su cui si decidono trattamento integrativo e detrazioni;
 - l'IVS sul lordo arrotondato all'euro, trattamento e indennità troncati;
 - la capienza sul progressivo dell'anno (`capienzaProgressiva`);
 - l'eccedenza arrotondata al quarto d'ora.

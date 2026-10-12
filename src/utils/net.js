@@ -327,42 +327,28 @@ export function redditoComplessivo(gross, settings = {}, contributi = null) {
 /**
  * Il trattamento integrativo spetta in QUESTO mese?
  *
- * PERCHÉ MENSILE E NON ANNUALE
- * La legge guarda l'anno, il software paghe guarda il mese. Fino al 14
- * settembre 2026 l'app faceva come la legge, e prometteva un TI che in busta
- * spesso non c'era: il conto tornava a dicembre, ma intanto il netto di ogni
- * mese era sbagliato — che è l'unico numero su cui il lavoratore decide.
+ * La legge guarda l'anno, la busta il mese: ogni mese il datore decide su un
+ * reddito PRESUNTO dell'anno (`lordoPresuntoAnno()` in capienza.js), lo stesso
+ * su cui calcola le detrazioni. Torna su sei buste Zucchetti del 2026 su sei,
+ * e sulle detrazioni di agosto e settembre al centesimo. Il confronto coi
+ * 15.000 è sul reddito, come vuole la legge. → check-reddito-presunto.mjs
  *
- * LA REGOLA, RICAVATA DA CINQUE BUSTE DEL 2026 (stesso datore, LUL Zucchetti):
- * si prende l'imponibile previdenziale del mese, lo si moltiplica per 12 e lo
- * si confronta con i 15.000 € della prima fascia. Sopra, il TI non viene
- * erogato; sotto, sì.
- *
- *   febbraio 1.099 × 12 = 13.188  →  TI 92,05      in busta: c'è      ✓
- *   maggio   1.163 × 12 = 13.956  →  TI 101,91     in busta: c'è      ✓
- *   giugno   2.048 × 12 = 24.576  →  niente        in busta: assente  ✓
- *   luglio   1.173 × 12 = 14.076  →  TI 101,91     in busta: c'è      ✓
- *   agosto   1.298 × 12 = 15.576  →  niente        in busta: assente  ✓
- *
- * QUALE IMPONIBILE: quello PREVIDENZIALE (il lordo arrotondato all'euro), non
- * quello fiscale. Le due ipotesi sono state provate una contro l'altra sulle
- * stesse cinque buste: col fiscale agosto darebbe 14.081, cioè sotto soglia e
- * TI erogato, mentre in busta non c'è. Il previdenziale spiega tutti e cinque i
- * mesi, il fiscale quattro.
- *
- * Che il confronto giusto per legge sarebbe sul reddito complessivo — cioè sul
- * fiscale — resta vero, ed è il motivo per cui questa è una regola PRUDENTE:
- * toglie il TI in mesi in cui a rigore spetterebbe, e il conguaglio di fine
- * anno lo restituisce. L'app riproduce quello che succede in busta, e lo dice.
- *
- * LIMITE: cinque buste, un datore solo. Se un altro software paghe usasse una
- * regola diversa, `tiModo: 'sempre'` la scavalca.
+ * Senza progressivo (chi chiama non sa che mese è) resta la regola di prima,
+ * lordo del mese × 12, che dà lo stesso esito su quelle buste
+ * (check-ti-mensile.mjs).
  */
-export function tiSpettaQuestoMese(lordoMese, settings = {}) {
+export function tiSpettaQuestoMese(lordoMese, settings = {}, lordoPresunto = null) {
   const modo = modoTrattamentoIntegrativo(settings);
   if (modo === 'mai') return { spetta: false, motivo: 'escluso a mano' };
   if (modo === 'sempre') return { spetta: true, motivo: 'incluso a mano' };
-
+  if (lordoPresunto != null) {
+    const reddito = Math.round(redditoComplessivo(lordoPresunto, settings));
+    const spetta = reddito <= TAX_2026.TI_SOGLIA_PIENO;
+    return {
+      spetta, presunto: true, proiezione: reddito, lordoPresunto: Math.round(lordoPresunto),
+      motivo: `reddito presunto dell'anno ${reddito} €, ${spetta ? 'sotto' : 'sopra'} i 15.000`,
+    };
+  }
   // L'imponibile previdenziale è il lordo arrotondato all'euro: è la stessa
   // base su cui la busta calcola l'IVS (vedi calcContributi).
   const baseMese = Math.round(Math.max(0, Number(lordoMese) || 0));
@@ -372,9 +358,7 @@ export function tiSpettaQuestoMese(lordoMese, settings = {}) {
     spetta,
     proiezione,
     baseMese,
-    motivo: spetta
-      ? `${baseMese} × 12 = ${proiezione} €, sotto i 15.000`
-      : `${baseMese} × 12 = ${proiezione} €, sopra i 15.000`,
+    motivo: `${baseMese} × 12 = ${proiezione} €, ${spetta ? 'sotto' : 'sopra'} i 15.000`,
   };
 }
 
@@ -415,38 +399,24 @@ export function patchTiSospeso(sospeso) {
 }
 
 /**
- * Il reddito annuo di riferimento che il software paghe usa PER QUESTO MESE.
- *
- * Non è una proiezione dell'anno: è il lordo del mese moltiplicato per dodici.
- * Governa insieme tre cose — detrazione, indennità L. 207/2024 e trattamento
- * integrativo — e le governa in blocco, perché dipendono tutte dalla fascia di
- * reddito in cui il sostituto d'imposta ti colloca quel mese.
- *
- * Sopra i 15.000 il riferimento si ferma «appena sopra soglia» invece di
- * seguire il lordo: è ciò che riproduce la detrazione stampata. Un mese con la
- * quattordicesima dentro proietterebbe 24.576 € e una detrazione molto più
- * bassa di quella che la busta mostra davvero.
- *
- * Riscontro su quattro buste del 2026, al centesimo (check-ti-mensile.mjs):
- *
- *   mese      riferimento   detrazione        TI        indennità
- *   febbraio      13.188   149,97 = busta   92,05 ✓    52,58 ≈ 52,68
- *   maggio        13.956   166,04 = busta  101,91 ✓    55,62 ≈ 55,71
- *   luglio        14.076   166,04 = busta  101,91 ✓    56,12 ≈ 56,22
- *   agosto        16.733   262,51 ≈ 261,50   0,00 ✓    56,23 ≈ 56,32
+ * Il reddito annuo di riferimento che il software paghe usa PER QUESTO MESE:
+ * governa in blocco detrazione, indennità L. 207/2024 e trattamento
+ * integrativo, perché dipendono tutte dalla fascia in cui il sostituto
+ * d'imposta ti colloca quel mese. Vedi `tiSpettaQuestoMese`.
  */
-export function riferimentoAnnuoDelMese(lordoMese, settings = {}) {
-  const esito = tiSpettaQuestoMese(lordoMese, settings);
+export function riferimentoAnnuoDelMese(lordoMese, settings = {}, lordoPresunto = null) {
+  const esito = tiSpettaQuestoMese(lordoMese, settings, lordoPresunto);
+  // Col progressivo, il riferimento È il reddito presunto: detrazioni comprese
+  // (check-reddito-presunto.mjs). Forzato a «sempre», resta nella fascia bassa.
+  if (lordoPresunto != null) {
+    return esito.spetta ? Math.min(lordoPresunto, taxableToGross(TAX_2026.TI_SOGLIA_PIENO, settings)) : lordoPresunto;
+  }
   if (esito.spetta) {
-    // Sotto soglia: il riferimento è la proiezione del mese. Se la decisione è
-    // forzata a mano («sempre»), si resta comunque nella fascia bassa, che è
-    // quella coerente con un TI erogato.
     const base = Math.round(Math.max(0, Number(lordoMese) || 0)) * 12;
     return Math.min(base, taxableToGross(TAX_2026.TI_SOGLIA_PIENO, settings));
   }
-  // Sopra soglia: appena oltre i 15.000 di reddito complessivo. I 100 € di
-  // margine non sono un numero magico — servono a stare dentro la fascia
-  // 15.000-28.000 senza sporgere, ed è lì che cade la detrazione stampata.
+  // Sopra soglia, senza progressivo: appena oltre i 15.000 di reddito, dentro
+  // la fascia 15.000-28.000 della detrazione. Un ripiego, non un dato.
   return taxableToGross(TAX_2026.TI_SOGLIA_PIENO + 100, settings);
 }
 
@@ -490,7 +460,8 @@ export function lordoDelMese(pagaTurni, anno, mese, settings = {}, { enableNetCa
  * settembre non erano più lo stesso. → check-netto-coerente.mjs
  */
 export function nettoDelMese(lordoMese, settings, giorniMese, extraMese = 0, capienza = null) {
-  return calcNetMonthly(lordoMese, riferimentoAnnuoDelMese(lordoMese, settings), settings, giorniMese, extraMese, capienza);
+  const ref = riferimentoAnnuoDelMese(lordoMese, settings, capienza?.lordoPresunto ?? null);
+  return calcNetMonthly(lordoMese, ref, settings, giorniMese, extraMese, capienza);
 }
 
 export function taxableToGross(taxable, settings = {}) {
@@ -1058,9 +1029,9 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   // Entrambe TRONCATE a due decimali, non arrotondate: in busta 1.200 × 31/365
   // fa 101,91 (il valore pieno è 101,9178) e 1.060,92 × 5,3% fa 56,22 (56,2288).
   const dayFraction = monthDays / 365;
-  // Soglia sul MESE (`tiSpettaQuestoMese`), capienza sul progressivo dell'anno
+  // Soglia sul reddito presunto e capienza sul progressivo dell'anno
   // (`capienza`, da capienza.js; senza, sul solo mese). → check-ti-capienza.mjs
-  const esitoTi = { ...tiSpettaQuestoMese(gross, settings), media: capienza?.media ?? null };
+  const esitoTi = { ...tiSpettaQuestoMese(gross, settings, capienza?.lordoPresunto ?? null), media: capienza?.media ?? null };
   esitoTi.senzaCapienza = esitoTi.spetta && !(capienza ? capienza.capiente : ann.trattamentoIntegrativo > 0);
   const trattamentoIntegrativo = esitoTi.spetta && !esitoTi.senzaCapienza
     ? trunc2((ann.trattamentoIntegrativo || T.TI_MASSIMO) * dayFraction) : 0;

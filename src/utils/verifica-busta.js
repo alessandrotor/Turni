@@ -21,6 +21,7 @@
 
 import { calcTotalPay, calcShiftMinutes, computePayByShift, hasAnyRate } from './pay.js';
 import { nettoDelMese, lordoDelMese } from './net.js';
+import { capienzaProgressiva } from './capienza.js';
 import {
   lordoDaBusta, incoerenze, ESENTE, FUORI_REDDITO, STORNO, EXTRA_MENSILITA,
 } from './leggi-cedolino.js';
@@ -284,7 +285,11 @@ export function confronta(fx, { allShifts = [], settings = {} } = {}) {
   const mese = fx.periodo.mese - 1;
   const giorni = getDaysInMonth(anno, mese);
   const b = lordoDaBusta(fx);
-  const n = nettoDelMese(b.lordo, settings, giorni, b.extra);
+  // Il progressivo della busta dà il reddito presunto del datore (capienza.js):
+  // l'imponibile INPS stampato comprende il mese, quindi lo si toglie.
+  const impInps = Number(fx.progressivi?.impInps) || 0;
+  const cap = impInps > 0 ? capienzaProgressiva(b.lordo, settings, { lordo: Math.max(0, impInps - Math.round(b.lordo)), mesi: mese, mese }) : null;
+  const n = nettoDelMese(b.lordo, settings, giorni, b.extra, cap);
   const righe = [];
 
   // ── Calcolo: dal lordo della busta ─────────────────────────────────────

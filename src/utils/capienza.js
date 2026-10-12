@@ -15,25 +15,51 @@
 // Indicato da chi mantiene il progetto, NON ancora riscontrato su una busta:
 // serve un mese basso dopo mesi pieni. → check-ti-capienza.mjs
 
-import { redditoComplessivo, irpefLorda, detrazioneLavoro, nettoDelMese, TAX_2026 } from './net.js';
+import { redditoComplessivo, irpefLorda, detrazioneLavoro, nettoDelMese, TAX_2026, EXTRA_MONTHS } from './net.js';
 
 /**
  * @param {number} lordoMese lordo del mese
  * @param {object} settings
- * @param {{lordo:number, mesi:number}|null} progressivo lordo e numero dei mesi
- *   dell'anno PRIMA di questo (da `progressiviDellAnno` in conguaglio.js)
- * @returns {{capiente:boolean, media:number|null}} `media` è il lordo mensile
- *   su cui si è deciso; `null` il primo mese, concesso senza conti.
+ * @param {{lordo:number, mesi:number, mese?:number}|null} progressivo lordo e
+ *   numero dei mesi dell'anno PRIMA di questo, e l'indice 0-11 di questo (da
+ *   `progressiviDellAnno` in conguaglio.js)
+ * @returns {{capiente:boolean, media:number|null, lordoPresunto:number|null}}
+ *   `media` è il lordo mensile su cui si è deciso, `null` il primo mese,
+ *   concesso senza conti; `lordoPresunto` da `lordoPresuntoAnno`.
  */
 export function capienzaProgressiva(lordoMese, settings = {}, progressivo = null) {
   const mesi = Number(progressivo?.mesi) || 0;
-  if (mesi === 0) return { capiente: true, media: null };
+  const lordoPresunto = lordoPresuntoAnno(lordoMese, settings, progressivo);
+  if (mesi === 0) return { capiente: true, media: null, lordoPresunto };
   const media = ((Number(progressivo.lordo) || 0) + (Number(lordoMese) || 0)) / (mesi + 1);
   const reddito = redditoComplessivo(media * 12, settings);
   return {
     capiente: irpefLorda(reddito) > detrazioneLavoro(reddito) - TAX_2026.TI_CAPIENZA_SCONTO,
     media: Math.round(media * 100) / 100,
+    lordoPresunto,
   };
+}
+
+/**
+ * Il LORDO PRESUNTO dell'anno, su cui il datore decide ogni mese trattamento
+ * integrativo e detrazioni: quanto pagato finora, più questo mese per ogni
+ * mese che resta (lui compreso) e per la 13ª ancora da pagare. Non c'è una
+ * formula di legge — la legge guarda l'anno vero, al conguaglio — ma è lo
+ * schema dei programmi paghe («già pagato + mese proiettato fino a dicembre»,
+ * NoiPA), e sulle buste Zucchetti torna: le detrazioni di agosto e settembre
+ * 2026 al centesimo, il trattamento integrativo sei mesi su sei.
+ * La 14ª NON si anticipa prima di giugno: nessuna busta dice che il datore lo
+ * faccia, e anticiparla toglieva il trattamento a febbraio e maggio, che in
+ * busta c'era. Il mese con la 14ª dentro si proietta intero, com'è: giugno
+ * 2026 non l'ha avuto. → check-reddito-presunto.mjs
+ *
+ * @returns {number|null} `null` senza l'indice del mese: si torna a lordo × 12.
+ */
+export function lordoPresuntoAnno(lordoMese, settings = {}, progressivo = null) {
+  const mese = progressivo?.mese;
+  if (!Number.isInteger(mese) || mese < 0 || mese > 11) return null;
+  const daPagare = settings.hasTredicesima && mese < EXTRA_MONTHS.tredicesima ? 1 : 0;
+  return (Number(progressivo.lordo) || 0) + (Number(lordoMese) || 0) * (12 - mese + daPagare);
 }
 
 /**

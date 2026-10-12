@@ -54,7 +54,7 @@ import { capienzaProgressiva } from './capienza.js';
 import { nettoDelMeseConPremio } from './premio-risultato.js';
 import {
   lordoDelMese, calcNetAnnual, monthlyBaseGross, TAX_2026,
-  tiSpettaQuestoMese, modoTrattamentoIntegrativo,
+  modoTrattamentoIntegrativo,
 } from './net.js';
 import { getDaysInMonth, parseDate } from './dates.js';
 
@@ -74,6 +74,7 @@ const r2 = (n) => Math.round(n * 100) / 100;
 export function saldoConguaglio(mesi, settings = {}, { tiMontanteNoto = null, irpefMontanteNota = null, anno = new Date().getFullYear() } = {}) {
   let cuneo = 0, lordoAnno = 0, giorni = 0, conLordo = 0;
   const irpefMesi = [];
+  const sopraMesi = [];
   const tiMesi = mesi.map((m, i) => {
     irpefMesi[i] = 0;
     if (!(m.lordo > 0)) return 0;
@@ -81,10 +82,11 @@ export function saldoConguaglio(mesi, settings = {}, { tiMontanteNoto = null, ir
     // Il premio di risultato è tassato a parte (premio-risultato.js): fuori
     // dall'IRPEF dell'anno e dal reddito su cui si misura la capienza.
     const premio = Number(m.premio) || 0;
-    const cap = capienzaProgressiva(m.lordo - premio, settings, { lordo: lordoAnno, mesi: conLordo });
+    const cap = capienzaProgressiva(m.lordo - premio, settings, { lordo: lordoAnno, mesi: conLordo, mese: i });
     const n = nettoDelMeseConPremio({ lordo: m.lordo, extraMese: m.extra || 0, premioMese: premio }, settings, m.giorni, anno, cap);
     conLordo += 1;
     irpefMesi[i] = n.irpefNetta;
+    sopraMesi[i] = !n.esitoTi.spetta;
     cuneo += n.bonusCuneo;
     lordoAnno += m.lordo - premio;
     giorni += m.giorni;
@@ -139,6 +141,7 @@ export function saldoConguaglio(mesi, settings = {}, { tiMontanteNoto = null, ir
     lordoAnno: r2(lordoAnno),
     tiAccreditato: r2(ti),
     tiMesi,
+    sopraMesi,
     irpefMesi,
   };
 }
@@ -252,8 +255,8 @@ export function mesiDellAnno({
  */
 export function progressiviDellAnno(args) {
   let lordo = 0, mesi = 0;
-  return mesiDellAnno(args).mesi.map((m) => {
-    const p = { lordo, mesi };
+  return mesiDellAnno(args).mesi.map((m, mese) => {
+    const p = { lordo, mesi, mese };
     if (m.lordo > 0) { lordo += m.lordo; mesi += 1; }
     return p;
   });
@@ -338,7 +341,7 @@ export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi = new 
     // ma applica la detrazione più alta; sotto, il contrario. Solo con la
     // decisione automatica: a mano, la ragione è la scelta, non il mese.
     mesiSopraSoglia: modoTrattamentoIntegrativo(settings) === 'auto'
-      ? mesiCentrale.map((m, i) => (m.lordo > 0 && !tiSpettaQuestoMese(m.lordo, settings).spetta ? i : -1)).filter((i) => i >= 0)
+      ? mesiCentrale.map((m, i) => (m.lordo > 0 && centrale.sopraMesi[i] ? i : -1)).filter((i) => i >= 0)
       : null,
     mesiSottoSoglia: modoTrattamentoIntegrativo(settings) === 'auto'
       // Col bonus DAVVERO in busta: sotto i 1.250 senza capienza non c'è (check-ti-capienza).
