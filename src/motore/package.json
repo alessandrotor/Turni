@@ -1,6 +1,6 @@
 {
   "name": "turni-motore",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Motore di calcolo di paga lorda e netta secondo la busta paga italiana: turni, contratto, fisco dell'anno, programma paghe.",
   "private": true,
   "type": "module",
@@ -8,5 +8,20 @@
   "exports": {
     ".": "./index.js",
     "./*": "./*"
+  },
+  "files": [
+    "*.js",
+    "contratti/",
+    "fisco/",
+    "programmi-paghe/",
+    "riscontri/",
+    "LEGGIMI.md",
+    "MANUALE.md"
+  ],
+  "scripts": {
+    "test": "node riscontri/esegui.mjs"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

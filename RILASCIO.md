@@ -455,7 +455,7 @@ non un riscontro: agosto è la prima occasione vera di verificarlo.
   giugno e luglio). Con tre buste si potrebbe anche riprendere la questione
   aperta sulla base del TFR, che con due sole non si poteva decidere.
 - Se vince il **mese di calendario**: cambia il default in `DEFAULT_SETTINGS`
-  (`src/App.jsx`) e aggiorna di conseguenza `docs/motore-di-calcolo.md` §16, dove
+  (`src/App.jsx`) e aggiorna di conseguenza `src/motore/MANUALE.md` §16, dove
   le due letture sono descritte come «due tagli diversi sugli stessi turni».
   Nessuna formula del motore cambia: la soglia del supplementare resta sul mese
   di paga, che è riscontrato a parte.

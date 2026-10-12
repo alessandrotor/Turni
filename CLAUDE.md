@@ -275,7 +275,11 @@ porta d'ingresso `calcolaMese()` in `src/motore/index.js`. Il confine lo tiene
 browser, nessuna data di oggi letta da sola (la passa chi chiama). I riscontri
 delle regole stanno in `src/motore/riscontri/`, quelli sulle buste in
 `scripts/`; `check-numeri-fermi.mjs` blocca al centesimo l'uscita del motore,
-e uno spostamento non deve muoverla. Cosa manca: `docs/motore-portabile.md`.
+e uno spostamento non deve muoverla. Il fisco dell'anno arriva ai calcoli con
+`conFisco()`, le regole del programma paghe stanno in `programmi-paghe/`, ogni
+impostazione che il motore legge è scritta in `motore/impostazioni.js`. Il
+manuale della macchina è `src/motore/MANUALE.md`; il motore si verifica da solo
+con `npm test` nella sua cartella.
 
 ## La regola che conta più di tutte
 

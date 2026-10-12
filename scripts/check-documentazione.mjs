@@ -28,7 +28,7 @@ import { join, basename, relative, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const RADICE = join(dirname(fileURLToPath(import.meta.url)), '..');
-const DOCUMENTI = ['CLAUDE.md', 'COSE-NUOVE.md', 'README.md', 'worker/README.md', 'src/motore/LEGGIMI.md',
+const DOCUMENTI = ['CLAUDE.md', 'COSE-NUOVE.md', 'README.md', 'worker/README.md', 'src/motore/LEGGIMI.md', 'src/motore/MANUALE.md',
   ...readdirSync(join(RADICE, 'docs')).filter((f) => f.endsWith('.md')).map((f) => `docs/${f}`)]
   .filter((f) => existsSync(join(RADICE, f)));
 const SALTA = new Set(['node_modules', 'dist', '.git', 'android', 'ios']);

@@ -17,11 +17,12 @@ import { getDaysInMonth, richiediOggi } from './date.js';
 import { CONTRATTI } from './contratti/index.js';
 import { fiscoDellAnno, conFisco } from './fisco/index.js';
 import { PROGRAMMI } from './programmi-paghe/index.js';
+import { IMPOSTAZIONI } from './impostazioni.js';
 
 /**
- * Dagli ingressi del motore alle impostazioni che le sue funzioni leggono.
- * È l'unico punto in cui i nomi di qui incontrano quelli interni: chi legge
- * questa tabella sa cosa ogni campo fa, senza aprire il resto.
+ * Dagli ingressi del motore alle impostazioni che le sue funzioni leggono
+ * (tutte descritte in impostazioni.js). È l'unico punto in cui i nomi di qui
+ * incontrano quelli interni.
  *
  * @param {object} p
  * @param {string} p.contratto codice di un file in `contratti/` ('' = legge)
@@ -96,5 +97,5 @@ export function calcolaMese({ periodo, oggi, ...ingressi }) {
 // I pezzi, per chi li vuole uno per uno.
 export {
   computePayByShift, calcTotalPay, lordoTurno, lordoDelMese, projectAnnualIncome,
-  computeAnnualGrossFromShifts, stimaConguaglio, CONTRATTI, fiscoDellAnno, PROGRAMMI,
+  computeAnnualGrossFromShifts, stimaConguaglio, CONTRATTI, fiscoDellAnno, PROGRAMMI, IMPOSTAZIONI,
 };

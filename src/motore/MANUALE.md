@@ -4,66 +4,72 @@ Documento di riferimento per chi (persona o modello) deve **modificare, estender
 o riscrivere** il calcolo di ore, lordo e netto. Non è una guida all'uso
 dell'app: è la descrizione della macchina che sta sotto.
 
-Aggiornato al 29 agosto 2026, versione `0.6.0` del `package.json`.
+Aggiornato al 12 ottobre 2026. La guida rapida — come si usa, come si aggiunge
+un contratto, un anno o un programma paghe — è `LEGGIMI.md`; questo è il
+manuale della macchina.
 
-> **Rapporto con `CLAUDE.md`.** Quello è l'orientamento rapido: i fatti
-> verificati sulle buste, in forma di elenco, con il riscontro accanto a
+> **Rapporto con `CLAUDE.md` di Turni.** Quello è l'orientamento rapido: i
+> fatti verificati sulle buste, in forma di elenco, con il riscontro accanto a
 > ciascuno. Questo descrive la **macchina**: come i fatti diventano un calcolo,
-> in che ordine, e cosa si rompe toccandoli. Dove i due si sovrappongono —
-> mese di paga, maggiorazioni, malattia non verificata — **`CLAUDE.md` è la
-> fonte**: è il file che si aggiorna scoprendo qualcosa di nuovo su una busta.
-> Se divergono, si allinea questo.
+> in che ordine, e cosa si rompe toccandoli. Dove i due si sovrappongono,
+> **`CLAUDE.md` è la fonte**: è il file che si aggiorna scoprendo qualcosa di
+> nuovo su una busta. Se divergono, si allinea questo.
 
 ---
 
 ## 0. In una frase
 
 Il motore prende un insieme di **turni** (`{date, startTime, endTime, ...}`) e
-un oggetto **impostazioni** (contratto, paga oraria, percentuali) e produce,
+un oggetto **impostazioni** (contratto, paga oraria, percentuali: tutte in
+`impostazioni.js`) e produce,
 attraverso una catena di funzioni pure, tre grandezze: **ore**, **lordo** e
 **netto stimato del mese** — quest'ultimo ricalcando la struttura di una busta
 paga italiana 2026.
 
 Tutto è **puro e sincrono**. Nessuna funzione del motore legge da
-`localStorage`, dalla rete o da React: lo stato entra come argomento. È la
-proprietà che rende possibile la cartella `scripts/`, dove gli stessi moduli
-vengono importati da Node puro e messi a confronto con buste paga reali.
+`localStorage`, dalla rete, da React o dall'orologio: lo stato e la data di
+oggi entrano come argomenti. È la proprietà che permette di copiare la
+cartella in un'altra app, e di importare gli stessi moduli da Node puro per
+metterli a confronto con buste paga reali. La tiene `check-confine-motore.mjs`.
 
 ---
 
 ## 1. Mappa dei file
 
-Tutto il motore vive in `src/utils/`. Nessun modulo di `components/` contiene
-aritmetica: se un numero non torna, il bug è in `utils/`.
+Il motore vive in `src/motore/` e non importa niente da fuori. Nessun modulo
+di `components/` contiene aritmetica: se un numero non torna, il bug è qui.
 
-| File | Responsabilità | Righe |
-|---|---|---|
-| `utils/dates.js` | date ISO, settimane lun–dom, **mese di paga**, parsing orari | 194 |
-| `motore/pay.js` | **cuore**: durata turni, soglie, maggiorazioni, lordo | 378 |
-| `motore/net.js` | **fisco**: contributi, IRPEF, detrazioni, TI, cuneo, TFR, proiezioni | 821 |
-| `motore/ccnl.js` | lettura dei preset contrattuali da `data/ccnl.json` | 109 |
-| `motore/assenze.js` | ferie, permessi, malattia, festività non lavorate | 146 |
-| `motore/notturno.js` | fascia notturna, minuti in fascia, cumulo | 196 |
-| `motore/holidays.js` | festività italiane, Pasqua (computus di Meeus) | 62 |
-| `motore/contributi-legge.js` | FIS / CIGS in base alla **dimensione azienda** | 76 |
-| `motore/bonus.js` | margini rispetto alle soglie del trattamento integrativo | 70 |
-| `utils/stats.js` | aggregazione annuale (nessuna formula nuova) | 274 |
-| `utils/maggiorazioni.js` | normalizza le % copiate dal cedolino (120 → 20) | 85 |
-| `motore/periodo-assenza.js` | «dal … al …» → giornate da creare | 99 |
-| `utils/festivita-non-lavorate.js` | propone le festività senza turno | 67 |
-| `utils/orari.js` | correzione degli orari `HH:50` → `HH:30` (import da foto) | 54 |
-| `hooks/useMonthlyNet.js` | orchestrazione del pannello netto mensile | 82 |
-| `data/ccnl.json` | 1163 CCNL dall'archivio CNEL; solo alcuni con parametri di calcolo | — |
+| File | Responsabilità |
+|---|---|
+| `index.js` | la porta: `calcolaMese()`, `impostazioniDa()`, i pezzi esportati |
+| `impostazioni.js` | ogni chiave delle impostazioni che il motore legge, col suo gruppo |
+| `pay.js` | **cuore**: durata turni, monte ore, supplementare e straordinario, maggiorazioni, lordo |
+| `net.js` | **fisco**: contributi, IRPEF, detrazioni, TI, cuneo, TFR, proiezioni |
+| `capienza.js` | capienza del TI sul progressivo, reddito presunto, simulazione del TI |
+| `conguaglio.js` | i dodici mesi dell'anno, il conguaglio di dicembre |
+| `restituzione.js`, `bonus.js`, `soglia-lorda.js` | rischio di restituzione, margini e soglie lorde del TI |
+| `premio-risultato.js`, `previdenza.js`, `contributi-legge.js` | premio detassato, fondo pensione e cassa sanitaria, FIS/CIGS |
+| `assenze.js`, `periodo-assenza.js` | ferie, permessi, malattia, festività; ferie a periodo |
+| `notturno.js`, `holidays.js` | fascia notturna e straordinario notturno; festività italiane e Pasqua |
+| `date.js`, `mensilita.js`, `ccnl.js` | aritmetica di calendario e `richiediOggi`; mesi di 13ª/14ª; lettura dei contratti |
+| `contratti/` | un file per contratto, `LEGGE` per chi non dichiara |
+| `fisco/` | un file per anno, `fiscoDellAnno`, `conFisco`, aliquota dei premi |
+| `programmi-paghe/` | un file per programma paghe: reddito presunto, chiusura al centesimo |
+| `riscontri/` | i riscontri delle regole, con dati sintetici, e i numeri fermi |
 
-**Regola di dipendenza:** `pay.js` importa `dates`, `holidays`, `ccnl`,
+Restano all'app di Turni, perché non calcolano: `utils/stats.js`
+(aggregazione annuale), `utils/maggiorazioni.js` (normalizza le % copiate dal
+cedolino), `utils/festivita-non-lavorate.js`, `utils/orari.js`,
+`utils/ccnl-elenco.js` (l'archivio CNEL dei nomi), `hooks/useMonthlyNet.js`.
+
+**Regola di dipendenza:** `pay.js` importa `date`, `holidays`, `ccnl`,
 `assenze`, `notturno`. `net.js` importa `ccnl`, `contributi-legge`, `pay`,
-`dates`. `notturno.js` importa `dates` e `ccnl` ma **non** `pay` — la
+`date`, `fisco/`, `programmi-paghe/`. `notturno.js` **non** importa `pay` — la
 dipendenza sarebbe circolare, ed è il motivo per cui `minutiNotturniPagati()`
 riceve i minuti pagati come parametro invece di calcolarseli.
 
 **Tutti gli import interni portano l'estensione `.js` esplicita.** Non è uno
-stile: senza, Node puro non importa i moduli e gli script di riscontro in
-`scripts/` smettono di partire.
+stile: senza, Node puro non importa i moduli e i riscontri smettono di partire.
 
 ---
 
@@ -98,36 +104,17 @@ Due invarianti da non rompere:
 
 ### 2.2 Impostazioni (`settings`)
 
-`localStorage` → `turni_settings`, fuse sui `DEFAULT_SETTINGS` di
-`src/App.jsx:18` a ogni avvio (i campi aggiunti dopo un salvataggio vecchio
-sarebbero altrimenti `undefined` e spegnerebbero funzioni in silenzio).
+Un oggetto piatto. **Il suo contratto è `impostazioni.js`**: ogni chiave che il
+motore legge, una riga, col gruppo (contratto, lavoratore, periodo, programma
+paghe, fisco, scelte) e il significato. `check-impostazioni-motore.mjs` lo
+confronta col codice: una chiave letta e non scritta lì, o scritta e non più
+letta, fa diventare rosso il riscontro. Due chiavi non vengono dall'utente:
+`fisco` la mette chi conosce l'anno (`conFisco`), `programmaPaghe` sceglie un
+file di `programmi-paghe/`.
 
-I campi che il motore legge davvero, raggruppati per ciò che governano:
-
-**Paga e orario**
-`hourlyRate`, `previousRates: [{until, rate}]`, `expectedWeeklyHours`,
-`fullTimeWeeklyHours`, `workingDaysPerWeek`, `onCall`,
-`dailyOvertimeThreshold`, `ccnl`, `periodoConteggio: 'paga'|'calendario'`.
-
-**Maggiorazioni**
-`sundaySurchargePct`, `holidaySurchargePct`, `holidaySundayMode:
-'max'|'sum'|'holiday'`, `overtimeSurchargePct` (supplementari),
-`straordinarioSurchargePct` (`''` = eredita dai supplementari),
-`nightSurchargePct`, `nightStart`, `nightEnd`, `nightCumuloMode:
-'max'|'somma'`, `patronSaintDate` (`'MM-DD'`).
-
-**Assenze**
-`absenceDailyHours` (`''` = calcolato), `malattiaCarenzaGiorni`,
-`malattiaCarenzaPct`, `malattiaPct`.
-
-**Fisco**
-`addRegionalePct`, `addComunalePct`, `addizionaliAltrove`, `noAddizionali`,
-`noTrattamentoIntegrativo`, `tiProjectionMode: 'stimato'|'ytd'`,
-`aziendaDipendenti: 'fino5'|'da6a15'|'oltre15'`, `ebtBase`,
-`hasTredicesima`, `hasQuattordicesima`, `hireDate`, `priorTaxableIncome`,
-`priorIncomeDate`, `annualGrossManual`, `tfrInBusta`, `tfrTaxRate`,
-`fixedMonthlyItems[]`, `fixedMonthlyDeductions[]`, `monthlyBonusAmount`,
-`monthlyBonus: {'YYYY-MM': true}`.
+In Turni le impostazioni vivono in `localStorage` (`turni_settings`), fuse sui
+`DEFAULT_SETTINGS` di `src/App.jsx` a ogni avvio; i nomi sono i loro, e per
+questo non si cambiano.
 
 **Convenzione ricorrente:** il campo **vuoto (`''`) significa «calcolalo tu»**,
 non zero. Vale per `straordinarioSurchargePct`, `tfrTaxRate`,
@@ -157,20 +144,24 @@ turni + settings
       ├─► calcNetAnnual(valoreDiRiferimento, settings)
       │      IRPEF annua, detrazioni, TI, cuneo — la scala su cui si misura il mese
       │
-      └─► calcNetMonthly(lordoMese, riferimentoAnnuo, settings, giorniMese, quota13/14)
-             la busta paga del mese
+      ├─► capienzaProgressiva(lordoMese, settings, progressivo)
+      │      reddito presunto dell'anno (programma paghe) e capienza del TI
+      │
+      └─► nettoDelMese(lordoMese, settings, giorniMese, quota13/14, capienza)
+             la busta paga del mese (calcNetMonthly sul reddito presunto)
 ```
+
+`calcolaMese()` in `index.js` fa questa catena per un mese, dagli ingressi
+divisi per natura.
 
 `App.jsx` calcola `payByShift` **una volta sola** con `useMemo` e la passa a
 valle. Ricalcolarla dentro ogni chiamata di `calcTotalPay` renderebbe l'app
 sempre più lenta al crescere dei turni: è `O(N)` sull'intera storia, non sul
 mese.
 
-**Perché il contesto è sempre `allShifts` e mai i soli turni del mese:** le
-soglie di supplementare/straordinario si cumulano su settimana o mese (lo
-straordinario sempre a settimana, `check-straordinario-settimanale.mjs`),
-e una settimana a cavallo di capodanno o di fine mese va raggruppata per
-intero. Passare solo il mese farebbe risultare cifre diverse fra Calendario e
+**Perché il contesto è sempre `allShifts` e mai i soli turni del mese:**
+supplementare e straordinario si contano a settimana, e una settimana a
+cavallo di capodanno o di fine mese va contata per intero. Passare solo il mese farebbe risultare cifre diverse fra Calendario e
 Statistiche per lo stesso periodo.
 
 ---
@@ -184,7 +175,7 @@ calcShiftMinutes(shift)  // pay.js
 1. Se `durationMinutes != null` → quello (assenze).
 2. Altrimenti `minutesDiff(startTime, endTime) − breakMinutes`, mai negativo.
 
-`minutesDiff()` (dates.js) somma 24 h se il risultato è negativo: **è così che
+`minutesDiff()` (date.js) somma 24 h se il risultato è negativo: **è così che
 un turno 22:00–06:00 vale 8 ore e non −16.**
 
 `parseTime()` ritorna `null` — non `NaN` — su un orario vuoto o malformato, e
@@ -195,121 +186,86 @@ non un totale corrotto.
 
 ## 5. Fase 2 — Raggruppamento: dove si cumulano le ore
 
-`computePayByShift()` raggruppa i turni prima di applicare le soglie. La chiave
-del gruppo dipende dal contratto, con questa **precedenza**:
+`computePayByShift()` conta le ore in due finestre diverse, e la distinzione è
+il cuore del contratto mensilizzato:
 
-| Condizione | Chiave del gruppo | Soglia contrattuale |
+| Contratto | Supplementare e straordinario | Ore ordinarie pagate |
 |---|---|---|
-| `settings.onCall` | `s.date` (il giorno) | `dailyOvertimeThreshold × 60` |
-| CCNL **mensilizzato** | `'YYYY-MM'` della data, oppure `payrollMonthKey(s.date)` se `periodoConteggio === 'paga'` | `monthlyContractHours × 60` |
-| altrimenti | lunedì della settimana | `expectedWeeklyHours × 60` |
+| `settings.onCall` | oltre `dailyOvertimeThreshold` nel **giorno** | le ore lavorate |
+| CCNL **mensilizzato** | a **settimana** (lun–dom): oltre le ore del contratto, e oltre le 40 | il **monte ore** del mese (24 × 4,3 = 103,20) |
+| altrimenti | a settimana, oltre le ore del contratto | le ore lavorate |
 
-### 5.1 La finestra è il mese di calendario
+### 5.1 Il supplementare è della settimana, le ordinarie sono del mese
 
-**Deciso dalla busta di agosto 2026**, e per un po' si era creduto il
-contrario. Due cose che è facile confondere:
+**Deciso dalla busta di settembre 2026, coi turni veri, al centesimo**
+(`check-supplementare-settimanale.mjs`). Le ore oltre le 24 del contratto in
+ogni settimana lun–dom sono supplementari nel giorno in cui si superano; una
+settimana a cavallo di due mesi resta una, e ogni ora va nel mese del suo
+giorno. Le ore ordinarie pagate sono invece il monte ore del mese, comunque
+distribuite: luglio ne aveva 109,5 lavorate, settembre 100,5 con le ferie, e la
+busta ne paga 103,20 tutte e due le volte. Per un mese ancora a metà la parte
+ordinaria sale fino al monte ore man mano che il mese si riempie
+(`quotaOrdinaria` in `pay.js`), senza salti.
 
-- la **soglia** del supplementare è mensile (103,20 h = 24 × 4,3), non
-  settimanale — questo lo avevano stabilito giugno e luglio, e non è cambiato;
-- la **finestra di giorni** che compone il mese è il calendario, dal 1
-  all'ultimo. Restava aperta, ed è quella che agosto ha chiuso.
+Per un po' si era creduta mensile anche la soglia del supplementare: giugno e
+luglio, letti sulle ore della BUSTA, davano «ore − 103,20 = supplementari», che
+tornava per costruzione. Coi turni, settembre dava 11,55 h contro 14,25.
 
-Il discriminante era stato scritto *prima* che la busta arrivasse: quindici
-giorni di ferie iniziati lunedì 31 agosto valgono **7 giornate** nel mese di
-paga e **1 sola** nel calendario. La busta ne paga una
-(`Ferie godute 4,00 ORE`). Conferma il totale: 120,75 h col calendario contro
-le 120,70 stampate, 138,75 col mese di paga.
+**La finestra del mese è il calendario**, dal 1 all'ultimo giorno: lo ha deciso
+la busta di agosto 2026 (`check-busta-agosto-2026.mjs`), con quindici giorni
+di ferie iniziati il 31 agosto e pagati per una sola giornata nel mese.
+`payrollMonthKey` resta in `date.js` per chi sceglie il mese di paga a
+settimane intere (`check-mese-paga-2026.mjs`).
 
-Perché prima sembrava il contrario: giugno e luglio erano stati confrontati con
-turni che l'utente stesso considera poco affidabili — a luglio ne mancavano
-5,20 h — e lo scarto fra le due regole era dello stesso ordine del rumore nei
-dati. Agosto è il mese tenuto bene, ed è l'unico su cui la misura decide.
+### 5.2 Le assenze riempiono la settimana
 
-`payrollMonthKey` resta in `dates.js` e serve ancora: il mese di paga è una
-delle due modalità del selettore nel Calendario, e chi vuole confrontare riga
-per riga con un cedolino che taglia a settimane intere lo usa. Riscontri:
-`check-busta-agosto-2026.mjs` (la decisione) e `check-mese-paga-2026.mjs` (gli
-estremi delle settimane).
-
-### 5.1-bis Le assenze riempiono il monte ore
-
-Dentro il gruppo, **le assenze vengono contate prima del lavoro**. Non è un
-dettaglio d'ordine: decide quante ore risultano supplementari.
-
-La busta di agosto lo dichiara nella propria aritmetica — `4,00 ferie +
-99,20 retribuzione = 103,20`, e tutto il lavoro eccedente è supplementare.
-Cumulando in ordine puramente cronologico, le ferie del 31 agosto arrivavano a
-soglia già superata: il motore le scartava dai supplementari (giusto, un'assenza
-non si paga in più) ma così non riempivano più il monte ore, e altrettante ore
-di lavoro restavano ordinarie. Uscivano 13,55 h contro le 17,50 stampate.
-
-La regola, detta come invarianza: **a parità di ore lavorate e di ore di
-assenza, quando cadono le ferie nel mese non deve cambiare la paga.**
-Riscontro: `check-assenze.mjs`.
-
-### 5.2 Perché il mensilizzato non usa la settimana
-
-Su un contratto mensilizzato la busta retribuisce un numero **fisso** di ore
-ogni mese — 24 × 4,3 = 103,20 per il part-time 60% del CCNL Turismo — e paga
-come supplementari le eccedenze **del mese**. Con la soglia settimanale i conti
-non tornerebbero: quattro settimane da 24 ore fanno 96 ore ordinarie, non
-103,20. Il divisore 4,3 (`monthlyHoursFactor` in `ccnl.json`) non è
-`52/12 = 4,333…`: quello è solo il ripiego generico.
+Ferie, permessi e malattia contano per primi nella settimana: riempiono le 24
+ore del contratto e non diventano mai supplementari. Quando cadono nella
+settimana non cambia la paga (`check-assenze.mjs`). La **festività non
+lavorata** invece non conta per le 24 ore: è già dentro il monte ore del mese
+(contarla dava ad agosto 22,5 h contro le 17,5 stampate).
 
 ---
 
-## 6. Fase 3 — Le due soglie: supplementari e straordinari
-
-Dentro ogni gruppo i turni si ordinano per `data + orario` e si cumula
-`cumMin`. Ogni turno occupa la banda `[before, after)` e viene spezzato fra le
-fasce con `minutesInBand(before, after, lo, hi)`.
+## 6. Fase 3 — Supplementare e straordinario
 
 ```
-0 ──────────── thresholdMin ──────────── fullTimeThresholdMin ──────────► ∞
-   ordinarie        supplementari             straordinari
-                 overtimeSurchargePct    straordinarioSurchargePct
+0 ──── ore del contratto (24) ──── tempo pieno (40) ────► ∞   nella settimana
+   ordinarie        supplementari            straordinari
+               overtimeSurchargePct    straordinarioSurchargePct
 ```
 
 - `straordinarioSurchargePct === '' | null` → **eredita** `overtimeSurchargePct`.
-- `onCall` **non ha** la soglia full-time: non esiste un part-time da cui
-  distinguerla, resta una sola soglia giornaliera.
-- Un turno può stare a cavallo di una soglia: `minutesInBand` lo divide senza
+- Lo straordinario si conta a settimana oltre le 40 ore (D.Lgs. 66/2003), anche
+  sul mensilizzato (`check-straordinario-settimanale.mjs`).
+- `onCall` **non ha** la soglia del tempo pieno: resta una sola soglia
+  giornaliera.
+- Un turno a cavallo di una soglia viene diviso con `minutesInBand` senza
   contarlo due volte.
 
-### 6.1 Le tre eccezioni che governano `cumMin`
+### 6.1 Le eccezioni che governano il conteggio
 
-Sono la parte più facile da rompere. Ognuna nasce da un fatto letto su una
-busta.
+**(a) Le ore festive lavorate stanno FUORI dal conteggio.** In busta un festivo
+lavorato ha una riga propria («Lavoro festivo ordinario» al 100% più «Magg.
+festivo») e quelle ore non compaiono fra le supplementari, né riempiono le 24
+ore della settimana (`check-festivo-supplementare.mjs`). Il test usa
+`isHoliday(s.date, settings)`, **non** `parts.holiday`: con la maggiorazione
+festiva a zero quest'ultimo sarebbe zero, e le ore rientrerebbero di nascosto.
 
-**(a) Le ore festive lavorate stanno FUORI dal conteggio delle eccedenze.**
-In busta un festivo lavorato ha una riga propria («Lavoro festivo ordinario» al
-100% più «Magg. festivo») e quelle ore **non compaiono fra le supplementari**.
-Si mettono da parte **prima** della soglia, non solo dopo — cioè non avanzano
-`cumMin`:
-
-```js
-const after = cumMin + (festivoLavorato ? 0 : m);
-```
-
-È la differenza fra le due letture possibili, e la busta di giugno 2026 la
-decide: 145,20 ore lavorate, 13,75 festive, soglia 103,20 →
-131,45 − 103,20 = **28,25** supplementari, esattamente quanto stampato.
-Lasciando le ore festive nel monte ore, le 6,75 ore del 2 giugno riempirebbero
-parte della soglia e ne uscirebbero 35,00. Riscontro:
-`node scripts/check-festivo-supplementare.mjs`.
-
-Il test usa `isHoliday(s.date, settings)`, **non** `parts.holiday`: con la
-maggiorazione festiva impostata a zero quest'ultimo sarebbe zero, e le ore
-rientrerebbero di nascosto fra le supplementari.
-
-**(b) Le assenze RIEMPIONO la soglia ma non possono essere eccedenti.**
-`cumMin` avanza (è così che la busta arriva comunque alle ore del mese quando ci
-sono ferie), ma `supplementareMin` e `straordinarioMin` restano 0: in un giorno
-di ferie non si lavora, e pagarlo in più sarebbe un guadagno per essere stati
-assenti.
+**(b) Le assenze riempiono la settimana ma non possono essere eccedenti.** In un
+giorno di ferie non si lavora, e pagarlo in più sarebbe un guadagno per essere
+stati assenti.
 
 **(c) Nessuna maggiorazione di giorno su un'assenza.** Una domenica di ferie non
-prende il domenicale: non ci si è andati.
+prende il domenicale.
+
+**(d) Le maggiorazioni non si cumulano.** Sulle ore di domenica che sono già
+supplementari o straordinarie resta solo l'eventuale differenza: la maggiore
+assorbe la minore. La domenica chiude la settimana, quindi è spesso proprio lei
+a passare le 24: settembre 2026 ne pagava 5,75 su 15,5. Lo **straordinario
+notturno** del contratto (Turismo: 60% fra le 24 e le 6, `straordinarioNotturno`
+in `contratti/`) sostituisce il 30% di giorno e assorbe il notturno ordinario
+(`check-straordinario-notturno.mjs`, dal CCNL e non da una busta).
 
 ---
 
@@ -438,6 +394,8 @@ riepilogo del mese le confronta una a una con quelle stampate in busta.
   overtimeMinutes, straordinarioMinutes, nightMinutes,
   tipo,                                          // TIPO.*
   ferieMinutes, permessoMinutes, malattiaMinutes, malattiaBase,
+  ordinariPagatiMinutes,   // minuti ordinari pagati (col monte ore del mensilizzato)
+  sundayMinutes,           // minuti che prendono il domenicale
   missingRate,             // nessuna paga applicabile a questa data
 }
 ```
@@ -463,15 +421,15 @@ si prende la prima che copre la data.
 (`hasAnyRate`) — non zero: sono due cose diverse, e la UI le mostra
 diversamente.
 
-> `calcShiftPay(shift, settings)` esiste ma è una versione **semplificata**,
-> senza soglie né contesto di gruppo. Il percorso che l'app percorre davvero è
-> `computePayByShift` → `calcTotalPay`.
+> Il percorso è uno solo: `computePayByShift` → `calcTotalPay`. Una seconda
+> strada per calcolare la paga, senza soglie né contesto, diventerebbe prima o
+> poi un numero diverso da quello riscontrato.
 
 ---
 
 ## 10. Fase 7 — Dal lordo del mese al reddito annuo di riferimento
 
-### 10.1 `computeAnnualGrossFromShifts(year, allShifts, settings, payByShift)`
+### 10.1 `computeAnnualGrossFromShifts(year, allShifts, settings, payByShift, oggi)`
 
 Somma: turni dell'anno + `priorTaxableIncome` (il «montante» già maturato prima
 di usare l'app) + 13ª/14ª già incassate.
@@ -480,8 +438,8 @@ Il **doppio conteggio** è evitato a granularità mese: `priorIncomeDate` marca 
 confine, e si contano solo i turni dei mesi **successivi** a `YYYY-MM` del
 cutoff. Il montante si applica solo se la sua data è dello stesso anno.
 
-Le mensilità aggiuntive si contano in base alla **data odierna**, non al mese che
-si sta sfogliando: altrimenti aprire dicembre farebbe risultare la tredicesima
+Le mensilità aggiuntive si contano in base alla **data di oggi** — che passa
+chi chiama, come in tutto il motore — non al mese che si sta sfogliando: altrimenti aprire dicembre farebbe risultare la tredicesima
 già presa, cambiando reddito annuo, aliquota e soglie del bonus.
 
 ### 10.2 Ratei di 13ª e 14ª
@@ -600,7 +558,14 @@ contributi diversi. Del contratto dipende solo *a quale fondo* si è iscritti
 Default `'oltre15'`: è la fascia delle due buste verificate ed è anche il valore
 che riproduce il comportamento precedente dell'app.
 
-### 11.2 Parametri fiscali 2026 (`TAX_2026`)
+### 11.2 Parametri fiscali per anno (`fisco/`)
+
+Un file per anno (`fisco/2026.js`), scelto da `fiscoDellAnno(anno)`: l'anno
+noto più recente fino a quello chiesto. Chi conosce l'anno — netto del mese,
+conguaglio, rischio di restituzione, `calcolaMese` — mette la tabella nelle
+impostazioni con `conFisco(impostazioni, anno)`; le funzioni la leggono con
+`fiscoDi(impostazioni)`, e chi non dice l'anno ha l'ultima nota
+(`check-fisco-anno.mjs`). Il 2026:
 
 ```
 IVS dipendente               9,19%
@@ -637,8 +602,17 @@ un cedolino dicesse il contrario, **vince il cedolino**.
 ## 12. Fase 9 — `calcNetMonthly(...)` — la busta del mese
 
 ```js
-calcNetMonthly(monthGross, annualGrossRef, settings, monthDays, extraMonthGross)
+nettoDelMese(lordoMese, settings, giorniMese, extraMese, capienza)
+  → calcNetMonthly(lordoMese, riferimentoAnnuoDelMese(...), settings, giorniMese, extraMese, capienza)
 ```
+
+**Il riferimento annuo è il REDDITO PRESUNTO dell'anno**, non il lordo del mese
+× 12: quanto pagato finora più questo mese per i mesi che restano e per la 13ª
+(`lordoPresuntoAnno` del programma paghe, in `programmi-paghe/`). Da lì il
+datore decide in blocco detrazione, indennità e trattamento integrativo, e le
+detrazioni di agosto e settembre 2026 tornano al centesimo
+(`check-reddito-presunto.mjs`). Senza progressivo decide la regola del
+programma paghe per quel caso (`annoSenzaProgressivo`: il lordo × 12).
 
 **Trattenute e bonus sono voci separate: il bonus non riduce le trattenute.**
 
@@ -656,8 +630,8 @@ irpefNetta   = max(0, irpefLordaOrd − detrazioni) + irpefExtra
 addizionali  = imponibile × aliquote, se ann.irpefNetta > 0
 trattenute   = round2(contributi + irpefNetta + addReg + addCom + trattenuteFisse)
 
-TI           = trunc2(ann.TI × monthDays/365)
-cuneo        = trunc2(imponibile × cuneoPercent(ann.imponibile))
+TI           = quota(ann.TI × monthDays/365)       quota: del programma paghe
+cuneo        = quota(imponibile × cuneoPercent(ann.imponibile))
 tfr          = tfrLordo − tfrImposta          (opzionale, tassazione separata)
 
 net = round2(gross − trattenute + TI + cuneo + tfr)
@@ -681,15 +655,16 @@ Quattro dettagli che vengono dalle buste e non dalla teoria:
 ### 12.1 Arrotondamenti
 
 ```js
-round2 = (x) => Math.round(x * 100) / 100;
-trunc2 = (x) => Math.floor(x * 100 + 1e-9) / 100;
+round2 = (x) => Math.round(x * 100) / 100;      // net.js
+quota  = (x) => Math.floor(x * 100 + 1e-9) / 100; // programmi-paghe/zucchetti.js
 ```
 
 Non è un dettaglio estetico: **il cedolino chiude ogni voce a due decimali e le
-somme partono da quelle**. Tenere la piena precisione fino in fondo fa sbagliare
-di qualche centesimo. Alcune voci il software paghe le **tronca** invece di
-arrotondarle — competenze esenti e quota Ente Bilaterale ditta: 1.200 × 31/365
-= 101,9178 in busta è **101,91**, non 101,92.
+somme partono da quelle**. Alcune voci il programma paghe le **tronca** invece
+di arrotondarle — trattamento integrativo, indennità e quota Ente Bilaterale
+ditta: 1.200 × 31/365 = 101,9178 in busta è **101,91**, non 101,92. Come si
+chiude al centesimo è una regola del programma paghe, e sta nel suo file
+(`check-programma-paghe.mjs`).
 
 ### 12.2 Il TFR in busta
 
@@ -717,7 +692,10 @@ Distinzione essenziale: chi modifica il motore deve sapere quali numeri sono
 - aliquote IVS/FIS/CIGS/Ente Bilaterale, base e troncamento della quota ditta;
 - detrazioni rapportate ai giorni, IRPEF lorda proporzionale, ritenute;
 - TI troncato sui giorni, cuneo sull'imponibile del mese;
-- mese di paga a settimane intere e soglia mensile del supplementare;
+- supplementare a settimana e ore ordinarie pari al monte ore (settembre 2026,
+  coi turni veri); domenicale che non si somma al supplementare;
+- reddito presunto dell'anno con la 13ª: detrazioni di agosto e settembre 2026;
+- mese di calendario come finestra del mese (agosto 2026);
 - esclusione delle ore festive dal conteggio delle eccedenze;
 - rateo 6/12 della 14ª con assunzione 29/12/2025;
 - maggiorazioni Turismo su 17 cedolini: notturno 25%, domenicale 10%,
@@ -731,51 +709,40 @@ Distinzione essenziale: chi modifica il motore deve sapere quali numeri sono
   scelta aziendale, non per obbligo di CCNL, e quello di marzo 2026 la riporta
   solo come storno delle ore. Una busta che documenta la generosità di
   un'azienda non è una regola da mettere in un motore (vedi `CLAUDE.md`);
-- sconto di 75 € nella capienza del TI;
+- sconto di 75 € nella capienza del TI, e il TI concesso il primo mese;
+- **straordinario** oltre le 40 ore e **straordinario notturno** al 60% (norma
+  e CCNL: nessuna busta ha una settimana oltre le 40);
 - **fascia notturna del Turismo**: le buste non riportano le timbrature, e
   l'art. 13 prevede orari diversi per settore (24:00–06:00, 23:00–06:00,
   23:30–06:30);
 - **base del TFR** (vedi §12.2).
 
-**In `data/ccnl.json`, solo le voci con `verificato: true`** sono state
-riscontrate voce per voce. Le altre (su 1163 totali) sono catalogo CNEL: nome,
-settore, e al più aliquote di uso comune. `toPreset()` le fonde sui `DEFAULTS`
-così una voce di solo catalogo non rompe il motore.
+**In `contratti/`, solo i file con `verificato: true`** sono stati riscontrati
+voce per voce. Un contratto che non ha un file vale `LEGGE`; i nomi degli altri
+(1.163 nell'archivio CNEL) stanno all'app, non al motore.
 
 ---
 
 ## 14. Come si verifica una modifica
 
-Gli script in `scripts/` girano su **Node puro**, importano gli stessi moduli
-dell'app e confrontano l'output con numeri stampati su cedolini reali. Non
+I riscontri girano su **Node puro** e importano gli stessi moduli dell'app. Non
 serve build.
 
 ```bash
-node scripts/check-busta-luglio-2026.mjs             # busta Turismo completa, al centesimo
-node scripts/check-busta-giugno-2026.mjs             # idem, mese precedente
-node scripts/check-busta-giugno-2026-fiduciari.mjs   # secondo CCNL, secondo gestionale
-node scripts/check-busta-luglio-2026-fiduciari.mjs
-node scripts/check-mese-paga-2026.mjs                # attribuzione settimane → mese di paga
-node scripts/check-festivo-supplementare.mjs         # ore festive fuori dalle eccedenze
-node src/motore/riscontri/check-notturno.mjs                      # minuti in fascia e cumulo
-node src/motore/riscontri/check-assenze.mjs
-node src/motore/riscontri/check-periodo-assenza.mjs
-node scripts/check-festivita.mjs
-node scripts/check-busta-mensilita-aggiuntive.mjs
-node scripts/check-busta-maggiorazioni-reali.mjs
-node scripts/check-magg-busta.mjs
-node scripts/check-tabellare-turismo.mjs        # composizione della paga oraria
-node src/motore/riscontri/check-bonus.mjs
-node src/motore/riscontri/check-proiezione.mjs
-node scripts/check-correzione-orari.mjs
-node scripts/check-serie-giorni.mjs
-node scripts/check-dati-in-uscita.mjs
+node src/motore/riscontri/check-numeri-fermi.mjs     # l'uscita non si è mossa di un centesimo
+node src/motore/riscontri/check-confine-motore.mjs   # niente import da fuori, niente orologio
+npm run riscontri                                    # tutti, anche con l'orologio spostato
 ```
 
-Ogni script stampa riga per riga `ok` / valore atteso / Δ, e chiude con
-`✓ tutti i riscontri superati, al centesimo`. **Una modifica al motore che fa
-fallire uno di questi script è sbagliata finché non si dimostra il contrario con
-una busta alla mano.**
+Quelli delle **regole** stanno in `src/motore/riscontri/` e viaggiano col
+motore; quelli sulle **buste** di una persona stanno nell'app che li ha (in
+Turni `scripts/check-busta-*.mjs`, `check-supplementare-settimanale.mjs`,
+`check-reddito-presunto.mjs`…), perché contengono le sue cifre.
+
+**Una modifica al motore che fa fallire uno di questi riscontri è sbagliata
+finché non si dimostra il contrario con una busta alla mano.** Uno spostamento
+di codice non deve muovere i numeri fermi; un cambio di regola li muove, e
+allora si riscrivono con `--aggiorna` nello stesso commit che lo dichiara.
 
 Output atteso di `check-busta-luglio-2026.mjs` (CCNL Turismo, part-time 60%,
 paga 9,21802 €/h, 31 giorni):
@@ -800,11 +767,15 @@ Le cose che si rompono per prime, con il sintomo.
 
 | Modifica apparentemente innocua | Cosa si rompe |
 |---|---|
-| togliere l'estensione `.js` da un import interno | `scripts/` smette di partire (`ERR_MODULE_NOT_FOUND`) |
-| far avanzare `cumMin` sulle ore festive | giugno 2026 dà 35,00 supplementari invece di 28,25 |
+| togliere l'estensione `.js` da un import interno | i riscontri smettono di partire (`ERR_MODULE_NOT_FOUND`) |
+| contare il supplementare sul mese invece che sulla settimana | settembre 2026: 11,55 h invece di 14,25 |
+| contare le ore festive o la festività non lavorata nelle 24 della settimana | supplementari in più di quante la busta ne paghi |
+| sommare il domenicale al supplementare sulle stesse ore | settembre 2026: 15,5 h di domenicale invece di 5,75 |
+| leggere `new Date()` dentro il motore | un riscontro diventa rosso il primo del mese; il motore non si porta via |
+| importare da fuori `src/motore` | il motore non si copia più da solo (`check-confine-motore`) |
 | usare `parts.holiday` invece di `isHoliday` per il test festivo | con maggiorazione festiva a 0 le ore rientrano fra le supplementari |
 | calcolare i contributi sul lordo esatto | 4 centesimi di scarto per voce, su ogni busta |
-| arrotondare invece di troncare TI/cuneo/quota ditta | 1 centesimo di scarto, ripetuto |
+| arrotondare invece di troncare TI/cuneo/quota ditta (programma paghe) | 1 centesimo di scarto, ripetuto |
 | applicare le detrazioni in proporzione all'imponibile | detrazione sbagliata in ogni mese ≠ 30,4 giorni |
 | passare al motore i soli turni del mese | settimane a cavallo spezzate: Calendario ≠ Statistiche |
 | ricalcolare `computePayByShift` a ogni chiamata | l'app rallenta linearmente con la storia dei turni |
@@ -820,29 +791,19 @@ Le cose che si rompono per prime, con il sintomo.
 
 Non sono bug, e vanno capite prima di «correggerle»:
 
-- **Calendario vs Statistiche sul totale ore di un mese.** Calendario, su CCNL
-  mensilizzato, conta sul **mese di paga** (settimane intere); Statistiche
-  raggruppa per **mese di calendario**, perché è la vista d'insieme dell'anno e
-  chi la guarda ragiona in mesi solari. Due tagli diversi sugli stessi turni.
-  `settings.periodoConteggio` lascia scegliere per il Calendario — la scelta si
-  fa lì, dai due pulsanti in `CalendarView` — e quando il periodo contato non
-  coincide col mese visualizzato viene **dichiarato sopra i numeri**: il
-  calendario non si allunga per farci stare i giorni in più, perché così si
-  perde di vista che mese si sta guardando. Il mese di paga fa quadrare i conti
-  con la busta, il mese di calendario risponde a «quanto ho lavorato a luglio».
-  Sono due domande diverse ed entrambe legittime.
-
-  > **Quale dei due sia il numero che la busta stampa non è ancora confermato.**
-  > *(Chiuso il 13/09/2026: vince il mese di calendario — vedi §5.1.)*
-  > Riscontrata è la *soglia* del supplementare sul mese di paga, non il totale
-  > ore. Si scioglie con il cedolino di agosto 2026, ed è la questione aperta in
-  > fondo a `RILASCIO.md`: se vincesse il mese di calendario, cambia il default
-  > in `DEFAULT_SETTINGS` e questa sezione, non una formula del motore.
-- **Ore dell'app vs ore in busta.** La busta include ferie, permessi e festività
-  non lavorate come ore retribuite. Se non sono state segnate nell'app, il
-  totale dell'app resta sotto. È esattamente lo scarto per cui esistono
+- **Ore dell'app vs ore in busta.** La busta paga il monte ore del mese
+  (103,20 h) anche quando le ore ordinarie lavorate sono di più o di meno, e
+  include ferie, permessi e festività non lavorate. Se non sono state segnate
+  nell'app, il totale dell'app resta sotto. È lo scarto per cui esistono
   `motore/assenze.js`, `motore/periodo-assenza.js` e
   `utils/festivita-non-lavorate.js`.
+- **Mese di calendario vs mese di paga.** La busta usa il calendario
+  (agosto 2026); il mese di paga a settimane intere resta una scelta del
+  Calendario di Turni, dichiarata sopra i numeri quando non coincide col mese
+  visualizzato.
+- **Un mese di quattro settimane esatte** arriva al massimo a 96 h ordinarie:
+  se le supplementari non bastano a coprire il resto, l'app mostra meno delle
+  103,20 che la busta paga comunque (`COSE-NUOVE.md`, J3).
 
 ---
 
@@ -863,10 +824,11 @@ numeri di un'app senza motore fiscale.
 1. **La busta batte la norma, la norma batte l'intuizione.** Ogni costante nuova
    va accompagnata dal cedolino su cui è stata letta, o da una nota esplicita
    che dice che non è verificata.
-2. **Un dato nuovo va nel posto giusto:** dipende dal contratto → `ccnl.json`;
-   dipende dalla legge e dall'azienda → `contributi-legge.js`; dipende dal
-   lavoratore (livello, classificazione) → è un'impostazione utente, non un
-   preset.
+2. **Un dato nuovo va nel posto giusto:** dipende dal contratto → il suo file
+   in `contratti/`; dipende dall'anno → `fisco/`; è una scelta del programma
+   paghe → `programmi-paghe/`; dipende dalla legge e dall'azienda →
+   `contributi-legge.js`; dipende dal lavoratore (livello, classificazione) →
+   è un'impostazione, e va scritta in `impostazioni.js`.
 3. **Percentuali sul giorno** → `getShiftSurchargeParts`. **Percentuali su una
    fascia oraria** → un modulo proprio, come `notturno.js`, che restituisce il
    solo supplemento.
@@ -878,3 +840,5 @@ numeri di un'app senza motore fiscale.
    aggiunta al motore (notturno, straordinari, contributi minori) ha un valore
    di partenza che la spegne: chi non tocca il campo nuovo vede gli stessi
    numeri di prima.
+7. **Il motore non esce dalla sua cartella e non legge l'orologio.** Una data
+   di oggi si riceve (`richiediOggi`), un dato del browser non si legge mai.

@@ -107,19 +107,25 @@ così l'interfaccia non si accorge di niente.
 
 ---
 
-## Stato al 12 ottobre 2026
+## Stato al 12 ottobre 2026: fatto
 
-| Passo | Stato |
+| Passo | Dove |
 |---|---|
-| 0. Numeri fermi | fatto: `check-numeri-fermi.mjs`, cinque profili, dodici mesi |
-| 1. Il confine | fatto: `src/motore/`, `check-confine-motore.mjs` |
-| 2. L'orologio | fatto: nessuna data di oggi letta dal motore (`richiediOggi`) |
-| 3. Il fisco per anno | a metà: la tabella sta in `motore/fisco/2026.js` e `fiscoDellAnno()` la sceglie, ma i calcoli usano ancora la 2026 per ogni anno |
-| 4. Il programma paghe | a metà: il reddito presunto sta in `motore/programmi-paghe/zucchetti.js`; la regola «lordo × 12» senza progressivo e i troncamenti al centesimo sono ancora nel codice |
-| 5. Il contratto come dati | fatto per i cinque contratti con regole proprie, un file ciascuno; l'archivio CNEL dei nomi resta all'app |
-| 6. I cinque oggetti | a metà: `calcolaMese()` li riceve, ma le funzioni interne leggono ancora un oggetto `impostazioni` coi nomi di Turni |
-| 7. I riscontri in due | fatto: regole in `src/motore/riscontri/`, buste e app in `scripts/` |
-| 8. Il pacchetto | a metà: `package.json` e `LEGGIMI.md` nella cartella; niente workspace npm |
+| 0. Numeri fermi | `check-numeri-fermi.mjs`: cinque profili, dodici mesi, anche la porta |
+| 1. Il confine | `src/motore/`, `check-confine-motore.mjs` |
+| 2. L'orologio | nessuna data di oggi letta dal motore (`richiediOggi`) |
+| 3. Il fisco per anno | `motore/fisco/2026.js`, scelto da `fiscoDellAnno()` e passato con `conFisco()`; `check-fisco-anno.mjs` |
+| 4. Il programma paghe | `motore/programmi-paghe/zucchetti.js`: reddito presunto, anno senza progressivo, chiusura al centesimo, primo mese; `check-programma-paghe.mjs` |
+| 5. Il contratto come dati | un file per contratto in `motore/contratti/`; l'archivio CNEL dei nomi all'app |
+| 6. I cinque oggetti | `calcolaMese()` li riceve; le impostazioni interne hanno il loro contratto in `motore/impostazioni.js`, tenuto allineato da `check-impostazioni-motore.mjs` |
+| 7. I riscontri in due | regole in `src/motore/riscontri/`, buste e app in `scripts/` |
+| 8. Il pacchetto | `src/motore/package.json` (`npm test`, `npm pack`), `LEGGIMI.md` e `MANUALE.md` |
+
+Una scelta diversa dal piano, al passo 6: i nomi interni delle impostazioni
+restano quelli di Turni. Sono le chiavi salvate nel telefono di chi usa l'app,
+e rinominarle voleva dire migrare i dati di tutti senza rendere il motore più
+portabile. Il piano chiedeva che il motore non dipendesse da `settings`; la
+dipendenza vera era un oggetto senza contratto, e ora il contratto c'è.
 
 ## 3. I passi, nell'ordine
 
@@ -147,7 +153,7 @@ Ogni passo è un commit, coi riscontri verdi e i numeri identici.
    motore; quelli delle buste di riferimento restano al progetto, con le cifre
    in file a parte e la paga oraria come profilo di riferimento con un nome.
 8. **Il pacchetto.** La cartella diventa un pacchetto con la sua versione, e
-   `docs/motore-di-calcolo.md` diventa il suo manuale.
+   il manuale del motore diventa `src/motore/MANUALE.md`.
 
 ---
 

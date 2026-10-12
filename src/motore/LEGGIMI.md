@@ -42,6 +42,7 @@ conguaglio) sono esportate dallo stesso file.
 | `pay.js` | dalla timbratura agli euro lordi: monte ore, supplementare, straordinario, maggiorazioni | |
 | `net.js` | dal lordo al netto: contributi, IRPEF, detrazioni, trattamento integrativo | |
 | `capienza.js`, `conguaglio.js`, `restituzione.js` | il trattamento integrativo mese per mese e a dicembre | |
+| `impostazioni.js` | ogni chiave delle impostazioni, col suo gruppo | chi aggiunge un'impostazione |
 | `riscontri/` | i riscontri delle regole, con dati sintetici | |
 
 ## Aggiungere o togliere, a mano
@@ -52,15 +53,19 @@ cambia `codice`, `nome` e le regole, e aggiungi una riga in
 scrivi vale la regola di legge (`LEGGE` nello stesso file). Per toglierlo:
 cancella la riga e il file.
 
-**Un anno fiscale.** Copia `fisco/2026.js` in un file nuovo (2027.js), cambia `anno` e
-i valori che la legge di bilancio cambia, aggiungi la riga in `fisco/index.js`.
-Attenzione: oggi il motore usa la tabella 2026 per ogni anno; `fiscoDellAnno()`
-sceglie quella giusta, ma collegarla a ogni calcolo è un passo ancora da fare.
+**Un anno fiscale.** Copia `fisco/2026.js` in un file nuovo (2027.js), cambia
+`anno` e i valori che la legge di bilancio cambia, aggiungi la riga in
+`fisco/index.js`. I calcoli che conoscono l'anno lo useranno da soli.
 
 **Un programma paghe.** Copia `programmi-paghe/zucchetti.js`, cambia le regole
-tenendo le stesse funzioni (oggi `lordoPresuntoAnno`), aggiungi la riga in
-`programmi-paghe/index.js`. Si sceglie con `programmaPaghe`; senza, vale
-Zucchetti, l'unico verificato sulle buste.
+tenendo le stesse quattro voci (`lordoPresuntoAnno`, `annoSenzaProgressivo`,
+`quota`, `primoMeseConcesso`), aggiungi la riga in `programmi-paghe/index.js`.
+Si sceglie con `programmaPaghe`; senza, vale Zucchetti, l'unico verificato
+sulle buste.
+
+**Un'impostazione nuova.** Una riga in `impostazioni.js`, col suo gruppo e cosa
+vuol dire. Il riscontro `check-impostazioni-motore.mjs` diventa rosso se il
+motore legge una chiave che lì non c'è.
 
 **Una festività.** Una riga in `holidays.js`: in `FIXED` se vale da sempre, in
 `DAL_ANNO` col primo anno se è nuova.
@@ -80,21 +85,24 @@ Le prime due le controlla `riscontri/check-confine-motore.mjs`.
 ## I riscontri
 
 ```sh
-node src/motore/riscontri/check-numeri-fermi.mjs     # i numeri non si sono mossi
-node src/motore/riscontri/check-confine-motore.mjs   # il motore non esce dalla cartella
+npm test                                   # dalla cartella del motore: tutti i suoi riscontri
+node riscontri/check-numeri-fermi.mjs      # i numeri non si sono mossi
+node riscontri/check-confine-motore.mjs    # il motore non esce dalla cartella
 ```
 
 Quelli sulle buste paga di una persona non stanno qui: restano all'app che li
 ha (in Turni, `scripts/check-busta-*.mjs` e simili), perché contengono le sue
 cifre.
 
-## Cosa non è ancora agnostico
+## Più a fondo
 
-- **Le impostazioni interne.** Le funzioni leggono un solo oggetto
-  `impostazioni` con i nomi di Turni (`hourlyRate`, `expectedWeeklyHours`…).
-  `calcolaMese` li nasconde, ma le funzioni una per una li vogliono ancora.
-- **Il fisco per anno**, come sopra: c'è la tabella, non ancora il
-  collegamento.
-- **Alcune regole Zucchetti sono ancora nel codice**: la decisione «lordo × 12»
-  quando manca il progressivo, i troncamenti al centesimo di trattamento
-  integrativo e indennità.
+`MANUALE.md` descrive la macchina: la catena dai turni al netto, cosa è
+verificato su una busta e cosa no, le trappole note.
+
+## Una cosa che resta di Turni
+
+I nomi delle impostazioni (`hourlyRate`, `expectedWeeklyHours`…) sono quelli
+che Turni salva nel telefono di chi lo usa, e non si cambiano: rinominarli
+voleva dire migrare i dati di tutti, per un motore che non diventa più
+portabile per questo. Sono tutti in `impostazioni.js`, col loro significato;
+`calcolaMese` li nasconde dietro nomi italiani.
