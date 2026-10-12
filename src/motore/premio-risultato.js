@@ -1,8 +1,8 @@
 // Il bonus come PREMIO DI RISULTATO: tassato a parte, non con l'IRPEF.
 //
 // I premi di risultato previsti da un accordo aziendale o territoriale pagano
-// un'imposta sostitutiva invece dell'IRPEF: 1% nel 2026 e nel 2027 (L. 30
-// dicembre 2025 n. 199, art. 1 c. 9), 5% prima e dopo; fino a 5.000 € l'anno
+// un'imposta sostitutiva invece dell'IRPEF (aliquota per anno in
+// fisco/index.js: 1% nel 2026 e nel 2027, 5% prima e dopo); fino a 5.000 € l'anno
 // nel biennio (3.000 € prima), per chi l'anno prima ha avuto al massimo
 // 80.000 € di reddito da lavoro dipendente. I contributi INPS restano, e
 // l'imposta si paga sul premio al netto di quelli.
@@ -23,13 +23,12 @@
 // l'anno, lontani dai 5.000. Lo dice il riscontro, non un `Math.min`.
 
 import { nettoDelMese, calcContributi, monthlyBaseGross } from './net.js';
+import { aliquotaPremio } from './fisco/index.js';
 
 const round2 = (n) => Math.round(n * 100) / 100;
 
-/** Aliquota dell'imposta sostitutiva nell'anno: 1% nel 2026-2027, 5% altrimenti. */
-export function aliquotaPremio(anno) {
-  return anno === 2026 || anno === 2027 ? 0.01 : 0.05;
-}
+// L'aliquota dell'anno sta in fisco/index.js.
+export { aliquotaPremio };
 
 /**
  * Il netto del mese col premio di risultato tassato a parte. Quanto del lordo

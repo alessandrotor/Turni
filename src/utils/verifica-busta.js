@@ -28,7 +28,8 @@ import {
 import { isHoliday } from '../motore/holidays.js';
 import { tipoTurno, TIPO } from '../motore/assenze.js';
 import { parseDate, payrollMonthKey, getDaysInMonth } from './dates.js';
-import { isMensilizzato, getCcnl } from '../motore/ccnl.js';
+import { isMensilizzato } from '../motore/ccnl.js';
+import { getContratto } from './ccnl-elenco.js';
 
 const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
   'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
@@ -399,7 +400,7 @@ export function testoDaCondividere(esito, { versione = '', settings = {}, partTi
   const intestazione = [
     `Turni ${versione}`.trim(),
     esito.periodo ? `verifica busta ${MESI[esito.periodo.mese]} ${esito.periodo.anno}` : 'verifica busta',
-    getCcnl(settings.ccnl)?.label ? `CCNL ${getCcnl(settings.ccnl).label}` : null,
+    getContratto(settings.ccnl)?.label ? `CCNL ${getContratto(settings.ccnl).label}` : null,
     partTimePct ? `part-time ${String(partTimePct).replace('.', ',')}%` : null,
   ].filter(Boolean).join(' · ');
   const linee = [intestazione];

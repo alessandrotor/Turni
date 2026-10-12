@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useId } from 'react';
-import { CCNL_LIST, getCcnl } from '../motore/ccnl';
+import { CCNL_LIST, getContratto } from '../utils/ccnl-elenco';
 
 // Scelta del contratto, con la tendina di ricerca.
 //
@@ -36,7 +36,7 @@ export default function CcnlPicker({ value, onChange, id, autoFocus = false }) {
   const idCampo = id || generato;
   const idLista = `${idCampo}-lista`;
 
-  const [testo, setTesto] = useState(() => getCcnl(value || '').label);
+  const [testo, setTesto] = useState(() => getContratto(value || '').label);
   const [aperta, setAperta] = useState(false);
   const [evidenziata, setEvidenziata] = useState(-1);
   const timerBlur = useRef(null);
@@ -47,12 +47,12 @@ export default function CcnlPicker({ value, onChange, id, autoFocus = false }) {
   // deve seguirlo: mostrare un nome che non corrisponde al dato salvato è
   // esattamente il difetto che questo componente esiste per chiudere.
   useEffect(() => {
-    setTesto(getCcnl(value || '').label);
+    setTesto(getContratto(value || '').label);
   }, [value]);
 
   const voci = useMemo(() => {
     const q = testo.trim().toLowerCase();
-    const scelto = getCcnl(value).label.toLowerCase();
+    const scelto = getContratto(value).label.toLowerCase();
     // Testo uguale al contratto già scelto = l'utente sta riaprendo per
     // cambiarlo: si mostra tutto invece di filtrare su sé stesso.
     const src = (!q || q === scelto)
@@ -83,7 +83,7 @@ export default function CcnlPicker({ value, onChange, id, autoFocus = false }) {
   const chiudi = () => {
     setAperta(false);
     setEvidenziata(-1);
-    setTesto(value ? getCcnl(value).label : '');
+    setTesto(value ? getContratto(value).label : '');
   };
 
   // D7: le frecce scorrono, Invio sceglie, e soprattutto Invio NON invia il

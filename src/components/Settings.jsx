@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { formatCurrency, parseNum } from '../motore/pay';
-import { getCcnl } from '../motore/ccnl';
+import { getContratto } from '../utils/ccnl-elenco';
 import { FASCE_DIPENDENTI, FASCIA_DEFAULT, contributiDiLegge } from '../motore/contributi-legge';
 import { esportaBackup, leggiBackup, applicaBackup, contaTurniSalvati } from '../services/backup';
 import { ESITO } from '../services/export';
@@ -467,7 +467,7 @@ export default function Settings({ settings, onSave }) {
   if (ultimoSalvato.current === null) ultimoSalvato.current = istantanea;
   useOccupato('impostazioni', istantanea !== ultimoSalvato.current);
 
-  const ccnlPreset = getCcnl(form.ccnl);
+  const ccnlPreset = getContratto(form.ccnl);
   // Le aliquote degli ammortizzatori non stanno nel CCNL: si ricavano dalla
   // fascia dimensionale scelta qui sopra, così l'elenco mostra quelle vere.
   const contributiLegge = contributiDiLegge(

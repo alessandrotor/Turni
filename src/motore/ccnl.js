@@ -1,80 +1,39 @@
-// Preset per Contratto Collettivo Nazionale di Lavoro.
+// Le regole del contratto scelto, lette da `contratti/`.
 //
-// Servono al motore del netto per due cose che il solo dato "paga oraria" non
-// può dire: le trattenute contributive minori (che variano da contratto a
-// contratto) e il divisore orario mensile con cui si calcola la mensilità.
-//
-// I DATI vivono in `src/data/ccnl.json` — file human-readable, aggiornabile a
-// mano o rigenerato con `npm run ccnl:aggiorna` (script `scripts/scarica-ccnl.mjs`,
-// scarica l'elenco dei CCNL vigenti dall'archivio open data CNEL). Qui c'è solo la logica di
-// lettura: ogni voce viene fusa sui DEFAULT, così una voce di solo catalogo
-// (senza parametri di calcolo) non rompe il motore e ripiega su valori generici.
+// Servono al motore per ciò che la sola paga oraria non dice: il divisore
+// orario del mese, la mensilizzazione, le trattenute minori, la fascia
+// notturna. Ogni contratto è un file in `contratti/`; quello che non dichiara
+// vale la regola di legge (`LEGGE`).
 //
 // ATTENZIONE alla fedeltà dei dati: solo le voci con `verificato: true` sono
-// state riscontrate voce per voce su una busta paga reale. Le altre riportano
-// aliquote di uso comune (o nulla): la UI deve dirlo, e chi ha la busta sotto
-// mano deve poter correggere a mano.
+// state riscontrate su una busta paga reale. La UI deve dirlo.
 
-// L'attributo `with { type: 'json' }` non serve al bundler ma sì a Node puro:
-// senza, `scripts/check-busta-giugno-2026.mjs` non riesce più a importare il
-// motore (ERR_IMPORT_ATTRIBUTE_MISSING).
-import ccnlData from '../data/ccnl.json' with { type: 'json' };
+import { CONTRATTI, LEGGE } from './contratti/index.js';
 
-// Divisore orario generico, quando il contratto non ne indica uno: 52 settimane
-// spalmate su 12 mesi.
-export const DEFAULT_MONTHLY_HOURS_FACTOR = 52 / 12;
+export const DEFAULT_MONTHLY_HOURS_FACTOR = LEGGE.monthlyHoursFactor;
 
-// Valori di ripiego per i campi che il motore del netto legge sempre.
-const DEFAULTS = {
-  label: '',
-  verificato: false,
-  monthlyHoursFactor: DEFAULT_MONTHLY_HOURS_FACTOR,
-  mensilizzato: false,
-  contributiExtra: [],
-  enteBilaterale: null,
-  // A quale fondo per gli ammortizzatori sociali è iscritto il settore ('fis',
-  // oppure null se non lo sappiamo). Le ALIQUOTE non stanno qui: dipendono
-  // dalla dimensione dell'azienda, non dal contratto — vedi contributi-legge.js.
-  ammortizzatori: null,
-  // Estremi della fascia notturna, quando il contratto se ne discosta dalla
-  // definizione di legge (22:00–06:00 del D.Lgs. 66/2003). `null` = vale la
-  // legge. La PERCENTUALE non sta qui: dipende dalla classificazione del
-  // lavoratore, non dal contratto, ed è un'impostazione dell'utente.
-  fasciaNotturna: null,
-};
-
-// Normalizza una voce grezza del JSON in un preset completo e sicuro da usare.
+// Le regole di un contratto, complete: i campi che non scrive valgono LEGGE.
 function toPreset(entry) {
   return {
-    ...DEFAULTS,
+    ...LEGGE,
     ...entry,
-    // Il JSON usa `nome`; il resto del codice si aspetta `label`.
-    label: entry.label || entry.nome || DEFAULTS.label,
+    label: entry.nome || '',
     // Un factor mancante o non valido non deve azzerare la mensilità.
     monthlyHoursFactor: Number(entry.monthlyHoursFactor) || DEFAULT_MONTHLY_HOURS_FACTOR,
     mensilizzato: entry.mensilizzato === true,
     contributiExtra: Array.isArray(entry.contributiExtra) ? entry.contributiExtra : [],
     enteBilaterale: entry.enteBilaterale || null,
     ammortizzatori: entry.ammortizzatori || null,
-    // Serve che ci siano ENTRAMBI gli estremi: mezza fascia non è una fascia,
-    // e ripiegare in silenzio su un estremo di legge e uno di contratto darebbe
-    // una finestra che non esiste in nessun contratto.
+    // Serve che ci siano ENTRAMBI gli estremi: mezza fascia non è una fascia.
     fasciaNotturna: (entry.fasciaNotturna?.inizio && entry.fasciaNotturna?.fine)
       ? { inizio: entry.fasciaNotturna.inizio, fine: entry.fasciaNotturna.fine }
       : null,
   };
 }
 
-// Lista completa (per il selettore) e mappa per codice (per il lookup).
-export const CCNL_LIST = ccnlData.map(toPreset);
-
-export const CCNL_PRESETS = CCNL_LIST.reduce((acc, c) => {
-  acc[c.codice] = c;
-  return acc;
-}, {});
-
-export function getCcnl(key) {
-  return CCNL_PRESETS[key] || CCNL_PRESETS[''] || toPreset({ codice: '' });
+/** Le regole del contratto `codice`; un codice sconosciuto vale la legge. */
+export function getCcnl(codice) {
+  return toPreset(CONTRATTI[codice] || { codice: codice || '' });
 }
 
 // Fattore ore mensili del contratto scelto (settimane retribuite al mese).
@@ -85,10 +44,8 @@ export function monthlyHoursFactor(settings = {}) {
 // Contratto MENSILIZZATO: la retribuzione è un importo fisso al mese, uguale in
 // ogni mese dell'anno, e le ore contrattuali sono un numero fisso (24 × 4,3 =
 // 103,20 per il Turismo part-time 60%) indipendente dai giorni di calendario.
-// Due conseguenze, entrambe riscontrate sulle buste reali di giugno e luglio
-// 2026 (`scripts/check-mese-paga-2026.mjs`):
-//  - il supplementare si conta sull'eccedenza MENSILE, non su quella settimanale;
-//  - il mese di paga è fatto di settimane intere (vedi payrollMonthKey).
+// Le ore ordinarie pagate sono quel monte ore, comunque distribuite; il
+// supplementare si conta a settimana (pay.js, check-supplementare-settimanale).
 export function isMensilizzato(settings = {}) {
   return getCcnl(settings.ccnl).mensilizzato === true;
 }
