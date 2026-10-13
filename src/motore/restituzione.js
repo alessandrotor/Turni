@@ -59,6 +59,8 @@ import { richiediOggi } from './date.js';
 import { fiscoDi, fiscoDellAnno, conFisco, FISCO_ULTIMO } from './fisco/index.js';
 import { lordoPerReddito } from './soglia-lorda.js';
 
+/** @typedef {import('./impostazioni.js').Impostazioni} Impostazioni */
+
 /**
  * Soglia di legge per la rateizzazione: sopra i 60 € il datore non trattiene
  * tutto a dicembre, ma spalma il recupero. Sotto, se lo riprende in una volta
@@ -134,8 +136,8 @@ export function quotaPotenziale(oggi) {
  * Il rischio di restituzione, in euro.
  *
  * @param {object} opts
- * @param {object} opts.settings impostazioni dell'app
- * @param {number} opts.proiezioneAnnua reddito annuo LORDO previsto a fine anno
+ * @param {Impostazioni} [opts.settings] impostazioni dell'app
+ * @param {number} [opts.proiezioneAnnua] reddito annuo LORDO previsto a fine anno
  * @param {Date}   [opts.oggi] per i riscontri; di default la data corrente
  * @param {number} [opts.erogatoStimato] il bonus accreditato finora secondo la
  *   regola mensile (`stimaConguaglio().tiFinora`). Senza, la quota piena.

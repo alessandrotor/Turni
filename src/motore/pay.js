@@ -469,7 +469,7 @@ export function computePayByShift(allShifts, settings) {
  * `src/motore/riscontri/check-lordo-turno.mjs` verifica che la somma dei lordi dei turni di
  * un mese sia identica al totale di quel mese.
  *
- * @param {object} voce una voce di `computePayByShift`
+ * @param {{base?: number, surcharge?: number}|null} voce una voce di `computePayByShift`
  * @returns {number} euro lordi del turno
  */
 export function lordoTurno(voce) {
@@ -541,6 +541,7 @@ export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = nul
 export function formatCurrency(amount) {
   const n = Number.isFinite(Number(amount)) ? Number(amount) : 0;
   try {
+    // @ts-expect-error 'always' è valido nei browser, non ancora nei tipi della libreria
     return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', useGrouping: 'always' }).format(n);
   } catch {
     return n.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });

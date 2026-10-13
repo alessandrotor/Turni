@@ -59,6 +59,8 @@ import {
 import { getDaysInMonth, parseDate, richiediOggi } from './date.js';
 import { conFisco, fiscoDi } from './fisco/index.js';
 
+/** @typedef {import('./impostazioni.js').Impostazioni} Impostazioni */
+
 /** Sotto questa cifra, da entrambi gli estremi, si dice «circa in pari». */
 export const SOGLIA_PARI = 20;
 
@@ -68,9 +70,10 @@ const r2 = (n) => Math.round(n * 100) / 100;
  * Il saldo del conguaglio su dodici mesi dati. `saldo` positivo = a debito
  * (te li riprendono), negativo = a credito.
  *
- * @param {Array<{lordo:number, extra:number, giorni:number}>} mesi dodici voci;
+ * @param {Array<{lordo:number, extra:number, giorni:number, premio?:number, montante?:boolean}>} mesi dodici voci;
  *   `lordo` 0 fuori dal rapporto di lavoro.
- * @param {object} settings
+ * @param {Impostazioni} impostazioni
+ * @param {{tiMontanteNoto?: any, irpefMontanteNota?: any, anno?: number}} [opzioni]
  */
 export function saldoConguaglio(mesi, impostazioni = {}, { tiMontanteNoto = null, irpefMontanteNota = null, anno } = {}) {
   if (!Number.isInteger(anno)) throw new TypeError('saldoConguaglio: serve l\'anno');
@@ -169,7 +172,9 @@ function inizioRapporto(anno, settings) {
  *  · questo mese e i prossimi: `contratto` o `media` dei mesi passati, mai
  *    meno di quanto già segnato.
  *
- * @returns {{ mesi: Array, meseOggi: number, mesiVuoti: number }}
+ * @param {{anno: number, allShifts?: Array<any>, settings?: Impostazioni, payMap?: any, oggi: Date,
+ *   scenario?: string, montanteAlterno?: boolean, totaleAnno?: number|null}} p
+ * @returns {{ mesi: Array<any>, meseOggi: number, mesiVuoti: number, cutoffIdx: number }}
  */
 export function mesiDellAnno({
   anno, allShifts = [], settings = {}, payMap, oggi, scenario = 'contratto', montanteAlterno = false,

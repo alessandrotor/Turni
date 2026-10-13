@@ -16,6 +16,8 @@ import { TAX_2026, FISCO_ULTIMO, fiscoDi } from './fisco/index.js';
 import { EXTRA_MONTHS } from './mensilita.js';
 import { programmaPaghe } from './programmi-paghe/index.js';
 
+/** @typedef {import('./impostazioni.js').Impostazioni} Impostazioni */
+
 export { TAX_2026 };
 
 // Arrotondamenti della busta paga. Non sono un dettaglio estetico: il cedolino
@@ -63,7 +65,7 @@ export function aliquotaMarginale(imponibile, T = FISCO_ULTIMO) {
  *    fringe benefit che si somma all'imponibile fiscale.
  *
  * @param {number} gross lordo del periodo
- * @param {object} settings contiene `ccnl`
+ * @param {Impostazioni} settings contiene `ccnl`
  * @param {number} ebBase base di calcolo dell'Ente Bilaterale (retribuzione contrattuale)
  * @param {number} [mesi=1] mesi coperti da `gross` (i tetti di previdenza.js sono annui)
  * @returns {{ totale, deducibili, fringeImponibile, righe }}
@@ -265,7 +267,7 @@ export function deductibleContribRate(settings = {}) {
  * schermate si contraddicevano a un euro dalla soglia. → check-bonus.mjs
  * Toglie anche fondo pensione e cassa sanitaria trattenuti (previdenza.js).
  *
- * @param {object} [contributi] i contributi già calcolati, per non rifare il
+ * @param {{deducibili: number, fringeImponibile: number}|null} [contributi] i contributi già calcolati, per non rifare il
  *   lavoro quando chi chiama li ha già.
  */
 export function redditoComplessivo(gross, settings = {}, contributi = null) {
@@ -379,7 +381,7 @@ export function riferimentoAnnuoDelMese(lordoMese, settings = {}, lordoPresunto 
  * busta, che senza questa funzione avrebbe misurato la busta contro una cifra
  * che l'app non mostra da nessuna parte.
  *
- * @returns {{ lordo: number, extraMese: number }} `extraMese` è la quota di
+ * @returns {{ lordo: number, extraMese: number, premioMese: number }} `extraMese` è la quota di
  *   mensilità aggiuntiva dentro `lordo` (serve a `nettoDelMese`, che la tassa a
  *   parte).
  */
@@ -453,7 +455,7 @@ function monthAccrues(year, monthIndex, hire) {
  *
  * @param {'tredicesima'|'quattordicesima'} kind
  * @param {number} year anno in cui la mensilità viene erogata
- * @param {object} settings contiene `hireDate` (ISO 'YYYY-MM-DD')
+ * @param {Impostazioni} settings contiene `hireDate` (ISO 'YYYY-MM-DD')
  */
 export function extraMonthAccrual(kind, year, settings = {}) {
   const raw = String(settings.hireDate || '');
@@ -509,9 +511,10 @@ export function extraMonthsAccrued(settings, year) {
  * @param {Array} allShifts TUTTI i turni (non solo quelli dell'anno): serve
  *   come contesto per gli straordinari, che si calcolano per settimana/mese di
  *   paga e non vanno spezzati a cavallo di capodanno.
- * @param {object} settings
- * @param {object} [payByShift] mappa già calcolata da `computePayByShift`,
- *   opzionale — evita di ricalcolarla se il chiamante la possiede già.
+ * @param {Impostazioni} settings
+ * @param {object|null} payByShift mappa già calcolata da `computePayByShift`,
+ *   `null` — evita di ricalcolarla se il chiamante la possiede già.
+ * @param {Date} oggi
  * @returns {{ total: number, extras: number }} extras = quota di mensilità
  *   aggiuntive già incassate, inclusa in total.
  */
@@ -573,6 +576,10 @@ export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, pay
 }
 
 
+// «1 mese» / «5 mesi»: compare nelle note della spiegazione, e «1 mesi» in un
+// pannello che deve ispirare fiducia sui numeri stona più del dovuto.
+const fmtMesi = (n) => `${n} mes${n === 1 ? 'e' : 'i'}`;
+
 /**
  * Reddito annuo di RIFERIMENTO per l'aliquota IRPEF e le soglie del bonus:
  * combina più fonti nell'ordine in cui un sostituto d'imposta le userebbe.
@@ -596,18 +603,15 @@ export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, pay
  * @param {number} annualGross reddito maturato nell'anno (`computeAnnualGrossFromShifts`)
  * @param {number} annualExtras quota di `annualGross` che è 13ª/14ª (una
  *   tantum: non si annualizza, altrimenti si moltiplicherebbe)
- * @param {object} settings
+ * @param {Impostazioni} settings
  * @param {number} [year]
  * @param {object} [opts]
  * @param {boolean} [opts.enableNetCalc] gate del motore fiscale (beta): a
  *   false i termini che dipendono dal contratto restano a zero — stesso
  *   comportamento di un chiamante che tiene il motore spento.
- * @returns {{ value: number, source: 'contratto'|'maturato'|'manuale' }}
+ * @param {Date} [opts.oggi] richiesto: il motore non legge l'orologio
+ * @returns {{ value: number, source: 'contratto'|'maturato'|'manuale'|'previsione', voci: any, mesiTrascorsi: number, mesiRestanti?: number }}
  */
-// «1 mese» / «5 mesi»: compare nelle note della spiegazione, e «1 mesi» in un
-// pannello che deve ispirare fiducia sui numeri stona più del dovuto.
-const fmtMesi = (n) => `${n} mes${n === 1 ? 'e' : 'i'}`;
-
 export function projectAnnualIncome(
   annualGross, annualExtras, settings = {}, year,
   { enableNetCalc = true, oggi } = {},
@@ -788,7 +792,7 @@ export function projectAnnualIncome(
 /**
  * Calcola la stima del netto annuo.
  * @param {number} grossAnnual reddito lordo annuo da lavoro dipendente
- * @param {object} settings può contenere addRegionalePct / addComunalePct
+ * @param {Impostazioni} settings può contenere addRegionalePct / addComunalePct
  * @param {object} [opts]
  * @param {number} [opts.giorni=365] giorni del rapporto di lavoro nell'anno.
  *   Detrazioni e trattamento integrativo pieno (sotto i 15.000) spettano in
@@ -901,7 +905,7 @@ export function tiDecision(annualGrossRef, settings = {}) {
  *
  * @param {number} monthGross lordo del mese (turni + eventuale mensilità agg.)
  * @param {number} annualGrossRef reddito annuo lordo di riferimento (per aliquote IRPEF/bonus)
- * @param {object} settings addRegionalePct / addComunalePct / tfrInBusta
+ * @param {Impostazioni} settings addRegionalePct / addComunalePct / tfrInBusta
  * @param {number} monthDays giorni di calendario del mese (per la prorata di TI/indennità)
  * @param {number} extraMonthGross quota di `monthGross` che è 13ª/14ª (tassata a parte)
  */
@@ -977,7 +981,8 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   const dayFraction = monthDays / 365;
   // Soglia sul reddito presunto e capienza sul progressivo dell'anno
   // (`capienza`, da capienza.js; senza, sul solo mese). → check-ti-capienza.mjs
-  const esitoTi = { ...tiSpettaQuestoMese(gross, settings, capienza?.lordoPresunto ?? null), media: capienza?.media ?? null };
+  const esitoTi = /** @type {ReturnType<typeof tiSpettaQuestoMese> & {senzaCapienza?: boolean, media?: number|null}} */ (
+    { ...tiSpettaQuestoMese(gross, settings, capienza?.lordoPresunto ?? null), media: capienza?.media ?? null });
   esitoTi.senzaCapienza = esitoTi.spetta && !(capienza ? capienza.capiente : ann.trattamentoIntegrativo > 0);
   const trattamentoIntegrativo = esitoTi.spetta && !esitoTi.senzaCapienza
     ? programmaPaghe(settings).quota((ann.trattamentoIntegrativo || T.TI_MASSIMO) * dayFraction) : 0;

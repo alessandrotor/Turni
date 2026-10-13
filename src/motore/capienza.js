@@ -19,9 +19,11 @@ import { redditoComplessivo, irpefLorda, detrazioneLavoro, nettoDelMese } from '
 import { fiscoDi } from './fisco/index.js';
 import { programmaPaghe } from './programmi-paghe/index.js';
 
+/** @typedef {import('./impostazioni.js').Impostazioni} Impostazioni */
+
 /**
  * @param {number} lordoMese lordo del mese
- * @param {object} settings
+ * @param {Impostazioni} settings
  * @param {{lordo:number, mesi:number, mese?:number}|null} progressivo lordo e
  *   numero dei mesi dell'anno PRIMA di questo, e l'indice 0-11 di questo (da
  *   `progressiviDellAnno` in conguaglio.js)

@@ -108,6 +108,7 @@ export function giorniPeriodo(dal, al) {
  * c'è. L'unica cosa che dipende dal tipo — l'avviso sui giorni consecutivi
  * della malattia, che la carenza pretende — è testo, e vive nell'interfaccia.
  *
+ * @param {{dal?: string, al?: string, turni?: Array<any>, settings?: import('./impostazioni.js').Impostazioni}} [p]
  * @returns {Array<{data:string, minuti:number, turnoEsistente:object|null, selezionato:boolean}>}
  */
 export function proponiPeriodo({ dal, al, turni = [], settings = {} } = {}) {

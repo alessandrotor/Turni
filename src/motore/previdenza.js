@@ -1,3 +1,5 @@
+
+/** @typedef {import('./impostazioni.js').Impostazioni} Impostazioni */
 // Fondo pensione e cassa sanitaria: trattenute in busta che ESCONO dal reddito.
 //
 // Perché contano: il reddito dei 15.000 è il lordo meno quello che la legge
@@ -38,7 +40,7 @@ const num = (v) => Math.max(0, Number(v) || 0);
  * cassa sanitaria è una quota fissa al mese.
  *
  * @param {number} gross lordo del periodo
- * @param {object} settings `fondoPensionePct`, `cassaSanitariaEuro`
+ * @param {Impostazioni} settings `fondoPensionePct`, `cassaSanitariaEuro`
  * @param {number} mesi quanti mesi copre il periodo (1 per la busta, 12 per l'anno)
  * @returns {Array<{label, pct?, base, importo, deducibile: true}>}
  */

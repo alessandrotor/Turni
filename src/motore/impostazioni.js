@@ -17,6 +17,11 @@
 // lavoratore, il periodo (quello che cambia mese per mese), il programma paghe
 // e il fisco dell'anno, più le scelte su come presentare il calcolo.
 
+/**
+ * Le impostazioni: ogni chiave della tabella qui sotto, tutte facoltative.
+ * @typedef {Partial<Record<keyof typeof IMPOSTAZIONI, any>>} Impostazioni
+ */
+
 export const GRUPPI = ['contratto', 'lavoratore', 'periodo', 'programmaPaghe', 'fisco', 'scelte'];
 
 export const IMPOSTAZIONI = {

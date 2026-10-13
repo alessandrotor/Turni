@@ -15,6 +15,8 @@
 import { redditoComplessivo } from './net.js';
 import { lordoPerReddito } from './soglia-lorda.js';
 
+/** @typedef {import('./impostazioni.js').Impostazioni} Impostazioni */
+
 export const BONUS_CONST = {
   SOGLIA_BONUS_PIENO: 15000, // imponibile: fino a qui bonus pieno (1200€)
   SOGLIA_BONUS_MAX: 28000,   // imponibile: oltre questa soglia il bonus non spetta
@@ -32,7 +34,7 @@ export const BONUS_STATUS = {
 /**
  * Calcola i margini rispetto alle soglie del bonus.
  * @param {number} annualIncome reddito annuo LORDO complessivo
- * @param {object} settings serve il CCNL: con i contributi minori l'aliquota
+ * @param {Impostazioni} settings serve il CCNL: con i contributi minori l'aliquota
  *   deducibile sale e le soglie in lordo si spostano di qualche decina di euro
  * @returns margini e soglie espressi in LORDO (coerenti con `income`)
  */

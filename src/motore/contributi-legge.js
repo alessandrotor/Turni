@@ -1,3 +1,5 @@
+
+/** @typedef {import('./impostazioni.js').Impostazioni} Impostazioni */
 // Contributi per gli ammortizzatori sociali (D.Lgs. 148/2015).
 //
 // NON sono parametri del CCNL, e per un po' l'app li ha trattati come se lo
@@ -58,7 +60,7 @@ function fascia(settings = {}) {
  * invece 0,27% tondo — stesso contributo, arrotondamento del gestionale paghe,
  * e da lì nascono i 3 centesimi di scarto documentati nel suo riscontro.
  *
- * @param {object} settings deve contenere `aziendaDipendenti`
+ * @param {Impostazioni} settings deve contenere `aziendaDipendenti`
  * @param {string|null} schema quale fondo si applica: 'fis' o null (non noto)
  * @returns {Array<{label: string, pct: number}>}
  */

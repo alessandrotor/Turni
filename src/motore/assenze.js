@@ -18,6 +18,8 @@
 // il file resta importabile da Node puro per i riscontri in `scripts/`.
 import { dayNumber } from './date.js';
 
+/** @typedef {import('./impostazioni.js').Impostazioni} Impostazioni */
+
 export const TIPO = {
   LAVORO: 'lavoro',
   FERIE: 'ferie',
@@ -145,7 +147,7 @@ export const MALATTIA_DEFAULT = {
  * davvero, perché contiene ferie cadute nel periodo.
  *
  * @param {object} shift
- * @param {object} settings
+ * @param {Impostazioni} settings
  * @param {number} giornoEvento posizione del giorno nel suo evento di malattia
  *   (da `giorniEventoMalattia`); ignorato per ferie e permessi.
  */

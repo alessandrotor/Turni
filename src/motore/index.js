@@ -19,6 +19,8 @@ import { fiscoDellAnno, conFisco } from './fisco/index.js';
 import { PROGRAMMI } from './programmi-paghe/index.js';
 import { IMPOSTAZIONI } from './impostazioni.js';
 
+/** @typedef {import('./impostazioni.js').Impostazioni} Impostazioni */
+
 /**
  * Dagli ingressi del motore alle impostazioni che le sue funzioni leggono
  * (tutte descritte in impostazioni.js). È l'unico punto in cui i nomi di qui
@@ -33,15 +35,15 @@ import { IMPOSTAZIONI } from './impostazioni.js';
  * @param {number} [p.lavoratore.giorniLavorativi=6] giorni della settimana di lavoro
  * @param {string} [p.lavoratore.assunzione] 'YYYY-MM-DD'
  * @param {boolean} [p.lavoratore.tredicesima] @param {boolean} [p.lavoratore.quattordicesima]
- * @param {object} [p.lavoratore.maggiorazioni] percentuali IN PIÙ: supplementare,
+ * @param {{supplementare?: number, straordinario?: number, domenicale?: number, festivo?: number, notturno?: number}} [p.lavoratore.maggiorazioni] percentuali IN PIÙ: supplementare,
  *   straordinario, domenicale, festivo, notturno
- * @param {object} [p.lavoratore.addizionali] { regionale, comunale } in %
+ * @param {{regionale?: number, comunale?: number}} [p.lavoratore.addizionali] in %
  * @param {number} [p.lavoratore.fondoPensionePct] @param {number} [p.lavoratore.cassaSanitariaEuro]
- * @param {object} [p.lavoratore.montante] { importo, fino: 'YYYY-MM-DD' } lordo dell'anno già pagato
+ * @param {{importo?: number, fino?: string}} [p.lavoratore.montante] { importo, fino: 'YYYY-MM-DD' } lordo dell'anno già pagato
  * @param {string} [p.programmaPaghe] codice di un file in `programmi-paghe/`
- * @param {object} [p.altro] impostazioni interne passate così come sono
+ * @param {Impostazioni} [p.altro] impostazioni interne passate così come sono
  */
-export function impostazioniDa({ contratto = '', lavoratore = {}, programmaPaghe, altro = {} }) {
+export function impostazioniDa({ contratto = '', lavoratore = /** @type {any} */ ({}), programmaPaghe, altro = {} }) {
   const l = lavoratore;
   const m = l.maggiorazioni || {};
   return {
@@ -82,7 +84,7 @@ export function impostazioniDa({ contratto = '', lavoratore = {}, programmaPaghe
 export function calcolaMese({ periodo, oggi, ...ingressi }) {
   richiediOggi(oggi, 'calcolaMese');
   const { anno, mese, turni = [] } = periodo;
-  const impostazioni = conFisco(impostazioniDa(ingressi), anno);
+  const impostazioni = conFisco(impostazioniDa(/** @type {any} */ (ingressi)), anno);
   const payMap = computePayByShift(turni, impostazioni);
   const chiave = `${anno}-${String(mese + 1).padStart(2, '0')}`;
   const delMese = turni.filter((t) => String(t.date).startsWith(chiave));
