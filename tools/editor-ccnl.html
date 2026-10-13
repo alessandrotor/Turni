@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Editor CCNL</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --card: #ffffff; --ink: #1c2330; --muted: #5d6778; --line: #dde1e8;
+    --accent: #2457d6; --accent-ink: #ffffff; --ok: #1d7a46; --warn: #a15c00; --err: #b3261e;
+    --code-bg: #0f1523; --code-ink: #dbe4f5; --field: #ffffff; --chip: #e9edf5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151c; --card: #1b2029; --ink: #e6e9f0; --muted: #98a2b6; --line: #2d3442;
+      --accent: #7aa2ff; --accent-ink: #0c1220; --ok: #5ccb8a; --warn: #f0b24a; --err: #ff8a80;
+      --code-bg: #0b0e15; --code-ink: #d3dcf0; --field: #151a23; --chip: #262d3a;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header {
+    position: sticky; top: 0; z-index: 5; background: var(--card); border-bottom: 1px solid var(--line);
+    display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; padding: 10px 20px;
+  }
+  header h1 { font-size: 17px; margin: 0 8px 0 0; letter-spacing: .2px; }
+  .file { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px; border-radius: 999px;
+    background: var(--chip); color: var(--muted); font-size: 13px; max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file.dirty::before { content: "●"; color: var(--warn); }
+  .spacer { flex: 1; }
+  button {
+    font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+    padding: 7px 13px; border-radius: 8px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  button.small { padding: 3px 9px; font-size: 13px; }
+  button.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+  button:disabled { opacity: .45; cursor: default; }
+  main { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; padding: 18px 20px 40px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 960px) { main { grid-template-columns: 1fr; } }
+  .col-form { display: grid; gap: 14px; align-content: start; }
+  .col-code { position: sticky; top: 64px; align-self: start; display: grid; gap: 12px; }
+  @media (max-width: 960px) { .col-code { position: static; } }
+  section.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 16px; }
+  section.card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin: 0 0 10px; }
+  .hint { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
+  .row { display: grid; gap: 10px 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-bottom: 8px; }
+  label.f { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+  input[type=text], select, textarea {
+    font: inherit; color: var(--ink); background: var(--field); border: 1px solid var(--line);
+    border-radius: 8px; padding: 7px 9px; width: 100%;
+  }
+  input[type=text]:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+  input:disabled, select:disabled { opacity: .5; }
+  textarea { min-height: 76px; resize: vertical; }
+  .sw { display: flex; align-items: center; gap: 9px; margin: 2px 0 8px; cursor: pointer; }
+  .sw input { width: 17px; height: 17px; accent-color: var(--accent); margin: 0; }
+  .sw b { font-weight: 600; }
+  .sub { border-left: 3px solid var(--line); padding-left: 12px; margin: 4px 0 8px 4px; }
+  .calc { display: flex; flex-wrap: wrap; gap: 8px; align-items: end; padding: 10px; background: var(--chip); border-radius: 8px; margin: 4px 0 8px; }
+  .calc label.f { flex: 1 1 110px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 0 6px 6px 0; }
+  td { padding: 3px 6px 3px 0; vertical-align: top; }
+  td input[type=text], td select { padding: 5px 7px; }
+  .w-pct { width: 78px; }
+  .w-chk { width: 40px; text-align: center; }
+  .w-del { width: 34px; }
+  .msgs { display: grid; gap: 6px; }
+  .msg { font-size: 13.5px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--line); }
+  .msg.err { color: var(--err); border-color: var(--err); }
+  .msg.warn { color: var(--warn); border-color: var(--warn); }
+  .msg.ok { color: var(--ok); border-color: var(--ok); }
+  .msg.info { color: var(--muted); }
+  pre {
+    margin: 0; background: var(--code-bg); color: var(--code-ink); border-radius: 12px; padding: 14px 16px;
+    font: 12.5px/1.5 ui-monospace, "Cascadia Code", Consolas, monospace; overflow: auto; max-height: 62vh; white-space: pre;
+  }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .toast {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg);
+    padding: 9px 16px; border-radius: 10px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .toast.on { opacity: 1; }
+  code.k { background: var(--chip); padding: 1px 6px; border-radius: 5px; font-size: 12.5px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Editor CCNL</h1>
+  <span id="fileChip" class="file">nuovo contratto</span>
+  <span class="spacer"></span>
+  <button id="bNuovo">Nuovo</button>
+  <button id="bApri">Apri…</button>
+  <button id="bSalva" class="primary" title="Scrive nel file aperto (Chrome / Edge); altrimenti scarica">Salva</button>
+  <button id="bScarica">Scarica .js</button>
+</header>
+
+<main>
+  <div class="col-form">
+
+    <section class="card">
+      <h2>Contratto</h2>
+      <div class="row">
+        <label class="f">Codice (nome del file)
+          <input type="text" data-p="codice" placeholder="logistica" spellcheck="false">
+        </label>
+        <label class="f">Nome
+          <input type="text" data-p="nome" placeholder="Logistica, trasporto merci e spedizione">
+        </label>
+      </div>
+      <label class="sw"><input type="checkbox" data-p="verificato"><span><b>Verificato su una busta reale</b></span></label>
+      <p class="hint">Lascia spento se i dati vengono dal testo del contratto: l'app lo dice a chi lo sceglie.</p>
+    </section>
+
+    <section class="card">
+      <h2>Ore e retribuzione</h2>
+      <div class="row">
+        <label class="f">Fattore ore mensili (settimane al mese)
+          <input type="text" inputmode="decimal" data-p="factor" placeholder="4,3">
+        </label>
+      </div>
+      <div class="calc">
+        <label class="f">Divisore mensile del contratto<input type="text" inputmode="decimal" id="cDiv" placeholder="173"></label>
+        <label class="f">Ore settimanali del contratto<input type="text" inputmode="decimal" id="cOre" placeholder="40"></label>
+        <button id="cUsa" class="small">Calcola e usa</button>
+        <span class="hint" id="cEsito" style="flex-basis:100%;margin:0">fattore = divisore ÷ ore settimanali (173 ÷ 40 = 4,325)</span>
+      </div>
+      <label class="sw"><input type="checkbox" data-p="mensilizzato"><span><b>Mensilizzato</b> — importo fisso al mese, ore contrattuali fisse</span></label>
+    </section>
+
+    <section class="card">
+      <h2>Notte</h2>
+      <label class="sw"><input type="checkbox" data-p="notte.custom"><span><b>Fascia notturna propria del contratto</b></span></label>
+      <div class="sub" id="boxNotte">
+        <div class="row">
+          <label class="f">Dalle<input type="text" data-p="notte.inizio" placeholder="22:00"></label>
+          <label class="f">Alle<input type="text" data-p="notte.fine" placeholder="06:00"></label>
+        </div>
+      </div>
+      <p class="hint" id="hintNotte">Spenta: vale quella di legge, 22:00–06:00 (D.Lgs. 66/2003).</p>
+      <label class="sw" style="margin-top:12px"><input type="checkbox" data-p="stra.custom"><span><b>Straordinario notturno con maggiorazione propria</b></span></label>
+      <div class="sub" id="boxStra">
+        <div class="row">
+          <label class="f">Maggiorazione %<input type="text" inputmode="decimal" data-p="stra.pct" placeholder="60"></label>
+          <label class="f">Dalle<input type="text" data-p="stra.inizio" placeholder="00:00"></label>
+          <label class="f">Alle<input type="text" data-p="stra.fine" placeholder="06:00"></label>
+        </div>
+      </div>
+      <p class="hint">Spenta: lo straordinario di notte vale come di giorno.</p>
+    </section>
+
+    <section class="card">
+      <h2>Contributi</h2>
+      <label class="sw"><input type="checkbox" data-p="ente.on"><span><b>Ente bilaterale</b></span></label>
+      <div class="sub" id="boxEnte">
+        <div class="row">
+          <label class="f">Nome<input type="text" data-p="ente.label" placeholder="Ente Bilaterale Turismo"></label>
+          <label class="f">% lavoratore<input type="text" inputmode="decimal" data-p="ente.pct" placeholder="0,2"></label>
+          <label class="f">% ditta<input type="text" inputmode="decimal" data-p="ente.quotaDitta" placeholder="0,2"></label>
+        </div>
+      </div>
+      <div class="row">
+        <label class="f">Fondo ammortizzatori
+          <select data-p="amm">
+            <option value="">non lo so / nessuno</option>
+            <option value="fis">FIS</option>
+          </select>
+        </label>
+      </div>
+      <label class="f">Altri contributi (JSON, lista — di solito vuota)
+        <textarea data-p="extraJson" spellcheck="false" placeholder="[]"></textarea>
+      </label>
+    </section>
+
+    <section class="card">
+      <h2>Maggiorazioni del contratto — con la fonte</h2>
+      <p class="hint" style="margin:0 0 10px">Il motore oggi le legge dalle impostazioni, non dal contratto: qui restano <b>documentate</b>, ognuna col suo articolo. Spunta «usabile» solo quando hai deciso che si possono usare.</p>
+      <div class="row">
+        <label class="f">Edizione / data del testo<input type="text" data-p="fonti.edizione" placeholder="CCNL 6 dicembre 2024, testo unico"></label>
+        <label class="f">Dove l'hai preso (URL)<input type="text" data-p="fonti.url" placeholder="https://…" spellcheck="false"></label>
+      </div>
+      <table>
+        <thead><tr><th>Voce</th><th class="w-pct">%</th><th>Condizione</th><th>Articolo</th><th class="w-chk" title="Deciso: si può usare">Usab.</th><th class="w-del"></th></tr></thead>
+        <tbody id="voci"></tbody>
+      </table>
+      <div class="bar" style="margin-top:8px"><button id="bVoce" class="small">+ Aggiungi voce</button></div>
+    </section>
+
+    <section class="card">
+      <h2>Note</h2>
+      <textarea data-p="note" style="min-height:110px" placeholder="Da dove vengono i dati, cosa non è stato verificato, ambiguità del testo…"></textarea>
+    </section>
+
+  </div>
+
+  <div class="col-code">
+    <div class="msgs" id="msgs"></div>
+    <pre id="code" aria-label="File generato"></pre>
+    <div class="bar">
+      <button id="bCopia">Copia il codice</button>
+      <span class="hint" id="hintSalva"></span>
+    </div>
+    <section class="card" id="boxAttiva">
+      <h2>Per attivarlo nel motore</h2>
+      <p class="hint" style="margin:0 0 6px">Salva il file in <code class="k">src/motore/contratti/</code> e in <code class="k">contratti/index.js</code> aggiungi:</p>
+      <pre id="attiva" style="max-height:none;font-size:12px"></pre>
+    </section>
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+// ==CORE== (logica pura: nessun riferimento al DOM; la prova in Node la estrae da qui)
+const ORDINE = ['codice', 'nome', 'verificato', 'monthlyHoursFactor', 'mensilizzato', 'enteBilaterale',
+  'ammortizzatori', 'fasciaNotturna', 'straordinarioNotturno', 'contributiExtra', 'fonti', 'note'];
+const IDENT = /^[A-Za-z_$][\w$]*$/;
+const ORA = /^([01]\d|2[0-3]):[0-5]\d$/;
+const VOCI = ['Notturno in turni', 'Notturno fuori turni', 'Domenicale', 'Domenicale con riposo compensativo',
+  'Festivo', 'Sabato', 'Supplementare', 'Straordinario diurno feriale', 'Straordinario notturno',
+  'Straordinario festivo', 'Straordinario notturno festivo', 'Altro'];
+
+function intestazioneNuova(nome) {
+  return `// Contratto «${nome || 'da compilare'}»: le regole che il motore legge. Nome e codice
+// servono a chi usa il motore da solo; firmatari e vigenza stanno
+// nell'archivio CNEL dell'app (src/data/ccnl.json). Un campo che manca vale
+// la regola di legge (\`LEGGE\` in contratti/index.js).`;
+}
+
+function ser(v, ind) {
+  const pad = '  '.repeat(ind);
+  if (v === null || v === undefined) return 'null';
+  if (Array.isArray(v)) {
+    if (!v.length) return '[]';
+    return '[\n' + v.map((x) => pad + '  ' + ser(x, ind + 1)).join(',\n') + '\n' + pad + ']';
+  }
+  if (typeof v === 'object') {
+    const k = Object.keys(v);
+    if (!k.length) return '{}';
+    return '{\n' + k.map((key) => pad + '  ' + (IDENT.test(key) ? key : JSON.stringify(key)) + ': ' + ser(v[key], ind + 1)).join(',\n') + '\n' + pad + '}';
+  }
+  return JSON.stringify(v);
+}
+
+/** Legge il testo di un file `contratti/*.js`: intestazione + oggetto esportato. */
+function leggiFile(testo) {
+  const i = testo.search(/export\s+default/);
+  if (i < 0) throw new Error('Non trovo «export default»: non sembra un file di contratto.');
+  const intestazione = testo.slice(0, i).trim();
+  let corpo = testo.slice(i).replace(/^export\s+default\s*/, '').trim().replace(/;\s*$/, '');
+  let obj;
+  try { obj = new Function('return (' + corpo + ')')(); } catch (e) { throw new Error('Non riesco a leggere l\'oggetto: ' + e.message); }
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) throw new Error('L\'oggetto esportato non è valido.');
+  return { intestazione, obj };
+}
+
+const num = (s) => {
+  const t = String(s ?? '').trim().replace(',', '.');
+  if (t === '') return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : NaN;
+};
+const txt = (n) => (n === null || n === undefined ? '' : String(n).replace('.', ','));
+
+function statoVuoto() {
+  return {
+    intestazione: '', altre: {},
+    codice: '', nome: '', verificato: false, factor: '', mensilizzato: false,
+    notte: { custom: false, inizio: '', fine: '' },
+    stra: { custom: false, pct: '', inizio: '', fine: '' },
+    ente: { on: false, label: '', pct: '', quotaDitta: '' },
+    amm: '', extraJson: '',
+    fonti: { edizione: '', url: '', voci: [] },
+    note: '',
+  };
+}
+
+function statoDa(obj, intestazione) {
+  const s = statoVuoto();
+  s.intestazione = intestazione || '';
+  s.codice = obj.codice || ''; s.nome = obj.nome || '';
+  s.verificato = obj.verificato === true;
+  s.factor = txt(obj.monthlyHoursFactor);
+  s.mensilizzato = obj.mensilizzato === true;
+  if (obj.fasciaNotturna) s.notte = { custom: true, inizio: obj.fasciaNotturna.inizio || '', fine: obj.fasciaNotturna.fine || '' };
+  if (obj.straordinarioNotturno) {
+    const o = obj.straordinarioNotturno;
+    s.stra = { custom: true, pct: txt(o.pct), inizio: o.inizio || '', fine: o.fine || '' };
+  }
+  if (obj.enteBilaterale) {
+    const e = obj.enteBilaterale;
+    s.ente = { on: true, label: e.label || '', pct: txt(e.pct), quotaDitta: txt(e.quotaDitta) };
+  }
+  s.amm = obj.ammortizzatori || '';
+  if (Array.isArray(obj.contributiExtra) && obj.contributiExtra.length) s.extraJson = JSON.stringify(obj.contributiExtra, null, 2);
+  const f = obj.fonti || {};
+  s.fonti.edizione = f.edizione || ''; s.fonti.url = f.url || '';
+  s.fonti.voci = (Array.isArray(f.maggiorazioni) ? f.maggiorazioni : []).map((v) => ({
+    voce: v.voce || '', pct: txt(v.pct), condizione: v.condizione || '', articolo: v.articolo || '', usabile: v.usabile === true,
+  }));
+  s.note = obj.note || '';
+  for (const k of Object.keys(obj)) if (!ORDINE.includes(k)) s.altre[k] = obj[k];
+  return s;
+}
+
+/** Lo stato del modulo → l'oggetto del contratto, solo con i campi che dicono qualcosa. */
+function oggettoDa(s) {
+  const o = {};
+  o.codice = s.codice.trim();
+  o.nome = s.nome.trim();
+  o.verificato = !!s.verificato;
+  const fac = num(s.factor);
+  if (fac !== null && !Number.isNaN(fac)) o.monthlyHoursFactor = fac;
+  if (s.mensilizzato) o.mensilizzato = true;
+  if (s.ente.on) {
+    const e = { label: s.ente.label.trim() };
+    const p = num(s.ente.pct), q = num(s.ente.quotaDitta);
+    e.pct = Number.isNaN(p) ? null : (p ?? 0);
+    e.quotaDitta = Number.isNaN(q) ? null : (q ?? 0);
+    o.enteBilaterale = e;
+  }
+  if (s.amm) o.ammortizzatori = s.amm;
+  if (s.notte.custom) o.fasciaNotturna = { inizio: s.notte.inizio.trim(), fine: s.notte.fine.trim() };
+  if (s.stra.custom) {
+    const p = num(s.stra.pct);
+    o.straordinarioNotturno = { pct: Number.isNaN(p) ? null : (p ?? 0), inizio: s.stra.inizio.trim(), fine: s.stra.fine.trim() };
+  }
+  if (s.extraJson.trim()) {
+    try { const a = JSON.parse(s.extraJson); if (Array.isArray(a) && a.length) o.contributiExtra = a; } catch { /* lo segnala la validazione */ }
+  }
+  const voci = s.fonti.voci
+    .filter((v) => v.voce || v.pct || v.condizione || v.articolo)
+    .map((v) => {
+      const p = num(v.pct);
+      const r = { voce: v.voce.trim(), pct: Number.isNaN(p) ? null : p };
+      if (v.condizione.trim()) r.condizione = v.condizione.trim();
+      if (v.articolo.trim()) r.articolo = v.articolo.trim();
+      r.usabile = !!v.usabile;
+      return r;
+    });
+  if (s.fonti.edizione.trim() || s.fonti.url.trim() || voci.length) {
+    const f = {};
+    if (s.fonti.edizione.trim()) f.edizione = s.fonti.edizione.trim();
+    if (s.fonti.url.trim()) f.url = s.fonti.url.trim();
+    if (voci.length) f.maggiorazioni = voci;
+    o.fonti = f;
+  }
+  if (s.note.trim()) o.note = s.note.trim();
+  for (const [k, v] of Object.entries(s.altre)) o[k] = v;
+  // ordine canonico, poi i campi sconosciuti
+  const out = {};
+  for (const k of ORDINE) if (k in o) out[k] = o[k];
+  for (const k of Object.keys(o)) if (!(k in out)) out[k] = o[k];
+  return out;
+}
+
+function codiceDa(s) {
+  const head = s.intestazione && s.intestazione.trim() ? s.intestazione.trim() : intestazioneNuova(s.nome.trim());
+  return head + '\n\nexport default ' + ser(oggettoDa(s), 0) + ';\n';
+}
+
+function controlla(s) {
+  const m = [];
+  const add = (t, msg) => m.push({ t, msg });
+  if (!s.codice.trim()) add('err', 'Manca il codice.');
+  else if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(s.codice.trim())) add('err', 'Il codice vuole minuscole, cifre e trattini (es. «commercio-confesercenti»).');
+  if (!s.nome.trim()) add('err', 'Manca il nome.');
+  const fac = num(s.factor);
+  if (Number.isNaN(fac)) add('err', 'Il fattore ore non è un numero.');
+  else if (fac === null) add('warn', 'Senza fattore ore vale quello di legge (4,333).');
+  else if (fac < 3.5 || fac > 5) add('warn', 'Il fattore ore è fuori dal solito (3,5–5): è «settimane al mese», non il divisore.');
+  const ora = (v, etichetta) => { if (!ORA.test(v.trim())) add('err', `${etichetta}: l'ora va scritta HH:MM (es. 22:00).`); };
+  if (s.notte.custom) { ora(s.notte.inizio, 'Fascia notturna, dalle'); ora(s.notte.fine, 'Fascia notturna, alle'); }
+  if (s.stra.custom) {
+    const p = num(s.stra.pct);
+    if (p === null || Number.isNaN(p)) add('err', 'Straordinario notturno: manca la percentuale.');
+    else if (p < 0 || p > 200) add('warn', 'Straordinario notturno: percentuale fuori dal solito.');
+    ora(s.stra.inizio, 'Straordinario notturno, dalle'); ora(s.stra.fine, 'Straordinario notturno, alle');
+  }
+  if (s.ente.on) {
+    if (!s.ente.label.trim()) add('warn', 'Ente bilaterale senza nome.');
+    for (const [k, nome] of [['pct', '% lavoratore'], ['quotaDitta', '% ditta']]) {
+      const n = num(s.ente[k]);
+      if (n === null || Number.isNaN(n)) add('err', `Ente bilaterale: ${nome} non è un numero.`);
+      else if (n > 5) add('warn', `Ente bilaterale: ${nome} è ${txt(n)}%, di solito sta sotto l'1%.`);
+    }
+  }
+  if (s.extraJson.trim()) {
+    try { if (!Array.isArray(JSON.parse(s.extraJson))) add('err', 'Altri contributi: dev\'essere una lista [ … ].'); }
+    catch { add('err', 'Altri contributi: il JSON non è valido.'); }
+  }
+  s.fonti.voci.forEach((v, i) => {
+    const n = i + 1;
+    if (!(v.voce || v.pct || v.condizione || v.articolo)) return;
+    const p = num(v.pct);
+    if (!v.voce.trim()) add('warn', `Maggiorazione ${n}: manca la voce.`);
+    if (p === null || Number.isNaN(p)) add('err', `Maggiorazione ${n}: la percentuale non è un numero.`);
+    else if (p < 0 || p > 300) add('warn', `Maggiorazione ${n}: percentuale fuori dal solito.`);
+    if (!v.articolo.trim()) add('warn', `Maggiorazione ${n} (${v.voce || 'senza voce'}): senza articolo non è una fonte.`);
+    if (v.usabile && !v.articolo.trim()) add('err', `Maggiorazione ${n}: segnata «usabile» ma senza articolo.`);
+  });
+  if (s.verificato) add('info', '«Verificato» dice che i dati tornano su una busta reale. Se vengono solo dal testo del contratto, spegnilo.');
+  if (Object.keys(s.altre).length) add('info', 'Campi che l\'editor non conosce, conservati così come sono: ' + Object.keys(s.altre).join(', ') + '.');
+  if (!m.some((x) => x.t === 'err' || x.t === 'warn')) add('ok', 'Nessun problema.');
+  return m;
+}
+// ==FINE-CORE==
+
+// ---------- interfaccia ----------
+const $ = (sel, r = document) => r.querySelector(sel);
+let stato = statoVuoto();
+let handle = null;      // file aperto (File System Access API), se c'è
+let nomeFile = '';
+let sporco = false;
+
+const get = (p) => p.split('.').reduce((o, k) => o[k], stato);
+function set(p, v) {
+  const parti = p.split('.');
+  const ultimo = parti.pop();
+  parti.reduce((o, k) => o[k], stato)[ultimo] = v;
+}
+
+function toast(t) {
+  const el = $('#toast');
+  el.textContent = t; el.classList.add('on');
+  clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 2200);
+}
+
+function disegnaVoci() {
+  const body = $('#voci');
+  body.innerHTML = '';
+  stato.fonti.voci.forEach((v, i) => {
+    const tr = document.createElement('tr');
+    const opz = VOCI.map((x) => `<option${x === v.voce ? ' selected' : ''}>${x}</option>`).join('');
+    const fuori = v.voce && !VOCI.includes(v.voce) ? `<option selected>${v.voce.replace(/</g, '&lt;')}</option>` : '';
+    tr.innerHTML = `
+      <td><select data-i="${i}" data-c="voce"><option value="">—</option>${fuori}${opz}</select></td>
+      <td class="w-pct"><input type="text" inputmode="decimal" data-i="${i}" data-c="pct" value="${v.pct}"></td>
+      <td><input type="text" data-i="${i}" data-c="condizione" value="${v.condizione.replace(/"/g, '&quot;')}" placeholder="es. fuori turno"></td>
+      <td><input type="text" data-i="${i}" data-c="articolo" value="${v.articolo.replace(/"/g, '&quot;')}" placeholder="Art. 12 c.4"></td>
+      <td class="w-chk"><input type="checkbox" data-i="${i}" data-c="usabile"${v.usabile ? ' checked' : ''}></td>
+      <td class="w-del"><button class="small ghost" data-del="${i}" title="Togli la riga">✕</button></td>`;
+    body.appendChild(tr);
+  });
+}
+
+function aggiornaCampi() {
+  document.querySelectorAll('[data-p]').forEach((el) => {
+    const v = get(el.dataset.p);
+    if (el.type === 'checkbox') el.checked = !!v; else el.value = v ?? '';
+  });
+  document.querySelectorAll('#boxNotte input').forEach((e) => { e.disabled = !stato.notte.custom; });
+  document.querySelectorAll('#boxStra input').forEach((e) => { e.disabled = !stato.stra.custom; });
+  document.querySelectorAll('#boxEnte input').forEach((e) => { e.disabled = !stato.ente.on; });
+  $('#hintNotte').style.display = stato.notte.custom ? 'none' : '';
+}
+
+function aggiornaUscita() {
+  const codice = codiceDa(stato);
+  $('#code').textContent = codice;
+  const msgs = $('#msgs');
+  msgs.innerHTML = '';
+  for (const x of controlla(stato)) {
+    const d = document.createElement('div');
+    d.className = 'msg ' + x.t;
+    d.textContent = x.msg;
+    msgs.appendChild(d);
+  }
+  const c = stato.codice.trim() || 'codice';
+  const nome = c.replace(/-([a-z0-9])/g, (_, ch) => ch.toUpperCase());
+  $('#attiva').textContent = `import ${nome} from './${c}.js';\n// …e nella lista di CONTRATTI:\n[…, ${nome}]`;
+  const chip = $('#fileChip');
+  chip.textContent = (nomeFile || 'nuovo contratto') + (sporco ? ' — modificato' : '');
+  chip.classList.toggle('dirty', sporco);
+  $('#hintSalva').textContent = handle ? 'Salva scrive nel file aperto.' : (window.showSaveFilePicker ? 'Salva chiede dove scrivere.' : 'Salva scarica il file.');
+}
+
+function cambiato() { sporco = true; aggiornaUscita(); }
+
+function carica(s, nome, h) {
+  stato = s; nomeFile = nome || ''; handle = h || null; sporco = false;
+  aggiornaCampi(); disegnaVoci(); aggiornaUscita();
+}
+
+document.addEventListener('input', (e) => {
+  const el = e.target;
+  if (el.dataset.p) {
+    set(el.dataset.p, el.type === 'checkbox' ? el.checked : el.value);
+    if (el.type === 'checkbox') aggiornaCampi();
+    cambiato();
+  } else if (el.dataset.c !== undefined) {
+    const v = stato.fonti.voci[Number(el.dataset.i)];
+    v[el.dataset.c] = el.type === 'checkbox' ? el.checked : el.value;
+    cambiato();
+  }
+});
+document.addEventListener('click', (e) => {
+  const d = e.target.closest('[data-del]');
+  if (d) { stato.fonti.voci.splice(Number(d.dataset.del), 1); disegnaVoci(); cambiato(); }
+});
+
+$('#bVoce').addEventListener('click', () => {
+  stato.fonti.voci.push({ voce: '', pct: '', condizione: '', articolo: '', usabile: false });
+  disegnaVoci(); cambiato();
+  const righe = document.querySelectorAll('#voci tr');
+  righe[righe.length - 1]?.querySelector('select')?.focus();
+});
+
+$('#cUsa').addEventListener('click', () => {
+  const d = num($('#cDiv').value), o = num($('#cOre').value);
+  if (!d || !o || Number.isNaN(d) || Number.isNaN(o)) { $('#cEsito').textContent = 'Servono tutti e due i numeri.'; return; }
+  const f = Math.round((d / o) * 10000) / 10000;
+  stato.factor = txt(f);
+  $('#cEsito').textContent = `${txt(d)} ÷ ${txt(o)} = ${txt(f)} — messo nel fattore.`;
+  aggiornaCampi(); cambiato();
+});
+
+function controllaPrimaDiPerdere() {
+  return !sporco || confirm('Ci sono modifiche non salvate. Le butto?');
+}
+
+$('#bNuovo').addEventListener('click', () => {
+  if (!controllaPrimaDiPerdere()) return;
+  carica(statoVuoto(), '', null);
+});
+
+async function apri() {
+  if (!controllaPrimaDiPerdere()) return;
+  const dalTesto = (testo, nome, h) => {
+    try {
+      const { intestazione, obj } = leggiFile(testo);
+      carica(statoDa(obj, intestazione), nome, h);
+      toast('Aperto ' + nome);
+    } catch (err) { alert(err.message); }
+  };
+  if (window.showOpenFilePicker) {
+    try {
+      const [h] = await window.showOpenFilePicker({ types: [{ description: 'Contratto', accept: { 'text/javascript': ['.js', '.mjs'] } }] });
+      const f = await h.getFile();
+      dalTesto(await f.text(), f.name, h);
+    } catch (err) { if (err.name !== 'AbortError') alert(err.message); }
+  } else {
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = '.js,.mjs';
+    inp.onchange = async () => { const f = inp.files[0]; if (f) dalTesto(await f.text(), f.name, null); };
+    inp.click();
+  }
+}
+$('#bApri').addEventListener('click', apri);
+
+function scarica() {
+  const nome = (stato.codice.trim() || 'contratto') + '.js';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([codiceDa(stato)], { type: 'text/javascript' }));
+  a.download = nome; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  nomeFile = nome; sporco = false; aggiornaUscita();
+  toast('Scaricato ' + nome);
+}
+$('#bScarica').addEventListener('click', scarica);
+
+$('#bSalva').addEventListener('click', async () => {
+  const errori = controlla(stato).filter((x) => x.t === 'err');
+  if (errori.length && !confirm('Ci sono errori nei dati:\n\n• ' + errori.map((x) => x.msg).join('\n• ') + '\n\nSalvo lo stesso?')) return;
+  try {
+    if (!handle && window.showSaveFilePicker) {
+      handle = await window.showSaveFilePicker({ suggestedName: (stato.codice.trim() || 'contratto') + '.js',
+        types: [{ description: 'Contratto', accept: { 'text/javascript': ['.js'] } }] });
+    }
+    if (handle) {
+      const w = await handle.createWritable();
+      await w.write(codiceDa(stato)); await w.close();
+      nomeFile = handle.name; sporco = false; aggiornaUscita();
+      toast('Salvato ' + handle.name);
+    } else scarica();
+  } catch (err) { if (err.name !== 'AbortError') alert(err.message); }
+});
+
+$('#bCopia').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(codiceDa(stato)); toast('Codice copiato'); }
+  catch { const r = document.createRange(); r.selectNodeContents($('#code')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Selezionato: premi Ctrl+C'); }
+});
+
+window.addEventListener('beforeunload', (e) => { if (sporco) { e.preventDefault(); e.returnValue = ''; } });
+carica(statoVuoto(), '', null);
+</script>
+</body>
+</html>
