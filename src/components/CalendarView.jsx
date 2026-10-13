@@ -37,6 +37,7 @@ import ImportModal from './ImportModal';
 import TimelineView from './TimelineView';
 import ShareWeekModal from './ShareWeekModal';
 import useOccupato from '../hooks/useOccupato';
+import useOggi from '../hooks/useOggi';
 import useSfoglio from '../hooks/useSfoglio';
 import { KEY_CAL_LAYOUT } from '../services/backup';
 
@@ -350,13 +351,14 @@ export default function CalendarView({
   // Il conguaglio di dicembre, come forchetta (motore/conguaglio.js). Solo per
   // l'anno in corso: per un anno chiuso il conguaglio è già in busta, e la busta
   // lo sa meglio dell'app. Dal primo momento in cui c'è un reddito da stimare.
-  const oggiAnno = new Date().getFullYear();
+  const oggi = useOggi();
+  const oggiAnno = oggi.getFullYear();
   const conguaglio = useMemo(
     () => (year === oggiAnno ? stimaConguaglio({
       anno: year, allShifts, settings, payMap: payByShift || {}, proiezioneAnnua: (annualProjection || annualGross) || null,
-      oggi: new Date(),
+      oggi,
     }) : null),
-    [year, oggiAnno, allShifts, settings, payByShift, annualProjection, annualGross],
+    [year, oggiAnno, oggi, allShifts, settings, payByShift, annualProjection, annualGross],
   );
   // Il bonus preso finora è UNO per tutte le schermate: quello mese per mese
   // del conguaglio. Per un anno chiuso, la quota piena come prima.

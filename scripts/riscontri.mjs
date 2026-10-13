@@ -17,11 +17,12 @@
 
 import { readdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join, basename } from 'node:path';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
-const OROLOGIO = join(QUI, 'lib', 'orologio-finto.mjs');
+// `--import` vuole un URL: su Windows un percorso `D:\…` dà ERR_UNSUPPORTED_ESM_URL_SCHEME.
+const OROLOGIO = pathToFileURL(join(QUI, 'lib', 'orologio-finto.mjs')).href;
 const DATE = ['2026-01-15T10:00', '2026-12-31T10:00', '2027-03-10T10:00'];
 const senzaDist = process.argv.includes('--senza-dist');
 

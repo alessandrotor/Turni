@@ -23,6 +23,7 @@ import AvvisoAnnulla from './components/AvvisoAnnulla';
 import { avvisoDaMostrare, DURATA_ANNULLA } from './utils/avvisi';
 import { iscrivitiAggiornamenti, applicaAggiornamento, primaDiRicaricare } from './services/aggiornamento';
 import useOccupato from './hooks/useOccupato';
+import useOggi from './hooks/useOggi';
 import { iscrivitiOccupato } from './utils/occupato';
 import { isAssenza } from './motore/assenze';
 import { turniDaImportare } from './utils/import-turni';
@@ -362,9 +363,10 @@ export default function App() {
   // ricalcolare RAL e tasse. Stessa funzione usata dalla pagina Statistiche,
   // per anni diversi: un'unica fonte evita che le due pagine mostrino cifre
   // diverse per lo stesso anno (vedi `computeAnnualGrossFromShifts` in net.js).
+  const oggi = useOggi();
   const annualGross = useMemo(
-    () => computeAnnualGrossFromShifts(year, allShifts, settings, payByShift, new Date()),
-    [allShifts, settings, year, payByShift],
+    () => computeAnnualGrossFromShifts(year, allShifts, settings, payByShift, oggi),
+    [allShifts, settings, year, payByShift, oggi],
   );
 
   // Reddito dell'anno PROIETTATO a dicembre, non quello incassato finora.
@@ -376,9 +378,9 @@ export default function App() {
   // qui è ciò che impedisce alle due schermate di dire numeri diversi.
   const annualProjection = useMemo(
     () => projectAnnualIncome(annualGross.total, annualGross.extras, settings, year, {
-      enableNetCalc: ENABLE_NET_CALC, oggi: new Date(),
+      enableNetCalc: ENABLE_NET_CALC, oggi,
     }),
-    [annualGross, settings, year],
+    [annualGross, settings, year, oggi],
   );
 
   // Doppioni, giorni già di ferie o malattia e campi da tenere: la regola sta

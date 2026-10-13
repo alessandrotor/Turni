@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import useOggi from './useOggi';
 import {
   lordoDelMese, riferimentoAnnuoDelMese, TAX_2026, tiDecision, projectAnnualIncome,
 } from '../motore/net';
@@ -24,6 +25,7 @@ export default function useMonthlyNet({
   year, month, settings, pay, annualGross, annualExtras = 0, daysInMonth, allShifts = [], payMap,
   tiSimulato = null,
 }) {
+  const oggi = useOggi();
   const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
   const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
     .reduce((s, v) => s + (Number(v.amount) || 0), 0);
@@ -46,9 +48,9 @@ export default function useMonthlyNet({
   // e soglie del bonus di tutto l'anno.
   const netProjection = useMemo(
     () => projectAnnualIncome(annualGross, annualExtras, settings, year, {
-      enableNetCalc: ENABLE_NET_CALC, oggi: new Date(),
+      enableNetCalc: ENABLE_NET_CALC, oggi,
     }),
-    [annualGross, annualExtras, settings, year],
+    [annualGross, annualExtras, settings, year, oggi],
   );
   const netBasis = netProjection.value;
 
@@ -77,10 +79,12 @@ export default function useMonthlyNet({
   );
   // La capienza del trattamento integrativo si costruisce sull'anno: il
   // progressivo dei mesi prima di questo (capienza.js).
-  const progressivo = useMemo(
-    () => (ENABLE_NET_CALC ? progressiviDellAnno({ anno: year, allShifts, settings, payMap: payMap || {}, oggi: new Date() })[month] : null),
-    [year, month, allShifts, settings, payMap],
+  // L'anno si calcola UNA volta: sfogliare i mesi estrae soltanto l'elemento.
+  const progressiviAnno = useMemo(
+    () => (ENABLE_NET_CALC ? progressiviDellAnno({ anno: year, allShifts, settings, payMap: payMap || {}, oggi }) : null),
+    [year, allShifts, settings, payMap, oggi],
   );
+  const progressivo = progressiviAnno ? progressiviAnno[month] : null;
   // Statistiche passa dalla stessa funzione: vedi `nettoDelMeseConPremio`.
   const netMonth = useMemo(
     () => (ENABLE_NET_CALC ? nettoDelMeseConPremio({ lordo: monthGross, extraMese: extraThisMonth, premioMese },

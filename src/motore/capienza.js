@@ -33,7 +33,7 @@ export function capienzaProgressiva(lordoMese, settings = {}, progressivo = null
   const mesi = Number(progressivo?.mesi) || 0;
   const lordoPresunto = lordoPresuntoAnno(lordoMese, settings, progressivo);
   if (mesi === 0 && programmaPaghe(settings).primoMeseConcesso) return { capiente: true, media: null, lordoPresunto };
-  const media = ((Number(progressivo.lordo) || 0) + (Number(lordoMese) || 0)) / (mesi + 1);
+  const media = ((Number(progressivo?.lordo) || 0) + (Number(lordoMese) || 0)) / (mesi + 1);
   const reddito = redditoComplessivo(media * 12, settings);
   return {
     capiente: irpefLorda(reddito, fiscoDi(settings)) > detrazioneLavoro(reddito, fiscoDi(settings)) - fiscoDi(settings).TI_CAPIENZA_SCONTO,

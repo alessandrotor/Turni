@@ -46,6 +46,28 @@ function descriviErroreScrittura(err) {
     };
 }
 
+// Se il JSON salvato non si legge, i byte NON si buttano: il primo salvataggio
+// successivo riscriverebbe la chiave e li perderebbe, mentre in parte si
+// possono ancora recuperare a mano. Si copiano in una chiave a parte, una sola
+// volta (la prima copia è la più vicina a com'erano). Niente domande: chi apre
+// l'app non è lì per questo, e i dati ci sono se servono.
+export const SUFFISSO_ILLEGGIBILE = '__illeggibile';
+
+export function leggiSalvato(storage, key, initialValue) {
+  let item = null;
+  try {
+    item = storage.getItem(key);
+    return item ? JSON.parse(item) : initialValue;
+  } catch {
+    if (item) {
+      try {
+        if (storage.getItem(key + SUFFISSO_ILLEGGIBILE) == null) storage.setItem(key + SUFFISSO_ILLEGGIBILE, item);
+      } catch { /* storage pieno o bloccato: qui non c'è altro da fare */ }
+    }
+    return initialValue;
+  }
+}
+
 /**
  * @returns {[any, Function, object|null]} valore, setter, errore di salvataggio
  *   (`null` finché tutto va bene). Il terzo elemento è nuovo: i chiamanti che
@@ -53,14 +75,7 @@ function descriviErroreScrittura(err) {
  *   DEVE mostrarlo — vedi il banner in `App.jsx`.
  */
 export default function useLocalStorage(key, initialValue) {
-  const [value, setValue] = useState(() => {
-    try {
-      const item = localStorage.getItem(key);
-      return item ? JSON.parse(item) : initialValue;
-    } catch {
-      return initialValue;
-    }
-  });
+  const [value, setValue] = useState(() => leggiSalvato(localStorage, key, initialValue));
 
   const [erroreSalvataggio, setErroreSalvataggio] = useState(null);
 

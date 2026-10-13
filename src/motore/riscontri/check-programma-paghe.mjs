@@ -50,6 +50,7 @@ esito(vero.trattamentoIntegrativo === 101.91 && conProva.trattamentoIntegrativo 
 esito(simulaTi(vero, 31, true, P).trattamentoIntegrativo === 101.92, 'anche la simulazione del riquadro');
 const primo = (s) => capienzaProgressiva(300, s, { lordo: 0, mesi: 0, mese: 0 }).capiente;
 esito(primo(S) === true && primo(P) === false, 'il primo mese: concesso o misurato sul mese');
+esito(typeof capienzaProgressiva(300, P, null).capiente === 'boolean', 'senza progressivo (null) non salta: misura sul mese');
 
 delete PROGRAMMI.prova;
 console.log(falliti ? `\n${falliti} riscontro/i FALLITO/I\n` : '\nTutto torna.\n');

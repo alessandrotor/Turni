@@ -73,6 +73,13 @@ la chiave e **i byte corrotti — in parte recuperabili a mano — spariscono pe
 sempre**. Manca la quarantena della stringa illeggibile e l'avviso «i dati
 salvati non sono leggibili, non toccare niente».
 
+> **Chiusa per la parte che perdeva i dati — 13/10/2026.** `leggiSalvato`
+> copia i byte illeggibili in `<chiave>__illeggibile` (una sola volta, la prima
+> copia non si sovrascrive) prima di restituire il valore di partenza.
+> → `check-json-corrotto.mjs`. **Resta fuori l'avviso** a schermo: per
+> regola (frictionless) non si chiede niente all'apertura, e i dati ci sono
+> in salvo se qualcuno li cerca. Non c'è ancora una via in app per ripristinarli.
+
 ### A4. Il file nativo finisce nella cache — `export.js:50` *(verificato)*
 
 `directory: Directory.Cache`. Se l'utente chiude il foglio di condivisione senza
