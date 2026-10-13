@@ -3,7 +3,7 @@ import { parseDate, formatDayShort, minutesDiff, formatMinutes } from '../utils/
 import useModalDismiss from '../hooks/useModalDismiss';
 import { turniDaImportare } from '../utils/import-turni';
 
-function ShiftPreviewRow({ shift }) {
+export function ShiftPreviewRow({ shift }) {
   const mins = minutesDiff(shift.startTime, shift.endTime) - (shift.breakMinutes || 0);
   const date = parseDate(shift.date);
   const dayName = formatDayShort(date);

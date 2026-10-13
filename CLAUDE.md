@@ -517,6 +517,11 @@ Discendono tutte dalla parola d'ordine qui sopra.
   (`confrontoConSoglia`, → `check-costo-soglia.mjs`); il caso peggiore resta
   solo per chi è sotto e chiede «e se la superassi?». Lo stesso per il conguaglio: «ti riprendono» è cassa (quello che
   le buste hanno dato in più dell'anno), non una perdita, e si dice.
+- **Incolla turni da un messaggio** (`utils/testo-turni.js`) legge il testo
+  IN LOCALE: nessuna rete, nessun modello, ed è per questo che non ha il
+  consenso della foto. «Lun» senza data si risolve sul giorno più vicino a oggi
+  e l'anteprima lo dice con un «Parti da» da correggere: non si indovina in
+  silenzio. Un orario senza giorno non diventa un giorno. → `check-testo-turni.mjs`
 - **Non si scrolla se non è assolutamente necessario.** Vale soprattutto per
   ciò che si apre sopra la pagina: una finestra che costa uno scorrimento per
   arrivare al pulsante che la chiude è una finestra scritta troppo lunga, e la

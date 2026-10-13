@@ -15,7 +15,7 @@ import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../motore/assenze';
 import { EXTRA_MONTHS, projectAnnualIncome } from '../motore/net';
-import { ENABLE_DEBUG, ENABLE_NET_CALC } from '../config/features';
+import { ENABLE_NET_CALC } from '../config/features';
 import useMonthlyNet from '../hooks/useMonthlyNet';
 
 // Aliquota contributiva: fino a 3 decimali, senza zeri inutili in coda
@@ -34,6 +34,8 @@ const PROJECTION_LABEL = {
 };
 import { exportShiftsExcel, exportShiftsPDF } from '../services/export';
 import ImportModal from './ImportModal';
+import ImportTesto from './ImportTesto';
+import DebugUso from './DebugUso';
 import TimelineView from './TimelineView';
 import ShareWeekModal from './ShareWeekModal';
 import useOccupato from '../hooks/useOccupato';
@@ -875,18 +877,14 @@ export default function CalendarView({
               <strong>{TITOLO_ERRORE[importError.tipo]}</strong> {importError.messaggio}
             </span>
           )}
-          {ENABLE_DEBUG && importUsage && (
-            <div className="debug-usage">
-              <span className="debug-usage-tag">🐛 DEBUG token</span>
-              <span>prompt <strong>{importUsage.prompt ?? '—'}</strong></span>
-              <span>output <strong>{importUsage.output ?? '—'}</strong></span>
-              <span>thinking <strong>{importUsage.thinking ?? '—'}</strong></span>
-              <span>totale <strong>{importUsage.total ?? '—'}</strong></span>
-              <span className="debug-usage-meta">{importUsage.model} · {importUsage.finishReason || 'STOP'}</span>
-            </div>
-          )}
+          <DebugUso uso={importUsage} />
         </div>
       )}
+
+      {/* Da testo: locale, c'è anche senza il servizio di riconoscimento. */}
+      <div className="import-bar">
+        <ImportTesto esistenti={allShifts} onConfirm={onImportShifts} />
+      </div>
 
       {/* Main shifts view: Timeline or Grid. Scorrere di lato sui giorni cambia
           mese (`utils/swipe.js`): le frecce stanno in alto, fuori dalla portata
