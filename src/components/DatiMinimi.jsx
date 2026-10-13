@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import useModalDismiss from '../hooks/useModalDismiss';
-import { parseNum } from '../utils/pay';
+import { parseNum } from '../motore/pay';
 import { datiMinimiMancanti } from '../utils/configurazione';
 
 // I due dati senza cui non ha senso segnare un turno, chiesti quando si prova a

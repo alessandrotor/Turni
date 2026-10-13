@@ -42,7 +42,6 @@ export const FORMATO = 1;
 
 export const KEY_SHIFTS = 'turni_shifts';
 export const KEY_SETTINGS = 'turni_settings';
-export const KEY_TELEMETRY_OFF = 'turni_telemetry_off';
 export const KEY_CAL_LAYOUT = 'turni_cal_layout';
 
 export const LAYOUT_AMMESSI = new Set(['grid', 'timeline']);
@@ -187,8 +186,6 @@ export function pianoRipristino(dati, turniBuoni) {
   if (dati.impostazioni && typeof dati.impostazioni === 'object' && !Array.isArray(dati.impostazioni)) {
     piano.push({ chiave: KEY_SETTINGS, valore: JSON.stringify(dati.impostazioni) });
   }
-
-  piano.push({ chiave: KEY_TELEMETRY_OFF, valore: dati.telemetriaDisattivata ? '1' : null });
 
   // Assente nei backup fatti prima che la vista agenda esistesse: in quel caso
   // si lascia la preferenza corrente com'è, invece di riportarla alla griglia.

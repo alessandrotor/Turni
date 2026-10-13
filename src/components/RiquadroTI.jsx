@@ -14,11 +14,11 @@
 // Qui non si calcola niente: ogni cifra arriva dal calendario, che la prende
 // dal motore (CLAUDE.md, «il motore è il cuore»).
 
-import { formatCurrency } from '../utils/pay';
+import { formatCurrency } from '../motore/pay';
 import { euroCella, scriviForchetta } from '../utils/formato';
-import { BONUS_STATUS } from '../utils/bonus';
-import { CAUSA, POSIZIONE } from '../utils/restituzione';
-import { tiSospeso, patchTiSospeso } from '../utils/net';
+import { BONUS_STATUS } from '../motore/bonus';
+import { CAUSA, POSIZIONE } from '../motore/restituzione';
+import { tiSospeso, patchTiSospeso } from '../motore/net';
 
 function Sospendi({ settings, onUpdateSettings }) {
   return (

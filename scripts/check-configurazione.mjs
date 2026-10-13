@@ -4,13 +4,12 @@
 //
 // PERCHÉ ESISTE
 // Dopo il giro sul CSS e quello sul JavaScript (`check-codice-morto.mjs`),
-// restava tutto il resto: JSON, XML Android, HTML, `_headers`, `.env.esempio`,
-// lo script Apps Script della telemetria. Sono pochi file, quasi mai toccati —
+// restava tutto il resto: JSON, HTML, `_headers`, `.env.esempio`. Sono pochi file, quasi mai toccati —
 // ed è proprio per questo che quando si rompono nessuno se ne accorge: non c'è
 // una schermata bianca, c'è una funzione che smette di funzionare in silenzio
 // su un ambiente solo.
 //
-// I tre modi di sbagliare che questo script guarda sono tutti così:
+// I modi di sbagliare che questo script guarda sono tutti così:
 //
 //  1. UN VALORE DI `_headers` CHE VA A CAPO. Non dà errore: Cloudflare legge la
 //     riga successiva come un header nuovo e la butta. La CSP resta monca e il
@@ -18,13 +17,6 @@
 //  2. UNA VARIABILE `VITE_*` USATA E NON DOCUMENTATA. Il codice la legge come
 //     stringa vuota, quindi la funzione che ne dipende semplicemente non c'è, e
 //     chi compila da un altro computer non ha modo di sapere che gli manca.
-//  3. UNA COLONNA DELLA TELEMETRIA CHE NON COMBACIA. Il Foglio Google scrive le
-//     colonne di `HEADERS` e ignora tutto il resto: un campo aggiunto da una
-//     parte e non dall'altra si perde senza che nessuna delle due si lamenti.
-//
-// Non entra qui il rapporto fra la CSP e la telemetria — che oggi la CSP
-// blocca, di proposito: sta scritto in `public/_headers`, perché è una
-// decisione, non un fatto da riscontrare.
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -48,7 +40,7 @@ function elenca(dir, filtro, out = []) {
 console.log('\nConfigurazione e contratti fra linguaggi\n');
 
 // ── 1. Ogni JSON si legge ──────────────────────────────────────────────────
-const json = ['capacitor.config.json', 'package.json', 'worker/package.json', 'src/data/ccnl.json']
+const json = ['package.json', 'worker/package.json', 'src/data/ccnl.json']
   .filter(existsSync);
 const jsonRotti = json.filter((f) => {
   try { JSON.parse(readFileSync(f, 'utf8')); return false; } catch { return true; }
@@ -173,29 +165,6 @@ check(nonDocumentate.length === 0 && nonUsate.length === 0,
   '.env.esempio elenca esattamente le variabili che il codice legge',
   [...nonDocumentate.map((v) => `${v} non documentata`), ...nonUsate.map((v) => `${v} documentata e mai letta`)]
     .join(' · ') || `${lette.size} variabili`);
-
-// ── 8. Il contratto della telemetria: JavaScript → Apps Script → Foglio ────
-// Il Foglio scrive le colonne di `HEADERS` e basta. Un campo aggiunto da questa
-// parte e non da quella non arriva, e non se ne lamenta nessuno: si scopre
-// guardando una colonna vuota fra sei mesi.
-const gs = readFileSync('docs/telemetry-appsscript.gs', 'utf8');
-const colonne = new Set([...(gs.match(/const HEADERS = \[([\s\S]*?)\]/)?.[1] ?? '')
-  .matchAll(/'([^']+)'/g)].map((m) => m[1]));
-const inviate = new Set();
-// I tre punti da cui nasce il messaggio, e non ce n'è un quarto:
-const tel = readFileSync('src/services/telemetry.js', 'utf8');
-for (const m of (tel.match(/JSON\.stringify\(\{([\s\S]*?)\}\)/)?.[1] ?? '').matchAll(/^\s*([a-zA-Z]\w*):/gm)) inviate.add(m[1]);
-const cal = readFileSync('src/components/CalendarView.jsx', 'utf8');
-for (const m of (cal.match(/const meta = \{([^}]*)\}/)?.[1] ?? '').matchAll(/([a-zA-Z]\w*):/g)) inviate.add(m[1]);
-for (const m of cal.matchAll(/sendImportTelemetry\(\{([^}]*)\}/g)) {
-  for (const k of m[1].matchAll(/([a-zA-Z]\w*):/g)) inviate.add(k[1]);
-}
-const wrk = readFileSync('worker/src/index.js', 'utf8');
-for (const m of (wrk.match(/usage:\s*\{([\s\S]*?)\n\s*\},/)?.[1] ?? '').matchAll(/^\s*([a-zA-Z]\w*):/gm)) inviate.add(m[1]);
-const perse = [...inviate].filter((k) => !colonne.has(k));
-check(perse.length === 0 && inviate.size >= 10,
-  'ogni campo inviato dalla telemetria ha la sua colonna nel Foglio',
-  perse.length ? `si perderebbe: ${perse.join(', ')}` : `${inviate.size} campi su ${colonne.size} colonne`);
 
 // ── 9. La scorciatoia dell'icona: manifest ↔ App ───────────────────────────
 // «Segna il turno di oggi» vive in due file che non si parlano: l'indirizzo sta

@@ -8,7 +8,7 @@
 // Un mese senza turni non è un mese a zero: è un mese non segnato.
 
 import { confrontoMontante } from '../src/utils/confronto-montante.js';
-import { computePayByShift } from '../src/utils/pay.js';
+import { computePayByShift } from '../src/motore/pay.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {

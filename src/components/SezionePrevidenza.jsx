@@ -1,23 +1,39 @@
 // Impostazioni: fondo pensione e cassa sanitaria trattenuti in busta.
 //
 // Sta in un file a sé perché Settings.jsx è congelato alla sua misura
-// (check-dimensioni). Il conto lo fa il motore (utils/previdenza.js): qui si
+// (check-dimensioni). Il conto lo fa il motore (motore/previdenza.js): qui si
 // leggono e si salvano due numeri, e si dice cosa cambiano.
 
-import { parseNum } from '../utils/pay';
-import { TETTO_FONDO_PENSIONE } from '../utils/previdenza';
+import { parseNum } from '../motore/pay';
+import { TETTO_FONDO_PENSIONE } from '../motore/previdenza';
 
 const comeTesto = (n) => (Number(n) ? String(Number(n)).replace('.', ',') : '');
 
 export const formPrevidenza = (settings) => ({
   fondoPensionePct: comeTesto(settings.fondoPensionePct),
   cassaSanitariaEuro: comeTesto(settings.cassaSanitariaEuro),
+  bonusPremioRisultato: !!settings.bonusPremioRisultato,
 });
 
 export const salvaPrevidenza = (form) => ({
   fondoPensionePct: parseNum(form.fondoPensionePct),
   cassaSanitariaEuro: parseNum(form.cassaSanitariaEuro),
+  bonusPremioRisultato: !!form.bonusPremioRisultato,
 });
+
+// Il bonus come premio di risultato (motore/premio-risultato.js): sta qui per
+// la stessa ragione della sezione sotto, Settings.jsx non può crescere.
+export function PremioRisultato({ form, setCheck }) {
+  return (
+    <label className="check-row" htmlFor="premio-risultato">
+      <input id="premio-risultato" type="checkbox" checked={!!form.bonusPremioRisultato} onChange={setCheck('bonusPremioRisultato')} />
+      <span>
+        È un <strong>premio di risultato</strong> (tassato all&apos;1% invece che con l&apos;IRPEF). Solo se la
+        busta lo scrive così; non ancora riscontrato su una busta.
+      </span>
+    </label>
+  );
+}
 
 export default function SezionePrevidenza({ form, set }) {
   return (

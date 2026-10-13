@@ -1,10 +1,10 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { formatDate, formatDayShort, parseDate, minutesDiff, formatMinutes, spostaOrario } from '../utils/dates';
-import { proponiPeriodo, totalePeriodo } from '../utils/periodo-assenza';
+import { proponiPeriodo, totalePeriodo } from '../motore/periodo-assenza';
 import useModalDismiss from '../hooks/useModalDismiss';
-import { TIPO, ETICHETTA, ICONA, tipoTurno, isAssenza, minutiGiornoAssenza } from '../utils/assenze';
+import { TIPO, ETICHETTA, ICONA, tipoTurno, isAssenza, minutiGiornoAssenza } from '../motore/assenze';
 import { proponiOrari, sagomeFrequenti, ORARI_DEFAULT, MAX_SAGOME } from '../utils/orari-proposti';
-import { parseNum } from '../utils/pay';
+import { parseNum } from '../motore/pay';
 import { calcolaCosaCambia } from '../utils/cosa-cambia';
 import { bozzaDaSalvare } from '../utils/bozza';
 

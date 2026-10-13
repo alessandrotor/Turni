@@ -2,10 +2,10 @@ import { useRef, useEffect, useMemo } from 'react';
 import {
   formatDate, formatDayShort, isToday, isWeekend, formatMinutes,
 } from '../utils/dates';
-import { calcShiftMinutes, getShiftSurchargePct, formatCurrency, lordoTurno } from '../utils/pay';
-import { minutiNotturniPagati, pctNotturno, fasciaNotturna } from '../utils/notturno';
-import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
-import { isHoliday } from '../utils/holidays';
+import { calcShiftMinutes, getShiftSurchargePct, formatCurrency, lordoTurno } from '../motore/pay';
+import { minutiNotturniPagati, pctNotturno, fasciaNotturna } from '../motore/notturno';
+import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../motore/assenze';
+import { isHoliday } from '../motore/holidays';
 
 // Il badge dice quante ore cadono in fascia; il suggerimento dice se quelle ore
 // valgono davvero di più. Sono due cose diverse e vanno tenute distinte: la

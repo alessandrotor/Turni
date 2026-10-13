@@ -45,7 +45,7 @@
 // import, altrimenti Node non risolve e il riscontro non parte.
 
 import { parseDate } from './dates.js';
-import { TIPO, tipoTurno } from './assenze.js';
+import { TIPO, tipoTurno } from '../motore/assenze.js';
 
 /** Quello che si propone quando non c'è storico: il comportamento di sempre. */
 export const ORARI_DEFAULT = { startTime: '08:00', endTime: '16:00', breakMinutes: 0 };

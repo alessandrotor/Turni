@@ -25,8 +25,8 @@ import {
   datiMinimiMancanti, haDatiMinimi, contrattoMancante,
   maggiorazioneDaChiedere, consigliatiMancanti, statoConfigurazione,
 } from '../src/utils/configurazione.js';
-import { FASCIA_NOTTURNA_DEFAULT, FASCIA_NOTTURNA_POSSIBILE } from '../src/utils/notturno.js';
-import ccnl from '../src/data/ccnl.json' with { type: 'json' };
+import { FASCIA_NOTTURNA_DEFAULT, FASCIA_NOTTURNA_POSSIBILE } from '../src/motore/notturno.js';
+import { CONTRATTI } from '../src/motore/contratti/index.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {
@@ -193,7 +193,7 @@ esito(chiedeNotte(turno('23:00', '06:30'), CON_TURISMO),
 // La fascia «possibile» deve contenere tutte quelle che l'app conosce: se un
 // domani se ne aggiunge una che comincia prima delle 22:00, questo lo scopre.
 const inMinuti = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
-const note = [FASCIA_NOTTURNA_DEFAULT, ...ccnl.map((c) => c.fasciaNotturna).filter(Boolean)];
+const note = [FASCIA_NOTTURNA_DEFAULT, ...Object.values(CONTRATTI).map((c) => c.fasciaNotturna).filter(Boolean)];
 const larga = FASCIA_NOTTURNA_POSSIBILE;
 esito(note.every((f) => inMinuti(f.inizio) >= inMinuti(larga.inizio)),
   'la fascia larga comincia prima di ogni fascia nota', larga.inizio);

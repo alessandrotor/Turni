@@ -54,8 +54,6 @@ export default class ErrorBoundary extends Component {
       // serva invece che dopo.
       if (esito === ESITO.SALVATO) {
         this.setState({ esito: { testo: `Backup salvato: ${turni} turni al sicuro.` } });
-      } else if (esito === ESITO.CONDIVISO) {
-        this.setState({ esito: { testo: `Backup di ${turni} turni pronto: controlla di averlo salvato dove volevi.` } });
       } else if (esito === ESITO.ANNULLATO) {
         this.setState({ esito: { attenzione: true, testo: 'Backup annullato: non è stato salvato niente. I tuoi dati sono ancora solo qui.' } });
       } else {
@@ -68,9 +66,8 @@ export default class ErrorBoundary extends Component {
         });
       }
     } catch (err) {
-      // Ultimo salvagente. `esportaBackup` passa da `deliver`, che su Android
-      // carica i plugin Capacitor con import dinamici: in uno stato già rotto
-      // anche quelli possono fallire. Qui si scende al minimo indispensabile —
+      // Ultimo salvagente. `esportaBackup` passa da `deliver`, che in uno stato
+      // già rotto può fallire. Qui si scende al minimo indispensabile —
       // leggere localStorage e trasformarlo in testo — che non dipende da
       // niente e non può rompersi a sua volta.
       try {

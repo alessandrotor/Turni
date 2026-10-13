@@ -6,7 +6,7 @@ Turni serve a tenere traccia dei propri turni di lavoro e a stimare quanto si
 guadagna. Questa informativa dice quali dati escono dal tuo dispositivo, dove
 vanno e perché. È scritta per essere letta, non per essere firmata.
 
-Vale sia per il sito (turni-9vr.pages.dev) sia per l'app Android.
+Vale per il sito turni-9vr.pages.dev, anche quando lo installi come app.
 
 ## In breve
 
@@ -81,7 +81,7 @@ repository ma nella versione pubblicata non è attivo, e si può verificare:
 node scripts/check-dati-in-uscita.mjs
 ```
 
-Nelle versioni di prova dell'app Android può essere attiva una statistica
+Nelle versioni di prova può essere attiva una statistica
 tecnica — numero di token consumati, versione dell'app, un identificativo
 casuale dell'installazione — con un interruttore per spegnerla in Impostazioni.
 Quell'interruttore compare **solo dove la statistica esiste davvero**.
@@ -97,10 +97,9 @@ foto, solo quando usi quella funzione: è spiegato sopra.
 
 ## Permessi
 
-L'app Android chiede il solo permesso **Internet**, necessario all'import da
-foto. L'accesso alle immagini passa dal selettore di sistema, quindi riguarda
-solo il file che scegli tu, una volta per volta: l'app non può sfogliare la tua
-galleria.
+Il sito non chiede permessi. L'accesso alle immagini per l'import da foto passa
+dal selettore di file, quindi riguarda solo il file che scegli tu, una volta per
+volta: l'app non può sfogliare la tua galleria.
 
 ## I tuoi diritti
 

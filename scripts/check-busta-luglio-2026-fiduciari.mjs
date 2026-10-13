@@ -24,7 +24,7 @@
 // particolare ex art. 9 GDPR, l'app non ha un campo dedicato per non
 // etichettarla come tale).
 
-import { calcNetMonthly } from '../src/utils/net.js';
+import { calcNetMonthly } from '../src/motore/net.js';
 
 const SETTINGS = {
   hourlyRate: 9.43022,

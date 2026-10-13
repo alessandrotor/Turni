@@ -25,13 +25,12 @@ const esito = (ok, etichetta, dettaglio = '') => {
   console.log(`  ${ok ? 'ok  ' : 'FALLITO'} ${etichetta}${dettaglio ? '  — ' + dettaglio : ''}`);
 };
 
-const SAFARI = { nativo: false, ios: true, standalone: false };
+const SAFARI = { ios: true, standalone: false };
 
 console.log('\nChi rischia di perdere i dati\n');
 esito(datiARischio(SAFARI) === true, 'iPhone in Safari', 'il 7-Day Cap di WebKit lo riguarda');
 esito(datiARischio({ ...SAFARI, standalone: true }) === false, 'iPhone con l\'app sulla Home', 'esente dal limite');
-esito(datiARischio({ ...SAFARI, nativo: true }) === false, 'app nativa', 'lo storage lo garantisce il sistema');
-esito(datiARischio({ nativo: false, ios: false, standalone: false }) === false, 'Android o desktop', 'nessuna cancellazione a tempo');
+esito(datiARischio({ ios: false, standalone: false }) === false, 'Android o desktop', 'nessuna cancellazione a tempo');
 
 console.log('\nQuando chiederlo\n');
 esito(chiedereInstallazioneIOS({ ...SAFARI, turni: 0 }) === false,
@@ -42,7 +41,7 @@ esito(chiedereInstallazioneIOS({ ...SAFARI, turni: 40, rifiutato: true }) === fa
   'un no dura', 'anche con molti turni');
 esito(chiedereInstallazioneIOS({ ...SAFARI, standalone: true, turni: 40 }) === false,
   'già installata: niente', 'nessuno deve sentirsi chiedere ciò che ha già fatto');
-esito(chiedereInstallazioneIOS({ nativo: false, ios: false, standalone: false, turni: 40 }) === false,
+esito(chiedereInstallazioneIOS({ ios: false, standalone: false, turni: 40 }) === false,
   'fuori da iOS: niente', 'altrove installare è una comodità, non una difesa');
 
 console.log('\nChi parla in alto\n');

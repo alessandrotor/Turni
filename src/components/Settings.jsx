@@ -1,20 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
-import { formatCurrency, parseNum } from '../utils/pay';
-import { getCcnl } from '../utils/ccnl';
-import { FASCE_DIPENDENTI, FASCIA_DEFAULT, contributiDiLegge } from '../utils/contributi-legge';
-import { isTelemetryEnabled, setTelemetryEnabled, telemetriaDisponibile } from '../services/telemetry';
+import { formatCurrency, parseNum } from '../motore/pay';
+import { getContratto } from '../utils/ccnl-elenco';
+import { FASCE_DIPENDENTI, FASCIA_DEFAULT, contributiDiLegge } from '../motore/contributi-legge';
 import { esportaBackup, leggiBackup, applicaBackup, contaTurniSalvati } from '../services/backup';
 import { ESITO } from '../services/export';
 import CcnlPicker from './CcnlPicker';
-import SezionePrevidenza, { formPrevidenza, salvaPrevidenza } from './SezionePrevidenza';
+import SezionePrevidenza, { formPrevidenza, salvaPrevidenza, PremioRisultato } from './SezionePrevidenza';
 import { statoConfigurazione } from '../utils/configurazione';
-import { modoTrattamentoIntegrativo } from '../utils/net';
+import { modoTrattamentoIntegrativo } from '../motore/net';
 import { elencoOrariDaCorreggere, applicaCorrezioneOrari } from '../services/correzioni';
 import { ENABLE_NET_CALC } from '../config/features';
 import { genId } from '../utils/id';
 import useOccupato from '../hooks/useOccupato';
-import { minutiGiornoAssenza } from '../utils/assenze';
-import { fasciaNotturnaRisolta, CUMULO_DEFAULT } from '../utils/notturno';
+import { minutiGiornoAssenza } from '../motore/assenze';
+import { fasciaNotturnaRisolta, CUMULO_DEFAULT } from '../motore/notturno';
 import { normalizzaMaggiorazione, messaggioMaggiorazione } from '../utils/maggiorazioni';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
@@ -92,8 +91,6 @@ export default function Settings({ settings, onSave }) {
     malattiaCarenzaPct: toInput(settings.malattiaCarenzaPct ?? 0),
     malattiaPct: toInput(settings.malattiaPct ?? 100),
     ...formPrevidenza(settings),
-    // Non passa da `onSave`: vive in localStorage, gestito da services/telemetry.
-    telemetry: isTelemetryEnabled(),
   });
   const [saved, setSaved] = useState(false);
   // Backup: stato locale alla sezione, non passa da onSave (agisce direttamente
@@ -216,8 +213,6 @@ export default function Settings({ settings, onSave }) {
 
       if (esito === ESITO.SALVATO) {
         setBackupMsg({ testo: `Backup salvato: ${turni} turni.` });
-      } else if (esito === ESITO.CONDIVISO) {
-        setBackupMsg({ testo: `Backup di ${turni} turni pronto. Controlla di averlo salvato dove volevi: finché resta solo fra i file temporanei, il telefono può cancellarlo.` });
       } else if (esito === ESITO.ANNULLATO) {
         setBackupMsg({ testo: 'Backup annullato: non è stato salvato nessun file.' });
       } else {
@@ -308,7 +303,7 @@ export default function Settings({ settings, onSave }) {
     setBackupBusy(true);
     try {
       const { turni, esito, testo } = await esportaBackup();
-      if (esito === ESITO.SALVATO || esito === ESITO.CONDIVISO) {
+      if (esito === ESITO.SALVATO) {
         setBackupMsg({ testo: `Dati attuali messi al sicuro: ${turni} turni.` });
       } else if (esito === ESITO.ANNULLATO) {
         setBackupMsg({ testo: 'Nessun file salvato.' });
@@ -472,7 +467,7 @@ export default function Settings({ settings, onSave }) {
   if (ultimoSalvato.current === null) ultimoSalvato.current = istantanea;
   useOccupato('impostazioni', istantanea !== ultimoSalvato.current);
 
-  const ccnlPreset = getCcnl(form.ccnl);
+  const ccnlPreset = getContratto(form.ccnl);
   // Le aliquote degli ammortizzatori non stanno nel CCNL: si ricavano dalla
   // fascia dimensionale scelta qui sopra, così l'elenco mostra quelle vere.
   const contributiLegge = contributiDiLegge(
@@ -1249,32 +1244,10 @@ export default function Settings({ settings, onSave }) {
             te lo chiede l'app al primo import da immagine (e potrai cambiarlo da lì).
           </p>
 
-          {/* L'interruttore compare SOLO dove la telemetria esiste davvero (l'APK
-              di prova). Nel sito non c'è endpoint: mostrarlo lo stesso sarebbe un
-              comando che non governa niente e che lascia credere che qualcosa
-              parta. Vedi `telemetriaDisponibile` in services/telemetry.js. */}
-          {telemetriaDisponibile ? (
-            <>
-              <label className="check-row">
-                <input
-                  type="checkbox"
-                  checked={form.telemetry}
-                  onChange={(e) => { setTelemetryEnabled(e.target.checked); setForm(f => ({ ...f, telemetry: e.target.checked })); }}
-                />
-                <span>Invia statistiche anonime d'uso dell'import</span>
-              </label>
-              <p className="form-hint">
-                Solo il numero di token consumati e un identificativo casuale dell'installazione:
-                nessun turno, nessuna immagine, niente che ti identifichi. Serve a capire quanto
-                costa la funzione durante la beta.
-              </p>
-            </>
-          ) : (
-            <p className="form-hint">
-              Di questa app non viene raccolta nessuna statistica d'uso: né quante volte
-              importi, né quanto costa. Non c'è niente da spegnere.
-            </p>
-          )}
+          <p className="form-hint">
+            Di questa app non viene raccolta nessuna statistica d'uso: né quante volte
+            importi, né quanto costa. Non c'è niente da spegnere.
+          </p>
         </details>
 
         {/* Backup e ripristino: i dati vivono solo in localStorage */}
@@ -1655,10 +1628,10 @@ export default function Settings({ settings, onSave }) {
               <option value="mai">Non contarlo mai</option>
             </select>
             <p className="form-hint">
-              <strong>Come fa il mio datore</strong>: il bonus compare nei mesi in cui il lordo
-              sta sotto i <strong>1.250 €</strong>, e sparisce in quelli in cui lo supera —
-              perché moltiplicato per dodici uscirebbe dai 15.000 € entro cui spetta. È quello
-              che succede davvero in busta, verificato su cinque cedolini.
+              <strong>Come fa il mio datore</strong>: ogni mese stima il reddito dell'anno — quanto
+              hai preso finora più questo mese fino a dicembre — e il tratt. integrativo compare
+              solo se la stima sta sotto i <strong>15.000 €</strong>. È quello che succede davvero
+              in busta, verificato su sei cedolini.
               <br /><br />
               <strong>Contalo sempre</strong>: se il tuo datore te lo accredita comunque. Alla
               fine dell'anno il conto torna uguale: quello che non hai preso mese per mese
@@ -1808,6 +1781,7 @@ export default function Settings({ settings, onSave }) {
               scaglioni): l'importo è sempre lo stesso, imposta qui una volta sola. Dal calendario
               poi spunti i mesi in cui l'hai preso.
             </p>
+            {Number(parseNum(form.monthlyBonusAmount)) > 0 && <PremioRisultato form={form} setCheck={setCheck} />}
           </div>
         </details>
 

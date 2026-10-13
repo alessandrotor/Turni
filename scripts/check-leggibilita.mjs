@@ -162,7 +162,7 @@ for (const [sel, { dy, lato }] of Object.entries(AREE)) {
 // ── 5. Un solo modo di scrivere gli euro ───────────────────────────────────
 console.log('\nGli euro col punto delle migliaia\n');
 
-const { formatCurrency } = await import('../src/utils/pay.js');
+const { formatCurrency } = await import('../src/motore/pay.js');
 const spazi = s => s.replace(/[  ]/g, ' ');
 verifica('formatCurrency(2317.25)', spazi(formatCurrency(2317.25)) === '2.317,25 €', spazi(formatCurrency(2317.25)));
 verifica('formatCurrency(16600)', spazi(formatCurrency(16600)) === '16.600,00 €', spazi(formatCurrency(16600)));

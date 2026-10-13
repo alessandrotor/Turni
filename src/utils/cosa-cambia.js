@@ -10,20 +10,20 @@
 // usando lo stesso motore di calcolo già collaudato (pay.js e net.js).
 // È una funzione pura, senza React e senza dipendenze dal DOM.
 
-import { calcShiftMinutes, calcTotalPay, computePayByShift, hasAnyRate } from './pay.js';
+import { calcShiftMinutes, calcTotalPay, computePayByShift, hasAnyRate } from '../motore/pay.js';
 import {
-  nettoDelMese,
   lordoDelMese,
   computeAnnualGrossFromShifts,
   projectAnnualIncome,
-} from './net.js';
-import { progressiviDellAnno } from './conguaglio.js';
-import { capienzaProgressiva } from './capienza.js';
-import { calcBonusMargin, BONUS_STATUS } from './bonus.js';
+} from '../motore/net.js';
+import { progressiviDellAnno } from '../motore/conguaglio.js';
+import { capienzaProgressiva } from '../motore/capienza.js';
+import { nettoDelMeseConPremio } from '../motore/premio-risultato.js';
+import { calcBonusMargin, BONUS_STATUS } from '../motore/bonus.js';
 import { getDaysInMonth } from './dates.js';
-import { isMensilizzato, monthlyContractHours } from './ccnl.js';
-import { isHoliday } from './holidays.js';
-import { isAssenza, TIPO } from './assenze.js';
+import { isMensilizzato, monthlyContractHours } from '../motore/ccnl.js';
+import { isHoliday } from '../motore/holidays.js';
+import { isAssenza, TIPO } from '../motore/assenze.js';
 
 // IL MONTE ORE DATO PER SCONTATO. Sul mensilizzato le ore ordinarie pagate
 // sono il monte ore del mese (103,20 h a 24 h settimanali), comunque siano
@@ -147,8 +147,8 @@ export function calcolaCosaCambia({
     // progressivo solo, per la capienza.
     const prima = lordoDelMese(pagaPrima?.total, year, month, settings);
     const dopo = lordoDelMese(pagaDopo?.total, year, month, settings);
-    const prog = progressiviDellAnno({ anno: year, allShifts: shiftsBefore, settings, payMap: mapPrima })[month];
-    const netto = (l) => nettoDelMese(l.lordo, settings, daysInMonth, l.extraMese, capienzaProgressiva(l.lordo, settings, prog));
+    const prog = progressiviDellAnno({ anno: year, allShifts: shiftsBefore, settings, payMap: mapPrima, oggi })[month];
+    const netto = (l) => nettoDelMeseConPremio(l, settings, daysInMonth, year, capienzaProgressiva(l.lordo - l.premioMese, settings, prog));
     return { pagaPrima, pagaDopo, nettoPrima: netto(prima), nettoDopo: netto(dopo) };
   };
   const monte = candidateShift ? montePresunto(monthShiftsBefore, settings, year, month, oggi) : null;
@@ -179,12 +179,12 @@ export function calcolaCosaCambia({
 
   if (rateAvailable) {
     const payMapBefore = computePayByShift(shiftsBefore, settings);
-    const annualBefore = computeAnnualGrossFromShifts(year, shiftsBefore, settings, payMapBefore);
-    const projBefore = projectAnnualIncome(annualBefore.total, annualBefore.extras, settings, year);
+    const annualBefore = computeAnnualGrossFromShifts(year, shiftsBefore, settings, payMapBefore, oggi);
+    const projBefore = projectAnnualIncome(annualBefore.total, annualBefore.extras, settings, year, { oggi });
 
     const payMapAfter = computePayByShift(shiftsAfter, settings);
-    const annualAfter = computeAnnualGrossFromShifts(year, shiftsAfter, settings, payMapAfter);
-    const projAfter = projectAnnualIncome(annualAfter.total, annualAfter.extras, settings, year);
+    const annualAfter = computeAnnualGrossFromShifts(year, shiftsAfter, settings, payMapAfter, oggi);
+    const projAfter = projectAnnualIncome(annualAfter.total, annualAfter.extras, settings, year, { oggi });
 
     // La soglia dei 15.000 vale sul REDDITO COMPLESSIVO, e la proiezione è un
     // LORDO: confrontarli direttamente faceva gridare «supera la soglia» con

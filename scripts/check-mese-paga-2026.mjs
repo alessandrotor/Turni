@@ -22,7 +22,7 @@
 // 103,20 h sono le ore ordinarie pagate comunque: check-supplementare-settimanale.mjs.
 
 import { payrollMonthKey, payrollMonthRange, formatDate, parseDate, getWeekStart } from '../src/utils/dates.js';
-import { calcTotalPay, calcShiftMinutes, computePayByShift } from '../src/utils/pay.js';
+import { calcTotalPay, calcShiftMinutes, computePayByShift } from '../src/motore/pay.js';
 
 const RATE = 9.21802;
 

@@ -9,7 +9,7 @@
 import { deliver } from './export';
 import {
   APP_TAG, FORMATO,
-  KEY_SHIFTS, KEY_SETTINGS, KEY_TELEMETRY_OFF, KEY_CAL_LAYOUT,
+  KEY_SHIFTS, KEY_SETTINGS, KEY_CAL_LAYOUT,
   controllaBusta, vagliaTurni, pianoRipristino, scriviConRitorno,
 } from '../utils/backup-contenuto';
 
@@ -18,10 +18,6 @@ import {
 // permette a `scripts/check-backup.mjs` di rompere lo storage a metà ripristino
 // e guardare se i dati tornano al loro posto. Qui restano i due mestieri che
 // hanno bisogno del browser — leggere un File e consegnare un file.
-//
-// `turni_install_id` resta fuori dal backup di proposito: è l'identità
-// dell'installazione ai fini della telemetria, e ripristinarla su un secondo
-// dispositivo mescolerebbe le statistiche di due installazioni distinte.
 
 // Riesportata perché la legge anche CalendarView.
 export { KEY_CAL_LAYOUT };
@@ -71,7 +67,6 @@ export function costruisciBackup() {
     versioneApp: typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : null,
     turni: leggi(KEY_SHIFTS, {}),
     impostazioni: leggi(KEY_SETTINGS, {}),
-    telemetriaDisattivata: leggiGrezzo(KEY_TELEMETRY_OFF) === '1',
     vistaCalendario: leggiGrezzo(KEY_CAL_LAYOUT) || null,
   };
 }

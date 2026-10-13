@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react';
 import { MONTH_NAMES, parseDate } from '../utils/dates';
-import { hasAnyRate, formatCurrency } from '../utils/pay';
-import { computeAnnualGrossFromShifts, projectAnnualIncome, calcNetAnnual } from '../utils/net';
+import { hasAnyRate, formatCurrency } from '../motore/pay';
+import { computeAnnualGrossFromShifts, projectAnnualIncome, calcNetAnnual } from '../motore/net';
 import {
   monthlyBreakdown, dailyBreakdown, yearSummary, monthGrid,
   daysInLongStreaks, STREAK_LUNGA,
 } from '../utils/stats';
-import { calcBonusMargin, BONUS_STATUS } from '../utils/bonus';
-import { TIPO, ETICHETTA } from '../utils/assenze';
+import { calcBonusMargin, BONUS_STATUS } from '../motore/bonus';
+import { TIPO, ETICHETTA } from '../motore/assenze';
 import { ENABLE_NET_CALC } from '../config/features';
 
 const fmt0 = (n) => formatCurrency(Math.round(n));
@@ -76,7 +76,7 @@ function dayCategory(day) {
 // (dodici mesi, un colore per giorno) più i totali che nessuna altra vista
 // mette insieme. Le cifre economiche vengono dalle stesse funzioni che usa
 // Calendario — vedi `computeAnnualGrossFromShifts`/`projectAnnualIncome` in
-// utils/net.js — così le due pagine non possono divergere.
+// motore/net.js — così le due pagine non possono divergere.
 export default function StatsView({ allShifts, settings, payByShift, onNavigate, onOpenMonth, onOpenDay }) {
   const yearsWithData = useMemo(() => {
     const set = new Set((allShifts || []).map(s => Number(s.date.slice(0, 4))));
@@ -94,12 +94,12 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
   const [showCalcolo, setShowCalcolo] = useState(false);
 
   const annualGross = useMemo(
-    () => computeAnnualGrossFromShifts(year, allShifts, settings, payByShift),
+    () => computeAnnualGrossFromShifts(year, allShifts, settings, payByShift, new Date()),
     [year, allShifts, settings, payByShift],
   );
   const projection = useMemo(
     () => projectAnnualIncome(annualGross.total, annualGross.extras, settings, year, {
-      enableNetCalc: ENABLE_NET_CALC,
+      enableNetCalc: ENABLE_NET_CALC, oggi: new Date(),
     }),
     [annualGross, settings, year],
   );

@@ -4,17 +4,17 @@ import {
   formatDate, formatMonthYear, isToday, isWeekend,
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth, formatPayrollRange,
 } from '../utils/dates';
-import { calcShiftMinutes, calcTotalPay, formatCurrency, lordoTurno } from '../utils/pay';
-import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../utils/assenze';
-import { isMensilizzato } from '../utils/ccnl';
-import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../utils/bonus';
-import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../utils/restituzione';
+import { calcShiftMinutes, calcTotalPay, formatCurrency, lordoTurno } from '../motore/pay';
+import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../motore/assenze';
+import { isMensilizzato } from '../motore/ccnl';
+import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../motore/bonus';
+import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../motore/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
 import { contrattoMancante } from '../utils/configurazione';
 import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
-import { minutiGiornoAssenza } from '../utils/assenze';
-import { EXTRA_MONTHS, TAX_2026, projectAnnualIncome } from '../utils/net';
+import { minutiGiornoAssenza } from '../motore/assenze';
+import { EXTRA_MONTHS, projectAnnualIncome } from '../motore/net';
 import { ENABLE_DEBUG, ENABLE_NET_CALC } from '../config/features';
 import useMonthlyNet from '../hooks/useMonthlyNet';
 
@@ -33,22 +33,22 @@ const PROJECTION_LABEL = {
   manuale: 'inserita a mano',
 };
 import { exportShiftsExcel, exportShiftsPDF } from '../services/export';
-import { sendImportTelemetry } from '../services/telemetry';
 import ImportModal from './ImportModal';
 import TimelineView from './TimelineView';
 import ShareWeekModal from './ShareWeekModal';
 import useOccupato from '../hooks/useOccupato';
+import useOggi from '../hooks/useOggi';
 import useSfoglio from '../hooks/useSfoglio';
 import { KEY_CAL_LAYOUT } from '../services/backup';
 
 import { intervalloCella } from '../utils/orario-cella';
-import { stimaConguaglio } from '../utils/conguaglio';
+import { stimaConguaglio } from '../motore/conguaglio';
 import { numeroIt, euroCella, scriviForchetta } from '../utils/formato';
 import { PopupMese, PopupConguaglio, PopupSoglia } from './PopupFiscali';
 import RiquadroTI from './RiquadroTI';
 import NetPillole from './NetPillole';
 import { confrontoMontante } from '../utils/confronto-montante';
-import { lordoMeseMinimoTi } from '../utils/soglia-lorda';
+import { lordoMeseMinimoTi } from '../motore/soglia-lorda';
 import { tipoDiErrore, TITOLO_ERRORE } from '../utils/errore-import';
 
 // La forchetta a dieci euro: una cifra al centesimo prometterebbe una
@@ -347,23 +347,25 @@ export default function CalendarView({
   // Quanto rischia di dover RIDARE INDIETRO. E' la domanda che la gente si fa
   // davvero, e fino a settembre 2026 l'app non la sfiorava: sapeva dire se il
   // bonus spetta adesso, mai quanto costa scoprire a dicembre che non spettava.
-  // Vedi utils/restituzione.js per il modello e per cosa l'app NON puo' sapere.
-  // Il conguaglio di dicembre, come forchetta (utils/conguaglio.js). Solo per
+  // Vedi motore/restituzione.js per il modello e per cosa l'app NON puo' sapere.
+  // Il conguaglio di dicembre, come forchetta (motore/conguaglio.js). Solo per
   // l'anno in corso: per un anno chiuso il conguaglio è già in busta, e la busta
   // lo sa meglio dell'app. Dal primo momento in cui c'è un reddito da stimare.
-  const oggiAnno = new Date().getFullYear();
+  const oggi = useOggi();
+  const oggiAnno = oggi.getFullYear();
   const conguaglio = useMemo(
     () => (year === oggiAnno ? stimaConguaglio({
       anno: year, allShifts, settings, payMap: payByShift || {}, proiezioneAnnua: (annualProjection || annualGross) || null,
+      oggi,
     }) : null),
-    [year, oggiAnno, allShifts, settings, payByShift, annualProjection, annualGross],
+    [year, oggiAnno, oggi, allShifts, settings, payByShift, annualProjection, annualGross],
   );
   // Il bonus preso finora è UNO per tutte le schermate: quello mese per mese
   // del conguaglio. Per un anno chiuso, la quota piena come prima.
-  const tiFinora = conguaglio ? conguaglio.tiFinora : quotaPotenziale(dataDiRiferimento(year));
+  const tiFinora = conguaglio ? conguaglio.tiFinora : quotaPotenziale(dataDiRiferimento(year, new Date()));
   const rischio = useMemo(
     () => rischioRestituzione({
-      settings, proiezioneAnnua: annualProjection || annualGross, oggi: dataDiRiferimento(year),
+      settings, proiezioneAnnua: annualProjection || annualGross, oggi: dataDiRiferimento(year, new Date()),
       erogatoStimato: conguaglio ? conguaglio.tiFinora : null,
     }),
     [settings, annualProjection, annualGross, year, conguaglio],
@@ -413,7 +415,7 @@ export default function CalendarView({
   // non copre quei turni: uno «0 €» in cella sembrerebbe un turno non pagato,
   // che è una cosa diversa e falsa. `lordoTurno` sta in pay.js apposta, così
   // questa somma e il totale del riepilogo escono dalla stessa riga di codice
-  // (riscontro: scripts/check-lordo-turno.mjs).
+  // (riscontro: src/motore/riscontri/check-lordo-turno.mjs).
   const euroDelGiorno = useCallback((turni) => {
     if (!payByShift) return null;
     let somma = 0;
@@ -517,7 +519,7 @@ export default function CalendarView({
   // «fino ad agosto», «fino a luglio»: la d eufonica davanti ad a-.
   const finoA = (m) => { const n = nomeMese(m); return `fino ${/^a/i.test(n) ? 'ad' : 'a'} ${n}`; };
   // Le cifre delle buste del montante: scritte in `settings` solo quando si
-  // lascia il campo, legate al mese del montante (utils/conguaglio.js).
+  // lascia il campo, legate al mese del montante (motore/conguaglio.js).
   const salvaBuste = (chiave) => {
     const bozza = busteBozza[chiave];
     if (bozza == null || !conguaglio) return;
@@ -526,8 +528,8 @@ export default function CalendarView({
     onUpdateSettings?.({ [chiave]: String(bozza).trim() === '' || !(v >= 0) ? null : { importo: v, fino } });
     setBusteBozza((b) => ({ ...b, [chiave]: null }));
   };
-  // IL PERCHÉ di IRPEF e bonus, coi mesi che lo causano. Nei mesi sopra 1.250 €
-  // il datore non dà il bonus ma applica la detrazione più alta, che lo
+  // IL PERCHÉ di IRPEF e bonus, coi mesi che lo causano. Nei mesi in cui la
+  // stima del datore supera i 15.000 non dà il bonus ma la detrazione più alta, che lo
   // sostituisce; sotto, il contrario. Se l'anno finisce dall'altra parte della
   // soglia, a dicembre lo scambio si rovescia — ed è per questo che le due voci
   // hanno segni opposti e si compensano.
@@ -543,11 +545,11 @@ export default function CalendarView({
     const sopra = conguaglio.mesiSopraSoglia;
     const sotto = conguaglio.mesiSottoSoglia;
     if (c.annoSottoSoglia && c.voci.trattamentoIntegrativo <= -1 && sopra?.length) {
-      return `${elencoMesi(sopra)} ${sopra.length === 1 ? 'supera' : 'superano'} 1.250 €: niente tratt. integrativo, ma meno IRPEF. `
+      return `${elencoMesi(sopra)} ${sopra.length === 1 ? 'ha' : 'hanno'} una stima oltre i 15.000: niente tratt. integrativo, ma meno IRPEF. `
         + "Sull'anno resti sotto i 15.000: si inverte.";
     }
     if (!c.annoSottoSoglia && c.voci.trattamentoIntegrativo >= 1 && sotto?.length) {
-      return `${elencoMesi(sotto)} ${sotto.length === 1 ? 'resta' : 'restano'} sotto 1.250 €: tratt. integrativo, ma più IRPEF. `
+      return `${elencoMesi(sotto)} ${sotto.length === 1 ? 'ha' : 'hanno'} una stima sotto i 15.000: tratt. integrativo, ma più IRPEF. `
         + "Sull'anno superi i 15.000: si inverte.";
     }
     return null;
@@ -575,7 +577,7 @@ export default function CalendarView({
   }, [settings, year, oggiAnno]);
   const proiezioneBonusOgniMese = useMemo(
     () => projectAnnualIncome(annualGross, annualExtras, settingsBonusOgniMese, year, {
-      enableNetCalc: ENABLE_NET_CALC,
+      enableNetCalc: ENABLE_NET_CALC, oggi: new Date(),
     }),
     [annualGross, annualExtras, settingsBonusOgniMese, year],
   );
@@ -590,7 +592,7 @@ export default function CalendarView({
   const conguaglioSimulato = useMemo(
     () => (simulaBonus && year === oggiAnno ? stimaConguaglio({
       anno: year, allShifts, settings: settingsBonusOgniMese, payMap: payByShift || {},
-      proiezioneAnnua: proiezioneBonusOgniMese.value,
+      proiezioneAnnua: proiezioneBonusOgniMese.value, oggi: new Date(),
     }) : null),
     [simulaBonus, year, oggiAnno, allShifts, settingsBonusOgniMese, payByShift, proiezioneBonusOgniMese],
   );
@@ -601,7 +603,7 @@ export default function CalendarView({
   // COSA FA AL TRATTAMENTO INTEGRATIVO, che è il motivo per cui la domanda
   // viene fatta: il lordo da solo non risponde. La soglia dei 15.000 non è una
   // linea oltre cui si perde tutto — è una buca larga un paio di centinaia di
-  // euro e profonda ~129 (vedi utils/restituzione.js) — e i tre casi vogliono
+  // euro e profonda ~129 (vedi motore/restituzione.js) — e i tre casi vogliono
   // tre risposte diverse, non tre intensità dello stesso allarme.
   const posizioneSimulata = useMemo(
     () => posizioneRispettoSoglia(proiezioneBonusOgniMese.value, settings, costo),
@@ -639,7 +641,6 @@ export default function CalendarView({
   async function runImport(file, name) {
     setImportLoading(true);
     setImportError(null);
-    const meta = { named: !!name, imageBytes: file?.size ?? null, imageType: file?.type ?? null };
     try {
       // Client del proxy caricato on-demand: serve solo a chi importa da
       // immagine, non deve pesare sull'avvio (come services/export.js).
@@ -647,12 +648,10 @@ export default function CalendarView({
       const { shifts: parsed, usage } = await parseShiftsFromImage(file, name);
       setImportUsage(usage);
       setImportParsed(parsed);
-      sendImportTelemetry({ ok: true, ...usage, shifts: parsed.length, ...meta });
     } catch (err) {
       // Due famiglie, due gesti: rifare la foto o controllare la rete.
       const tipo = tipoDiErrore(err);
       setImportError({ tipo, messaggio: err.message || 'Il riconoscimento non è riuscito.' });
-      sendImportTelemetry({ ok: false, error: String(err.message || err), tipo, ...meta });
     } finally {
       setImportLoading(false);
     }
@@ -1195,18 +1194,18 @@ export default function CalendarView({
               />
               {/* LA REGOLA DEL MESE, dove si vede il suo effetto. Ad agosto la
                   busta tratteneva 8,38 € di IRPEF e nessuno capiva perché: il
-                  lordo × 12 superava i 15.000, e il programma paghe aveva
+                  stima dell'anno superava i 15.000, e il programma paghe aveva
                   tolto il tratt. integrativo e messo la detrazione alta. La
                   spiegazione stava in «Come è calcolato?», chiusa. */}
-              {/* Si dice con la cifra unica, 1.250 € al mese, non con la
-                  moltiplicazione: «1.298 × 12 = 15.576» è il conto, e resta
+              {/* Prima il lordo, da confrontare con la busta, poi il reddito
+                  dei 15.000. Il conto per esteso è nel popup di «perché?», e resta
                   nel popup di «perché?» per chi lo vuole vedere. */}
               {netMonth?.esitoTi?.proiezione != null && (
                 <span className="bonus-strip-note">
                   {netMonthSimulato ? <>Simulazione: tocca il riquadro per tornare al calcolo.</>
-                    : tiNelMese ? <>Questo mese resti sotto i {numeroIt(TAX_2026.TI_SOGLIA_PIENO / 12)} € lordi: c'è il tratt. integrativo.</>
+                    : tiNelMese ? <>Il datore stima ~{numeroIt(netMonth.esitoTi.lordoPresunto ?? 0)} € lordi nell'anno ({numeroIt(netMonth.esitoTi.proiezione)} di reddito): sotto i 15.000, c'è il tratt. integrativo.</>
                     : netMonth.esitoTi.spetta ? <>Niente tratt. integrativo: la media dell'anno{netMonth.esitoTi.media != null && <>, ~{numeroIt(Math.round(netMonth.esitoTi.media))} € al mese,</>} è sotto i ~{numeroIt(minimoTi ?? 0)} € lordi che danno IRPEF da compensare.</>
-                    : <>Questo mese superi i {numeroIt(TAX_2026.TI_SOGLIA_PIENO / 12)} € lordi: niente tratt. integrativo, ma meno IRPEF.</>}
+                    : <>Il datore stima ~{numeroIt(netMonth.esitoTi.lordoPresunto ?? 0)} € lordi nell'anno ({numeroIt(netMonth.esitoTi.proiezione)} di reddito): sopra i 15.000, niente tratt. integrativo, ma meno IRPEF.</>}
                   {meseSiInverte && <strong> A dicembre si inverte.</strong>}{' '}
                   <button type="button" className="linklike" onClick={() => setMeseSpiegato(true)}>perché?</button>
                 </span>
@@ -1400,7 +1399,7 @@ export default function CalendarView({
                   </>
                 )}
 
-                {/* La regola del mese (lordo × 12) non sta più qui: ha la sua
+                {/* La regola del mese (la stima dell'anno) non sta più qui: ha la sua
                     riga nel riquadro del netto e il suo popup, «perché?». */}
                 <div className="net-subnote">
                   Sull'anno, la stima è {fmt0(netBasis)} € lordi ({PROJECTION_LABEL[netProjection.source]}):

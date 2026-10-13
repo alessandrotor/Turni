@@ -34,12 +34,10 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 const API_URL =
   'https://az-apim-cne-sa-0002-lgc-we.azure-api.net/ricerca-api/ricerca/pubblica/open-data?type=ARCHIVIO_CORRENTE';
 
-// Campi che potresti aver riempito a mano (parametri di calcolo): se il file di
-// output esiste già, questi valori vengono PRESERVATI e non sovrascritti.
-// `note` e `fasciaNotturna` stanno in elenco per lo stesso motivo degli altri:
-// sono conoscenza ricavata dai cedolini, non dati del CNEL, e un aggiornamento
-// del catalogo non deve cancellarla in silenzio.
-const CAMPI_CURATI = ['verificato', 'monthlyHoursFactor', 'mensilizzato', 'contributiExtra', 'enteBilaterale', 'ammortizzatori', 'note', 'fasciaNotturna'];
+// Campi curati a mano che un aggiornamento non deve cancellare. Le REGOLE dei
+// contratti (divisore orario, mensilizzazione, fascia notturna…) non stanno più
+// qui: sono file in src/motore/contratti/, che questo script non tocca.
+const CAMPI_CURATI = [];
 
 function firstDefined(...vals) {
   return vals.find(v => v !== undefined && v !== null && v !== '') ?? null;
@@ -66,11 +64,6 @@ function toCatalogEntry(rec) {
     vigente: rec.ultimoAccordoVigente === true,
     idAccordo: firstDefined(rec.idAccordo),
     fonte: 'https://www.cnel.it/Archivio-Contratti/entra-nell-archivio',
-    // Parametri di calcolo: vuoti finché non verificati su una busta reale.
-    verificato: false,
-    monthlyHoursFactor: null,
-    contributiExtra: [],
-    enteBilaterale: null,
   };
 }
 

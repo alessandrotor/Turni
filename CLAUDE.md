@@ -1,6 +1,6 @@
 # Turni — note per Claude
 
-PWA (React 18 + Vite, Capacitor per Android) che segna i turni e stima lordo e
+PWA (React 18 + Vite) che segna i turni e stima lordo e
 netto secondo le regole della busta paga italiana. Codice, commenti e interfaccia
 sono in italiano: scrivere nella stessa lingua.
 
@@ -148,11 +148,10 @@ Tre riscontri non parlano di buste ma di come il codice resta leggibile:
   La documentazione invecchia in silenzio; così invecchia a voce alta.
 - **`check-codice-morto.mjs`**: classi CSS ed export senza nessuno che li usi.
 
-`check-dati-in-uscita.mjs` ispeziona `dist/`, e su una build locale fallisce
-senza che ci sia niente di rotto: `.env.local` imposta `VITE_TELEMETRY_URL`,
-quindi in `dist/` finisce `script.google.com`. La CI non la imposta
-(`deploy-test.yml`). Vuole anche il proxy AI nel bundle. È l'unico falso
-allarme noto.
+`check-dati-in-uscita.mjs` ispeziona `dist/` e vuole il proxy AI nel bundle:
+su una build locale senza `VITE_AI_PROXY_URL` fallisce senza che ci sia niente
+di rotto. È l'unico falso allarme noto. La telemetria non c'è più (12/10/2026):
+nessun dato d'uso esce dall'app.
 
 `COSE-NUOVE.md` è l'inventario dei difetti noti, e invecchia in silenzio se
 nessuno lo tocca: quando una voce si chiude va marcata lì, col riscontro che la
@@ -179,13 +178,13 @@ quanto costa scoprire a dicembre che non spettava.
   1329,86: tre cifre per una domanda. Gli euro sul singolo turno sono un'opzione
   (`mostraEuroPerTurno`), spenta di default: chi non l'accende trova il
   calendario di prima.
-- **Il lordo di un turno si chiede a `lordoTurno`** (`utils/pay.js`), mai
+- **Il lordo di un turno si chiede a `lordoTurno`** (`motore/pay.js`), mai
   sommando a mano `base + surcharge` dentro un componente. Il riscontro
   (`check-lordo-turno.mjs`) verifica che la somma dei turni faccia esattamente
   il totale del mese: se la cella e il riepilogo dicessero cifre diverse,
   nessuna delle due sarebbe più credibile.
 - **Il rischio di restituzione è una CIFRA, non uno stato**
-  (`utils/restituzione.js`). «Bonus ridotto: reddito oltre i 15.000» descriveva
+  (`motore/restituzione.js`). «Bonus ridotto: reddito oltre i 15.000» descriveva
   una condizione; «di questo passo devi restituire ~805 €» dice cosa costa.
   **Ma quella cifra è cassa, non perdita**, e per un anno l'app le ha confuse.
   Superare i 15.000 costa **~129 € l'anno**, non 1.200: la detrazione da lavoro
@@ -210,7 +209,7 @@ quanto costa scoprire a dicembre che non spettava.
   di fine anno e lasciava fermo dicembre. Simula solo da questo mese a
   dicembre: i mesi passati sono andati come sono andati.
 
-- **Il conguaglio di dicembre è una forchetta, mai una cifra** (`utils/conguaglio.js`).
+- **Il conguaglio di dicembre è una forchetta, mai una cifra** (`motore/conguaglio.js`).
   È la differenza fra quanto il datore trattiene mese per mese (lordo × 12) e
   quanto è dovuto sull'anno vero: stesso motore, nessuna regola nuova. L'anno
   è la proiezione del motore anche agli estremi, che variano solo come erano i
@@ -252,8 +251,8 @@ Confonderli faceva dire «devi restituire 805 €» a chi guadagna 2.150 € l'a
 
 ## Il motore è il cuore: i numeri escono da lì
 
-**Ogni cifra a schermo viene da una funzione del motore** (`utils/net.js`,
-`utils/pay.js` e i moduli che li usano), mai da un conto rifatto dentro un
+**Ogni cifra a schermo viene da una funzione del motore** (`motore/net.js`,
+`motore/pay.js` e i moduli che li usano), mai da un conto rifatto dentro un
 componente o un modulo nuovo. È così apposta: due schermate che fanno lo stesso
 conto per strade diverse prima o poi dicono cifre diverse, e allora nessuna delle
 due è più credibile. Già capitato: il conguaglio sommava l'anno per conto suo,
@@ -266,6 +265,21 @@ diceva «superi i 15.000» e l'altro «resti sotto».
   lo usano tutti.
 - **Se sembra necessario fare altrimenti, si chiede prima a chi mantiene il
   progetto.** Non si decide da soli.
+
+**Il motore sta in `src/motore/` e può uscire da qui**: in un'altra app, senza
+il resto di Turni. Contratti, anni fiscali e programmi paghe sono un file
+ciascuno con un indice di una riga (`contratti/`, `fisco/`, `programmi-paghe/`),
+così si aggiungono e si tolgono a mano; la guida è `src/motore/LEGGIMI.md`, la
+porta d'ingresso `calcolaMese()` in `src/motore/index.js`. Il confine lo tiene
+`check-confine-motore.mjs`: niente import da fuori dalla cartella, niente
+browser, nessuna data di oggi letta da sola (la passa chi chiama). I riscontri
+delle regole stanno in `src/motore/riscontri/`, quelli sulle buste in
+`scripts/`; `check-numeri-fermi.mjs` blocca al centesimo l'uscita del motore,
+e uno spostamento non deve muoverla. Il fisco dell'anno arriva ai calcoli con
+`conFisco()`, le regole del programma paghe stanno in `programmi-paghe/`, ogni
+impostazione che il motore legge è scritta in `motore/impostazioni.js`. Il
+manuale della macchina è `src/motore/MANUALE.md`; il motore si verifica da solo
+con `npm test` nella sua cartella.
 
 ## La regola che conta più di tutte
 
@@ -324,12 +338,12 @@ barra divideva per l'aliquota (16.622) e il popup cercava sul reddito vero
 (16.596): due lordi per la stessa soglia. Fondo pensione e cassa sanitaria
 trattenuti in busta escono dal reddito come l'INPS (art. 51 c. 2 lett. h e a),
 quindi alzano la soglia: si chiedono in Impostazioni e li toglie
-`calcContributi` (`utils/previdenza.js`, → `check-previdenza.mjs`, dalla
+`calcContributi` (`motore/previdenza.js`, → `check-previdenza.mjs`, dalla
 norma, non da una busta). Cosa quel lordo NON sa, e va detto se serve: altri
 redditi o altri datori (la soglia in lordo scende), aliquote diverse dalla
 9,19% (apprendisti), voci esenti.
 Con la CU dell'utente il conto torna a ~30 € l'anno. Non c'è contraddizione con
-la regola MENSILE del programma paghe (1.250 € *lordi* al mese, più sotto): quella
+la decisione MENSILE del programma paghe (sul reddito presunto, più sotto): quella
 è una decisione provvisoria mese per mese, il conguaglio di dicembre la rifà sul
 reddito vero. Chi propone «15.000 al lordo» va fermato con la CU, non assecondato:
 l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
@@ -345,15 +359,19 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   e la busta ne paga **una** (`Ferie godute 4,00 ORE`). Conferma il totale:
   120,75 h col calendario contro le 120,70 stampate, 138,75 col mese di paga.
   → `check-busta-agosto-2026.mjs`
-- **Tasse e bonus si decidono sul MESE, non sull'anno.** Il software paghe
-  prende il lordo del mese, lo moltiplica per dodici e da lì sceglie in blocco
-  detrazione, indennità L. 207/2024 e trattamento integrativo. L'app faceva come
-  la legge — guardava l'anno — e prometteva ogni mese un bonus che in busta
-  spesso non c'era. Riscontro su quattro cedolini 2026, al centesimo sul TI:
-  febbraio e maggio e luglio sotto soglia col bonus, agosto sopra senza. Per chi
-  legge, la soglia si dice in una cifra sola: **1.250 € di lordo al mese**
-  (15.000 ÷ 12). → `check-ti-mensile.mjs`
-  **Sotto i 1.250 non basta**: serve anche IRPEF da compensare (la capienza).
+- **Tasse e bonus si decidono ogni mese su un REDDITO PRESUNTO dell'anno.**
+  La legge guarda l'anno vero, al conguaglio; mese per mese il datore stima:
+  quanto pagato finora + questo mese per i mesi che restano e per la 13ª
+  (`lordoPresuntoAnno()` in `capienza.js`). Da lì sceglie in blocco detrazione,
+  indennità L. 207/2024 e trattamento integrativo. Non è una formula di legge
+  ma lo schema dei programmi paghe (NoiPA lo documenta), e lo rivelano le
+  detrazioni di agosto e settembre 2026, che sopra i 15.000 cambiano col
+  reddito: tornano al centesimo, e il trattamento integrativo torna su sei buste
+  su sei. Prima l'app usava lordo × 12 (i «1.250 € al mese», una regola
+  Zucchetti) e 15.100 € fissi sopra soglia. La 14ª non si anticipa: nessuna
+  busta lo mostra. Senza l'indice del mese il motore torna a lordo × 12.
+  → `check-reddito-presunto.mjs`, `check-ti-mensile.mjs`
+  **Sotto i 15.000 non basta**: serve anche IRPEF da compensare (la capienza).
   Con poche ore le detrazioni la azzerano già e il trattamento non c'è; il
   riquadro diceva «c'è il tratt. integrativo» su un netto che non l'aveva.
   La capienza però si guarda sul **progressivo dell'anno**, non sul mese da
@@ -364,7 +382,7 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   mantiene il progetto, non ancora visto su una busta. La riga dice la media e
   la soglia, `lordoMeseMinimoTi()` (~750 € nel Turismo). → `check-ti-capienza.mjs`
   **La regola si spiega dove si vede il suo effetto**: il riquadro del netto ha
-  una riga «1.298 × 12 = 15.576 €: sopra i 15.000…» e un «perché?» con IRPEF
+  una riga «Il datore stima ~16.645 € lordi nell'anno (15.044 di reddito)…» e un «perché?» con IRPEF
   lorda, detrazioni, ritenute e trattamento integrativo del mese, coi nomi
   della busta. Ad agosto 2026 la busta tratteneva 8,38 € di IRPEF e non si
   capiva perché: la spiegazione stava in «Come è calcolato?», chiusa. Si dice
@@ -373,8 +391,8 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   finisce dall'altra parte dei 15.000, la riga aggiunge «A dicembre si
   inverte» e il popup dice cosa succede a QUESTO mese al conguaglio, col saldo
   dell'anno di `stimaConguaglio`. L'anno si confronta coi 15.000 sul reddito
-  (`redditoAnno`, lordo meno contributi), il mese sul lordo × 12: sono le due
-  regole vere, e ognuna ha la sua grandezza accanto.
+  (`redditoAnno`, lordo meno contributi), il mese sulla stima del datore: sono
+  le due regole vere, e ognuna ha la sua grandezza accanto.
   Attenzione a non confonderla con la proiezione annua, che RESTA e serve ad
   altro: il margine del bonus e il rischio di restituzione sono domande
   sull'anno. Il pannello del netto le tiene su due righe separate apposta.
@@ -409,6 +427,9 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   Lo **straordinario** si conta a SETTIMANA, oltre le 40 ore (D.Lgs.
   66/2003); il supplementare sta fra 24 e 40. Dalla norma, nessuna busta con
   una settimana oltre le 40. → `check-straordinario-settimanale.mjs`
+  Di notte il Turismo lo paga al 60% fra le 24 e le 6, e assorbe il notturno
+  ordinario: è un dato del contratto (`straordinarioNotturno` in `ccnl.json`),
+  dal CCNL e non da una busta. → `check-straordinario-notturno.mjs`
   Nel «Cosa cambia nel mese» del modulo il monte ore si presume pieno (nel
   mese in corso, con almeno una settimana segnata): un turno vale solo per le
   ore oltre le 24 della sua settimana, e accanto si dice perché. Le cifre del
@@ -480,7 +501,7 @@ Discendono tutte dalla parola d'ordine qui sopra.
 - Le giornate pagate ma non lavorate **non si chiamano «assenza»** a schermo:
   ferie, permesso, malattia, festività, ognuna col suo nome. Se da orario non era
   previsto andare a lavoro, non è un buco da giustificare. Gli identificatori nel
-  codice (`isAssenza`, `assenzaMinutes`, `utils/assenze.js`) restano come sono.
+  codice (`isAssenza`, `assenzaMinutes`, `motore/assenze.js`) restano come sono.
 - Quando i conteggi non coprono il mese visualizzato (mese di paga), il periodo
   si **dichiara sopra i numeri**. Non si allunga il calendario per farceli stare:
   provato, era brutto e si perdeva di vista che mese si stava guardando.

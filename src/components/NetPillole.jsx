@@ -14,7 +14,7 @@
 //
 // Qui non si calcola niente: le cifre arrivano da `nettoDelMese`.
 
-import { formatCurrency } from '../utils/pay';
+import { formatCurrency } from '../motore/pay';
 
 function Mobile({ nome, cifra, attivo, simulato, onTocca, titolo, nelLordo = false }) {
   return (

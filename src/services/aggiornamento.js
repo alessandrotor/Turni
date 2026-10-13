@@ -110,9 +110,7 @@ function alCambioVisibilita() {
 }
 
 /**
- * Registra il service worker e mette in ascolto. Da chiamare una volta sola, e
- * SOLO sul web: nella WebView dell'APK Capacitor un SW servirebbe asset vecchi
- * dalla cache dopo un aggiornamento del pacchetto.
+ * Registra il service worker e mette in ascolto. Da chiamare una volta sola.
  */
 export function avviaAggiornamenti() {
   if (applica) return; // già registrato

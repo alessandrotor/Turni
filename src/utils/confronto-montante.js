@@ -16,8 +16,8 @@
 //
 // Modulo puro, senza React e senza browser.
 
-import { calcTotalPay } from './pay.js';
-import { lordoDelMese } from './net.js';
+import { calcTotalPay } from '../motore/pay.js';
+import { lordoDelMese } from '../motore/net.js';
 
 /** Scarto oltre il quale si avvisa: 500 € o il 30%, come prima. */
 export function scartoRilevante(montante, turni) {

@@ -36,8 +36,8 @@
 // il mese va tagliato a settimane intere o dal 1 al 31. Quello che cambia col
 // periodo è solo la parte OLTRE la soglia (vedi check-mese-paga-2026.mjs).
 
-import { calcTotalPay } from '../src/utils/pay.js';
-import { monthlyHoursFactor, monthlyContractHours, monthlyFullTimeHours } from '../src/utils/ccnl.js';
+import { calcTotalPay } from '../src/motore/pay.js';
+import { monthlyHoursFactor, monthlyContractHours, monthlyFullTimeHours } from '../src/motore/ccnl.js';
 
 const round2 = (n) => Math.round(n * 100) / 100;
 

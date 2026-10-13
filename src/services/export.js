@@ -1,10 +1,8 @@
 // Esportazione dei turni del mese in Excel (.xlsx) e PDF.
 // Librerie pesanti caricate on-demand (dynamic import) per non appesantire l'avvio.
-// Su Android il file viene scritto e aperto col foglio di condivisione nativo;
-// su browser viene scaricato.
-import { Capacitor } from '@capacitor/core';
-import { calcShiftMinutes } from '../utils/pay';
-import { tipoTurno, ETICHETTA, TIPO } from '../utils/assenze';
+// Il file si salva col «salva con nome» del browser, o si scarica.
+import { calcShiftMinutes } from '../motore/pay';
+import { tipoTurno, ETICHETTA, TIPO } from '../motore/assenze';
 import { parseDate, formatMonthYear } from '../utils/dates';
 
 const GIORNI = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
@@ -61,8 +59,6 @@ function prepare(shifts, monthDate, periodo = '') {
 export const ESITO = {
   /** L'utente ha scelto dove salvare e la scrittura è andata a buon fine. */
   SALVATO: 'salvato',
-  /** Consegnato al foglio di condivisione di sistema (Android/iOS). */
-  CONDIVISO: 'condiviso',
   /** Download avviato dal browser: non c'è modo di sapere se è arrivato. */
   NON_VERIFICABILE: 'non-verificabile',
   /** L'utente ha annullato: nessun file scritto, e non è un errore. */
@@ -77,8 +73,7 @@ export const ESITO = {
 //
 // Funzione a parte, e pura, perché la decisione si possa riscontrare senza un
 // browser: vedi `scripts/check-consegna-file.mjs`.
-export function stradaDiConsegna({ nativo, salvaConNome }) {
-  if (nativo) return 'condivisione';
+export function stradaDiConsegna({ salvaConNome }) {
   if (salvaConNome) return 'salvaConNome';
   return 'download';
 }
@@ -101,26 +96,8 @@ function base64ToBlob(base64, mime) {
  */
 export async function deliver(filename, base64, mime) {
   const strada = stradaDiConsegna({
-    nativo: Capacitor.isNativePlatform(),
     salvaConNome: typeof window !== 'undefined' && typeof window.showSaveFilePicker === 'function',
   });
-
-  if (strada === 'condivisione') {
-    const { Filesystem, Directory } = await import('@capacitor/filesystem');
-    const { Share } = await import('@capacitor/share');
-    const { uri } = await Filesystem.writeFile({ path: filename, data: base64, directory: Directory.Cache });
-    try {
-      await Share.share({ title: filename, files: [uri], dialogTitle: 'Esporta turni' });
-    } catch (err) {
-      // Chiudere il foglio di condivisione senza scegliere non è un guasto:
-      // trattarlo come tale farebbe comparire un errore rosso a chi ha
-      // semplicemente cambiato idea. Ma non è nemmeno un successo — il file è
-      // rimasto nella cache, che il sistema può svuotare quando vuole.
-      if (/cancel/i.test(String(err?.message || err))) return { esito: ESITO.ANNULLATO };
-      throw err;
-    }
-    return { esito: ESITO.CONDIVISO };
-  }
 
   if (strada === 'salvaConNome') {
     let handle;

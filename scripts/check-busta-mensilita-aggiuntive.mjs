@@ -29,7 +29,7 @@
 // I DATI NON STANNO QUI. Le fixture si generano dai PDF personali e la cartella
 // e' ignorata da git: senza, il riscontro si salta invece di fallire.
 
-import { extraMonthAccrual, monthlyBaseGross } from '../src/utils/net.js';
+import { extraMonthAccrual, monthlyBaseGross } from '../src/motore/net.js';
 import { fixtureOSalta, voce, confronto } from './lib/fixture-buste.mjs';
 
 const TITOLO = 'Mensilita’ aggiuntive contro i cedolini reali';

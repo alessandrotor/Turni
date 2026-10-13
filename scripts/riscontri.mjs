@@ -17,19 +17,24 @@
 
 import { readdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { dirname, join, basename } from 'node:path';
 
 const QUI = dirname(fileURLToPath(import.meta.url));
-const OROLOGIO = join(QUI, 'lib', 'orologio-finto.mjs');
+// `--import` vuole un URL: su Windows un percorso `D:\…` dà ERR_UNSUPPORTED_ESM_URL_SCHEME.
+const OROLOGIO = pathToFileURL(join(QUI, 'lib', 'orologio-finto.mjs')).href;
 const DATE = ['2026-01-15T10:00', '2026-12-31T10:00', '2027-03-10T10:00'];
 const senzaDist = process.argv.includes('--senza-dist');
 
-const riscontri = readdirSync(QUI).filter((f) => /^check-.*\.mjs$/.test(f)).sort();
+// I riscontri delle buste e dell'app stanno qui; quelli delle regole viaggiano
+// col motore, in src/motore/riscontri.
+const DEL_MOTORE = join(QUI, '..', 'src', 'motore', 'riscontri');
+const elenca = (dir) => readdirSync(dir).filter((f) => /^check-.*\.mjs$/.test(f)).map((f) => join(dir, f));
+const riscontri = [...elenca(QUI), ...elenca(DEL_MOTORE)].sort((a, b) => basename(a).localeCompare(basename(b)));
 const falliti = [];
 
 const gira = (file, data) => {
-  const args = data ? ['--import', OROLOGIO, join(QUI, file)] : [join(QUI, file)];
+  const args = data ? ['--import', OROLOGIO, file] : [file];
   const r = spawnSync(process.execPath, args, {
     env: { ...process.env, ...(data ? { OGGI_FINTO: data } : {}) },
     encoding: 'utf8',
@@ -39,14 +44,14 @@ const gira = (file, data) => {
 };
 
 for (const file of riscontri) {
-  const dist = file === 'check-dati-in-uscita.mjs';
+  const dist = basename(file) === 'check-dati-in-uscita.mjs';
   if (dist && senzaDist) continue;
   gira(file, null);
   if (!dist) for (const d of DATE) gira(file, d);
 }
 
 for (const f of falliti) {
-  console.error(`\n✗ ${f.file}${f.data ? `  (orologio al ${f.data})` : ''}\n${f.uscita}`);
+  console.error(`\n✗ ${basename(f.file)}${f.data ? `  (orologio al ${f.data})` : ''}\n${f.uscita}`);
 }
 console.log(`\n${riscontri.length} riscontri, ${falliti.length ? `${falliti.length} esecuzioni fallite` : 'tutti tornano'}${senzaDist ? ' (senza dist/)' : ''}.`);
 process.exit(falliti.length ? 1 : 0);

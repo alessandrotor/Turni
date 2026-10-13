@@ -21,8 +21,8 @@
 // qualunque proiezione in quella fascia dà lo stesso risultato (soglie a
 // scaglino, non lineari), quindi il valore preciso non è determinante.
 
-import { calcNetMonthly, round2, trunc2 } from '../src/utils/net.js';
-import { calcTotalPay } from '../src/utils/pay.js';
+import { calcNetMonthly, round2, trunc2 } from '../src/motore/net.js';
+import { calcTotalPay } from '../src/motore/pay.js';
 
 const BASE_SETTINGS = {
   hourlyRate: 9.21802,

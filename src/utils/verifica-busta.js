@@ -19,15 +19,17 @@
 // Modulo puro, senza rete: il riscontro controlla che resti così, perché la
 // pagina promette in grande che la busta non va da nessuna parte.
 
-import { calcTotalPay, calcShiftMinutes, computePayByShift, hasAnyRate } from './pay.js';
-import { nettoDelMese, lordoDelMese } from './net.js';
+import { calcTotalPay, calcShiftMinutes, computePayByShift, hasAnyRate } from '../motore/pay.js';
+import { nettoDelMese, lordoDelMese } from '../motore/net.js';
+import { capienzaProgressiva } from '../motore/capienza.js';
 import {
   lordoDaBusta, incoerenze, ESENTE, FUORI_REDDITO, STORNO, EXTRA_MENSILITA,
 } from './leggi-cedolino.js';
-import { isHoliday } from './holidays.js';
-import { tipoTurno, TIPO } from './assenze.js';
+import { isHoliday } from '../motore/holidays.js';
+import { tipoTurno, TIPO } from '../motore/assenze.js';
 import { parseDate, payrollMonthKey, getDaysInMonth } from './dates.js';
-import { isMensilizzato, getCcnl } from './ccnl.js';
+import { isMensilizzato } from '../motore/ccnl.js';
+import { getContratto } from './ccnl-elenco.js';
 
 const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
   'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
@@ -284,7 +286,11 @@ export function confronta(fx, { allShifts = [], settings = {} } = {}) {
   const mese = fx.periodo.mese - 1;
   const giorni = getDaysInMonth(anno, mese);
   const b = lordoDaBusta(fx);
-  const n = nettoDelMese(b.lordo, settings, giorni, b.extra);
+  // Il progressivo della busta dà il reddito presunto del datore (capienza.js):
+  // l'imponibile INPS stampato comprende il mese, quindi lo si toglie.
+  const impInps = Number(fx.progressivi?.impInps) || 0;
+  const cap = impInps > 0 ? capienzaProgressiva(b.lordo, settings, { lordo: Math.max(0, impInps - Math.round(b.lordo)), mesi: mese, mese }) : null;
+  const n = nettoDelMese(b.lordo, settings, giorni, b.extra, cap);
   const righe = [];
 
   // ── Calcolo: dal lordo della busta ─────────────────────────────────────
@@ -394,7 +400,7 @@ export function testoDaCondividere(esito, { versione = '', settings = {}, partTi
   const intestazione = [
     `Turni ${versione}`.trim(),
     esito.periodo ? `verifica busta ${MESI[esito.periodo.mese]} ${esito.periodo.anno}` : 'verifica busta',
-    getCcnl(settings.ccnl)?.label ? `CCNL ${getCcnl(settings.ccnl).label}` : null,
+    getContratto(settings.ccnl)?.label ? `CCNL ${getContratto(settings.ccnl).label}` : null,
     partTimePct ? `part-time ${String(partTimePct).replace('.', ',')}%` : null,
   ].filter(Boolean).join(' · ');
   const linee = [intestazione];

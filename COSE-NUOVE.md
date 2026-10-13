@@ -73,6 +73,13 @@ la chiave e **i byte corrotti — in parte recuperabili a mano — spariscono pe
 sempre**. Manca la quarantena della stringa illeggibile e l'avviso «i dati
 salvati non sono leggibili, non toccare niente».
 
+> **Chiusa per la parte che perdeva i dati — 13/10/2026.** `leggiSalvato`
+> copia i byte illeggibili in `<chiave>__illeggibile` (una sola volta, la prima
+> copia non si sovrascrive) prima di restituire il valore di partenza.
+> → `check-json-corrotto.mjs`. **Resta fuori l'avviso** a schermo: per
+> regola (frictionless) non si chiede niente all'apertura, e i dati ci sono
+> in salvo se qualcuno li cerca. Non c'è ancora una via in app per ripristinarli.
+
 ### A4. Il file nativo finisce nella cache — `export.js:50` *(verificato)*
 
 `directory: Directory.Cache`. Se l'utente chiude il foglio di condivisione senza
@@ -204,7 +211,7 @@ data+orari.)*
 
 ### C1. Un anno diverso dal 2026 usa la fiscalità 2026 — *misurato*
 
-`src/utils/net.js` ha una sola tabella, `TAX_2026`, usata senza mai guardare
+`src/motore/net.js` ha una sola tabella, `TAX_2026`, usata senza mai guardare
 l'anno. `StatsView.jsx:81-91` lascia sfogliare tutti gli anni con dati.
 
 | mese | app | busta reale | scarto |
@@ -501,8 +508,16 @@ Chiusi dopo la revisione, con lo stesso criterio: ognuno ha il suo riscontro.
   settimane intere) arriva al massimo a 96 h ordinarie: se le supplementari
   non bastano a coprire il resto, l'app mostra meno delle 103,20 che la busta
   paga comunque. Per sapere che il mese è finito il motore dovrebbe ricevere
-  la data di oggi, che oggi non riceve.
+  la data di oggi, che oggi non riceve (`docs/motore-portabile.md`, passo 2).
   Nessuna busta lo mostra ancora.
+
+---
+
+# K. App nativa tolta — 12/10/2026
+
+L'app Android (Capacitor) è uscita dal repository: cartella `android`, configurazione, dipendenze, `deploy.bat` e la guida alla pubblicazione su Play. Turni è solo la PWA; un'app nativa, se servirà, si rifà da zero. Chiuse per questo, senza riscontro perché non c'è più niente da riscontrare: **B2** (l'AAB con la telemetria accesa), **F1** (il versionCode), **F9** (la firma), **F14** (la guida di Play), **G1** (R8), **G3** (il FileProvider). Il worker accetta ancora l'origine `https://localhost` che serviva all'APK: va tolta al prossimo deploy del worker.
+
+Tolta anche la telemetria, che funzionava solo nell'APK: chiuse **F11** (il messaggio non filtrato) e **G10** (opt-out invece di opt-in). I browser che l'avevano usata conservano le chiavi `turni_install_id` e `turni_telemetry_off`, che nessuno legge più.
 
 ---
 

@@ -9,11 +9,11 @@
 
 import { useRef } from 'react';
 import useModalDismiss from '../hooks/useModalDismiss';
-import { formatCurrency } from '../utils/pay';
+import { formatCurrency } from '../motore/pay';
 import { formatMonthYear } from '../utils/dates';
 import { numeroIt, euroCella } from '../utils/formato';
-import { tiMontanteNoto, irpefMontanteNota } from '../utils/conguaglio';
-import { SOGLIA_RATEIZZAZIONE, POSIZIONE } from '../utils/restituzione';
+import { tiMontanteNoto, irpefMontanteNota } from '../motore/conguaglio';
+import { SOGLIA_RATEIZZAZIONE, POSIZIONE } from '../motore/restituzione';
 
 // La cornice comune: velo, Esc, fuoco dentro, «Ho capito». Ognuno dei tre la
 // ripeteva uguale.
@@ -40,7 +40,7 @@ function Finestra({ titolo, onChiudi, children }) {
 }
 
 // PERCHÉ OGNI MESE È DIVERSO. La regola del programma paghe (lordo del
-// mese × 12, `tiSpettaQuestoMese`) e il suo effetto su QUESTO mese, con
+// stima dell'anno, `tiSpettaQuestoMese`) e il suo effetto su QUESTO mese, con
 // le righe e i nomi della busta. Le cifre sono quelle di `nettoDelMese`:
 // le stesse del riquadro da cui si apre. Verificata su buste Zucchetti
 // (check-ti-mensile.mjs): lo si dice, senza promettere che ogni
@@ -51,15 +51,15 @@ export function PopupMese({
   return (
     <Finestra titolo="Perché ogni mese è diverso" onChiudi={onChiudi}>
       <p className="form-hint">
-        Il datore non sa quanto guadagnerai: ogni mese fa i conti su lordo × 12
-        (verificato sulle buste Zucchetti). Sotto 1.250 € al mese ti dà il tratt.
-        integrativo; sopra lo toglie, ma alza la detrazione.
+        Il datore non sa quanto guadagnerai: ogni mese stima l&apos;anno con quanto hai preso
+        finora più questo mese fino a dicembre e per la 13ª (verificato sulle buste Zucchetti).
+        Sotto i 15.000 di reddito ti dà il tratt. integrativo; sopra lo toglie, ma alza la detrazione.
         {netMonth.esitoTi.senzaCapienza && <> Però serve IRPEF da compensare, e conta la media
           dell&apos;anno: sotto i ~{numeroIt(minimoTi ?? 0)} € al mese le detrazioni la azzerano già.</>}
       </p>
       <div className="net-group-label">
-        {formatMonthYear(currentMonth)}: {numeroIt(netMonth.esitoTi.baseMese)} × 12
-        = {numeroIt(netMonth.esitoTi.proiezione)} €
+        {formatMonthYear(currentMonth)}: ~{numeroIt(netMonth.esitoTi.lordoPresunto ?? 0)} € lordi
+        ({numeroIt(netMonth.esitoTi.proiezione)} € di reddito)
       </div>
       <div className="conti-bonus-righe">
         <div className="bonus-cifre"><span>IRPEF lorda</span><strong>{formatCurrency(netMonth.irpefLorda)}</strong></div>

@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import useModalDismiss from '../hooks/useModalDismiss';
-import { parseNum } from '../utils/pay';
+import { parseNum } from '../motore/pay';
 import { consigliatiMancanti } from '../utils/configurazione';
 
 // I campi che mancano, compilabili qui.

@@ -20,7 +20,7 @@
 
 import {
   controllaBusta, vagliaTurni, pianoRipristino, scriviConRitorno, perche,
-  KEY_SHIFTS, KEY_SETTINGS, KEY_TELEMETRY_OFF, KEY_CAL_LAYOUT, FORMATO,
+  KEY_SHIFTS, KEY_SETTINGS, KEY_CAL_LAYOUT, FORMATO,
 } from '../src/utils/backup-contenuto.js';
 
 let falliti = 0;
@@ -76,7 +76,6 @@ const BACKUP = {
   formato: 1,
   turni: { a1: TURNO },
   impostazioni: { hourlyRate: 9.5 },
-  telemetriaDisattivata: false,
   vistaCalendario: 'timeline',
 };
 
@@ -143,7 +142,7 @@ verifica('una voce già a posto resta la stessa', vagliaTurni({ a1: TURNO }).buo
 // ── 3. Il ripristino che riesce ────────────────────────────────────────────
 console.log('\nQuando va tutto bene\n');
 
-const pieno = finto({ [KEY_SHIFTS]: '{"vecchio":1}', [KEY_TELEMETRY_OFF]: '1' });
+const pieno = finto({ [KEY_SHIFTS]: '{"vecchio":1}' });
 const piano = pianoRipristino(BACKUP, vagliaTurni(BACKUP.turni).buoni);
 const esito = scriviConRitorno(piano, pieno);
 
@@ -151,8 +150,6 @@ verifica('riesce', esito.ok, true);
 verifica('i turni sono quelli nuovi', JSON.parse(pieno.contenuto()[KEY_SHIFTS]), { a1: TURNO });
 verifica('le impostazioni pure', JSON.parse(pieno.contenuto()[KEY_SETTINGS]), { hourlyRate: 9.5 });
 verifica('la vista segue i dati', pieno.contenuto()[KEY_CAL_LAYOUT], 'timeline');
-verifica('la telemetria torna accesa', KEY_TELEMETRY_OFF in pieno.contenuto(), false,
-  'il backup diceva «non disattivata»: la chiave va tolta, non lasciata');
 
 const senzaVista = pianoRipristino({ ...BACKUP, vistaCalendario: undefined }, {});
 verifica('un backup vecchio non tocca la vista',

@@ -1,4 +1,4 @@
-import { ETICHETTA, TIPO, tipoTurno } from '../utils/assenze';
+import { ETICHETTA, TIPO, tipoTurno } from '../motore/assenze';
 
 // «L'ho cancellato per sbaglio»: la via di ritorno, invece della domanda prima.
 //
