@@ -35,6 +35,14 @@ function Mobile({ nome, cifra, attivo, simulato, onTocca, titolo, nelLordo = fal
   );
 }
 
+// Il premio da solo: il riepilogo lo usa nei mesi senza turni, dove il netto non c'è.
+export function PillolaPremio({ importo, preso, onTocca }) {
+  return (
+    <Mobile nome="Bonus" cifra={importo} attivo={preso} onTocca={onTocca} nelLordo
+      titolo={preso ? 'Tocca se questo mese non lo prendi' : 'Tocca se questo mese lo prendi'} />
+  );
+}
+
 export default function NetPillole({
   lordo, net, effectiveRatePct, tfr,
   bonusImporto, bonusPreso, onBonus,
@@ -44,10 +52,7 @@ export default function NetPillole({
     <div className="net-pillole">
       {/* Il premio sta PRIMA del lordo, perché ne fa parte: dopo le trattenute,
           con un «+», si leggeva come un'aggiunta al netto, contato due volte. */}
-      {bonusImporto > 0 && (
-        <Mobile nome="Bonus" cifra={bonusImporto} attivo={bonusPreso} onTocca={onBonus} nelLordo
-          titolo={bonusPreso ? 'Tocca se questo mese non lo prendi' : 'Tocca se questo mese lo prendi'} />
-      )}
+      {bonusImporto > 0 && <PillolaPremio importo={bonusImporto} preso={bonusPreso} onTocca={onBonus} />}
       <span className="net-pillola">
         <span className="net-pillola-nome">Lordo</span>
         <span className="net-pillola-cifra">{formatCurrency(lordo)}</span>

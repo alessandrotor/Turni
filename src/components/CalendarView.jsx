@@ -48,7 +48,7 @@ import { stimaConguaglio } from '../motore/conguaglio';
 import { numeroIt, euroCella, scriviForchetta } from '../utils/formato';
 import { PopupMese, PopupConguaglio, PopupSoglia } from './PopupFiscali';
 import RiquadroTI from './RiquadroTI';
-import NetPillole from './NetPillole';
+import NetPillole, { PillolaPremio } from './NetPillole';
 import { confrontoMontante } from '../utils/confronto-montante';
 import { lordoMeseMinimoTi } from '../motore/soglia-lorda';
 import { tipoDiErrore, TITOLO_ERRORE } from '../utils/errore-import';
@@ -470,7 +470,7 @@ export default function CalendarView({
   const vociOltreTurni = [
     extraThisMonth > 0 && { label: month === EXTRA_MONTHS.tredicesima ? 'Tredicesima' : 'Quattordicesima', value: extraThisMonth },
     fixedMonthlyTotal > 0 && { label: 'Voci fisse', value: fixedMonthlyTotal },
-    perMonthBonus > 0 && { label: `Bonus di ${formatMonthYear(currentMonth)}`, value: perMonthBonus },
+    perMonthBonus > 0 && (showNetPanel || !onUpdateSettings) && { label: `Bonus di ${formatMonthYear(currentMonth)}`, value: perMonthBonus },
   ].filter(Boolean);
 
   // Quanto è "coperta" la proiezione dal maturato: i mesi dell'anno in cui ci
@@ -1125,8 +1125,7 @@ export default function CalendarView({
                 <span className="summary-sublabel" key={v.label}>{v.label} {formatCurrency(v.value)}</span>
               ))}
               {/* Il riquadro del premio sta nel netto, che senza turni non c'è. */ !showNetPanel && monthlyBonusAmount > 0 && onUpdateSettings && (
-                <button type="button" className="linklike summary-sublabel" onClick={handleMonthBonusToggle}>
-                  {bonusTakenThisMonth ? 'Togli il bonus da questo mese' : `Aggiungi il bonus a questo mese (${formatCurrency(monthlyBonusAmount)})`}</button>)}
+                <div className="net-pillole"><PillolaPremio importo={monthlyBonusAmount} preso={bonusTakenThisMonth} onTocca={handleMonthBonusToggle} /></div>)}
               {pay.shiftsWithoutRate > 0 && (
                 <span className="summary-sublabel summary-sublabel--warn">
                   ⚠️ {pay.shiftsWithoutRate} turn{pay.shiftsWithoutRate === 1 ? 'o conteggiato' : 'i conteggiati'} a 0 €:
