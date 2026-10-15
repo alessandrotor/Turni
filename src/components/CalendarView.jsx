@@ -823,12 +823,14 @@ export default function CalendarView({
                 compone il motore (`lordoDelMese`: turni + voci fisse + bonus
                 spuntato + 13ª/14ª), coi centesimi. La barra diceva 1.200 (i
                 soli turni, arrotondati), il riepilogo 1199,86 e il netto
-                partiva da 1329,86: tre cifre per la stessa domanda. */}
+                partiva da 1329,86: tre cifre per la stessa domanda.
+                La 13ª/14ª si dice: a dicembre, a turni vuoti, sembrava paga. */}
             <span className="cal-header-soldi-val" title={`${formatCurrency(monthGross)} lordi in ${formatMonthYear(currentMonth)}`}>
               {formatCurrency(monthGross)}
             </span>
             <span className="cal-header-soldi-ore">{formatMinutesShort(totalMins)}</span>
-            <span className="cal-header-soldi-eti">lordo stimato</span>
+            <span className="cal-header-soldi-eti">lordo stimato{extraThisMonth > 0 && <span className="cal-header-soldi-extra">
+              di cui {currentMonth.getMonth() === 11 ? '13ª' : '14ª'} {formatCurrency(extraThisMonth)}</span>}</span>
           </div>
         )}
       </div>
