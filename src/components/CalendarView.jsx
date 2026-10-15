@@ -462,10 +462,8 @@ export default function CalendarView({
     tiSimulato: tiSimulati[chiaveMese] ?? null,
   });
   const netVisto = netMonthSimulato || netMonth; // il riquadro del netto mostra la simulazione
-  // Senza nemmeno un turno segnato nel mese non c'è niente da stimare: voci
-  // fisse mensili o mensilità aggiuntive maturate da sole (senza turni)
-  // farebbero comunque comparire trattamento integrativo/cuneo, dando
-  // l'impressione di un netto "inventato" per un mese ancora vuoto.
+  // Senza turni nel mese niente netto: voci fisse e 13ª/14ª da sole facevano
+  // comparire trattamento integrativo e cuneo su un mese vuoto.
   const showNetPanel = showNetPanelRaw && counted.length > 0;
   // Quello che la busta aggiunge ai turni, dal motore (`lordoDelMese`): con
   // le competenze dei turni somma al lordo mostrato in barra e nel riepilogo.
@@ -1126,6 +1124,9 @@ export default function CalendarView({
               {vociOltreTurni.map(v => (
                 <span className="summary-sublabel" key={v.label}>{v.label} {formatCurrency(v.value)}</span>
               ))}
+              {/* Il riquadro del premio sta nel netto, che senza turni non c'è. */ !showNetPanel && monthlyBonusAmount > 0 && onUpdateSettings && (
+                <button type="button" className="linklike summary-sublabel" onClick={handleMonthBonusToggle}>
+                  {bonusTakenThisMonth ? 'Togli il bonus da questo mese' : `Aggiungi il bonus a questo mese (${formatCurrency(monthlyBonusAmount)})`}</button>)}
               {pay.shiftsWithoutRate > 0 && (
                 <span className="summary-sublabel summary-sublabel--warn">
                   ⚠️ {pay.shiftsWithoutRate} turn{pay.shiftsWithoutRate === 1 ? 'o conteggiato' : 'i conteggiati'} a 0 €:
