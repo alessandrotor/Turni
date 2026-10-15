@@ -944,6 +944,7 @@ export default function CalendarView({
                   today ? 'cal-cell--today' : '',
                   weekend ? 'cal-cell--weekend' : '',
                   dateStr === focusDate ? 'cal-cell--focus' : '',
+                  dayShifts.some(s => s.note) ? 'cal-cell--nota' : '', // una nota si vede a colpo d'occhio
                 ].join(' ')}
                 onClick={e => { if (e.target === e.currentTarget) onAddShift(dateStr); }}
               >

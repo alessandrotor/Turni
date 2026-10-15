@@ -759,6 +759,7 @@ input, select, textarea { font: inherit; }
 }
 .cal-cell--weekend { background: #fafafa; }
 .cal-cell--weekend:hover { background: #f3f4f6; }
+.cal-cell--nota, .cal-cell--nota:hover { background: linear-gradient(90deg, var(--c-warning) 3px, var(--c-warning-light) 3px); }
 
 /* Il numero del giorno è il pulsante "aggiungi turno" della cella */
 .cal-cell-add {
