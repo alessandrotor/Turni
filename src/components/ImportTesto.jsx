@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import useModalDismiss from '../hooks/useModalDismiss';
 import useOccupato from '../hooks/useOccupato';
 import { leggiTestoTurni } from '../utils/testo-turni';
@@ -13,9 +13,28 @@ import { ShiftPreviewRow } from './ImportModal';
 // Niente passaggio intermedio, niente domande: l'unica cosa che si può toccare
 // è «Parti da», e compare solo quando le date sono state dedotte dal nome del
 // giorno («Lun» non dice quale lunedì).
+//
+// Il testo può arrivare anche da «Condividi → Turni» (share_target nel manifest,
+// vite.config.js): allora il modulo si apre già pieno. Letto una volta sola e
+// tolto dall'indirizzo, come la scorciatoia in App.jsx: un ricaricamento non lo
+// riapre, e il tasto Indietro fa quello che ci si aspetta.
+let condiviso = (() => {
+  try {
+    const q = new URLSearchParams(window.location.search);
+    const parti = ['titolo_condiviso', 'testo_condiviso', 'link_condiviso'].map((k) => q.get(k)).filter(Boolean);
+    if (!parti.length) return null;
+    window.history.replaceState({}, '', window.location.pathname);
+    return parti.join('\n');
+  } catch {
+    return null;
+  }
+})();
+
 export default function ImportTesto({ esistenti = [], onConfirm }) {
-  const [aperto, setAperto] = useState(false);
-  const [testo, setTesto] = useState('');
+  const [aperto, setAperto] = useState(() => !!condiviso);
+  const [testo, setTesto] = useState(() => condiviso || '');
+  // Usato: se il calendario si rimonta (cambio scheda) non si riapre.
+  useEffect(() => { condiviso = null; }, []);
   const [inizio, setInizio] = useState('');
   const overlayRef = useRef(null);
   const dialogRef = useRef(null);

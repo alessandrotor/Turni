@@ -190,6 +190,18 @@ check(scorciatoie.length > 0 && orfane.length === 0,
     ? orfane.map((s) => `?${s.chiave}=${s.valore} non letto`).join(' · ')
     : scorciatoie.map((s) => `?${s.chiave}=${s.valore}`).join(', '));
 
+// ── 10. La condivisione verso l'app: manifest ↔ ImportTesto ───────────────
+// Stesso contratto della scorciatoia: i nomi dei parametri di `share_target`
+// li sceglie il manifest, chi li legge è «Incolla turni». Rinominati da una
+// parte sola, «Condividi → Turni» aprirebbe il calendario senza il testo.
+const importTesto = readFileSync('src/components/ImportTesto.jsx', 'utf8');
+const blocco = vite.match(/share_target:\s*\{[\s\S]*?params:\s*\{([^}]*)\}/);
+const parametri = blocco ? [...blocco[1].matchAll(/:\s*'([a-z_]+)'/g)].map((m) => m[1]) : [];
+const nonLetti = parametri.filter((p) => !importTesto.includes(`'${p}'`));
+check(parametri.length > 0 && nonLetti.length === 0,
+  'ogni parametro della condivisione ha chi lo legge in ImportTesto',
+  nonLetti.length ? nonLetti.map((p) => `${p} non letto`).join(' · ') : parametri.join(', '));
+
 console.log(falliti === 0
   ? '\nI file che nessuno guarda mai sono a posto.\n'
   : `\n${falliti} problema/i.\n`);

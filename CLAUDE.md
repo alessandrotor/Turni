@@ -522,6 +522,8 @@ Discendono tutte dalla parola d'ordine qui sopra.
   consenso della foto. «Lun» senza data si risolve sul giorno più vicino a oggi
   e l'anteprima lo dice con un «Parti da» da correggere: non si indovina in
   silenzio. Un orario senza giorno non diventa un giorno. → `check-testo-turni.mjs`
+  Ci si arriva anche da «Condividi → Turni» (`share_target` nel manifest, solo
+  Android con l'app installata): il modulo si apre già pieno. → `check-configurazione.mjs`
 - **Non si scrolla se non è assolutamente necessario.** Vale soprattutto per
   ciò che si apre sopra la pagina: una finestra che costa uno scorrimento per
   arrivare al pulsante che la chiude è una finestra scritta troppo lunga, e la

@@ -78,6 +78,15 @@ export default defineConfig({
         // Apre il modulo, NON salva niente: un turno scritto senza che nessuno
         // lo veda è un dato che tocca i soldi senza uno sguardo.
         //
+        // «Condividi → Turni» da WhatsApp, Galleria, Lens: il testo arriva a
+        // «Incolla turni» (ImportTesto.jsx) e si legge sul telefono. Solo
+        // Android con l'app installata; Safari non lo supporta. Anche questo è
+        // un contratto fra due file → check-configurazione.mjs.
+        share_target: {
+          action: '/',
+          method: 'GET',
+          params: { title: 'titolo_condiviso', text: 'testo_condiviso', url: 'link_condiviso' },
+        },
         shortcuts: [
           {
             name: 'Segna il turno di oggi',
