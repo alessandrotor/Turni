@@ -190,17 +190,25 @@ check(scorciatoie.length > 0 && orfane.length === 0,
     ? orfane.map((s) => `?${s.chiave}=${s.valore} non letto`).join(' · ')
     : scorciatoie.map((s) => `?${s.chiave}=${s.valore}`).join(', '));
 
-// ── 10. La condivisione verso l'app: manifest ↔ ImportTesto ───────────────
-// Stesso contratto della scorciatoia: i nomi dei parametri di `share_target`
-// li sceglie il manifest, chi li legge è «Incolla turni». Rinominati da una
-// parte sola, «Condividi → Turni» aprirebbe il calendario senza il testo.
+// ── 10. La condivisione verso l'app: manifest ↔ service worker ↔ ImportTesto ─
+// «Condividi → Turni» passa per tre file che non si parlano. Il manifest
+// sceglie i nomi dei campi, `public/condividi-sw.js` li riceve (è una POST) e
+// rimanda alla pagina con dei parametri, «Incolla turni» legge quei parametri.
+// Rinominato uno da una parte sola, la condivisione aprirebbe il calendario
+// vuoto senza un errore. E Workbox deve caricare il gestore, o la POST va a vuoto.
 const importTesto = readFileSync('src/components/ImportTesto.jsx', 'utf8');
-const blocco = vite.match(/share_target:\s*\{[\s\S]*?params:\s*\{([^}]*)\}/);
-const parametri = blocco ? [...blocco[1].matchAll(/:\s*'([a-z_]+)'/g)].map((m) => m[1]) : [];
+const swCondividi = readFileSync('public/condividi-sw.js', 'utf8');
+const blocco = vite.match(/share_target:\s*\{([\s\S]*?)\n\s*\},/);
+const campi = blocco ? [...blocco[1].matchAll(/(?:name|title|text|url):\s*'([a-z_]+)'/g)].map((m) => m[1]) : [];
+const azione = blocco?.[1].match(/action:\s*'([^']+)'/)?.[1];
+const parametri = [...swCondividi.matchAll(/'([a-z]+_condivis[oa])'/g)].map((m) => m[1]);
+const nonRicevuti = campi.filter((c) => !swCondividi.includes(`'${c}'`));
 const nonLetti = parametri.filter((p) => !importTesto.includes(`'${p}'`));
-check(parametri.length > 0 && nonLetti.length === 0,
-  'ogni parametro della condivisione ha chi lo legge in ImportTesto',
-  nonLetti.length ? nonLetti.map((p) => `${p} non letto`).join(' · ') : parametri.join(', '));
+check(campi.length >= 4 && nonRicevuti.length === 0 && azione && swCondividi.includes(`'${azione}'`)
+  && /importScripts:\s*\['condividi-sw\.js'\]/.test(vite) && parametri.length >= 4 && nonLetti.length === 0,
+  'la condivisione arriva fino a «Incolla turni»',
+  [...nonRicevuti.map((c) => `${c} non ricevuto dal service worker`), ...nonLetti.map((p) => `${p} non letto da ImportTesto`)].join(' · ')
+    || `${azione}: ${campi.join(', ')} → ${parametri.join(', ')}`);
 
 console.log(falliti === 0
   ? '\nI file che nessuno guarda mai sono a posto.\n'

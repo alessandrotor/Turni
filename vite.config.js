@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdirSync, copyFileSync } from 'node:fs';
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url)));
 
@@ -12,6 +12,13 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url)))
 // workflow (.github/workflows/deploy-test.yml).
 const SITE_URL = (process.env.VITE_SITE_URL || 'https://turni-9vr.pages.dev').replace(/\/$/, '');
 
+const FILE_OCR = {
+  'worker.min.js': 'node_modules/tesseract.js/dist/worker.min.js',
+  'tesseract-core-simd-lstm.wasm.js': 'node_modules/tesseract.js-core/tesseract-core-simd-lstm.wasm.js',
+  'tesseract-core-lstm.wasm.js': 'node_modules/tesseract.js-core/tesseract-core-lstm.wasm.js',
+  'eng.traineddata.gz': 'node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz',
+};
+
 export default defineConfig({
   plugins: [
     react(),
@@ -20,6 +27,23 @@ export default defineConfig({
       // crawler, che il JavaScript non lo esegue.
       name: 'origine-nei-meta',
       transformIndexHtml: (html) => html.replaceAll('__SITE_URL__', SITE_URL),
+    },
+    {
+      // Tesseract servito DAL SITO (/ocr), non da un CDN: services/lettore-immagine.js.
+      // In sviluppo lo serve il server di Vite, in build si copia in dist/.
+      name: 'lettore-immagini',
+      configureServer(server) {
+        server.middlewares.use('/ocr', (req, res, next) => {
+          const f = FILE_OCR[req.url.slice(1)];
+          if (!f) return next();
+          res.setHeader('Content-Type', f.endsWith('.js') ? 'text/javascript' : 'application/octet-stream');
+          res.end(readFileSync(f));
+        });
+      },
+      closeBundle() {
+        mkdirSync('dist/ocr', { recursive: true });
+        for (const [nome, da] of Object.entries(FILE_OCR)) copyFileSync(da, `dist/ocr/${nome}`);
+      },
     },
     VitePWA({
       // La registrazione del service worker la facciamo a mano in src/main.jsx
@@ -50,6 +74,11 @@ export default defineConfig({
         // calendario, e l'informativa risulterebbe pubblicata pur non essendo
         // raggiungibile. È il caso in cui un 200 mente.
         navigateFallbackDenylist: [/^\/privacy/],
+        // Il lettore delle immagini (~4,5 MB) NON va nel precache: lo scarica
+        // solo chi lo usa, la prima volta. E il gestore della condivisione
+        // deve rispondere prima delle regole di Workbox.
+        globIgnores: ['ocr/**'],
+        importScripts: ['condividi-sw.js'],
       },
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
@@ -78,14 +107,16 @@ export default defineConfig({
         // Apre il modulo, NON salva niente: un turno scritto senza che nessuno
         // lo veda è un dato che tocca i soldi senza uno sguardo.
         //
-        // «Condividi → Turni» da WhatsApp, Galleria, Lens: il testo arriva a
-        // «Incolla turni» (ImportTesto.jsx) e si legge sul telefono. Solo
-        // Android con l'app installata; Safari non lo supporta. Anche questo è
-        // un contratto fra due file → check-configurazione.mjs.
+        // «Condividi → Turni» da WhatsApp, Galleria, Lens: testo o immagine
+        // arrivano a «Incolla turni» (ImportTesto.jsx) e si leggono sul
+        // telefono. POST perché un'immagine in un indirizzo non ci sta: la
+        // riceve public/condividi-sw.js. Solo Android con l'app installata;
+        // Safari non lo supporta. Contratto fra tre file → check-configurazione.mjs.
         share_target: {
-          action: '/',
-          method: 'GET',
-          params: { title: 'titolo_condiviso', text: 'testo_condiviso', url: 'link_condiviso' },
+          action: '/condividi',
+          method: 'POST',
+          enctype: 'multipart/form-data',
+          params: { title: 'titolo', text: 'testo', url: 'link', files: [{ name: 'immagini', accept: ['image/*'] }] },
         },
         shortcuts: [
           {

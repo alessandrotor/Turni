@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import useModalDismiss from '../hooks/useModalDismiss';
 import useOccupato from '../hooks/useOccupato';
 import { leggiTestoTurni } from '../utils/testo-turni';
+import { trovaPersona } from '../utils/tabellone';
 import { turniDaImportare } from '../utils/import-turni';
 import { minutesDiff, formatMinutes } from '../utils/dates';
 import { ShiftPreviewRow } from './ImportModal';
@@ -18,11 +19,16 @@ import { ShiftPreviewRow } from './ImportModal';
 // vite.config.js): allora il modulo si apre già pieno. Letto una volta sola e
 // tolto dall'indirizzo, come la scorciatoia in App.jsx: un ricaricamento non lo
 // riapre, e il tasto Indietro fa quello che ci si aspetta.
+//
+// Un'IMMAGINE condivisa invece la lascia il service worker in una cache
+// (public/condividi-sw.js) e qui arriva solo `?immagine_condivisa`.
+let immagineCondivisa = false;
 let condiviso = (() => {
   try {
     const q = new URLSearchParams(window.location.search);
+    immagineCondivisa = q.has('immagine_condivisa');
     const parti = ['titolo_condiviso', 'testo_condiviso', 'link_condiviso'].map((k) => q.get(k)).filter(Boolean);
-    if (!parti.length) return null;
+    if (!parti.length && !immagineCondivisa) return null;
     window.history.replaceState({}, '', window.location.pathname);
     return parti.join('\n');
   } catch {
@@ -30,21 +36,68 @@ let condiviso = (() => {
   }
 })();
 
-export default function ImportTesto({ esistenti = [], onConfirm }) {
-  const [aperto, setAperto] = useState(() => !!condiviso);
+const FASI = {
+  scarico: 'Preparo il lettore: ~4,5 MB, solo la prima volta',
+  nomi: 'Leggo i nomi',
+  turni: 'Leggo i tuoi turni',
+};
+
+export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome }) {
+  const [aperto, setAperto] = useState(() => !!condiviso || immagineCondivisa);
   const [testo, setTesto] = useState(() => condiviso || '');
+  // Il tabellone da un'immagine (prova): fase di lettura, oppure i nomi da
+  // scegliere la prima volta. Il risultato diventa testo qui sopra.
+  const [immagine, setImmagine] = useState(null);
+  const tabRef = useRef(null);
+  const fileRef = useRef(null);
+
+  const leggiTurni = async (persona) => {
+    onNome?.(persona.nome);
+    const { turniDi } = await import('../services/lettore-immagine');
+    const t = await turniDi(tabRef.current, persona, { avanza: (fase) => setImmagine({ fase }) });
+    setImmagine(t ? null : { errore: 'Nella tua riga non ho trovato orari.' });
+    if (t) setTesto(t);
+  };
+  const leggiImmagine = async (file) => {
+    if (!file) return;
+    setAperto(true);
+    try {
+      const { apriTabellone } = await import('../services/lettore-immagine');
+      const tab = await apriTabellone(file, { oggi: new Date(), avanza: (fase) => setImmagine({ fase }) });
+      if (tab.errore) { setImmagine({ errore: 'Non riconosco questa tabella: per ora leggo solo il tabellone Excel a due celle per giorno.' }); return; }
+      tabRef.current = tab;
+      const io = trovaPersona(tab.persone, nome);
+      if (io) await leggiTurni(io); else setImmagine({ persone: tab.persone });
+    } catch {
+      setImmagine({ errore: 'Non sono riuscito a leggere l\'immagine.' });
+    }
+  };
+
   // Usato: se il calendario si rimonta (cambio scheda) non si riapre.
-  useEffect(() => { condiviso = null; }, []);
+  useEffect(() => {
+    condiviso = null;
+    if (!immagineCondivisa) return;
+    immagineCondivisa = false;
+    (async () => {
+      try {
+        const cache = await caches.open('turni-condivisi');
+        const r = await cache.match('/condiviso/immagine');
+        await cache.delete('/condiviso/immagine');
+        if (r) leggiImmagine(await r.blob());
+      } catch { /* senza cache non c'è niente da leggere */ }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [inizio, setInizio] = useState('');
   const overlayRef = useRef(null);
   const dialogRef = useRef(null);
 
-  const chiudi = () => { setAperto(false); setTesto(''); setInizio(''); };
+  const chiudi = () => { setAperto(false); setTesto(''); setInizio(''); setImmagine(null); };
   // Con del testo incollato un tocco fuori o Esc non lo buttano: si chiude
   // dalla ✕ o da «Annulla». Senza testo non c'è niente da perdere.
   const tentaChiudi = () => { if (!testo.trim()) chiudi(); };
   useModalDismiss(dialogRef, tentaChiudi, aperto);
-  useOccupato('importTesto', aperto && !!testo.trim());
+  useOccupato('importTesto', aperto && (!!testo.trim() || !!immagine?.fase));
 
   const letto = useMemo(
     () => (aperto && testo.trim() ? leggiTestoTurni(testo, { oggi: new Date(), inizio }) : null),
@@ -70,7 +123,7 @@ export default function ImportTesto({ esistenti = [], onConfirm }) {
   return (
     <>
       <button className="btn-import" onClick={() => setAperto(true)}>
-        📋 Incolla turni da un messaggio
+        📋 Turni da un messaggio o un'immagine
       </button>
 
       {aperto && (
@@ -83,6 +136,23 @@ export default function ImportTesto({ esistenti = [], onConfirm }) {
             </div>
 
             <div className="import-body">
+              {/* Prova: il tabellone da un'immagine, letto sul telefono. */}
+              <input ref={fileRef} type="file" accept="image/*" hidden
+                onChange={(e) => { leggiImmagine(e.target.files?.[0]); e.target.value = ''; }} />
+              {!immagine?.fase && (
+                <button type="button" className="btn-import" style={{ marginBottom: '.5rem' }} onClick={() => fileRef.current?.click()}>
+                  📷 Da un'immagine <span className="beta-tag">prova</span>
+                </button>
+              )}
+              {immagine?.fase && <p className="import-match">⏳ {FASI[immagine.fase]}…</p>}
+              {immagine?.errore && <p className="import-match import-match--warn">⚠️ {immagine.errore}</p>}
+              {immagine?.persone && (
+                <div role="group" aria-label="Chi sei nel tabellone?" style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem', marginBottom: '.5rem' }}>
+                  {immagine.persone.map((p) => (
+                    <button key={p.fasce[0]} type="button" className="btn-import" onClick={() => leggiTurni(p)}>{p.nome}</button>
+                  ))}
+                </div>
+              )}
               <textarea
                 autoFocus
                 value={testo}

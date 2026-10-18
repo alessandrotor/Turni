@@ -494,8 +494,8 @@ export default function CalendarView({
     && !(Number(settings.annualGrossManual) > 0)
     && mesiConTurni > 0 && mesiConTurni < mesiTrascorsi;
 
-  // Costante di build: il modulo gemini resta caricato pigramente (riga ~242).
-  const hasImportAI = !!import.meta.env.VITE_AI_PROXY_URL;
+  // SOSPESA mentre si prova la lettura sul telefono (ImportTesto): `false &&` e basta per riaccenderla.
+  const hasImportAI = false && !!import.meta.env.VITE_AI_PROXY_URL;
 
   const closeNameModal = useCallback(() => { setPendingImportFile(null); setEditingName(false); setPickAfterName(false); }, []);
   useModalDismiss(nameModalRef, closeNameModal, !!pendingImportFile || editingName);
@@ -883,7 +883,7 @@ export default function CalendarView({
 
       {/* Da testo: locale, c'è anche senza il servizio di riconoscimento. */}
       <div className="import-bar">
-        <ImportTesto esistenti={allShifts} onConfirm={onImportShifts} />
+        <ImportTesto esistenti={allShifts} onConfirm={onImportShifts} nome={settings.workerName} onNome={(workerName) => onUpdateSettings?.({ workerName })} />
       </div>
 
       {/* Main shifts view: Timeline or Grid. Scorrere di lato sui giorni cambia

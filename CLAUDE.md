@@ -523,7 +523,20 @@ Discendono tutte dalla parola d'ordine qui sopra.
   e l'anteprima lo dice con un «Parti da» da correggere: non si indovina in
   silenzio. Un orario senza giorno non diventa un giorno. → `check-testo-turni.mjs`
   Ci si arriva anche da «Condividi → Turni» (`share_target` nel manifest, solo
-  Android con l'app installata): il modulo si apre già pieno. → `check-configurazione.mjs`
+  Android con l'app installata): il modulo si apre già pieno. La condivisione è
+  una POST e la riceve `public/condividi-sw.js`. → `check-configurazione.mjs`
+- **Il tabellone da un'immagine si legge SUL TELEFONO** (prova, ottobre 2026):
+  Tesseract in WebAssembly, scaricato la prima volta da `/ocr` del sito stesso
+  (~4,5 MB, fuori dal precache), mai da un CDN; per questo la CSP ha
+  `'wasm-unsafe-eval'`. Si legge CELLA PER CELLA: sulla tabella intera il
+  lettore sbaglia quasi tutto. Un formato solo, il tabellone Excel a due celle
+  per giorno; su due settimane vere 183 turni giusti su 184. Il nome è
+  `workerName`: la prima volta si tocca dall'elenco, poi la riga si ritrova da
+  sola, e i turni dei colleghi non vengono nemmeno letti. Il risultato diventa
+  testo di «Incolla turni», quindi la stessa anteprima. Parte pura in
+  `utils/tabellone.js`, lettore in `services/lettore-immagine.js`.
+  → `check-tabellone.mjs`. Nel frattempo la lettura con l'IA è SOSPESA
+  (`hasImportAI` in `CalendarView.jsx`), non tolta.
 - **Non si scrolla se non è assolutamente necessario.** Vale soprattutto per
   ciò che si apre sopra la pagina: una finestra che costa uno scorrimento per
   arrivare al pulsante che la chiude è una finestra scritta troppo lunga, e la
