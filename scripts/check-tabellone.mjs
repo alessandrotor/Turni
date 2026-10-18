@@ -22,6 +22,7 @@
 import { readFileSync, existsSync } from 'node:fs';
 import {
   trovaGriglia, fasce, colonne, ritaglio, orarioDaCella, persone, trovaPersona, dateDaIntestazione, testoDaRighe,
+  coppieDaParole, colonneDaCoppie, celleDaColonne, testoDaFascia, ruotaGrigi,
 } from '../src/utils/tabellone.js';
 
 let falliti = 0;
@@ -90,6 +91,41 @@ esito(colonne([0, 100, 200]) === null, 'una tabella con un\'altra forma non si l
 const cella = ritaglio(g, W, [170, 220], [40, 70]);
 esito(!cella.vuota && cella.dati.every((v) => v === 0 || v === 255) && ritaglio(g, W, [270, 320], [134, 164]).vuota,
   'la cella esce in bianco e nero, e una cella bianca si salta');
+
+console.log('\nUna foto, col righello\n');
+// Le parole che il lettore ha restituito sulla foto vera di uno schermo
+// (ottobre 2026): orari fusi («12:3015:00»), durate in coda («05:30»), e la
+// prima colonna senza nessuna coppia leggibile.
+const parole = [['12:30', 563, 655, 0, 37], ['15:00', 668, 732, 8, 25], ['7', 186, 236, 200, 217], [' 09:2015:30', 1398, 1568, 287, 325],
+  ['6:00', 1723, 1773, 297, 315], ['06:00', 1802, 1898, 286, 326], ['11:00', 1906, 1967, 296, 316], ['000', 87, 134, 308, 326], [' 0022:30', 167, 334, 296, 335],
+  ['12:30', 602, 665, 301, 320], ['18:00', 677, 741, 301, 319], ['1:30', 1824, 1883, 347, 367], ['14:00', 1891, 1956, 347, 367], ['06:00', 85, 142, 432, 450],
+  ['11:00', 201, 260, 430, 449], ['7:00', 270, 332, 429, 448], ['06:00', 606, 677, 426, 445], ['12:00', 687, 752, 426, 444], ['16:30', 1013, 1078, 424, 442],
+  ['22:30', 1087, 1157, 423, 442], ['16:3022:30', 1819, 1960, 420, 440], ['1301400', 209, 340, 532, 551], ['19:00', 611, 676, 529, 548], ['22:30', 686, 754, 528, 547],
+  ['10:00', 1809, 1872, 570, 590], ['14:00', 1880, 1944, 570, 590], [' 19::4522:30', 195, 358, 643, 681], ['16:30', 1014, 1078, 646, 665], ['22:30', 1087, 1155, 646, 665],
+  ['13:00', 1411, 1474, 643, 662], ['18:00', 1484, 1547, 643, 662], ['15:00', 1879, 1943, 640, 660], ['16302100', 228, 363, 769, 788], [' 09:3015:30', 1383, 1546, 751, 788],
+  ['16:00', 1405, 1468, 807, 825], ['21:30', 1477, 1538, 806, 825]].map(([testo, x0, x1, y0, y1]) => ({ testo, x0, x1, y0, y1 }));
+const coppie = coppieDaParole(parole);
+esito(coppie.some((c) => c.inizio === '09:20' && c.fine === '15:30') && coppie.some((c) => c.inizio === '16:30' && c.fine === '22:30' && c.x > 1800),
+  'gli orari fusi in una parola si separano', JSON.stringify(coppie.map((c) => `${c.inizio}-${c.fine}@${Math.round(c.x)}`)));
+const colX = colonneDaCoppie(coppie, 2000);
+const attese = [203, 596, 1014, 1406, 1814];
+esito(colX.length === 5 && colX.every((x, i) => Math.abs(x - attese[i]) < 25),
+  'la colonna senza coppie leggibili si ricostruisce dal passo', colX.map(Math.round).join(' '));
+const celle = celleDaColonne(colX, 2000);
+esito(celle.every(([a, b], i) => a < colX[i] && b < (colX[i + 1] ?? 2000) && b > colX[i]), 'una cella per colonna, a filo del testo', JSON.stringify(celle));
+// Le celle della riga A di quella foto, come le ha lette il lettore.
+const rigaA = ['7:00 22:30 05:30\n4\n', '12:30 18:00 05:30\n', '00:00\n', '09:30 15:30 06:00\n', '06:00 11:00\n11:30 14:00\n'];
+const fasciaA = testoDaFascia(rigaA, 0);
+esito(fasciaA === 'Mar 12:30-18:00\nGio 09:30-15:30\nVen 06:00-11:00\nVen 11:30-14:00',
+  'la durata in coda non è un orario; «17:00» letto «7:00» (15 ore e mezza) non diventa un turno', fasciaA.replace(/\n/g, ' | '));
+esito(testoDaFascia(rigaA, 2).startsWith('Gio 12:30-18:00') && testoDaFascia(rigaA, 6).startsWith('Lun 12:30-18:00'),
+  'il giorno della prima colonna sposta tutti gli altri, oltre la domenica compresa');
+// Il righello inclinato come lo disegna CSS rotate(3deg) torna orizzontale.
+const L = 400, A = 200, linea = new Uint8Array(L * A).fill(255);
+for (let x = 0; x < L; x++) linea[Math.round(100 + (x - 200) * Math.tan(3 * Math.PI / 180)) * L + x] = 0;
+const dritta = ruotaGrigi(linea, L, A, 3, 200, 100);
+const piena = Math.max(...Array.from({ length: A }, (_, y) => dritta.subarray(y * L, (y + 1) * L).filter((v) => v < 128).length));
+esito(piena > L * 0.95, 'la fascia inclinata si raddrizza nel verso giusto', `${piena}/${L}`);
 
 console.log('\nIl lettore resta sul telefono\n');
 const lettore = readFileSync('src/services/lettore-immagine.js', 'utf8');

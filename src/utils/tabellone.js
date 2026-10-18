@@ -198,7 +198,10 @@ export function dateDaIntestazione(testi, oggi) {
 }
 
 const minuti = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3));
-const durataPlausibile = (a, b) => { const d = (minuti(b) - minuti(a) + 1440) % 1440; return d > 0 && d <= 16 * 60; };
+// Un turno dura più di zero e al massimo 13 ore: il riposo minimo è di 11 ore
+// consecutive ogni 24 (art. 7 D.Lgs. 66/2003). Oltre, è un orario letto male
+// («17:00» diventato «7:00»): meglio perderlo che importarlo sbagliato.
+const durataPlausibile = (a, b) => { const d = (minuti(b) - minuti(a) + 1440) % 1440; return d > 0 && d <= 13 * 60; };
 
 const GIORNI = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
@@ -212,7 +215,7 @@ export function testoDaRighe(righe, date) {
     for (const r of righe) {
       const inizio = orarioDaCella(r[2 * g]);
       const fine = orarioDaCella(r[2 * g + 1]);
-      // Un turno che non dura (o dura più di 16 ore) è rumore letto male.
+      // Un turno che non dura, o dura più di quanto la legge consente, è rumore.
       if (!inizio || !fine || !durataPlausibile(inizio, fine)) continue;
       const giorno = date
         ? `${String(date[g].getDate()).padStart(2, '0')}/${String(date[g].getMonth() + 1).padStart(2, '0')}`
@@ -221,4 +224,134 @@ export function testoDaRighe(righe, date) {
     }
   }
   return linee.join('\n');
+}
+
+// ── Le foto: niente griglia, il righello ───────────────────────────────────
+// Su una foto (di uno schermo, di un foglio) le linee spesso non si vedono e
+// la griglia non si trova. Allora la riga la indica chi usa l'app, col
+// righello, e le COLONNE si ricavano dagli orari: ogni colonna ha orari in
+// qualche riga, e gli inizi dei turni di una colonna stanno tutti allineati.
+
+// Raddrizza attorno a (cx, cy) ciò che è inclinato di `gradi` nel verso di
+// CSS `rotate()` (positivo = scende verso destra): la fascia inclinata del
+// righello diventa orizzontale prima di ritagliarla.
+export function ruotaGrigi(grigi, W, H, gradi, cx = W / 2, cy = H / 2) {
+  if (!gradi) return grigi;
+  const a = gradi * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+  const out = new Uint8Array(W * H).fill(255);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const sx = Math.round(cx + (x - cx) * c - (y - cy) * s), sy = Math.round(cy + (x - cx) * s + (y - cy) * c);
+    if (sx >= 0 && sy >= 0 && sx < W && sy < H) out[y * W + x] = grigi[sy * W + sx];
+  }
+  return out;
+}
+
+// Dalle parole lette (testo e riquadro) ai turni: due orari vicini sulla
+// stessa riga, il secondo dopo il primo. La durata che spesso li segue
+// («05:30») sta più lontana e non si accoppia.
+export function coppieDaParole(parole) {
+  // Una parola può contenerne più d'uno («12:3015:00»: lo spazio si perde):
+  // ogni orario prende la sua parte del riquadro, in proporzione ai caratteri.
+  const orari = parole.flatMap((p) => {
+    const t = String(p.testo), n = Math.max(1, t.length), passo = (p.x1 - p.x0) / n;
+    const trovati = /^\d{4}$/.test(t) ? [{ 0: t, 1: t.slice(0, 2), 2: t.slice(2), index: 0 }] : [...t.matchAll(/(\d{1,2}):(\d{2})/g)];
+    return trovati.filter((m) => Number(m[1]) < 24 && Number(m[2]) < 60).map((m) => ({
+      ora: `${m[1].padStart(2, '0')}:${m[2]}`, x0: p.x0 + m.index * passo, x1: p.x0 + (m.index + m[0].length) * passo,
+      y0: p.y0, y1: p.y1, yc: (p.y0 + p.y1) / 2,
+    }));
+  }).sort((a, b) => a.yc - b.yc || a.x0 - b.x0);
+  const coppie = [];
+  const usati = new Set();
+  for (const a of orari) {
+    if (usati.has(a)) continue;
+    const alto = a.y1 - a.y0, largo = a.x1 - a.x0;
+    const b = orari.filter((o) => o !== a && !usati.has(o) && Math.abs(o.yc - a.yc) < alto * 0.6 && o.x0 > a.x0 && o.x0 - a.x1 < largo * 0.6)
+      .sort((p, q) => p.x0 - q.x0)[0];
+    if (b && durataPlausibile(a.ora, b.ora)) {
+      usati.add(a); usati.add(b);
+      coppie.push({ inizio: a.ora, fine: b.ora, x: a.x0, y: a.yc, largo });
+    }
+  }
+  return coppie;
+}
+
+// Le colonne: gli inizi dei turni raggruppati per posizione orizzontale. Le
+// colonne di un tabellone hanno passo regolare: una colonna in cui non si è
+// letto niente (tutta riposi, o tagliata dal bordo) si ricostruisce dal passo,
+// altrimenti tutti i giorni dopo scivolerebbero di uno. `larghezza` è quella
+// dell'immagine: fin lì si cercano colonne.
+export function colonneDaCoppie(coppie, larghezza = Infinity) {
+  const xs = coppie.map((c) => c.x).sort((a, b) => a - b);
+  const tolleranza = (coppie.map((c) => c.largo).sort((a, b) => a - b)[Math.floor(coppie.length / 2)] || 50) * 1.5;
+  const gruppi = [];
+  for (const x of xs) {
+    const u = gruppi[gruppi.length - 1];
+    if (u && x - u[u.length - 1] <= tolleranza) u.push(x); else gruppi.push([x]);
+  }
+  const centri = gruppi.map((g) => g.reduce((a, b) => a + b, 0) / g.length);
+  if (centri.length < 2) return centri;
+  const salti = centri.slice(1).map((x, i) => x - centri[i]);
+  const passo = Math.min(...salti);
+  const colonne = [centri[0]];
+  for (const x of centri.slice(1)) {
+    for (let k = Math.round((x - colonne[colonne.length - 1]) / passo) - 1; k > 0; k--) colonne.push(x - k * passo);
+    colonne.push(x);
+  }
+  while (colonne[0] - passo >= 0) colonne.unshift(colonne[0] - passo);
+  while (colonne[colonne.length - 1] + passo <= larghezza - passo * 0.3) colonne.push(colonne[colonne.length - 1] + passo);
+  return colonne;
+}
+
+// Le celle della fascia: da poco prima dell'inizio di una colonna a poco
+// prima della successiva. Dentro, la durata del turno resta in fondo alla
+// riga e non disturba: di ogni riga si prendono i primi due orari.
+export function celleDaColonne(colonneX, larghezza) {
+  const passo = colonneX.length > 1 ? colonneX[1] - colonneX[0] : larghezza;
+  // A sinistra quasi a filo del testo: prima c'è spesso un segno (la barretta
+  // colorata dei gestionali) che il lettore prende per un «1».
+  return colonneX.map((x, i) => [Math.max(0, Math.round(x - passo * 0.015)), Math.min(larghezza - 1, Math.round((colonneX[i + 1] ?? x + passo) - passo * 0.06))]);
+}
+
+// I turni di una cella letta: ogni riga coi suoi primi due orari, se il
+// secondo viene dopo il primo e il turno sta in piedi.
+export function turniDaTestoCella(testo) {
+  const turni = [];
+  for (const riga of String(testo || '').split('\n')) {
+    const ore = [...riga.matchAll(/(\d{1,2}):?(\d{2})/g)]
+      .filter((m) => Number(m[1]) < 24 && Number(m[2]) < 60).map((m) => `${m[1].padStart(2, '0')}:${m[2]}`);
+    if (ore.length >= 2 && ore[1] > ore[0] && durataPlausibile(ore[0], ore[1])) turni.push(`${ore[0]}-${ore[1]}`);
+  }
+  return turni;
+}
+
+// La fascia scelta col righello, una cella per colonna, diventa testo di
+// «Incolla turni». `primo` è il giorno della prima colonna (0 = lunedì): su
+// una foto senza date lo dice chi la guarda.
+export function testoDaFascia(testiCelle, primo = 0) {
+  return testiCelle.flatMap((t, col) => turniDaTestoCella(t).map((o) => `${GIORNI[(primo + col) % 7]} ${o}`)).join('\n');
+}
+
+// Le celle della fascia scelta col righello, pronte per il lettore: raddrizzate,
+// col contrasto steso, SENZA soglia. Sulla foto di uno schermo la soglia
+// mangiava i «:» e le cifre sottili (13 turni giusti su 20 invece di 16).
+export function celleDellaFascia(grigi, W, H, { y0, y1, gradi = 0 }, colonneX) {
+  const g = ruotaGrigi(grigi, W, H, gradi, W / 2, (y0 + y1) / 2);
+  const t = Math.max(0, Math.round(y0)), b = Math.min(H, Math.round(y1)), h = Math.max(1, b - t);
+  return celleDaColonne(colonneX, W).map(([x0, x1]) => {
+    const w = Math.max(1, x1 - x0), dati = new Uint8Array(w * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) dati[y * w + x] = g[(t + y) * W + x0 + x];
+    return { ...contrasto(dati), w, h };
+  });
+}
+
+// Il grigio steso fra l'1% e il 99% dei pixel, senza soglia. `vuota` se non
+// c'è contrasto, cioè niente di scritto.
+export function contrasto(dati) {
+  const ist = new Uint32Array(256);
+  for (const v of dati) ist[v] += 1;
+  const q = (p) => { let n = 0; for (let v = 0; v < 256; v++) { n += ist[v]; if (n >= p * dati.length) return v; } return 255; };
+  const min = q(0.01), max = q(0.99), scala = max > min ? 255 / (max - min) : 1;
+  const out = new Uint8Array(dati.length);
+  for (let i = 0; i < dati.length; i++) out[i] = Math.max(0, Math.min(255, Math.round((dati[i] - min) * scala)));
+  return { dati: out, vuota: max - min < 40 };
 }

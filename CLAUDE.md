@@ -533,8 +533,16 @@ Discendono tutte dalla parola d'ordine qui sopra.
   per giorno; su due settimane vere 183 turni giusti su 184. Il nome è
   `workerName`: la prima volta si tocca dall'elenco, poi la riga si ritrova da
   sola, e i turni dei colleghi non vengono nemmeno letti. Il risultato diventa
-  testo di «Incolla turni», quindi la stessa anteprima. Parte pura in
+  testo di «Incolla turni», quindi la stessa anteprima, con «Turni di X ·
+  cambia» sopra; il nome sta anche in Impostazioni. Parte pura in
   `utils/tabellone.js`, lettore in `services/lettore-immagine.js`.
+  **Una foto senza griglia** (lo schermo di un gestionale) apre il RIGHELLO
+  (`Righello.jsx`): la fascia la posa chi la guarda, le colonne si ricavano
+  dagli orari letti su tutta l'immagine (passo regolare, quelle vuote si
+  ricostruiscono), il giorno della prima colonna è un tocco perché in una
+  foto le date spesso non ci sono. Sulla foto vera: 16 turni giusti su 20.
+  Un turno oltre le 13 ore è rumore (art. 7 D.Lgs. 66/2003, 11 ore di riposo):
+  meglio perso che importato sbagliato.
   → `check-tabellone.mjs`. Nel frattempo la lettura con l'IA è SOSPESA
   (`hasImportAI` in `CalendarView.jsx`), non tolta.
 - **Non si scrolla se non è assolutamente necessario.** Vale soprattutto per

@@ -11,6 +11,7 @@
 
 import {
   trovaGriglia, fasce, colonne, ritaglio, persone, dateDaIntestazione, testoDaRighe,
+  coppieDaParole, colonneDaCoppie, celleDellaFascia, contrasto, testoDaFascia,
 } from '../utils/tabellone';
 
 const OCR = '/ocr';
@@ -38,6 +39,9 @@ async function grigiDa(file) {
   const tela = document.createElement('canvas');
   tela.width = W; tela.height = H;
   const ctx = tela.getContext('2d', { willReadFrequently: true });
+  // Rimpicciolire bene conta: con la qualità di default i «:» e le cifre
+  // sottili di una foto da 16 MP si perdevano (martedì letto «0»).
+  ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(bmp, 0, 0, W, H);
   bmp.close?.();
   const rgba = ctx.getImageData(0, 0, W, H).data;
@@ -74,7 +78,7 @@ export async function apriTabellone(file, { oggi, avanza = () => {} }) {
   const { hy, vx } = trovaGriglia(grigi, W, H);
   const col = colonne(vx);
   const [testa, ...righe] = fasce(hy);
-  if (!col || !righe.length) return { errore: 'formato' };
+  if (!col || !righe.length) return apriFoto(w, grigi, W, H, avanza);
   const intestazione = [];
   for (let g = 0; g < 7; g++) {
     intestazione.push(await leggi(w, ritaglio(grigi, W, [col.giorni[2 * g][0], col.giorni[2 * g + 1][1]], testa), '6', ''));
@@ -105,3 +109,29 @@ export async function turniDi(tabellone, persona, { avanza = () => {} } = {}) {
   return testoDaRighe(celle, date);
 }
 
+// Una FOTO, senza griglia da trovare: si leggono gli orari di tutta
+// l'immagine solo per capire dove stanno le colonne. La riga la sceglie chi
+// usa l'app, col righello (components/Righello.jsx).
+async function apriFoto(w, grigi, W, H, avanza) {
+  avanza('colonne');
+  await w.setParameters({ tessedit_pageseg_mode: '11', tessedit_char_whitelist: '0123456789: ' });
+  const { data } = await w.recognize(tela({ ...contrasto(grigi), w: W, h: H }), {}, { blocks: true });
+  const parole = (data.blocks || []).flatMap((b) => b.paragraphs.flatMap((p) => p.lines.flatMap((l) => l.words)))
+    .map((p) => ({ testo: p.text, x0: p.bbox.x0 - 20, x1: p.bbox.x1 - 20, y0: p.bbox.y0 - 20, y1: p.bbox.y1 - 20 }));
+  const colonneX = colonneDaCoppie(coppieDaParole(parole), W);
+  if (colonneX.length < 2) return { errore: 'formato' };
+  return { foto: true, grigi, W, H, colonneX };
+}
+
+// La fascia del righello, `{ y0, y1, gradi }` in pixel dell'immagine letta.
+// `primo` è il giorno della prima colonna (0 = lunedì).
+export async function turniDellaFascia(foto, fascia, primo, { avanza = () => {} } = {}) {
+  avanza('turni');
+  const w = await avviaLettore();
+  await w.setParameters({ tessedit_pageseg_mode: '6', tessedit_char_whitelist: '0123456789: ' });
+  const testi = [];
+  for (const c of celleDellaFascia(foto.grigi, foto.W, foto.H, fascia, foto.colonneX)) {
+    testi.push(c.vuota ? '' : (await w.recognize(tela(c))).data.text);
+  }
+  return testoDaFascia(testi, primo);
+}

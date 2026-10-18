@@ -6,6 +6,7 @@ import { trovaPersona } from '../utils/tabellone';
 import { turniDaImportare } from '../utils/import-turni';
 import { minutesDiff, formatMinutes } from '../utils/dates';
 import { ShiftPreviewRow } from './ImportModal';
+import Righello from './Righello';
 
 // «Incolla i turni da un messaggio»: il testo si legge sul telefono, non va a
 // nessun servizio (utils/testo-turni.js). Per questo non ha l'avviso della foto.
@@ -39,6 +40,7 @@ let condiviso = (() => {
 const FASI = {
   scarico: 'Preparo il lettore: ~4,5 MB, solo la prima volta',
   nomi: 'Leggo i nomi',
+  colonne: 'Cerco le colonne',
   turni: 'Leggo i tuoi turni',
 };
 
@@ -47,25 +49,38 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
   const [testo, setTesto] = useState(() => condiviso || '');
   // Il tabellone da un'immagine (prova): fase di lettura, oppure i nomi da
   // scegliere la prima volta. Il risultato diventa testo qui sopra.
+  // Dopo la lettura: di chi sono i turni (tabellone), o il righello (foto).
   const [immagine, setImmagine] = useState(null);
+  const [origine, setOrigine] = useState(null);
   const tabRef = useRef(null);
   const fileRef = useRef(null);
+  const avanza = (fase) => setImmagine({ fase });
 
   const leggiTurni = async (persona) => {
     onNome?.(persona.nome);
     const { turniDi } = await import('../services/lettore-immagine');
-    const t = await turniDi(tabRef.current, persona, { avanza: (fase) => setImmagine({ fase }) });
+    const t = await turniDi(tabRef.current, persona, { avanza });
     setImmagine(t ? null : { errore: 'Nella tua riga non ho trovato orari.' });
+    setOrigine({ nome: persona.nome });
+    if (t) setTesto(t);
+  };
+  const leggiFascia = async (stato, fascia) => {
+    const { turniDellaFascia } = await import('../services/lettore-immagine');
+    const t = await turniDellaFascia(tabRef.current, fascia, stato.primo, { avanza });
+    setImmagine(t ? null : { errore: 'In quella fascia non ho trovato orari: spostala sulla tua riga.', righello: true });
+    setOrigine({ righello: stato });
     if (t) setTesto(t);
   };
   const leggiImmagine = async (file) => {
     if (!file) return;
     setAperto(true);
+    setOrigine(null);
     try {
       const { apriTabellone } = await import('../services/lettore-immagine');
-      const tab = await apriTabellone(file, { oggi: new Date(), avanza: (fase) => setImmagine({ fase }) });
-      if (tab.errore) { setImmagine({ errore: 'Non riconosco questa tabella: per ora leggo solo il tabellone Excel a due celle per giorno.' }); return; }
-      tabRef.current = tab;
+      const tab = await apriTabellone(file, { oggi: new Date(), avanza });
+      if (tab.errore) { setImmagine({ errore: 'Non riconosco questa tabella: non trovo né le righe né gli orari.' }); return; }
+      tabRef.current = { ...tab, file };
+      if (tab.foto) { setImmagine({ righello: true }); return; }
       const io = trovaPersona(tab.persone, nome);
       if (io) await leggiTurni(io); else setImmagine({ persone: tab.persone });
     } catch {
@@ -92,7 +107,7 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
   const overlayRef = useRef(null);
   const dialogRef = useRef(null);
 
-  const chiudi = () => { setAperto(false); setTesto(''); setInizio(''); setImmagine(null); };
+  const chiudi = () => { setAperto(false); setTesto(''); setInizio(''); setImmagine(null); setOrigine(null); };
   // Con del testo incollato un tocco fuori o Esc non lo buttano: si chiude
   // dalla ✕ o da «Annulla». Senza testo non c'è niente da perdere.
   const tentaChiudi = () => { if (!testo.trim()) chiudi(); };
@@ -120,6 +135,8 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
     chiudi();
   };
 
+  const conRighello = !!(immagine?.righello && tabRef.current?.foto);
+
   return (
     <>
       <button className="btn-import" onClick={() => setAperto(true)}>
@@ -139,13 +156,27 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
               {/* Prova: il tabellone da un'immagine, letto sul telefono. */}
               <input ref={fileRef} type="file" accept="image/*" hidden
                 onChange={(e) => { leggiImmagine(e.target.files?.[0]); e.target.value = ''; }} />
-              {!immagine?.fase && (
+              {!immagine?.fase && !conRighello && (
                 <button type="button" className="btn-import" style={{ marginBottom: '.5rem' }} onClick={() => fileRef.current?.click()}>
                   📷 Da un'immagine <span className="beta-tag">prova</span>
                 </button>
               )}
               {immagine?.fase && <p className="import-match">⏳ {FASI[immagine.fase]}…</p>}
               {immagine?.errore && <p className="import-match import-match--warn">⚠️ {immagine.errore}</p>}
+              {conRighello && (
+                <Righello file={tabRef.current.file} larghezza={tabRef.current.W} altezza={tabRef.current.H}
+                  iniziale={origine?.righello} onLeggi={leggiFascia} />
+              )}
+              {/* Di chi sono i turni letti, e come si cambia: un tocco. */}
+              {origine && !immagine && (
+                <p className="import-match" style={{ display: 'flex', gap: '.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {origine.nome ? <span>Turni di <strong>{origine.nome}</strong></span> : <span>📏 Dalla fascia scelta</span>}
+                  <button type="button" className="linklike"
+                    onClick={() => setImmagine(origine.nome ? { persone: tabRef.current.persone } : { righello: true })}>
+                    {origine.nome ? 'cambia' : 'sposta'}
+                  </button>
+                </p>
+              )}
               {immagine?.persone && (
                 <div role="group" aria-label="Chi sei nel tabellone?" style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem', marginBottom: '.5rem' }}>
                   {immagine.persone.map((p) => (
@@ -153,6 +184,8 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
                   ))}
                 </div>
               )}
+              {/* Col righello aperto il testo non serve ancora: la finestra non deve scorrere. */}
+              {!conRighello && <>
               <textarea
                 autoFocus
                 value={testo}
@@ -165,6 +198,7 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
               <p className="import-intro" style={{ marginTop: '.4rem', fontSize: '.8rem', opacity: .8 }}>
                 Il testo resta sul telefono: non viene inviato a nessun servizio.
               </p>
+              </>}
 
               {letto && (
                 <>

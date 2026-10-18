@@ -57,6 +57,7 @@ export default function Settings({ settings, onSave }) {
     hasTredicesima: !!settings.hasTredicesima,
     hasQuattordicesima: !!settings.hasQuattordicesima,
     hireDate: settings.hireDate || '',
+    workerName: settings.workerName || '',
     ccnl: settings.ccnl || '',
     aziendaDipendenti: settings.aziendaDipendenti || FASCIA_DEFAULT,
     tfrInBusta: !!settings.tfrInBusta,
@@ -425,6 +426,7 @@ export default function Settings({ settings, onSave }) {
       hasTredicesima: form.hasTredicesima,
       hasQuattordicesima: form.hasQuattordicesima,
       hireDate: form.hireDate,
+      workerName: form.workerName.trim(),
       ccnl: form.ccnl,
       aziendaDipendenti: form.aziendaDipendenti,
       tfrInBusta: form.tfrInBusta,
@@ -1235,19 +1237,16 @@ export default function Settings({ settings, onSave }) {
           )}
         </details>
 
-        {/* Import turni da foto (AI) */}
+        {/* Turni da un'immagine: letti sul telefono (services/lettore-immagine.js) */}
         <details className="settings-section">
-          <summary className="settings-section-title">🤖 Import turni da foto</summary>
+          <summary className="settings-section-title">📷 Turni da un'immagine</summary>
           <p className="settings-section-desc">
-            L'immagine viene inviata a Google Gemini per la lettura e non viene conservata.
-            I turni restano sul tuo telefono. Il <strong>nome</strong> da cercare sul foglio
-            te lo chiede l'app al primo import da immagine (e potrai cambiarlo da lì).
+            L'immagine del tabellone si legge sul telefono e non viene inviata a nessuno.
+            Della tabella si leggono solo le righe col tuo nome.
           </p>
-
-          <p className="form-hint">
-            Di questa app non viene raccolta nessuna statistica d'uso: né quante volte
-            importi, né quanto costa. Non c'è niente da spegnere.
-          </p>
+          <label className="form-label" htmlFor="worker-name">Il tuo nome nel tabellone</label>
+          <input id="worker-name" className="form-input" value={form.workerName} onChange={set('workerName')} placeholder="come è scritto sul foglio" />
+          <p className="form-hint">Nessuna statistica d'uso viene raccolta: non c'è niente da spegnere.</p>
         </details>
 
         {/* Backup e ripristino: i dati vivono solo in localStorage */}
