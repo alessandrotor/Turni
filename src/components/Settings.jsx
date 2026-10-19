@@ -15,6 +15,7 @@ import useOccupato from '../hooks/useOccupato';
 import { minutiGiornoAssenza } from '../motore/assenze';
 import { fasciaNotturnaRisolta, CUMULO_DEFAULT } from '../motore/notturno';
 import { normalizzaMaggiorazione, messaggioMaggiorazione } from '../utils/maggiorazioni';
+import EliminaDati from './EliminaDati';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
 const toInput = (n) => (n === '' || n == null || !Number(n) ? '' : String(Number(n)).replace('.', ','));
@@ -1286,6 +1287,7 @@ export default function Settings({ settings, onSave }) {
             </button>
             <span className="form-hint">Sostituisce tutti i dati attuali</span>
           </div>
+          <EliminaDati onEsporta={handleEsportaBackup} turniSalvati={turniSalvati} />
 
           <input
             ref={backupInputRef}
@@ -1487,7 +1489,6 @@ export default function Settings({ settings, onSave }) {
         {/* ══ AVANZATE — fisco e dettagli ═════════════════════════ */}
         <details className="settings-advanced">
           <summary className="settings-advanced-title">⚙️ Avanzate — fisco e dettagli</summary>
-
 
         {/* TFR in busta */}
         <details className="settings-section">

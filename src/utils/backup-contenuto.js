@@ -249,3 +249,41 @@ export function scriviConRitorno(piano, storage) {
     return { ok: false, errore, tornatoIndietro };
   }
 }
+
+/**
+ * L'opzione nucleare: tutto quello che Turni tiene su questo telefono, via.
+ * Turni, impostazioni, ripresa, l'immagine condivisa in attesa e le copie del
+ * lettore di immagini. È l'unica azione dell'app con una conferma PRIMA
+ * (components/EliminaDati.jsx): dopo non c'è niente da annullare, perché non
+ * esiste nessun'altra copia.
+ *
+ * L'origine del sito è solo di Turni, quindi `clear()` non tocca altro. Resta
+ * il codice dell'app in cache (il precache del service worker): non è un dato,
+ * e senza l'app non si aprirebbe più offline.
+ *
+ * Gli strumenti si passano da fuori perché il riscontro li possa simulare
+ * (`check-elimina-dati.mjs`). Non si ferma al primo errore: cancella tutto
+ * quello che può e dice cosa non ha potuto.
+ *
+ * @returns {Promise<{ ok: boolean, errori: string[] }>}
+ */
+export async function eliminaTuttoIlLocale({ localStorage: ls, sessionStorage: ss, caches: cc, indexedDB: idb } = {}) {
+  const errori = [];
+  const prova = async (nome, fn) => { try { await fn(); } catch { errori.push(nome); } };
+  await prova('memoria del browser', () => ls?.clear());
+  await prova('sessione', () => ss?.clear());
+  await prova('immagini condivise', () => cc?.delete('turni-condivisi'));
+  await prova('copie del lettore di immagini', async () => {
+    if (!idb?.databases) return;
+    for (const { name } of await idb.databases()) {
+      if (name) {
+        await new Promise((ok, ko) => {
+          const r = idb.deleteDatabase(name);
+          r.onsuccess = ok; r.onerror = ko; r.onblocked = ok;
+        });
+      }
+    }
+  });
+  if (ls && ls.length > 0) errori.push('memoria del browser');
+  return { ok: errori.length === 0, errori: [...new Set(errori)] };
+}

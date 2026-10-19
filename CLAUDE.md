@@ -76,6 +76,11 @@ In pratica, e sono regole, non aspirazioni:
   insegna a chiudere gli avvisi a riflesso. Cancellare un turno agisce subito e
   apre una finestra per tornare indietro (`utils/avvisi.js`, `DURATA_ANNULLA`).
   Quella finestra è lavoro in sospeso: tiene la sua chiave in `occupato`.
+  **L'unica eccezione, decisa da chi mantiene il progetto:** «Elimina tutti i
+  dati» in Impostazioni (`EliminaDati.jsx`) chiede conferma PRIMA, perché
+  dopo non esiste nessuna copia da cui tornare. È l'opzione nucleare per chi
+  vuole il pieno controllo dei suoi dati: la conferma dice cosa sparisce e
+  mette accanto il backup. → `check-elimina-dati.mjs`
 - **Dove l'annulla dopo non può esistere, si protegge il gesto.** Un turno
   cancellato esiste ancora per otto secondi; una bozza chiusa no, non è mai
   stata scritta da nessuna parte. Quindi il tocco sull'area scura attorno al
