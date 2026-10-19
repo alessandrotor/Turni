@@ -1,4 +1,4 @@
-// Genera la pagina pubblica dell'informativa:
+// Genera le pagine pubbliche dell'informativa e dei termini d'uso:
 //
 //   node scripts/genera-privacy.mjs        (gira da solo prima di ogni build)
 //
@@ -6,8 +6,8 @@
 // L'informativa deve esistere in due posti: leggibile nel repository e
 // raggiungibile da un indirizzo pubblico. Tenerne due copie significa che prima
 // o poi divergono — e la copia che l'utente legge diventa quella sbagliata,
-// senza che nessuno se ne accorga. Qui la sorgente e' una sola, `docs/privacy.md`,
-// e la pagina si rigenera.
+// senza che nessuno se ne accorga. Qui la sorgente e' una sola, `docs/privacy.md`
+// (e `docs/termini.md` per i termini), e la pagina si rigenera.
 //
 // PERCHE' NON UNA ROTTA DELL'APP
 // Una rotta React non risponderebbe a chi apre il link senza JavaScript, e
@@ -22,8 +22,12 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
-const SORGENTE = 'docs/privacy.md';
-const USCITA = 'public/privacy/index.html';
+const PAGINE = [
+  { sorgente: 'docs/privacy.md', cartella: 'public/privacy', titolo: 'Informativa sulla privacy — Turni',
+    descrizione: 'Quali dati escono dal tuo dispositivo usando Turni, dove vanno e perche.' },
+  { sorgente: 'docs/termini.md', cartella: 'public/termini', titolo: "Termini d'uso — Turni",
+    descrizione: "Cos'e Turni, cosa aspettarsi dalle sue stime e cosa no." },
+];
 
 const esc = (s) => s
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -34,12 +38,15 @@ function inline(s) {
   const codici = [];
   s = esc(s).replace(/`([^`]+)`/g, (_, c) => `\u0000${codici.push(`<code>${c}</code>`) - 1}\u0000`);
   s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  s = s.replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" rel="noopener">$1</a>');
+  // Link esterni, o interni al sito (`/termini/`): così l'informativa del sito
+  // di prova punta ai termini del sito di prova, non a quelli di produzione.
+  s = s.replace(/\[([^\]]+)\]\((https?:[^)]+|\/[^)\s]*)\)/g, '<a href="$2" rel="noopener">$1</a>');
   s = s.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, '$1<a href="$2" rel="noopener">$2</a>');
   return s.replace(/\u0000(\d+)\u0000/g, (_, i) => codici[Number(i)]);
 }
 
-const righe = readFileSync(SORGENTE, 'utf8').split(/\r?\n/);
+function genera({ sorgente, cartella, titolo, descrizione }) {
+const righe = readFileSync(sorgente, 'utf8').split(/\r?\n/);
 const out = [];
 let i = 0;
 
@@ -92,7 +99,7 @@ while (i < righe.length) {
     continue;
   }
 
-  console.error(`\nRiga ${i + 1} non interpretabile, e non la ometto in silenzio:\n  ${r}\n`);
+  console.error(`\n${sorgente}, riga ${i + 1} non interpretabile, e non la ometto in silenzio:\n  ${r}\n`);
   process.exit(1);
 }
 
@@ -101,8 +108,8 @@ const html = `<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Informativa sulla privacy — Turni</title>
-<meta name="description" content="Quali dati escono dal tuo dispositivo usando Turni, dove vanno e perche.">
+<title>${titolo}</title>
+<meta name="description" content="${descrizione}">
 <style>
   :root { color-scheme: light dark; --testo:#1f2933; --sfondo:#fff; --tenue:#5b6570;
           --bordo:#e3e8ee; --accento:#2563eb; --nota:#fff8e1; }
@@ -142,6 +149,9 @@ ${out.join('\n')}
 </html>
 `;
 
-mkdirSync('public/privacy', { recursive: true });
-writeFileSync(USCITA, html, 'utf8');
-console.log(`${USCITA} rigenerata da ${SORGENTE} (${out.length} blocchi).`);
+mkdirSync(cartella, { recursive: true });
+writeFileSync(`${cartella}/index.html`, html, 'utf8');
+console.log(`${cartella}/index.html rigenerata da ${sorgente} (${out.length} blocchi).`);
+}
+
+for (const pagina of PAGINE) genera(pagina);

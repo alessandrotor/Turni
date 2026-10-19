@@ -1855,9 +1855,9 @@ export default function Settings({ settings, onSave }) {
               pagina statica: resta leggibile anche se l'app è rotta.
               `target="_blank"` per non far perdere le modifiche non salvate. */}
           <p className="settings-privacy">
-            <a href="/privacy/" target="_blank" rel="noopener">
-              Come vengono trattati i tuoi dati
-            </a>
+            <a href="/privacy/" target="_blank" rel="noopener">Come vengono trattati i tuoi dati</a>
+            {' · '}
+            <a href="/termini/" target="_blank" rel="noopener">Termini d&apos;uso</a>
           </p>
         </div>
       </form>

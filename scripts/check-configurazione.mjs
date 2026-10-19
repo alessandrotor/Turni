@@ -75,7 +75,7 @@ check(xmlRotti.length === 0, 'ogni XML Android è bilanciato',
 // ── 3. HTML bilanciato e senza id ripetuti ─────────────────────────────────
 // Due elementi con lo stesso id non danno errore: `getElementById` ne trova uno
 // solo, e `htmlFor`/`aria-*` puntano al primo che capita.
-const htmlFile = ['index.html', 'public/privacy/index.html'].filter(existsSync);
+const htmlFile = ['index.html', 'public/privacy/index.html', 'public/termini/index.html'].filter(existsSync);
 const htmlRotti = [];
 for (const f of htmlFile) {
   const testo = readFileSync(f, 'utf8');
@@ -209,6 +209,19 @@ check(campi.length >= 4 && nonRicevuti.length === 0 && azione && swCondividi.inc
   'la condivisione arriva fino a «Incolla turni»',
   [...nonRicevuti.map((c) => `${c} non ricevuto dal service worker`), ...nonLetti.map((p) => `${p} non letto da ImportTesto`)].join(' · ')
     || `${azione}: ${campi.join(', ')} → ${parametri.join(', ')}`);
+
+// ── 11. Le pagine statiche non le ingoia il ripiego della PWA ────────────────
+// Dentro l'app installata ogni indirizzo che il service worker non conosce
+// finisce sul calendario (`navigateFallback`). Informativa e termini sono
+// pagine vere in `public/`: senza la loro voce in `navigateFallbackDenylist`
+// il link si apre sul calendario, e la pagina risulta pubblicata ma non si
+// legge. La prossima pagina aggiunta deve avere la sua voce.
+const statiche = readdirSync('public', { withFileTypes: true })
+  .filter((d) => d.isDirectory() && existsSync(`public/${d.name}/index.html`)).map((d) => d.name);
+const escluse = vite.match(/navigateFallbackDenylist:\s*\[([^\]]*)\]/)?.[1] || '';
+const ingoiate = statiche.filter((n) => !escluse.includes(`\\/${n}`));
+check(statiche.length > 0 && ingoiate.length === 0, 'ogni pagina statica è esclusa dal ripiego della PWA',
+  ingoiate.map((n) => `/${n}/ aprirebbe il calendario`).join(' · ') || statiche.map((n) => `/${n}/`).join(', '));
 
 console.log(falliti === 0
   ? '\nI file che nessuno guarda mai sono a posto.\n'

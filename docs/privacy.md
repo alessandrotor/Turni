@@ -1,12 +1,15 @@
 # Informativa sulla privacy — Turni
 
-**Ultimo aggiornamento:** 21 agosto 2026
+**Ultimo aggiornamento:** 19 ottobre 2026
 
 Turni serve a tenere traccia dei propri turni di lavoro e a stimare quanto si
 guadagna. Questa informativa dice quali dati escono dal tuo dispositivo, dove
-vanno e perché. È scritta per essere letta, non per essere firmata.
+vanno e perché. È scritta per essere letta, non per essere firmata: non c'è
+niente da accettare.
 
-Vale per il sito turni-9vr.pages.dev, anche quando lo installi come app.
+Vale per il sito turni-9vr.pages.dev e per il sito di prova, anche quando li
+installi come app. Le condizioni d'uso sono in una pagina a parte:
+[Termini d'uso](/termini/).
 
 ## In breve
 
@@ -14,14 +17,22 @@ Vale per il sito turni-9vr.pages.dev, anche quando lo installi come app.
 c'è una sincronizzazione, e chi sviluppa l'app non può vedere i tuoi dati
 nemmeno volendo.
 
-Escono dal dispositivo **solo** due cose, e solo se usi l'import da foto:
-la foto che scegli e il nome da cercarci dentro. Tutto il resto — turni,
-orari, paga, contratto, calcoli — resta dove l'hai scritto.
+Dal dispositivo escono solo i dati tecnici che servono a qualunque sito per
+essere aperto (l'indirizzo IP, il tipo di browser) e un conteggio anonimo delle
+visite. Turni, orari, paga, contratto, calcoli e le immagini dei tabelloni
+restano dove li hai messi.
+
+## Chi è il titolare
+
+Il titolare del trattamento è **Alessandro Torreggiani**, che sviluppa e
+pubblica Turni a titolo personale e gratuito. Contatto:
+**g.asriel@gmail.com**.
 
 ## Dati che restano sul tuo dispositivo
 
 Turni, orari, paga oraria, dati del contratto e tutto ciò che serve alla stima
 del netto sono salvati **solo nella memoria locale del browser o dell'app**.
+Il titolare non li riceve e non li tratta.
 
 Questo ha un rovescio che è giusto conoscere: se cancelli i dati del sito,
 disinstalli l'app, o svuoti la memoria del browser, **i tuoi turni spariscono e
@@ -29,62 +40,56 @@ non sono recuperabili da nessuna parte**. Non esiste una copia altrove. Per
 questo c'è la funzione di backup in Impostazioni: il file che produce resta a
 te, non viene inviato da nessuna parte.
 
-## Import dei turni da foto
+## Turni letti da un'immagine
 
-È l'unica funzione che manda qualcosa fuori, ed è facoltativa. Se non la usi,
-nessuna immagine lascia mai il dispositivo.
+L'immagine del tabellone che scegli o condividi con Turni **si legge sul
+telefono**: non viene inviata a nessun servizio. Il programma che la legge si
+scarica la prima volta che usi la funzione, dal sito di Turni stesso e non da
+servizi esterni, e resta nella memoria del telefono.
 
-Quando la usi, partono:
+Se il tabellone contiene i nomi dei colleghi, Turni li legge sul telefono solo
+per mostrarti l'elenco da cui scegliere il tuo, poi legge soltanto la tua riga.
+L'immagine non viene conservata: un'immagine condivisa con l'app viene
+cancellata appena letta.
 
-- **la foto che scegli tu**, volta per volta, dal selettore del sistema;
-- **il nome** che hai indicato, perché serve a trovare la tua riga nel foglio e
-  a non far leggere i turni di tutti gli altri;
-- **un identificativo di sessione**, generato quando apri la pagina e **mai
-  salvato**: cambia a ogni ricaricamento e serve solo a fermare chi tenta di
-  inviare centinaia di richieste di fila. Non collega fra loro i tuoi import.
+## Lettura con l'intelligenza artificiale (spenta)
 
-Il percorso è: dispositivo → un server intermedio gestito da chi sviluppa l'app
-(Cloudflare Workers) → **Google Gemini**, che legge l'immagine e restituisce
-date e orari. Il server intermedio non conserva né la foto né il nome.
+Nel codice di Turni esiste anche una lettura delle foto con Google Gemini, che
+manda la foto e il nome da cercare a un servizio esterno. **Oggi è spenta.** Se
+dovesse tornare attiva, questa informativa verrà aggiornata prima, e la prima
+volta che la usi un avviso ti dirà, prima dell'invio, che la foto esce
+dall'Unione Europea, che sul piano gratuito Google può usarla per migliorare i
+suoi servizi, e che con la foto partono anche i nomi dei colleghi scritti sul
+foglio.
 
-### Le cose scomode, dette
+## Servizi coinvolti
 
-- **La foto esce dall'Unione Europea.** Google tratta i dati anche su server
-  fuori dallo Spazio economico europeo.
-- **Finché il progetto Gemini resta sul piano gratuito, Google può usare i
-  contenuti inviati per migliorare i propri servizi, e revisori umani possono
-  vederli.** Sono le condizioni del piano gratuito:
-  https://ai.google.dev/gemini-api/terms
-- **Se il foglio contiene i nomi dei tuoi colleghi, partono anche quelli** — e
-  loro non hanno scelto nulla. Puoi ritagliare la foto sulla tua riga prima di
-  caricarla: l'app lo dice anche a schermo, prima del primo invio.
+| Chi | Perché | Cosa vede | Base giuridica |
+|---|---|---|---|
+| **Cloudflare** (Pages) | ospita il sito e lo protegge dagli abusi | l'indirizzo IP e i dati tecnici della richiesta, come per qualunque sito | legittimo interesse a far funzionare il sito in sicurezza (art. 6.1.f GDPR) |
+| **Cloudflare Web Analytics** | conteggio delle visite | pagina visitata e dati aggregati, **senza cookie e senza profilazione** | legittimo interesse a sapere se il sito viene usato (art. 6.1.f GDPR) |
 
-Per questo la prima volta compare un avviso: perché la decisione la prenda tu,
-sapendo queste tre cose e non dopo.
+Cloudflare tratta questi dati per conto del titolare, secondo le sue condizioni:
+https://www.cloudflare.com/privacypolicy/
 
-## Altri servizi coinvolti
+## Cookie e memoria del browser
 
-| Chi | Perché | Cosa vede |
-|---|---|---|
-| **Cloudflare** (Pages) | ospita il sito | l'indirizzo IP, come qualunque sito |
-| **Cloudflare Turnstile** | verifica che dall'altra parte ci sia un browser vero, prima di spendere quota | segnali tecnici del browser, **nessun cookie di tracciamento** |
-| **Cloudflare Web Analytics** | conteggio delle visite | pagina visitata e dati aggregati, **senza cookie e senza profilazione** |
-| **Google Gemini** | legge la foto dei turni | vedi sopra |
+Turni **non usa cookie**, né di profilazione né pubblicitari. Usa soltanto la
+memoria locale del browser (dove stanno i tuoi dati) e la cache dell'app (che
+la fa funzionare anche senza rete). Sono strumenti tecnici strettamente
+necessari, per i quali la legge non chiede consenso (art. 122 del Codice
+privacy): per questo non c'è nessun banner.
 
 ## Statistiche d'uso
 
-**Sul sito non ne viene raccolta nessuna.** Non c'è un contatore di quante volte
-importi, né di quanto costa la funzione. Il codice per farlo esiste nel
-repository ma nella versione pubblicata non è attivo, e si può verificare:
+**Non ne viene raccolta nessuna.** Non c'è un contatore di quante volte usi una
+funzione, né un identificativo della tua installazione. Il codice che lo faceva
+nelle versioni di prova è stato tolto il 12 ottobre 2026, e lo si può
+verificare:
 
 ```bash
 node scripts/check-dati-in-uscita.mjs
 ```
-
-Nelle versioni di prova può essere attiva una statistica
-tecnica — numero di token consumati, versione dell'app, un identificativo
-casuale dell'installazione — con un interruttore per spegnerla in Impostazioni.
-Quell'interruttore compare **solo dove la statistica esiste davvero**.
 
 ## Dati che non vengono raccolti
 
@@ -92,37 +97,42 @@ Nessun dato di contatto (email, telefono, rubrica), nessuna posizione, nessun
 identificatore pubblicitario, nessuna cronologia. Non ci sono inserzioni e non
 c'è profilazione.
 
-Il **nome** che indichi per l'import è l'unica eccezione, e viaggia solo con la
-foto, solo quando usi quella funzione: è spiegato sopra.
-
 ## Permessi
 
-Il sito non chiede permessi. L'accesso alle immagini per l'import da foto passa
-dal selettore di file, quindi riguarda solo il file che scegli tu, una volta per
-volta: l'app non può sfogliare la tua galleria.
+Il sito non chiede permessi. L'accesso alle immagini passa dal selettore di
+file o dalla condivisione del sistema, quindi riguarda solo il file che scegli
+tu, una volta per volta: l'app non può sfogliare la tua galleria.
+
+## Per quanto tempo
+
+I dati sul tuo dispositivo restano finché non li cancelli tu. I dati tecnici
+delle richieste al sito li conserva Cloudflare per il tempo necessario alla
+sicurezza del servizio, secondo le sue condizioni.
 
 ## I tuoi diritti
 
 Poiché i dati restano sul tuo dispositivo, li controlli direttamente: puoi
-vederli, modificarli, esportarli in un file e cancellarli dalle Impostazioni,
-senza chiedere niente a nessuno.
+vederli, modificarli, esportarli in un file e cancellarli. In Impostazioni,
+**Elimina tutti i dati** li toglie tutti dal dispositivo in una volta.
 
-Per le foto già inviate a Google valgono le condizioni di Google, e sono
-irrecuperabili dalla nostra parte perché non le conserviamo.
+Per i dati tecnici trattati tramite Cloudflare puoi esercitare i diritti
+previsti dagli articoli 15–22 del GDPR (accesso, rettifica, cancellazione,
+limitazione, opposizione) scrivendo al contatto qui sopra.
+
+Se ritieni che i tuoi dati siano trattati in modo non conforme, puoi proporre
+reclamo al Garante per la protezione dei dati personali:
+https://www.garanteprivacy.it
 
 ## Minori
 
-L'app non è rivolta a minori di 13 anni e non raccoglie consapevolmente dati che
+L'app non è rivolta a minori di 14 anni e non raccoglie consapevolmente dati che
 li riguardano.
 
 ## Stime economiche
 
 Il calcolo del netto e delle voci in busta paga è una **stima indicativa**. Non
-sostituisce la busta paga, il conguaglio fiscale, né un professionista.
-
-## Contatti
-
-Per domande su questa informativa o sui tuoi dati: **g.asriel@gmail.com**
+sostituisce la busta paga, il conguaglio fiscale, né un professionista. Le
+condizioni complete sono nei [Termini d'uso](/termini/).
 
 ## Modifiche
 
