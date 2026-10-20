@@ -21,37 +21,12 @@ import { capienzaProgressiva } from '../motore/capienza.js';
 import { nettoDelMeseConPremio } from '../motore/premio-risultato.js';
 import { calcBonusMargin, BONUS_STATUS } from '../motore/bonus.js';
 import { getDaysInMonth } from './dates.js';
-import { isMensilizzato, monthlyContractHours } from '../motore/ccnl.js';
-import { isHoliday } from '../motore/holidays.js';
-import { isAssenza, TIPO } from '../motore/assenze.js';
 
-// IL MONTE ORE DATO PER SCONTATO. Sul mensilizzato le ore ordinarie pagate
-// sono il monte ore del mese (103,20 h a 24 h settimanali), comunque siano
-// distribuite, e il supplementare si conta a settimana (pay.js). A metà mese le
-// ore segnate sono poche, ma il datore le ore da contratto le deve comunque:
-// quindi un turno in più vale solo per le ore oltre le 24 della sua settimana,
-// e uno in una settimana più corta non cambia il lordo. Si presume il monte ore
-// pieno con un permesso virtuale (`presunto`: riempie il mese, non la
-// settimana) solo nel mese in corso e con almeno una settimana di contratto già
-// segnata: a griglia vuota non si sa ancora niente. Lo si dice accanto alla
-// cifra. → check-cosa-cambia.mjs
-function montePresunto(monthShifts, settings, year, month, oggi) {
-  if (settings.onCall || !isMensilizzato(settings) || !(Number(settings.overtimeSurchargePct) > 0)) return null;
-  if (year !== oggi.getFullYear() || month !== oggi.getMonth()) return null;
-  const contratto = Math.round(monthlyContractHours(settings) * 60);
-  const settimana = (Number(settings.expectedWeeklyHours) || 0) * 60;
-  // Le ore festive lavorate non riempiono il monte ore: stessa regola di pay.js.
-  const segnate = monthShifts.filter((s) => isAssenza(s) || !isHoliday(s.date, settings))
-    .reduce((t, s) => t + calcShiftMinutes(s), 0);
-  if (contratto <= 0 || segnate < settimana || segnate >= contratto) return null;
-  const mese = `${year}-${String(month + 1).padStart(2, '0')}`;
-  return {
-    segnate, contratto,
-    turno: { id: '__monte_ore_presunto', date: `${mese}-15`, type: TIPO.PERMESSO, durationMinutes: contratto - segnate, presunto: true },
-  };
-}
-
-const oreIt = (min) => (Math.round(min / 6) / 10).toLocaleString('it-IT');
+// IL MESE IN CORSO SALE COI TURNI, come la barra del calendario: stesso
+// motore, stessa data (`oggi`), quindi ogni turno mostra di quanto la fa
+// salire. Prima qui si presumeva il monte ore già pieno — giusto per la busta
+// di fine mese, ma la cifra del modulo e quella della barra si contraddicevano.
+// → check-cosa-cambia.mjs, check-mese-in-corso.mjs
 const durata = (min) => formatDeltaMinutes(Math.abs(min)).replace('+', '');
 
 // «di cui 4h 48m supplementari»: le ore pagate in più dentro il delta.
@@ -128,20 +103,14 @@ export function calcolaCosaCambia({
   const minsAfter = monthShiftsAfter.reduce((acc, s) => acc + calcShiftMinutes(s), 0);
   const deltaMinuti = minsAfter - minsBefore;
 
-  // 4-5. Lordo e netto del mese, prima e dopo. Con `extra` (il monte ore
-  // presunto) il conto si fa su un mese pieno: è la cifra principale, perché
-  // le ore del contratto sono pagate comunque. Accanto si dice perché un turno
-  // vale meno delle sue ore. Le cifre del CALENDARIO restano sulle ore
-  // segnate: sono quelle che tornano con la busta.
-  // → check-cosa-cambia.mjs
+  // 4-5. Lordo e netto del mese, prima e dopo, come li mostra il calendario.
   const rateAvailable = hasAnyRate(settings);
   const daysInMonth = getDaysInMonth(year, month);
-  const conti = (extra = null) => {
-    const con = (lista) => (extra ? [...lista, extra] : lista);
-    const mapPrima = computePayByShift(con(shiftsBefore), settings);
-    const mapDopo = computePayByShift(con(shiftsAfter), settings);
-    const pagaPrima = calcTotalPay(con(monthShiftsBefore), settings, con(shiftsBefore), mapPrima);
-    const pagaDopo = calcTotalPay(con(monthShiftsAfter), settings, con(shiftsAfter), mapDopo);
+  const conti = () => {
+    const mapPrima = computePayByShift(shiftsBefore, settings, { oggi });
+    const mapDopo = computePayByShift(shiftsAfter, settings, { oggi });
+    const pagaPrima = calcTotalPay(monthShiftsBefore, settings, shiftsBefore, mapPrima);
+    const pagaDopo = calcTotalPay(monthShiftsAfter, settings, shiftsAfter, mapDopo);
     // Stessa composizione e stesso netto del pannello di Calendario: vedi
     // `lordoDelMese` e `nettoDelMese` in net.js. I mesi prima non cambiano: un
     // progressivo solo, per la capienza.
@@ -151,11 +120,7 @@ export function calcolaCosaCambia({
     const netto = (l) => nettoDelMeseConPremio(l, settings, daysInMonth, year, capienzaProgressiva(l.lordo - l.premioMese, settings, prog));
     return { pagaPrima, pagaDopo, nettoPrima: netto(prima), nettoDopo: netto(dopo) };
   };
-  const monte = candidateShift ? montePresunto(monthShiftsBefore, settings, year, month, oggi) : null;
-  const vero = rateAvailable ? conti() : null;
-  const pieno = rateAvailable && monte ? conti(monte.turno) : null;
-
-  const scelto = pieno || vero;
+  const scelto = rateAvailable ? conti() : null;
   const payBefore = scelto?.pagaPrima ?? null;
   const payAfter = scelto?.pagaDopo ?? null;
   const netBefore = scelto?.nettoPrima ?? null;
@@ -163,11 +128,6 @@ export function calcolaCosaCambia({
   const deltaLordo = (payAfter?.total || 0) - (payBefore?.total || 0);
   const deltaNetto = netBefore && netAfter ? netAfter.net - netBefore.net : 0;
   const deltaTrattenute = netBefore && netAfter ? netAfter.trattenute - netBefore.trattenute : 0;
-  // In LORDO: è la sola maggiorazione. Il netto di un mese pieno ha un'altra
-  // aliquota, e due netti accanto si leggevano come una contraddizione.
-  const lordoSoloSegnate = vero ? (vero.pagaDopo?.total || 0) - (vero.pagaPrima?.total || 0) : 0;
-  const giaPagato = pieno ? lordoSoloSegnate - deltaLordo : 0;
-  const settimanali = Number(settings.expectedWeeklyHours) || 0;
 
   // 6. Proiezione annua e Margine Trattamento Integrativo
   let margineBonusBefore = null;
@@ -178,11 +138,11 @@ export function calcolaCosaCambia({
   let sogliaLorda = null;
 
   if (rateAvailable) {
-    const payMapBefore = computePayByShift(shiftsBefore, settings);
+    const payMapBefore = computePayByShift(shiftsBefore, settings, { oggi });
     const annualBefore = computeAnnualGrossFromShifts(year, shiftsBefore, settings, payMapBefore, oggi);
     const projBefore = projectAnnualIncome(annualBefore.total, annualBefore.extras, settings, year, { oggi });
 
-    const payMapAfter = computePayByShift(shiftsAfter, settings);
+    const payMapAfter = computePayByShift(shiftsAfter, settings, { oggi });
     const annualAfter = computeAnnualGrossFromShifts(year, shiftsAfter, settings, payMapAfter, oggi);
     const projAfter = projectAnnualIncome(annualAfter.total, annualAfter.extras, settings, year, { oggi });
 
@@ -223,12 +183,7 @@ export function calcolaCosaCambia({
     // Di cui pagate in più: «+8h» da solo non dice se valgono il 100% o il 130%.
     deltaSupplementareMin: (payAfter?.overtimeMinutes || 0) - (payBefore?.overtimeMinutes || 0),
     deltaStraordinarioMin: (payAfter?.straordinarioMinutes || 0) - (payBefore?.straordinarioMinutes || 0),
-    montePresunto: monte ? { segnate: monte.segnate, contratto: monte.contratto } : null,
     testoDiCui: testoDiCui(payAfter, payBefore),
-    giaPagato,
-    testoMonte: giaPagato >= 0.01
-      ? `Fino a ${oreIt(settimanali * 60)} h a settimana sei già pagato: le ${oreIt(monte.contratto)} h del mese spettano comunque.`
-      : null,
     sogliaLorda,
   };
 }

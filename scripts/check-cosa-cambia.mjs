@@ -116,12 +116,12 @@ assert(formatDeltaMinutes(-45) === '−45m', 'formatDeltaMinutes negativo solo m
     'e la striscia del bonus dice la stessa cosa');
 }
 
-// IL MONTE ORE DATO PER SCONTATO (Turismo, 24 h → 103,20 h al mese). Le ore
-// ordinarie pagate sono il monte ore, il supplementare si conta a settimana
-// (check-supplementare-settimanale). Quindi nel mese in corso, con almeno una
-// settimana segnata, la cifra principale presume il mese pieno: un turno vale
-// solo per le ore oltre le 24 della sua settimana, e accanto si dice perché.
-// Le cifre del CALENDARIO restano sulle ore segnate.
+// IL MESE IN CORSO SALE COI TURNI (Turismo, 24 h → 103,20 h al mese), come la
+// barra del calendario: ogni turno mostra di quanto la fa salire. Le ore
+// ordinarie salgono fino al monte, quelle oltre le 24 della settimana sono
+// supplementari (check-supplementare-settimanale, check-mese-in-corso). Prima
+// qui si presumeva il monte già pieno, e il modulo diceva «+0 €» mentre la
+// barra saliva: due cifre per la stessa domanda.
 {
   const ST = { hourlyRate: 10, expectedWeeklyHours: 24, fullTimeWeeklyHours: 40, ccnl: 'turismo',
     overtimeSurchargePct: 30, periodoConteggio: 'calendario' };
@@ -136,29 +136,25 @@ assert(formatDeltaMinutes(-45) === '−45m', 'formatDeltaMinutes negativo solo m
   const otto = { date: '2026-10-20', startTime: '08:00', endTime: '16:00' };
   const prova = (n, oggi = OGGI, turno = otto) => calcolaCosaCambia({ candidateShift: turno, allShifts: giorni(n), settings: ST, oggi });
 
-  const vuota = prova(2);
-  assert(vuota.testoMonte === null && vuota.deltaLordo === 80, `griglia quasi vuota: le ore segnate, trovato ${vuota.deltaLordo}`);
+  assert(prova(2).deltaLordo === 80, `griglia quasi vuota: le ore del turno, trovato ${prova(2).deltaLordo}`);
   const avviata = prova(6);
-  assert(Math.abs(avviata.deltaLordo) < 0.01 && avviata.testoDiCui === null,
-    `36 h segnate, settimana del 20 vuota: le 8 h sono già nel monte ore (${avviata.deltaLordo})`);
-  assert(/Fino a 24 h a settimana sei già pagato: le 103,2 h del mese spettano comunque/.test(avviata.testoMonte || ''),
-    `e dice perché: «${avviata.testoMonte}»`);
+  assert(Math.abs(avviata.deltaLordo - 80) < 0.01 && avviata.testoDiCui === null,
+    `36 h segnate, settimana del 20 vuota: le 8 h fanno salire il mese (${avviata.deltaLordo})`);
   // 1-3 e 5-8 ottobre: la settimana del 5 è già a 24 h, e l'8 è un giovedì.
   const piena = prova(7, OGGI, { date: '2026-10-09', startTime: '08:00', endTime: '16:00' });
-  assert(Math.abs(piena.deltaLordo - 104) < 0.01 && piena.testoDiCui === 'di cui 8h suppl.' && piena.testoMonte === null,
+  assert(Math.abs(piena.deltaLordo - 104) < 0.01 && piena.testoDiCui === 'di cui 8h suppl.',
     `settimana già a 24 h: tutto supplementare (${piena.deltaLordo}, «${piena.testoDiCui}»)`);
-  assert(prova(6, new Date(2026, 11, 7)).testoMonte === null && prova(6, new Date(2026, 11, 7)).deltaLordo === 80,
-    'mese già chiuso: conta solo quello segnato');
+  assert(prova(6, new Date(2026, 11, 7)).deltaLordo === 80, 'mese già chiuso: conta quello segnato');
+  // 108 h segnate di cui 36 supplementari: 72 h ordinarie, il monte non è pieno.
   const oltre = prova(18);
-  assert(oltre.testoMonte === null && Math.abs(oltre.deltaLordo) < 0.01,
-    `mese già oltre il monte ore: la settimana del 20 resta sotto le 24, trovato ${oltre.deltaLordo}`);
+  assert(Math.abs(oltre.deltaLordo - 80) < 0.01,
+    `108 h segnate ma 36 supplementari: il turno fa ancora salire il mese, trovato ${oltre.deltaLordo}`);
   const togli = calcolaCosaCambia({ candidateShift: null, originalShift: giorni(6)[5], allShifts: giorni(6), settings: ST, oggi: OGGI });
-  assert(togli.testoMonte === null && Math.abs(togli.deltaLordo + 60) < 0.01,
-    `togliere un turno conta sul mese segnato: trovato ${togli.deltaLordo}`);
-  // Il calendario non presume niente: computePayByShift, senza permessi virtuali.
-  const segnati = [...giorni(6), { ...otto, id: 'x' }];
-  const sup = Object.values(computePayByShift(segnati, ST)).reduce((t, v) => t + v.overtimeMinutes, 0);
-  assert(sup === 0, `il calendario resta sulle ore segnate: ${sup} min supplementari su 44 h`);
+  assert(Math.abs(togli.deltaLordo + 60) < 0.01, `togliere un turno fa scendere il mese: trovato ${togli.deltaLordo}`);
+  // Stessa cifra della barra: il modulo e il calendario chiedono lo stesso motore con la stessa data.
+  const dopo = [...giorni(6), { ...otto, id: 'x' }];
+  const barra = (lista) => Object.values(computePayByShift(lista, ST, { oggi: OGGI })).reduce((t, v) => t + v.base + v.surcharge, 0);
+  assert(Math.abs((barra(dopo) - barra(giorni(6))) - avviata.deltaLordo) < 0.01, 'il modulo dice di quanto sale la barra');
 }
 
 if (falliti === 0) {

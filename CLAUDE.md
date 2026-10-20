@@ -441,10 +441,12 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   Di notte il Turismo lo paga al 60% fra le 24 e le 6, e assorbe il notturno
   ordinario: è un dato del contratto (`straordinarioNotturno` in `ccnl.json`),
   dal CCNL e non da una busta. → `check-straordinario-notturno.mjs`
-  Nel «Cosa cambia nel mese» del modulo il monte ore si presume pieno (nel
-  mese in corso, con almeno una settimana segnata): un turno vale solo per le
-  ore oltre le 24 della sua settimana, e accanto si dice perché. Le cifre del
-  calendario restano sulle ore segnate. → `check-cosa-cambia.mjs`
+  **Ogni cambiamento nei soldi si vede.** Il «Cosa cambia nel mese» del
+  modulo usa la stessa regola e la stessa data della barra, quindi dice di
+  quanto la barra salirà (prima presumeva il monte pieno e diceva «+0 €»
+  mentre la barra saliva); e la barra, per qualche secondo, mostra accanto al
+  lordo la differenza appena avvenuta (`CifraCheCambia.jsx`).
+  → `check-cosa-cambia.mjs`
 - **Le assenze riempiono la settimana**, anche quando cadono in coda: in busta
   `4,00 ferie + 99,20 retribuzione = 103,20`. Contarle in ordine cronologico
   faceva perdere ore già maturate a chi andava in ferie a fine periodo.
