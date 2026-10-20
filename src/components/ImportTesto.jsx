@@ -77,11 +77,11 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
     setOrigine(null);
     try {
       const { apriTabellone } = await import('../services/lettore-immagine');
-      const tab = await apriTabellone(file, { oggi: new Date(), avanza });
+      const tab = await apriTabellone(file, { oggi: new Date(), nome, avanza });
       if (tab.errore) { setImmagine({ errore: 'Non riconosco questa tabella: non trovo né le righe né gli orari.' }); return; }
       tabRef.current = { ...tab, file };
       if (tab.foto) { setImmagine({ righello: true }); return; }
-      const io = trovaPersona(tab.persone, nome);
+      const io = tab.io || trovaPersona(tab.persone, nome);
       if (io) await leggiTurni(io); else setImmagine({ persone: tab.persone });
     } catch {
       setImmagine({ errore: 'Non sono riuscito a leggere l\'immagine.' });
@@ -157,7 +157,7 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
               <input ref={fileRef} type="file" accept="image/*" hidden
                 onChange={(e) => { leggiImmagine(e.target.files?.[0]); e.target.value = ''; }} />
               {!immagine?.fase && !conRighello && (
-                <button type="button" className="btn-import" style={{ marginBottom: '.5rem' }} onClick={() => fileRef.current?.click()}>
+                <button type="button" className="btn-import" style={{ marginBottom: '.5rem' }} onClick={() => { import('../services/lettore-immagine').then((m) => m.preparaLettore()); fileRef.current?.click(); }}>
                   📷 Da un'immagine <span className="beta-tag">prova</span>
                 </button>
               )}
@@ -172,7 +172,13 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
                 <p className="import-match" style={{ display: 'flex', gap: '.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
                   {origine.nome ? <span>Turni di <strong>{origine.nome}</strong></span> : <span>📏 Dalla fascia scelta</span>}
                   <button type="button" className="linklike"
-                    onClick={() => setImmagine(origine.nome ? { persone: tabRef.current.persone } : { righello: true })}>
+                    onClick={async () => {
+                      if (!origine.nome) { setImmagine({ righello: true }); return; }
+                      setImmagine({ fase: 'nomi' });
+                      const { tuttiINomi } = await import('../services/lettore-immagine');
+                      tabRef.current = await tuttiINomi(tabRef.current);
+                      setImmagine({ persone: tabRef.current.persone });
+                    }}>
                     {origine.nome ? 'cambia' : 'sposta'}
                   </button>
                 </p>

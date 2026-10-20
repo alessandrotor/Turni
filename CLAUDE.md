@@ -547,7 +547,10 @@ Discendono tutte dalla parola d'ordine qui sopra.
   `workerName`: la prima volta si tocca dall'elenco, poi la riga si ritrova da
   sola, e i turni dei colleghi non vengono nemmeno letti. Il risultato diventa
   testo di «Incolla turni», quindi la stessa anteprima, con «Turni di X ·
-  cambia» sopra; il nome sta anche in Impostazioni. Parte pura in
+  cambia» sopra; il nome sta anche in Impostazioni. Per la velocità: due
+  lettori in parallelo, avviati al tocco su «📷» mentre si sceglie l'immagine;
+  col nome noto ci si ferma alla sua riga (gli altri nomi solo su «cambia»);
+  delle date bastano due giorni d'accordo. Da 5,0 a 2,8 s a CPU rallentata ×4. Parte pura in
   `utils/tabellone.js`, lettore in `services/lettore-immagine.js`.
   **Una foto senza griglia** (lo schermo di un gestionale) apre il RIGHELLO
   (`Righello.jsx`): la fascia la posa chi la guarda, le colonne si ricavano

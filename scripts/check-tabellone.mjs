@@ -21,7 +21,7 @@
 //    finiscono nel precache di chi non li usa.
 import { readFileSync, existsSync } from 'node:fs';
 import {
-  trovaGriglia, fasce, colonne, ritaglio, orarioDaCella, persone, trovaPersona, dateDaIntestazione, testoDaRighe,
+  trovaGriglia, fasce, colonne, ritaglio, orarioDaCella, persone, trovaPersona, dateDaIntestazione, lunediVotato, testoDaRighe,
   coppieDaParole, colonneDaCoppie, celleDaColonne, testoDaFascia, ruotaGrigi,
 } from '../src/utils/tabellone.js';
 
@@ -61,6 +61,11 @@ esito(capodanno && capodanno[0].getFullYear() === 2026 && capodanno[0].getDate()
 esito(dateDaIntestazione(['LUNEDI', '', '', '', '', '', ''], oggi) === null && testoDaRighe([['8', '14', ...new Array(12).fill('')]], null) === 'Lun 08:00-14:00',
   'senza date leggibili, i nomi dei giorni (le date le chiede l\'anteprima)');
 
+// Per andare veloci se ne leggono due alla volta, e ci si ferma quando due
+// giorni concordano: il primo letto male non deve bastare a decidere.
+esito(lunediVotato(['LUNED!\n15-ott', 'MARTED]\n20-0tt'], oggi)?.voti === 1 && lunediVotato(['LUNED!\n15-ott', 'MARTED]\n20-0tt', 'MERCOLEDI\n21-ott'], oggi)?.voti === 2,
+  'due giorni discordi non bastano, il terzo d\'accordo sì');
+
 console.log('\nNomi\n');
 // La seconda riga di ogni persona ha solo le ore del contratto: non è una persona.
 const elenco = persone(['ROSSI', '40', 'BIANCHI', '24', '', 'GIULIA SALERNO', '24', 'VERDI', '24', 'GIULIA', '24', '24,00']);
@@ -68,6 +73,8 @@ esito(elenco.map((p) => `${p.nome}:${p.fasce.join(',')}`).join(' ') === 'ROSSI:0
   'una riga col nome apre una persona, le altre la continuano', JSON.stringify(elenco));
 esito(trovaPersona(elenco, 'Giulia')?.nome === 'GIULIA' && trovaPersona(elenco, 'giulia salerno')?.nome === 'GIULIA SALERNO',
   'GIULIA non è GIULIA SALERNO');
+esito(trovaPersona(persone(['CHARUE']), 'Charlie', 0.85) === null && trovaPersona(persone(['ALESSANDRO']), 'Alessandro', 0.85)?.nome === 'ALESSANDRO',
+  'chi si ferma al primo nome trovato chiede di più: «CHARUE» non basta, finché non si sono visti gli altri');
 esito(trovaPersona(persone(['CHARUE', 'JULIA']), 'Charlie')?.nome === 'CHARUE' && trovaPersona(persone(['JULIA']), 'Giulia') === null && trovaPersona(elenco, 'Bianchl')?.nome === 'BIANCHI' && trovaPersona(elenco, 'Neri') === null && trovaPersona(elenco, '') === null,
   'una lettera letta male si perdona, un nome che non c\'è no');
 

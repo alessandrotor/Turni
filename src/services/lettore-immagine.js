@@ -10,26 +10,52 @@
 // La parte che si può verificare senza browser sta in utils/tabellone.js.
 
 import {
-  trovaGriglia, fasce, colonne, ritaglio, persone, dateDaIntestazione, testoDaRighe,
+  trovaGriglia, fasce, colonne, ritaglio, persone, trovaPersona, dateDaIntestazione, lunediVotato, testoDaRighe,
   coppieDaParole, colonneDaCoppie, celleDellaFascia, contrasto, testoDaFascia,
 } from '../utils/tabellone';
 
 const OCR = '/ocr';
 const LARGHEZZA_MAX = 2000; // una foto da 16 MP intera occupa 64 MB solo per stare in memoria
 
-let lettore = null;
+// DUE lettori: le celle si leggono in parallelo (un telefono ha 8 core), e il
+// tempo che conta è quello di chi aspetta. Si avviano appena si tocca «📷»
+// (`preparaLettore`), mentre si sceglie l'immagine nella galleria: è il pezzo
+// più lento sul telefono, e così non lo vede nessuno.
+const QUANTI = 2;
+let lettori = null;
 
-async function avviaLettore() {
-  if (!lettore) {
-    lettore = (async () => {
+function avviaLettori() {
+  if (!lettori) {
+    lettori = (async () => {
       const { createWorker } = await import('tesseract.js');
-      return createWorker('eng', 1, {
+      const uno = () => createWorker('eng', 1, {
         workerPath: `${OCR}/worker.min.js`, corePath: OCR, langPath: OCR, workerBlobURL: false, gzip: true,
       }, { load_system_dawg: '0', load_freq_dawg: '0' });
+      return Promise.all(Array.from({ length: QUANTI }, uno));
     })();
-    lettore.catch(() => { lettore = null; });
+    lettori.catch(() => { lettori = null; });
   }
-  return lettore;
+  return lettori;
+}
+const avviaLettore = async () => (await avviaLettori())[0];
+
+export function preparaLettore() {
+  avviaLettori().catch(() => {});
+}
+
+// Legge tanti ritagli insieme, con gli stessi parametri, dividendoli fra i lettori.
+async function leggiTutti(ritagli, psm, lista) {
+  const ws = await avviaLettori();
+  await Promise.all(ws.map((w) => w.setParameters({ tessedit_pageseg_mode: psm, tessedit_char_whitelist: lista })));
+  const testi = new Array(ritagli.length).fill('');
+  let prossimo = 0;
+  await Promise.all(ws.map(async (w) => {
+    while (prossimo < ritagli.length) {
+      const i = prossimo++;
+      if (!ritagli[i].vuota) testi[i] = (await w.recognize(tela(ritagli[i]))).data.text.trim();
+    }
+  }));
+  return testi;
 }
 
 async function grigiDa(file) {
@@ -63,49 +89,60 @@ function tela(r) {
   return out;
 }
 
-async function leggi(w, r, psm, lista) {
-  if (r.vuota) return '';
-  await w.setParameters({ tessedit_pageseg_mode: psm, tessedit_char_whitelist: lista });
-  return (await w.recognize(tela(r))).data.text.trim();
-}
-
 // Primo passo: griglia, date e nomi. `avanza(fase)` dice a che punto si è.
-export async function apriTabellone(file, { oggi, avanza = () => {} }) {
+// Col nome già noto ci si ferma alla sua riga: i nomi sotto si leggono solo se
+// si tocca «cambia» (`tuttiINomi`). Delle date bastano due giorni d'accordo.
+export async function apriTabellone(file, { oggi, nome, avanza = () => {} }) {
   avanza('scarico');
-  const w = await avviaLettore();
+  await avviaLettori();
   avanza('nomi');
   const { grigi, W, H } = await grigiDa(file);
   const { hy, vx } = trovaGriglia(grigi, W, H);
   const col = colonne(vx);
   const [testa, ...righe] = fasce(hy);
-  if (!col || !righe.length) return apriFoto(w, grigi, W, H, avanza);
+  if (!col || !righe.length) return apriFoto(await avviaLettore(), grigi, W, H, avanza);
+
   const intestazione = [];
-  for (let g = 0; g < 7; g++) {
-    intestazione.push(await leggi(w, ritaglio(grigi, W, [col.giorni[2 * g][0], col.giorni[2 * g + 1][1]], testa), '6', ''));
+  for (let g = 0; g < 7 && (lunediVotato(intestazione, oggi)?.voti || 0) < 2; g += QUANTI) {
+    const giorni = [g, g + 1].filter((d) => d < 7);
+    intestazione.push(...await leggiTutti(giorni.map((d) => ritaglio(grigi, W, [col.giorni[2 * d][0], col.giorni[2 * d + 1][1]], testa)), '6', ''));
   }
-  const nomi = [];
-  for (const f of righe) nomi.push(await leggi(w, ritaglio(grigi, W, col.nome, f), '7', ''));
-  return { grigi, W, col, righe, date: dateDaIntestazione(intestazione, oggi), persone: persone(nomi) };
+
+  const tab = { grigi, W, col, righe, oggi, date: dateDaIntestazione(intestazione, oggi), nomi: [] };
+  while (tab.nomi.length < righe.length) {
+    const prossime = righe.slice(tab.nomi.length, tab.nomi.length + QUANTI);
+    tab.nomi.push(...await leggiTutti(prossime.map((f) => ritaglio(grigi, W, col.nome, f)), '7', ''));
+    const elenco = persone(tab.nomi);
+    const io = trovaPersona(elenco, nome, 0.85);
+    // Trovato, e già cominciata la persona dopo: le sue righe sono tutte qui.
+    if (io && elenco.indexOf(io) < elenco.length - 1) return { ...tab, persone: elenco, io, completo: false };
+  }
+  return { ...tab, persone: persone(tab.nomi), completo: true };
+}
+
+// I nomi che mancano, per scegliere un'altra persona.
+export async function tuttiINomi(tab) {
+  if (tab.completo) return tab;
+  const resto = await leggiTutti(tab.righe.slice(tab.nomi.length).map((f) => ritaglio(tab.grigi, tab.W, tab.col.nome, f)), '7', '');
+  const nomi = [...tab.nomi, ...resto];
+  return { ...tab, nomi, persone: persone(nomi), completo: true };
 }
 
 // Secondo passo: le righe di UNA persona, solo quelle. I turni dei colleghi
 // non vengono nemmeno letti.
 export async function turniDi(tabellone, persona, { avanza = () => {} } = {}) {
   avanza('turni');
-  const w = await avviaLettore();
   const { grigi, W, col, righe, date } = tabellone;
-  const celle = [];
-  for (const i of persona.fasce) {
-    const riga = [];
-    for (const c of col.giorni) {
-      const r = ritaglio(grigi, W, c, righe[i]);
-      let t = await leggi(w, r, '7', '0123456789,.Xx');
-      // Una lettera sola («X») con l'elenco largo spesso non esce: seconda prova.
-      if (!t) t = await leggi(w, r, '10', '0123456789Xx');
-      riga.push(t);
-    }
-    celle.push(riga);
+  const ritagli = persona.fasce.flatMap((i) => col.giorni.map((c) => ritaglio(grigi, W, c, righe[i])));
+  const testi = await leggiTutti(ritagli, '7', '0123456789,.Xx');
+  // Una lettera sola («X») con l'elenco largo spesso non esce: seconda prova,
+  // solo sulle celle scritte e non lette.
+  const rilettura = testi.map((t, i) => (!t && !ritagli[i].vuota ? i : -1)).filter((i) => i >= 0);
+  if (rilettura.length) {
+    const seconde = await leggiTutti(rilettura.map((i) => ritagli[i]), '10', '0123456789Xx');
+    rilettura.forEach((i, k) => { testi[i] = seconde[k]; });
   }
+  const celle = persona.fasce.map((_, r) => testi.slice(r * 14, r * 14 + 14));
   return testoDaRighe(celle, date);
 }
 

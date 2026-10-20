@@ -147,7 +147,7 @@ export function persone(nomiPerFascia) {
 // Il nome già noto (Impostazioni, `workerName`) ritrovato fra quelli letti:
 // uguale, o quasi (una lettera letta male). Fra «GIULIA» e «GIULIA SALERNO»
 // vince l'uguale.
-export function trovaPersona(elenco, nome) {
+export function trovaPersona(elenco, nome, minimo = 0.7) {
   if (!nome) return null;
   const n = normalizza(nome);
   let migliore = null, punti = 0;
@@ -156,7 +156,9 @@ export function trovaPersona(elenco, nome) {
     if (s > punti) { migliore = p; punti = s; }
   }
   // 0,7: «CHARUE» ritrova CHARLIE (0,71), «JULIA» non diventa GIULIA (0,67).
-  return punti >= 0.7 ? migliore : null;
+  // Chi si ferma al primo nome trovato (services/lettore-immagine.js) chiede
+  // di più, perché non ha ancora visto gli altri.
+  return punti >= minimo ? migliore : null;
 }
 
 const normalizza = (s) => String(s).toUpperCase().normalize('NFD').replace(/[^A-Z ]/g, '').replace(/\s+/g, ' ').trim();
@@ -180,6 +182,13 @@ const MESI = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ot
 // sopra il 19). L'anno è quello che mette la data più vicina a oggi. null se
 // non si legge nessun giorno: allora le date le chiede l'anteprima.
 export function dateDaIntestazione(testi, oggi) {
+  const l = lunediVotato(testi, oggi);
+  return l ? Array.from({ length: 7 }, (_, d) => new Date(l.data.getFullYear(), l.data.getMonth(), l.data.getDate() + d)) : null;
+}
+
+// Il lunedì più votato e quanti giorni lo confermano: con due giorni d'accordo
+// non serve leggere gli altri cinque.
+export function lunediVotato(testi, oggi) {
   const voti = new Map();
   testi.forEach((t, i) => {
     // «19-0tt»: il lettore scambia la o con lo zero.
@@ -192,9 +201,8 @@ export function dateDaIntestazione(testi, oggi) {
     voti.set(k, (voti.get(k) || 0) + 1);
   });
   if (!voti.size) return null;
-  const [k] = [...voti].sort((a, b) => b[1] - a[1])[0];
-  const l = new Date(k);
-  return Array.from({ length: 7 }, (_, d) => new Date(l.getFullYear(), l.getMonth(), l.getDate() + d));
+  const [k, n] = [...voti].sort((a, b) => b[1] - a[1])[0];
+  return { data: new Date(k), voti: n };
 }
 
 const minuti = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3));
