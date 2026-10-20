@@ -419,8 +419,14 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   settimana lun-dom, nel giorno in cui si superano; una settimana a cavallo
   resta una e ogni ora va nel mese del suo giorno. Ordinarie: 103,20 h al mese
   (24 × 4,3) comunque distribuite — luglio ne aveva 109,5 lavorate, settembre
-  100,5 con le ferie, e la busta ne paga 103,20 tutte e due le volte. Un mese
-  ancora a metà mostra le ore segnate (`quotaOrdinaria()` in `pay.js`).
+  100,5 con le ferie, e la busta ne paga 103,20 tutte e due le volte. Il mese
+  IN CORSO (lo dice `oggi`, passato da App.jsx) sale coi turni: ordinarie =
+  ore segnate meno supplementari, fino al monte (`quotaOrdinaria()` in
+  `pay.js`). Prima le ore supplementari riempivano anche il monte: a ottobre
+  2026, 39 h supplementari lo davano pieno a metà mese e i turni aggiunti non
+  muovevano il lordo — sembrava un guasto. A mese chiuso vale la busta, e
+  senza `oggi` (verifica busta, riscontri) ogni mese è chiuso.
+  → `check-mese-in-corso.mjs`
   La regola mensile di prima veniva da giugno e luglio letti sulle ore della
   BUSTA: «ore − 103,20 = supplementari» tornava per costruzione. Coi turni,
   settembre dava 11,55 h contro 14,25. → `check-supplementare-settimanale.mjs`

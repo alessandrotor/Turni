@@ -353,7 +353,7 @@ export default function App() {
   // Mappa paga per turno, calcolata UNA volta: è O(N) su tutta la storia dei
   // turni. Ricalcolarla a ogni chiamata di calcTotalPay (mese, anno, montante)
   // rallenta l'app col crescere dei turni; qui la memoizziamo e la passiamo giù.
-  const payByShift = useMemo(() => computePayByShift(allShifts, settings), [allShifts, settings]);
+  const payByShift = useMemo(() => computePayByShift(allShifts, settings, { oggi: new Date() }), [allShifts, settings]);
 
   const year = currentMonth.getFullYear();
 

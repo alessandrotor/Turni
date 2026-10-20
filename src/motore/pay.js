@@ -213,7 +213,14 @@ function supplementarePerSettimana(allShifts, settings, sogliaMin, straordinario
 // è ancora pieno: lì si mostrano le ore segnate (supplementari a parte), e la
 // parte ordinaria sale fino al monte man mano che il mese si riempie, senza
 // salti. Il festivo lavorato ha la sua riga e resta fuori.
-function quotaOrdinaria(turni, settings, monteMin, supplementare, straordinario) {
+//
+// IL MESE IN CORSO sale coi turni (`inCorso`): le ordinarie sono le ore
+// segnate MENO i supplementari, fino al monte. Con la regola dei mesi chiusi
+// le ore supplementari riempivano anche il monte: a ottobre 2026, 133 h
+// segnate di cui 39 supplementari davano il monte già pieno a metà mese, e i
+// turni aggiunti dopo non muovevano il lordo di un euro — sembrava un guasto.
+// A mese chiuso vale la busta: il monte ore spetta comunque. → check-mese-in-corso.mjs
+function quotaOrdinaria(turni, settings, monteMin, supplementare, straordinario, inCorso = false) {
   let lavoro = 0;
   let assenze = 0;
   let sup = 0;
@@ -226,14 +233,20 @@ function quotaOrdinaria(turni, settings, monteMin, supplementare, straordinario)
     }
   }
   const segnate = lavoro + assenze;
-  const ordinarie = Math.min(monteMin, segnate) - Math.max(0, Math.min(sup, monteMin - segnate));
+  const ordinarie = inCorso
+    ? Math.min(monteMin, segnate - sup)
+    : Math.min(monteMin, segnate) - Math.max(0, Math.min(sup, monteMin - segnate));
   const lavorate = lavoro - sup;
   return lavorate > 0 ? Math.max(0, ordinarie - assenze) / lavorate : 1;
 }
 
 // Serve l'insieme completo dei turni per raggruppare correttamente.
 // Ritorna una mappa { [shiftId]: { base, surcharge, overtimeMinutes, ... } }.
-export function computePayByShift(allShifts, settings) {
+//
+// `oggi` (facoltativo): con la data, il mese che la contiene (e quelli dopo)
+// sono «in corso» e le ore ordinarie salgono coi turni segnati; senza, ogni
+// mese è contato come chiuso, come sulla busta.
+export function computePayByShift(allShifts, settings, { oggi = null } = {}) {
   const otPct = Number(settings?.overtimeSurchargePct) || 0;
   const extraPctRaw = settings?.straordinarioSurchargePct;
   const extraPct = (extraPctRaw === '' || extraPctRaw == null) ? otPct : (Number(extraPctRaw) || 0);
@@ -281,8 +294,11 @@ export function computePayByShift(allShifts, settings) {
     groups.get(key).push(s);
   }
 
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const meseOggi = mensile && oggi ? (perCalendario ? iso(oggi).slice(0, 7) : payrollMonthKey(iso(oggi))) : null;
+
   const result = {};
-  for (const groupShifts of groups.values()) {
+  for (const [chiave, groupShifts] of groups.entries()) {
     // LE ASSENZE PRIMA, poi il lavoro in ordine cronologico.
     //
     // Non è un vezzo: decide quante ore risultano supplementari, e lo si vede
@@ -306,7 +322,7 @@ export function computePayByShift(allShifts, settings) {
     // resta quello cronologico — cambia solo quale dei due gruppi viene prima.
     groupShifts.sort(assenzePrima);
     const quota = supplementareSett
-      ? quotaOrdinaria(groupShifts, settings, thresholdMin, supplementareSett, straordinarioSett) : 1;
+      ? quotaOrdinaria(groupShifts, settings, thresholdMin, supplementareSett, straordinarioSett, meseOggi != null && chiave >= meseOggi) : 1;
     let cumMin = 0;
     for (const s of groupShifts) {
       const m = calcShiftMinutes(s);
