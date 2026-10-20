@@ -658,6 +658,7 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
               <span className="cosa-cambia-label">Cosa cambia nel mese:</span>
               <strong className="cosa-cambia-cifra">{cosaCambia.testoDeltaNetto} netti</strong>
               <span className="cosa-cambia-ore">({cosaCambia.testoDeltaOre}{cosaCambia.testoDiCui && `, ${cosaCambia.testoDiCui}`})</span>
+              {cosaCambia.testoMonte && <span className="cosa-cambia-ore" style={{ width: '100%' }}>{cosaCambia.testoMonte}</span>}
               {cosaCambia.superaSoglia && (
                 <span className="cosa-cambia-avviso">⚠️ Superi la soglia del tratt. integrativo: ~{Math.round(cosaCambia.sogliaLorda).toLocaleString('it-IT')} € lordi (15.000 di reddito)</span>
               )}

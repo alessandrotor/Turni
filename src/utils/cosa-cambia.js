@@ -10,6 +10,7 @@
 // usando lo stesso motore di calcolo già collaudato (pay.js e net.js).
 // È una funzione pura, senza React e senza dipendenze dal DOM.
 
+import { isMensilizzato, monthlyContractHours } from '../motore/ccnl.js';
 import { calcShiftMinutes, calcTotalPay, computePayByShift, hasAnyRate } from '../motore/pay.js';
 import {
   lordoDelMese,
@@ -184,6 +185,12 @@ export function calcolaCosaCambia({
     deltaSupplementareMin: (payAfter?.overtimeMinutes || 0) - (payBefore?.overtimeMinutes || 0),
     deltaStraordinarioMin: (payAfter?.straordinarioMinutes || 0) - (payBefore?.straordinarioMinutes || 0),
     testoDiCui: testoDiCui(payAfter, payBefore),
+    // Più ore e nemmeno un euro: il mese ha già le ore ordinarie del monte ore,
+    // e la busta non ne paga di più (luglio 2026: 109,5 lavorate, 103,20
+    // pagate). Un «+0 €» senza il perché sembra un guasto.
+    testoMonte: deltaMinuti > 0 && Math.abs(deltaLordo) < 0.005 && isMensilizzato(settings) && !settings.onCall
+      ? `${new Date(year, month, 1).toLocaleDateString('it-IT', { month: 'long' }).replace(/^./, (c) => c.toUpperCase())} ha già le ${(Math.round(monthlyContractHours(settings) * 10) / 10).toLocaleString('it-IT')} h ordinarie che la busta paga: fino a ${settings.expectedWeeklyHours} h a settimana questo turno non aggiunge euro.`
+      : null,
     sogliaLorda,
   };
 }

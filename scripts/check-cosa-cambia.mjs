@@ -151,6 +151,14 @@ assert(formatDeltaMinutes(-45) === '−45m', 'formatDeltaMinutes negativo solo m
     `108 h segnate ma 36 supplementari: il turno fa ancora salire il mese, trovato ${oltre.deltaLordo}`);
   const togli = calcolaCosaCambia({ candidateShift: null, originalShift: giorni(6)[5], allShifts: giorni(6), settings: ST, oggi: OGGI });
   assert(Math.abs(togli.deltaLordo + 60) < 0.01, `togliere un turno fa scendere il mese: trovato ${togli.deltaLordo}`);
+  // Un mese già oltre il monte ore (luglio 2027, cinque settimane): un turno che
+  // resta nelle 24 h della sua settimana non aggiunge euro, e il modulo dice perché.
+  const luglio = ['01', '02', '03', '04', '05', '06', '07', '08', '12', '13', '14', '15', '19', '20', '21', '22', '26', '27', '28']
+    .map((g) => ({ id: `l${g}`, date: `2027-07-${g}`, startTime: '08:00', endTime: '14:00' }));
+  const pieno = calcolaCosaCambia({ candidateShift: { date: '2027-07-29', startTime: '08:00', endTime: '14:00' }, allShifts: luglio, settings: ST, oggi: new Date(2027, 6, 20) });
+  assert(Math.abs(pieno.deltaLordo) < 0.01 && /^Luglio ha già le 103,2 h ordinarie che la busta paga/.test(pieno.testoMonte || ''),
+    `mese oltre il monte ore: +0 € e il perché («${pieno.testoMonte}», ${pieno.deltaLordo})`);
+  assert(avviata.testoMonte === null, 'e il perché non compare quando il turno aggiunge euro');
   // Stessa cifra della barra: il modulo e il calendario chiedono lo stesso motore con la stessa data.
   const dopo = [...giorni(6), { ...otto, id: 'x' }];
   const barra = (lista) => Object.values(computePayByShift(lista, ST, { oggi: OGGI })).reduce((t, v) => t + v.base + v.surcharge, 0);
