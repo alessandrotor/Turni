@@ -448,6 +448,8 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   prima al nuovo (~0,6 s, rallentando alla fine) e mostra accanto la
   differenza, che entra ed esce sfumando (`CifraCheCambia.jsx`). Sobrio, non
   una roulette; con «meno animazioni» del sistema, solo il risultato.
+  Anche un turno che non sposta il lordo (monte ore già pieno) ha il suo
+  riscontro: «+0,00 €» in grigio, perché il silenzio si legge come un guasto.
   → `check-cosa-cambia.mjs`
 - **Le assenze riempiono la settimana**, anche quando cadono in coda: in busta
   `4,00 ferie + 99,20 retribuzione = 103,20`. Contarle in ordine cronologico
