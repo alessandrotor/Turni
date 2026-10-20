@@ -444,8 +444,10 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   **Ogni cambiamento nei soldi si vede.** Il «Cosa cambia nel mese» del
   modulo usa la stessa regola e la stessa data della barra, quindi dice di
   quanto la barra salirà (prima presumeva il monte pieno e diceva «+0 €»
-  mentre la barra saliva); e la barra, per qualche secondo, mostra accanto al
-  lordo la differenza appena avvenuta (`CifraCheCambia.jsx`).
+  mentre la barra saliva); e la barra fa scorrere la cifra dal valore di
+  prima al nuovo (~0,6 s, rallentando alla fine) e mostra accanto la
+  differenza, che entra ed esce sfumando (`CifraCheCambia.jsx`). Sobrio, non
+  una roulette; con «meno animazioni» del sistema, solo il risultato.
   → `check-cosa-cambia.mjs`
 - **Le assenze riempiono la settimana**, anche quando cadono in coda: in busta
   `4,00 ferie + 99,20 retribuzione = 103,20`. Contarle in ordine cronologico
