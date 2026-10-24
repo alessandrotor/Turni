@@ -80,7 +80,7 @@ export function flussoOre(turni, byShift, settings = {}, tutti = turni) {
     straordinario: { nome: 'Straordinario', minuti: 0, euro: 0 },
     festivo: { nome: 'Lavoro festivo', minuti: 0, euro: 0 },
     malattia: { nome: 'Malattia', minuti: 0, euro: 0 },
-    giaNelMonte: { nome: 'Già nel monte ore', minuti: 0, euro: 0 },
+    giaNelMonte: { nome: 'Oltre il monte ore', minuti: 0, euro: 0 },
   };
   const magg = {
     domenicale: { nome: 'Domenicale', minuti: 0, euro: 0 },

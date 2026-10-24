@@ -461,7 +461,8 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   euro. I due
   flussi che la busta non scrive sono quelli che la spiegano: il «monte ore»
   che a mese chiuso paga le 103,20 anche se parte delle ore è supplementare,
-  e il «già nel monte», le ore che non aggiungono euro. Riaffetta i campi di
+  e l'«oltre il monte ore», le ore che non aggiungono euro (detto col monte
+  e il perché: un «0 €» da solo non si capiva). Riaffetta i campi di
   `computePayByShift`, non conta niente: `flussoOre()`, → `check-flusso-ore.mjs`
 - **Le assenze riempiono la settimana**, anche quando cadono in coda: in busta
   `4,00 ferie + 99,20 retribuzione = 103,20`. Contarle in ordine cronologico

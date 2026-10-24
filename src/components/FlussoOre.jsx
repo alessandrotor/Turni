@@ -27,7 +27,8 @@ const COLORE = {
 const VISTE = [['flussi', 'Flussi'], ['oreuro', 'Ore/€'], ['settimane', 'Settimane'], ['mosaico', 'Mosaico']];
 const SPIEGA = {
   monte: 'Monte ore: la busta paga comunque le ore del contratto, anche quelle già andate in supplementare.',
-  giaNelMonte: 'Già nel monte ore: il mese ha le sue ore ordinarie, queste non aggiungono euro.',
+  // «0 €» da solo non si capiva (ottobre 2026): si dice il monte e perché.
+  giaNelMonte: (min, monte) => `Oltre il monte ore: lo stipendio paga ${monte ? ore(monte) : 'un monte ore fisso'} al mese. Le altre ${ore(min)} restano entro le ore del contratto della loro settimana: non sono supplementari, quindi non aggiungono euro.`,
   // Come la busta di settembre 2026: le ore oltre la soglia sono le ULTIME
   // della settimana, e la settimana finisce di domenica. È la prassi più
   // comune, ma nessuna norma la impone: un datore può contarle altrimenti.
@@ -154,7 +155,8 @@ function Flussi({ f, entra }) {
   }, [f]);
   const spiegazioni = [
     f.origini.some((o) => o.id === 'monte') && SPIEGA.monte,
-    f.voci.some((v) => v.id === 'giaNelMonte') && SPIEGA.giaNelMonte,
+    f.voci.some((v) => v.id === 'giaNelMonte')
+      && SPIEGA.giaNelMonte(f.voci.find((v) => v.id === 'giaNelMonte').minuti, f.monte?.monte),
     domenicaOltre(f) >= 0.5 && SPIEGA.domenica(domenicaOltre(f)),
   ].filter(Boolean);
   return (
@@ -178,7 +180,7 @@ function Flussi({ f, entra }) {
           <g key={n.id}>
             <rect x={XD} y={n.y} width={B} height={n.h} rx={2} fill={COLORE[n.id]} />
             <text x={XD + B + 6} y={n.y + 12} style={{ fontSize: 14, fontWeight: 800, fill: 'var(--c-text)' }}>
-              {n.id === 'giaNelMonte' ? '0 €' : formatCurrency(n.euro)}
+              {n.id === 'giaNelMonte' ? '0 € in più' : formatCurrency(n.euro)}
             </text>
             <text x={XD + B + 6} y={n.y + 25} style={testo}>{n.nome} · {ore(n.minuti)}</text>
           </g>
