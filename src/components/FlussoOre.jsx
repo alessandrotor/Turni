@@ -28,7 +28,15 @@ const VISTE = [['flussi', 'Flussi'], ['oreuro', 'Ore/€'], ['settimane', 'Setti
 const SPIEGA = {
   monte: 'Monte ore: la busta paga comunque le ore del contratto, anche quelle già andate in supplementare.',
   giaNelMonte: 'Già nel monte ore: il mese ha le sue ore ordinarie, queste non aggiungono euro.',
+  // Come la busta di settembre 2026: le ore oltre la soglia sono le ULTIME
+  // della settimana, e la settimana finisce di domenica. È la prassi più
+  // comune, ma nessuna norma la impone: un datore può contarle altrimenti.
+  domenica: (min) => `Domenica: ${ore(min)} oltre il contratto. La settimana finisce di domenica: le ore in più cadono lì e il +30% sostituisce il domenicale. Il tuo datore potrebbe contarle diversamente.`,
 };
+// Ore di domenica finite oltre il contratto (supplementare o straordinario).
+const domenicaOltre = (f) => f.flussi
+  .filter((x) => x.da === 'domeniche' && (x.a === 'supplementare' || x.a === 'straordinario'))
+  .reduce((t, x) => t + x.minuti, 0);
 const MESI = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
 const L = 358;                  // larghezza dei disegni
 const RIGHE = 'repeating-linear-gradient(45deg, rgba(255,255,255,.55) 0 3px, transparent 3px 6px)';
@@ -147,6 +155,7 @@ function Flussi({ f, entra }) {
   const spiegazioni = [
     f.origini.some((o) => o.id === 'monte') && SPIEGA.monte,
     f.voci.some((v) => v.id === 'giaNelMonte') && SPIEGA.giaNelMonte,
+    domenicaOltre(f) >= 0.5 && SPIEGA.domenica(domenicaOltre(f)),
   ].filter(Boolean);
   return (
     <>
@@ -279,6 +288,7 @@ function Settimane({ f, settings, entra }) {
         })}
       </div>
       <Legenda voci={usati.map((k) => [k === 'ordinarie' ? 'retribuzione' : k, NOMI[k]])} />
+      {domenicaOltre(f) >= 0.5 && <p className="form-hint" style={{ margin: '.4rem 0 0' }}>{SPIEGA.domenica(domenicaOltre(f))}</p>}
       {f.monte && (
         <>
           <p className="form-hint" style={{ margin: '.6rem 0 .2rem' }}>
