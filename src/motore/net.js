@@ -1,10 +1,6 @@
-// Stima del NETTO annuo secondo la fiscalità italiana 2026 (BETA).
-// Funzioni pure e testabili. Considera: contributi IVS, IRPEF a scaglioni,
-// detrazione lavoro dipendente, addizionali regionale/comunale, trattamento
-// integrativo (ex bonus Renzi) e cuneo fiscale.
-//
-// ATTENZIONE: è una STIMA a scopo indicativo, non sostituisce la busta paga
-// né il conguaglio. Parametri verificati per il 2026.
+// Stima del NETTO secondo la fiscalità italiana 2026 (BETA): contributi, IRPEF,
+// detrazioni, addizionali, trattamento integrativo e cuneo. Funzioni pure.
+// È una stima, non sostituisce la busta né il conguaglio.
 
 import { getCcnl, monthlyContractHours } from './ccnl.js';
 import { contributiDiLegge } from './contributi-legge.js';
@@ -20,12 +16,8 @@ import { programmaPaghe } from './programmi-paghe/index.js';
 
 export { TAX_2026 };
 
-// Arrotondamenti della busta paga. Non sono un dettaglio estetico: il cedolino
-// chiude ogni voce a due decimali e le somme partono da quelle, quindi tenere
-// la piena precisione fino in fondo fa sbagliare di qualche centesimo.
-// Alcune voci (competenze esenti, quota Ente Bilaterale a carico ditta) il
-// software paghe le TRONCA invece di arrotondarle — verificato sulla busta di
-// luglio 2026: 1.200 × 31/365 = 101,9178 in busta è 101,91, non 101,92.
+// La busta chiude ogni voce a due decimali; alcune (competenze esenti, quota
+// Ente Bilaterale ditta) le tronca: 1.200 × 31/365 = 101,9178 → 101,91.
 export const round2 = (x) => Math.round(x * 100) / 100;
 export const trunc2 = (x) => Math.floor(x * 100 + 1e-9) / 100;
 
@@ -41,9 +33,7 @@ export function irpefLorda(imponibile, T = FISCO_ULTIMO) {
   return imposta;
 }
 
-// Aliquota dello scaglione in cui cade il reddito: serve per le mensilità
-// aggiuntive, che il sostituto d'imposta tassa a parte con l'aliquota marginale
-// invece di spalmarle sull'aliquota media dell'anno.
+// Aliquota dello scaglione del reddito: tassa a parte le mensilità aggiuntive.
 export function aliquotaMarginale(imponibile, T = FISCO_ULTIMO) {
   for (const s of T.IRPEF_SCAGLIONI) {
     if (imponibile <= s.fino) return s.aliquota;
@@ -54,15 +44,8 @@ export function aliquotaMarginale(imponibile, T = FISCO_ULTIMO) {
 /**
  * Contributi a carico del dipendente, voce per voce come in busta paga.
  *
- * Oltre all'IVS (9,19%) il CCNL può prevedere trattenute minori — FIS, CIGS,
- * Ente Bilaterale — che il motore ignorava del tutto: su CCNL Turismo l'aliquota
- * vera è 9,85%, non 9,19%. Due dettagli riscontrati sulla busta reale:
- *
- *  - l'Ente Bilaterale non si calcola sul lordo ma sulla retribuzione
- *    CONTRATTUALE (paga base + contingenza riproporzionata al part-time), qui
- *    approssimata da `ebBase`; e NON è deducibile dall'imponibile fiscale;
- *  - la quota Ente Bilaterale a carico DITTA non viene trattenuta, ma è un
- *    fringe benefit che si somma all'imponibile fiscale.
+ * L'Ente Bilaterale ha una base propria (`ebBase`) e non è deducibile; la sua
+ * quota ditta è un fringe benefit che si somma all'imponibile fiscale.
  *
  * @param {number} gross lordo del periodo
  * @param {Impostazioni} settings contiene `ccnl`
@@ -80,11 +63,8 @@ export function calcContributi(gross, settings = {}, ebBase = 0, mesi = 1) {
   let deducibili = 0;
   let fringeImponibile = 0;
 
-  // I contributi NON si calcolano sul lordo esatto: l'imponibile previdenziale
-  // viene arrotondato all'EURO, e le aliquote si applicano a quello. Verificato
-  // su due buste diverse — Turismo luglio 2026 (lordo 1.173,48 → IVS su 1.173,00
-  // = 107,80) e servizi fiduciari giugno 2026 (756,77 → IVS su 757,00 = 69,57).
-  // Sul lordo pieno uscirebbero 107,84 e 69,55.
+  // L'imponibile previdenziale è arrotondato all'euro (luglio 2026: 1.173,48 →
+  // IVS su 1.173,00 = 107,80; sul lordo pieno uscirebbe 107,84).
   const baseInps = Math.round(g);
 
   const ivs = round2(baseInps * T.ALIQUOTA_IVS);
@@ -92,10 +72,8 @@ export function calcContributi(gross, settings = {}, ebBase = 0, mesi = 1) {
   totale += ivs;
   deducibili += ivs;
 
-  // Ammortizzatori sociali (FIS, CIGS): sono contributi di LEGGE, e l'aliquota
-  // dipende da quanti dipendenti ha l'azienda — non dal CCNL, che dice soltanto
-  // a quale fondo si è iscritti. `contributiExtra` resta per l'eventuale
-  // trattenuta davvero contrattuale, oggi vuoto per tutti.
+  // FIS e CIGS sono contributi di legge, con aliquota per dimensione aziendale;
+  // `contributiExtra` è per trattenute davvero contrattuali (oggi nessuna).
   const minori = [
     ...contributiDiLegge(settings, ccnl.ammortizzatori),
     ...(ccnl.contributiExtra || []),
@@ -108,48 +86,16 @@ export function calcContributi(gross, settings = {}, ebBase = 0, mesi = 1) {
     deducibili += importo;
   }
 
-  // Ente Bilaterale: base a sé, NON il lordo. È il minimo tabellare più la
-  // contingenza, riproporzionati al part-time.
-  //
-  // Lo scarto con la mensilità da contratto ha un nome, ed è il TERZO ELEMENTO:
-  // fa parte della retribuzione — quindi della paga oraria, quindi dei 951,30 —
-  // ma non di questa base, che si ferma alle prime due voci (948,05). Sulla
-  // busta di luglio 2026 sono 5,41 € al mese a tempo pieno, cioè 3,25 al 60%
-  // (vedi scripts/check-tabellare-turismo.mjs).
-  //
-  // L'app ripiega sulla mensilità da contratto e quindi sovrastima la base di
-  // quei 3,25: sono 0,2% di 3,25, meno di un centesimo di trattenuta, e un
-  // centesimo sull'imponibile fiscale attraverso la quota ditta. Ricostruirla
-  // esatta vorrebbe dire chiedere il terzo elemento in Impostazioni: un campo in
-  // più per meno di un centesimo, non si fa. `ebtBase` resta l'appiglio per i
-  // riscontri, che il numero preciso lo leggono dal cedolino; in Impostazioni
-  // non c'è, di proposito.
-  //
-  // DA DOVE VIENE QUEL CENTESIMO, perché non è una stima a occhio.
-  // La base certificata è `(minimo tabellare + contingenza) × part-time`, cioè
-  // la retribuzione SENZA il terzo elemento — riscontrata sul cedolino in
-  // check-tabellare-turismo.mjs, che verifica anche l'identità inversa
-  // (`retribuzione − base = terzo elemento riproporzionato`).
-  // Qui si usa `monthlyBaseGross`, che il terzo elemento ce l'ha dentro perché
-  // deriva dalla paga oraria: 951,30 invece di 948,05, +0,34%. Allo 0,20% del
-  // contributo fanno 1,90 contro 1,89.
-  //
-  // Il valore certificato quindi ESISTE, ma non è riportabile qui: il terzo
-  // elemento è contrattazione territoriale di secondo livello, cambia per
-  // provincia e per accordo, e in `ccnl.json` — che è nazionale — non ci può
-  // stare come costante valida per tutti. L'unico modo di averlo esatto sarebbe
-  // chiederlo, e un campo in più per un centesimo al mese è esattamente lo
-  // scambio che la regola di CLAUDE.md vieta.
-  // Se un giorno le tabelle territoriali entrassero nel progetto, questo è il
-  // punto da cambiare: due righe, e la base diventa esatta.
+  // Ente Bilaterale: base a sé (minimo tabellare + contingenza, al part-time).
+  // Qui ripiega su `ebBase`, che include il terzo elemento: scarto sotto il
+  // centesimo, non vale un campo in Impostazioni. → docs/note-motore-net.md
   const eb = ccnl.enteBilaterale;
   const base = Math.max(0, Number(settings.ebtBase) || Number(ebBase) || 0);
   if (eb && base > 0) {
     const importo = round2(base * ((Number(eb.pct) || 0) / 100));
     righe.push({ label: eb.label, pct: Number(eb.pct) || 0, base, importo, deducibile: false });
     totale += importo;
-    // La quota ditta è un fringe benefit: tassato pur non essendo trattenuto.
-    // In busta è TRONCATA (948,05 × 0,20% = 1,8961 → 1,89).
+    // Quota ditta: fringe benefit, TRONCATA in busta (948,05 × 0,20% = 1,89).
     fringeImponibile += programmaPaghe(settings).quota(base * ((Number(eb.quotaDitta) || 0) / 100));
   }
 
@@ -203,30 +149,10 @@ function bonusCuneo(redditoComplessivo, redditoLavoro, T = FISCO_ULTIMO) {
   return redditoLavoro * cuneoPercent(redditoComplessivo, redditoLavoro, T);
 }
 
-// Trattamento integrativo, calcolato sull'imponibile e sulle detrazioni.
-//
-// La capienza NON si misura sulla detrazione piena: la norma la confronta con la
-// detrazione da lavoro dipendente diminuita di 75 € (ragguagliati al periodo di
-// lavoro; qui si ragiona su base annua, quindi 75 pieni). Senza quello sconto il
-// TI verrebbe negato a chi per legge ci rientra, in una fascia stretta ma reale:
-// imposta lorda fra detrazione−75 e detrazione, cioè attorno agli 8.200–8.500 €
-// di imponibile.
-//
-// NON riscontrato su busta: nelle buste disponibili la capienza c'è comunque, con
-// o senza lo sconto. Viene dalla norma, non dai dati — se un cedolino dovesse
-// dire il contrario, è il cedolino a vincere.
-// Nella fascia 15.000–28.000 la somma delle detrazioni che fa da metro è
-// ELENCATA DALLA NORMA, e l'elenco è chiuso: artt. 12 e 13 c. 1 TUIR, art. 15
-// c. 1 lett. a) e b) e c. 1-ter per mutui contratti entro il 2021, rate di
-// art. 15 c. 1 lett. c) e 16-bis e di altre norme per spese sostenute entro il
-// 2021 (testo in docs/trattamento-integrativo.md §10).
-// L'ulteriore detrazione della L. 207/2024 NON è in quell'elenco — è del 2025,
-// non è del TUIR e non è una detrazione per spese — quindi qui NON entra,
-// anche se entra (giustamente) nel calcolo dell'IRPEF netta.
-// Con i parametri 2026 la differenza non si vede: in tutta la fascia l'imposta
-// lorda supera la detrazione da lavoro di più di quanto il cuneo possa
-// aggiungere. Si tiene lo stesso, perché è la norma, e perché un domani in cui
-// le due cose si avvicinano arriva senza avvisare.
+// Trattamento integrativo. La capienza si confronta con la detrazione da lavoro
+// meno 75 €; l'indennità L. 207/2024 resta fuori dal metro. Viene dalla norma,
+// non da una busta: se un cedolino dice altro, vince il cedolino.
+// → docs/note-motore-net.md
 export function trattamentoIntegrativo(reddito, irpef, detLavoro, T = FISCO_ULTIMO) {
   if (reddito > T.TI_SOGLIA_MAX) return 0;
   if (reddito <= T.TI_SOGLIA_PIENO) {
@@ -248,24 +174,16 @@ export function deductibleContribRate(settings = {}) {
   return fiscoDi(settings).ALIQUOTA_IVS + extra;
 }
 
-// Conversioni lordo ↔ imponibile fiscale. Le soglie di legge (15.000/28.000 per
-// il trattamento integrativo, 20.000/40.000 per il cuneo) sono definite sul
-// REDDITO COMPLESSIVO, che per un dipendente è il lordo al netto dei contributi
-// deducibili. Chi ragiona in lordo (come l'utente che somma i turni) ha bisogno
-// di una conversione: dal reddito al lordo c'è `lordoPerReddito`
-// (soglia-lorda.js), che cerca sul reddito vero; `taxableToGross` resta per il
-// riferimento mensile del programma paghe, tarato sulle buste.
+// Le soglie di legge sono sul REDDITO COMPLESSIVO (lordo meno contributi
+// deducibili). Dal reddito al lordo: `lordoPerReddito` (soglia-lorda.js);
+// `taxableToGross` serve al riferimento mensile del programma paghe.
 
 /**
- * Reddito complessivo ai fini IRPEF — la grandezza su cui la legge misura le
- * soglie del trattamento integrativo (15.000 / 28.000). Al lordo si tolgono i
- * soli contributi DEDUCIBILI e si aggiunge il fringe benefit (quota Ente
- * Bilaterale a carico ditta), tassato pur non essendo trattenuto.
- *
- * È l'UNICA definizione: pannello del netto, riquadro e soglia lorda la
- * chiedono qui. Quando la striscia moltiplicava per conto suo, le due
- * schermate si contraddicevano a un euro dalla soglia. → check-bonus.mjs
- * Toglie anche fondo pensione e cassa sanitaria trattenuti (previdenza.js).
+ * Reddito complessivo ai fini IRPEF, su cui la legge misura le soglie del
+ * trattamento integrativo: lordo meno contributi DEDUCIBILI (fondo pensione e
+ * cassa sanitaria compresi) più il fringe benefit della quota ditta.
+ * È l'unica definizione: pannello, riquadro e soglia lorda la chiedono qui.
+ * → check-bonus.mjs
  *
  * @param {{deducibili: number, fringeImponibile: number}|null} [contributi] i contributi già calcolati, per non rifare il
  *   lavoro quando chi chiama li ha già.
@@ -277,17 +195,10 @@ export function redditoComplessivo(gross, settings = {}, contributi = null) {
 }
 
 /**
- * Il trattamento integrativo spetta in QUESTO mese?
- *
- * La legge guarda l'anno, la busta il mese: ogni mese il datore decide su un
- * reddito PRESUNTO dell'anno (`lordoPresuntoAnno()` in capienza.js), lo stesso
- * su cui calcola le detrazioni. Torna su sei buste Zucchetti del 2026 su sei,
- * e sulle detrazioni di agosto e settembre al centesimo. Il confronto coi
- * 15.000 è sul reddito, come vuole la legge. → check-reddito-presunto.mjs
- *
- * Senza progressivo (chi chiama non sa che mese è) resta la regola di prima,
- * lordo del mese × 12, che dà lo stesso esito su quelle buste
- * (check-ti-mensile.mjs).
+ * Il trattamento integrativo spetta in QUESTO mese? Il datore decide sul reddito
+ * presunto dell'anno (`lordoPresuntoAnno()` in capienza.js), non sul mese: torna
+ * su sei buste su sei. → check-reddito-presunto.mjs
+ * Senza progressivo vale lordo del mese × 12. → check-ti-mensile.mjs
  */
 export function tiSpettaQuestoMese(lordoMese, settings = {}, lordoPresunto = null) {
   const modo = modoTrattamentoIntegrativo(settings);
@@ -314,20 +225,11 @@ export function tiSpettaQuestoMese(lordoMese, settings = {}, lordoPresunto = nul
 
 /**
  * 'auto' (come il datore) · 'sempre' · 'mai'.
- *
- * `noTrattamentoIntegrativo` era l'interruttore di prima, quando il default
- * includeva il TI e serviva un modo per toglierlo. Ora la decisione automatica
- * lo esclude più spesso, quindi serve l'opposto — ma chi aveva spuntato quella
- * casella deve ritrovare il comportamento che aveva scelto, non un altro.
+ * `noTrattamentoIntegrativo` è il flag di prima e resta valido.
  */
 export function modoTrattamentoIntegrativo(settings = {}) {
-  // Il flag vecchio viene PRIMA di `tiModo`, non dopo: i default fondono sempre
-  // `tiModo: 'auto'` nelle impostazioni, quindi guardarlo per secondo voleva
-  // dire non guardarlo mai. Così la casella «chiedi al datore di sospenderlo»
-  // spariva dal netto del mese pur restando spuntata. Impostazioni tiene i due
-  // campi allineati (`noTrattamentoIntegrativo = tiModo === 'mai'`), quindi un
-  // flag acceso con un modo diverso l'ha scritto la casella, che è la scelta
-  // più recente. → check-ti-mensile.mjs
+  // Il flag vecchio viene PRIMA: i default fondono sempre `tiModo: 'auto'`, e
+  // guardarlo per secondo voleva dire non guardarlo mai. → check-ti-mensile.mjs
   if (settings.noTrattamentoIntegrativo) return 'mai';
   if (settings.tiModo === 'sempre' || settings.tiModo === 'mai' || settings.tiModo === 'auto') {
     return settings.tiModo;
@@ -341,23 +243,19 @@ export function tiSospeso(settings = {}) {
 }
 
 /**
- * La modifica da scrivere per sospendere o riattivare il bonus: i due campi
- * insieme, sempre. Scriverne uno solo è il difetto che questa funzione chiude.
+ * I due campi insieme, sempre: scriverne uno solo li disallinea.
  */
 export function patchTiSospeso(sospeso) {
   return { noTrattamentoIntegrativo: !!sospeso, tiModo: sospeso ? 'mai' : 'auto' };
 }
 
 /**
- * Il reddito annuo di riferimento che il software paghe usa PER QUESTO MESE:
- * governa in blocco detrazione, indennità L. 207/2024 e trattamento
- * integrativo, perché dipendono tutte dalla fascia in cui il sostituto
- * d'imposta ti colloca quel mese. Vedi `tiSpettaQuestoMese`.
+ * Il reddito annuo di riferimento che il software paghe usa per questo mese:
+ * governa detrazione, indennità L. 207/2024 e trattamento integrativo.
  */
 export function riferimentoAnnuoDelMese(lordoMese, settings = {}, lordoPresunto = null) {
   const esito = tiSpettaQuestoMese(lordoMese, settings, lordoPresunto);
-  // Col progressivo, il riferimento È il reddito presunto: detrazioni comprese
-  // (check-reddito-presunto.mjs). Forzato a «sempre», resta nella fascia bassa.
+  // Col progressivo il riferimento è il reddito presunto. → check-reddito-presunto.mjs
   if (lordoPresunto != null) {
     return esito.spetta ? Math.min(lordoPresunto, taxableToGross(fiscoDi(settings).TI_SOGLIA_PIENO, settings)) : lordoPresunto;
   }
@@ -365,21 +263,14 @@ export function riferimentoAnnuoDelMese(lordoMese, settings = {}, lordoPresunto 
     const base = programmaPaghe(settings).annoSenzaProgressivo(lordoMese).proiezione;
     return Math.min(base, taxableToGross(fiscoDi(settings).TI_SOGLIA_PIENO, settings));
   }
-  // Sopra soglia, senza progressivo: appena oltre i 15.000 di reddito, dentro
-  // la fascia 15.000-28.000 della detrazione. Un ripiego, non un dato.
+  // Sopra soglia, senza progressivo: appena oltre i 15.000. Un ripiego, non un dato.
   return taxableToGross(fiscoDi(settings).TI_SOGLIA_PIENO + 100, settings);
 }
 
 /**
- * Il lordo di UN mese, come lo mostra l'app: la paga dei turni (già sommata da
- * `calcTotalPay` sull'insieme di turni che il chiamante sceglie), più la 13ª o
- * la 14ª che matura in quel mese, le voci fisse mensili e il bonus spuntato.
- *
- * Era scritto tre volte — Calendario (`useMonthlyNet`), Statistiche
- * (`monthlyBreakdown`) e «cosa cambia» — e la terza copia era già rimasta
- * indietro una volta sul formato del bonus. Ora serve anche al confronto con la
- * busta, che senza questa funzione avrebbe misurato la busta contro una cifra
- * che l'app non mostra da nessuna parte.
+ * Il lordo di UN mese come lo mostra l'app: paga dei turni, 13ª/14ª che matura,
+ * voci fisse e bonus spuntato. Unica funzione per Calendario, Statistiche,
+ * «cosa cambia» e confronto con la busta.
  *
  * @returns {{ lordo: number, extraMese: number, premioMese: number }} `extraMese` è la quota di
  *   mensilità aggiuntiva dentro `lordo` (serve a `nettoDelMese`, che la tassa a
@@ -388,8 +279,7 @@ export function riferimentoAnnuoDelMese(lordoMese, settings = {}, lordoPresunto 
 export function lordoDelMese(pagaTurni, anno, mese, settings = {}, { enableNetCalc = true } = {}) {
   const vociFisse = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
     .reduce((s, v) => s + (Number(v.amount) || 0), 0);
-  // Il bonus del mese è un importo fisso spuntato mese per mese (`true`); i
-  // valori numerici sono il formato di prima, e restano quelli.
+  // Importo fisso spuntato mese per mese (`true`); un numero è il formato di prima.
   const voce = settings.monthlyBonus?.[`${anno}-${String(mese + 1).padStart(2, '0')}`];
   const bonus = typeof voce === 'number' ? voce : (voce ? Number(settings.monthlyBonusAmount) || 0 : 0);
   const extraMese = enableNetCalc
@@ -404,10 +294,8 @@ export function lordoDelMese(pagaTurni, anno, mese, settings = {}, { enableNetCa
 }
 
 /**
- * Il netto di UN mese, come lo mostra l'app: lordo del mese, riferimento del
- * mese, stessa funzione per Calendario (`useMonthlyNet`) e per Statistiche
- * (`monthlyBreakdown`). Prima ognuna sceglieva il suo riferimento, e dal 14
- * settembre non erano più lo stesso. → check-netto-coerente.mjs
+ * Il netto di UN mese come lo mostra l'app, uguale per Calendario e Statistiche.
+ * → check-netto-coerente.mjs
  */
 export function nettoDelMese(lordoMese, settings, giorniMese, extraMese = 0, capienza = null) {
   const ref = riferimentoAnnuoDelMese(lordoMese, settings, capienza?.lordoPresunto ?? null);
@@ -421,13 +309,8 @@ export function taxableToGross(taxable, settings = {}) {
 export { EXTRA_MONTHS };
 
 // Retribuzione mensile "base" da contratto: ore settimanali × paga oraria ×
-// divisore orario del CCNL. Il divisore NON è sempre 52/12: il CCNL Turismo usa
-// 172 ore mensili su 40 settimanali, cioè 4,30 settimane, ed è la differenza fra
-// le 103,20 ore che compaiono in busta e le 104,04 che uscivano da 52/12.
-// Serve come importo indicativo della tredicesima/quattordicesima (≈ una mensilità).
-// Per un lavoratore a chiamata non esiste un orario contrattuale: le ore
-// settimanali rimaste in memoria da una configurazione precedente darebbero una
-// mensilità inventata, quindi vale 0.
+// divisore del CCNL (Turismo: 172 h su 40 settimanali = 4,30 settimane, non
+// 52/12). Vale 0 per il lavoro a chiamata, che non ha un orario contrattuale.
 export function monthlyBaseGross(settings = {}) {
   if (settings.onCall) return 0;
   const rate = Math.max(0, Number(settings.hourlyRate) || 0);
@@ -444,14 +327,9 @@ function monthAccrues(year, monthIndex, hire) {
 
 /**
  * Frazione di mensilità aggiuntiva effettivamente maturata (0..1).
- *
- * La 13ª/14ª non è quasi mai una mensilità piena: si matura in dodicesimi lungo
- * un periodo di competenza, che per la quattordicesima va da luglio dell'anno
- * prima a giugno, per la tredicesima segue l'anno solare. Chi è stato assunto a
- * metà periodo ne prende solo una quota — sulla busta di riferimento, assunzione
- * 29/12/2025, la 14ª di giugno 2026 vale 6/12.
- *
- * Senza data di assunzione si assume la mensilità piena (comportamento storico).
+ * Frazione di mensilità aggiuntiva maturata (0..1), in dodicesimi sul periodo di
+ * competenza: luglio–giugno per la 14ª, anno solare per la 13ª. Assunzione
+ * 29/12/2025 → 14ª di giugno 2026 = 6/12. Senza data di assunzione, 1.
  *
  * @param {'tredicesima'|'quattordicesima'} kind
  * @param {number} year anno in cui la mensilità viene erogata
@@ -500,12 +378,8 @@ export function extraMonthsAccrued(settings, year) {
 }
 
 /**
- * Reddito annuo lordo MATURATO nell'anno indicato: turni dell'anno (più il
- * montante fiscale già maturato prima di usare l'app, se impostato) più le
- * mensilità aggiuntive già incassate finora. È lo stesso numero che alimenta
- * sia il calendario (aliquota IRPEF, soglie del bonus) sia la pagina
- * Statistiche: un'unica funzione evita che le due pagine mostrino cifre
- * diverse per lo stesso anno.
+ * Reddito lordo MATURATO nell'anno: turni (più il montante, se impostato) e
+ * mensilità aggiuntive già incassate. Alimenta calendario e Statistiche.
  *
  * @param {number} year
  * @param {Array} allShifts TUTTI i turni (non solo quelli dell'anno): serve
@@ -522,52 +396,34 @@ export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, pay
   richiediOggi(oggi, 'computeAnnualGrossFromShifts');
   const y = year;
   const yearShifts = (allShifts || []).filter(s => parseDate(s.date).getFullYear() === y);
-  // Confine automatico a granularità MESE: il montante rappresenta il reddito fino
-  // al mese in cui è stato impostato. I turni dei mesi ≤ mese di riferimento sono già
-  // inclusi nel montante e NON vanno ri-sommati (evita il doppio conteggio); si
-  // contano solo quelli dei mesi successivi.
+  // Il montante copre i mesi fino al suo: i turni di quei mesi non si ri-sommano.
   const montante = Number(settings.priorTaxableIncome) || 0;
   const cutoff = settings.priorIncomeDate || '';
   const cutoffMonth = cutoff.slice(0, 7); // 'YYYY-MM'
   const sameYear = cutoff && Number(cutoff.slice(0, 4)) === y;
   const useCutoff = montante > 0 && sameYear;
   const counted = useCutoff ? yearShifts.filter(s => s.date.slice(0, 7) > cutoffMonth) : yearShifts;
-  // Contesto straordinari = TUTTI i turni, non solo quelli dell'anno: le
-  // settimane lun-dom a cavallo di capodanno vanno raggruppate per intero,
-  // altrimenti lo stesso mese vale una cifra qui e un'altra nel calendario.
+  // Contesto = TUTTI i turni: le settimane a cavallo di capodanno vanno intere.
   const pay = calcTotalPay(counted, settings, allShifts, payByShift);
   const fromShifts = pay ? pay.total : 0;
-  // Mensilità aggiuntive già incassate, in base alla data ODIERNA (non al mese
-  // che si sta sfogliando): altrimenti aprire dicembre farebbe risultare la
-  // tredicesima già presa, cambiando reddito annuo, aliquota e soglie bonus.
-  // Contano per il RATEO maturato, non per una mensilità piena: chi è assunto
-  // da sei mesi prende mezza quattordicesima.
+  // Le mensilità incassate dipendono da OGGI, non dal mese sfogliato, e contano
+  // per il rateo maturato.
   const now = oggi;
-  // `extras` dichiara quante mensilità aggiuntive stanno DENTRO `total`, non
-  // quante ne somma questa funzione: le due cose divergono quando c'è un
-  // montante, e chi chiama ha bisogno della prima. `projectAnnualIncome` ci
-  // sottrae le una-tantum prima di annualizzare, e una quota dichiarata per
-  // difetto finisce moltiplicata per 12/mesi-trascorsi.
+  // `extras` = mensilità che stanno DENTRO `total`: `projectAnnualIncome` le
+  // sottrae prima di annualizzare.
   let extras = 0;
   let daSommare = 0;
   if (y <= now.getFullYear()) {
     const monthIndex = y < now.getFullYear() ? 11 : now.getMonth();
     const mensile = monthlyBaseGross(settings);
     const incassate = receivedExtraMonthsCount(settings, monthIndex, y);
-    // Il montante è il lordo già guadagnato fino a tutto il suo mese: le
-    // mensilità erogate entro quel mese ci sono già dentro, perché il
-    // progressivo del cedolino le comprende. Sommarle di nuovo le contava due
-    // volte — la 14ª di giugno con un montante fermato a luglio — e il danno
-    // peggiore non era quello: finita nel maturato senza essere dichiarata in
-    // `extras`, veniva scambiata per reddito ricorrente e annualizzata.
+    // Le mensilità erogate entro il mese del montante ci sono già dentro:
+    // sommarle le contava due volte.
     const nelMontante = useCutoff
       ? receivedExtraMonthsCount(settings, Number(cutoffMonth.slice(5, 7)) - 1, y)
       : 0;
-    // Il mese del montante può stare avanti a oggi: il selettore è un
-    // <input type="month"> senza tetto, e chi riporta un progressivo di
-    // dicembre a ottobre ha un montante che contiene più mensilità di quante
-    // ne risultino incassate. Vale il più alto dei due — il montante fa fede
-    // per il suo periodo.
+    // Il mese del montante può stare avanti a oggi (il selettore non ha tetto):
+    // vale il più alto dei due.
     extras = mensile * Math.max(incassate, nelMontante);
     daSommare = mensile * Math.max(0, incassate - nelMontante);
   }
@@ -576,29 +432,18 @@ export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, pay
 }
 
 
-// «1 mese» / «5 mesi»: compare nelle note della spiegazione, e «1 mesi» in un
-// pannello che deve ispirare fiducia sui numeri stona più del dovuto.
+// «1 mese» / «5 mesi».
 const fmtMesi = (n) => `${n} mes${n === 1 ? 'e' : 'i'}`;
 
 /**
- * Reddito annuo di RIFERIMENTO per l'aliquota IRPEF e le soglie del bonus:
- * combina più fonti nell'ordine in cui un sostituto d'imposta le userebbe.
- *  - un importo scritto a mano vince su tutto: è la valvola di sfogo per chi
- *    sa che il resto dell'anno non somiglierà a quello appena passato;
- *  - lavoro a chiamata: solo il maturato annualizzato (non c'è un contratto
- *    da cui proiettare);
- *  - modalità 'ytd': il maturato annualizzato, sempre — per chi preferisce
- *    ragionare sul reddito effettivo finora ed è una scelta esplicita;
- *  - altrimenti la PREVISIONE IN AVANTI: quello che si è già guadagnato più
- *    quello che resta da contratto fino a dicembre. Vedi il commento nel corpo
- *    della funzione: è ciò che rende «quanto posso ancora guadagnare» un numero
- *    su cui si può decidere, invece di uno che si muove per conto suo.
- * A questo si sommano voci fisse mensili e bonus dell'anno (possono far
- * superare le soglie del trattamento integrativo).
- *
- * Un'unica funzione per Calendario e per la pagina Statistiche: duplicarla
- * con una versione "semplificata" farebbe mostrare due numeri diversi sotto
- * la stessa etichetta.
+ * Reddito annuo di RIFERIMENTO per aliquota IRPEF e soglie del trattamento
+ * integrativo, nell'ordine in cui lo userebbe un sostituto d'imposta:
+ *  - importo scritto a mano;
+ *  - lavoro a chiamata e modalità 'ytd': maturato annualizzato;
+ *  - altrimenti la PREVISIONE IN AVANTI: maturato più il resto dell'anno da
+ *    contratto (→ docs/note-motore-net.md).
+ * Si sommano voci fisse mensili e bonus dell'anno. Unica funzione per Calendario
+ * e Statistiche.
  *
  * @param {number} annualGross reddito maturato nell'anno (`computeAnnualGrossFromShifts`)
  * @param {number} annualExtras quota di `annualGross` che è 13ª/14ª (una
@@ -619,12 +464,8 @@ export function projectAnnualIncome(
   richiediOggi(oggi, 'projectAnnualIncome');
   const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
     .reduce((s, v) => s + (Number(v.amount) || 0), 0);
-  // IL MONTANTE CONTIENE GIÀ voci fisse e premi dei suoi mesi: è l'imponibile
-  // dei progressivi, tutto il lordo fino a quel mese. Sommarci sopra le voci
-  // fisse × 12 e ogni bonus spuntato dell'anno li contava due volte — con un
-  // montante fermato ad agosto, otto mesi di voci fisse e i premi spuntati di
-  // gennaio–agosto in più nella proiezione. Stessa regola già data a 13ª/14ª
-  // in `computeAnnualGrossFromShifts`. → check-proiezione.mjs
+  // Il montante contiene già voci fisse e premi dei suoi mesi: non si contano
+  // due volte. → check-proiezione.mjs
   const priorDate = String(settings.priorIncomeDate || '');
   const mesiNelMontante = Number(settings.priorTaxableIncome) > 0 && Number(priorDate.slice(0, 4)) === year
     ? Math.min(12, Math.max(0, Number(priorDate.slice(5, 7)) || 0)) : 0;
@@ -639,10 +480,8 @@ export function projectAnnualIncome(
     .filter(([k]) => k.slice(0, 4) === String(year) && Number(k.slice(5, 7)) > mesiNelMontante)
     .reduce((s, [, v]) => s + resolveBonusEntry(v), 0);
 
-  // 13ª/14ª sono una tantum: annualizzarle (×12/mesi trascorsi) le
-  // moltiplicherebbe: a luglio la 14ª di giugno varrebbe quasi due mensilità.
-  // Si annualizza solo la parte ricorrente e si riaggiungono per intero le
-  // mensilità aggiuntive previste nell'anno.
+  // 13ª/14ª sono una tantum: si annualizza solo la parte ricorrente e si
+  // riaggiungono per intero.
   const recurring = Math.max(0, annualGross - annualExtras);
   const extrasFullYear = enableNetCalc
     ? monthlyBaseGross(settings) * extraMonthsAccrued(settings, year)
@@ -650,11 +489,8 @@ export function projectAnnualIncome(
   const annualize = (v) => (monthsElapsed > 0 ? (v * 12) / monthsElapsed : v);
   const extras = (v) => v + fixedAnnual + bonusYearAll;
 
-  // Le voci che compongono il totale, restituite insieme al totale stesso.
-  // Stanno qui e non nella UI di proposito: una spiegazione che ricalcola i
-  // numeri per conto proprio prima o poi smette di combaciare con la cifra che
-  // pretende di spiegare, ed è il difetto peggiore per un pannello che esiste
-  // apposta per farsi controllare.
+  // Le voci stanno qui e non nella UI: una spiegazione che ricalcola per conto
+  // suo smette di combaciare col totale.
   const voci = [];
   const aggiungi = (label, valore, nota = null) => {
     if (Math.abs(valore) >= 0.005) voci.push({ label, valore, nota });
@@ -665,15 +501,8 @@ export function projectAnnualIncome(
   };
 
   if ((settings.tiProjectionMode || 'stimato') === 'ytd') {
-    // Il BONUS non si annualizza, per la stessa ragione della 13ª/14ª: si
-    // spunta mese per mese dal calendario, quindi è un fatto già avvenuto e
-    // non una tendenza. Moltiplicarlo per 12/mesi-trascorsi prometteva a
-    // settembre un terzo di bonus in più di quelli davvero presi — e su un
-    // premio di produttività, che non torna ogni mese, è una promessa che
-    // l'app non ha nessun motivo di fare.
-    // Le voci fisse invece restano dentro l'annualizzazione: quelle sì che
-    // tornano ogni mese, ed è esattamente cosa vuol dire «fisse».
-    // Quelle dei mesi del montante sono già dentro `recurring`.
+    // Il bonus non si annualizza (è già avvenuto, e un premio non torna ogni
+    // mese); le voci fisse sì, ma non quelle dei mesi del montante, già in `recurring`.
     const cumulativo = recurring + fixedMonthlyTotal * Math.max(0, monthsElapsed - mesiNelMontante);
     aggiungi('Maturato finora, annualizzato', annualize(cumulativo),
       `${fmtMesi(monthsElapsed)} × 12 ⁄ ${monthsElapsed}`);
@@ -699,42 +528,11 @@ export function projectAnnualIncome(
     return { value: extras(annualize(recurring)), source: 'maturato', voci, mesiTrascorsi: monthsElapsed };
   }
 
-  // ── Previsione IN AVANTI: maturato reale + quello che resta da contratto ──
-  //
-  // Non si annualizza il passato, si somma il futuro. La differenza non è
-  // estetica: decide se il riquadro del bonus serve a qualcosa.
-  //
-  // La domanda a cui questo numero deve rispondere è «accetto questo
-  // straordinario, o mi fa superare la soglia?». Con l'annualizzazione — il
-  // maturato moltiplicato per 12/mesi-trascorsi — un euro guadagnato ad agosto
-  // ne spostava uno e mezzo, a gennaio dodici. E il vecchio `Math.max` con la
-  // proiezione da contratto faceva da PAVIMENTO: finché il maturato
-  // annualizzato le stava sotto, aggiungere turni non muoveva il margine di un
-  // centesimo. Misurato il 21 agosto: i primi 200 € di straordinari lasciavano
-  // il margine fermo a 4.238 €, i successivi lo abbassavano di 300 € ogni 200.
-  // Un numero che non si muove e poi si muove troppo non è una risposta.
-  //
-  // Così invece ogni euro in più sposta la previsione di esattamente un euro.
-  //
-  // Il `Math.max` col contratto non serve più, e la ragione per cui c'era —
-  // «il contratto conosce solo le ore contrattuali e ignora supplementari e
-  // festivi» — è soddisfatta meglio da qui: quei supplementari sono già dentro
-  // il maturato, per intero e senza moltiplicatori. Chi non ha ancora
-  // lavorato nulla ottiene comunque 12 mensilità piene, perché il maturato è
-  // zero e il resto dell'anno vale l'anno intero.
-  //
-  // IL MESE IN CORSO VALE PER I GIORNI CHE GLI RESTANO, oggi compreso. Contato
-  // come già trascorso, il primo del mese la previsione perdeva di colpo una
-  // mensilità — dentro c'era solo un giorno di turni — e la recuperava durante
-  // il mese: il margine del bonus e il caso «sotto / buca / oltre» andavano a
-  // dente di sega. Col pro rata l'ultimo giorno di un mese e il primo del
-  // successivo danno la stessa cifra, e l'euro in più sposta ancora un euro.
-  //
-  // E L'ANNO GUARDATO NON È SEMPRE QUELLO DI OGGI. Un anno chiuso non ha
-  // futuro; uno che non è ancora cominciato è tutto futuro. Prima valeva 12
-  // «trascorsi» anche per quest'ultimo: a dicembre, aprendo gennaio, la
-  // previsione dell'anno dopo erano i soli turni già segnati, e la striscia
-  // annunciava sedicimila euro di margine. → check-proiezione.mjs
+  // ── Previsione IN AVANTI: maturato reale + resto dell'anno da contratto ──
+  // Non si annualizza il passato: ogni euro in più sposta la previsione di un
+  // euro. Il mese in corso vale per i giorni che restano, oggi compreso; un anno
+  // chiuso non ha futuro, uno non iniziato è tutto futuro.
+  // → docs/note-motore-net.md, check-proiezione.mjs
   const annoOggi = now.getFullYear();
   const giorniMese = new Date(annoOggi, now.getMonth() + 1, 0).getDate();
   const mesiRestanti = year < annoOggi ? 0
@@ -744,18 +542,13 @@ export function projectAnnualIncome(
   // `annualGross`: -1 per un anno che non è ancora cominciato.
   const meseIncassate = year < annoOggi ? 11 : year > annoOggi ? -1 : now.getMonth();
   const mensile = enableNetCalc ? monthlyBaseGross(settings) : 0;
-  // Le mensilità aggiuntive già incassate stanno dentro `annualGross`: qui si
-  // aggiungono solo quelle che devono ancora arrivare, altrimenti la 14ª di
-  // giugno verrebbe contata due volte.
+  // Quelle già incassate stanno in `annualGross`: si aggiungono solo le altre.
   const extraResidue = enableNetCalc
     ? mensile * Math.max(0, extraMonthsAccrued(settings, year) - receivedExtraMonthsCount(settings, meseIncassate, year))
     : 0;
   const value = annualGross + mesiRestanti * mensile + extraResidue;
 
-  // 13ª e 14ª come DUE righe distinte, ciascuna col proprio rateo. Una riga
-  // sola «13ª/14ª ancora da arrivare» non diceva quale delle due fosse, né che
-  // l'altra era già dentro il maturato, né perché il rateo non fosse intero —
-  // ed è la prima cosa che si chiede guardando quel numero.
+  // 13ª e 14ª come due righe, ciascuna col proprio rateo.
   const rateo = (kind) => (settings[kind === 'tredicesima' ? 'hasTredicesima' : 'hasQuattordicesima']
     ? extraMonthAccrual(kind, year, settings) : 0);
   const notaRateo = (frazione) => {
@@ -794,13 +587,9 @@ export function projectAnnualIncome(
  * @param {number} grossAnnual reddito lordo annuo da lavoro dipendente
  * @param {Impostazioni} settings può contenere addRegionalePct / addComunalePct
  * @param {object} [opts]
- * @param {number} [opts.giorni=365] giorni del rapporto di lavoro nell'anno.
- *   Detrazioni e trattamento integrativo pieno (sotto i 15.000) spettano in
- *   proporzione (art. 13 TUIR): chi è assunto a luglio ne matura metà. Senza,
- *   il conguaglio di un assunto a luglio misurava la capienza con la
- *   detrazione di un anno intero e inventava 500 € di bonus da restituire.
- *   L'indennità L. 207/24 è una percentuale del reddito e non si rapporta.
- *   Con 365 (il default) il conto è identico a prima. → check-conguaglio.mjs
+ * @param {number} [opts.giorni=365] giorni del rapporto nell'anno: detrazioni e
+ *   TI pieno spettano in proporzione (art. 13 TUIR). L'indennità L. 207/24 no.
+ *   → check-conguaglio.mjs
  */
 export function calcNetAnnual(grossAnnual, settings = {}, { giorni = 365 } = {}) {
   const T = fiscoDi(settings);
@@ -830,16 +619,13 @@ export function calcNetAnnual(grossAnnual, settings = {}, { giorni = 365 } = {})
   const pctOr = (v, def) => (Number.isFinite(Number(v)) ? Number(v) : def);
   const aliqReg = pctOr(settings.addRegionalePct, T.ADD_REGIONALE_DEFAULT) / 100;
   const aliqCom = pctOr(settings.addComunalePct, T.ADD_COMUNALE_DEFAULT) / 100;
-  // Le addizionali sono dovute solo se c'è imposta netta, e solo se non sono
-  // già trattenute da un altro datore o sospese per primo anno di lavoro
-  // (stessa regola del calcolo mensile).
+  // Addizionali dovute solo con imposta netta, e non se trattenute altrove o sospese.
   const addDovute = !settings.addizionaliAltrove && !settings.noAddizionali && irpefNetta > 0;
   const addRegionale = addDovute ? imponibile * aliqReg : 0;
   const addComunale = addDovute ? imponibile * aliqCom : 0;
 
-  // La capienza si misura con la detrazione dei giorni lavorati. Sotto i
-  // 15.000 il bonus è 1.200 € rapportati al periodo; sopra, la norma lo lega
-  // alla differenza fra detrazione e imposta, che è già dei giorni.
+  // Capienza con la detrazione dei giorni lavorati; sotto i 15.000 il TI è
+  // rapportato al periodo.
   const tiPieno = trattamentoIntegrativo(imponibile, lorda, detLav, T);
   const ti = imponibile <= T.TI_SOGLIA_PIENO ? tiPieno * quota : tiPieno;
   const cuneo = bonusCuneo(imponibile, imponibile, T);
@@ -889,19 +675,11 @@ export function tiDecision(annualGrossRef, settings = {}) {
 }
 
 /**
- * Stima del netto del MESE, partendo dal lordo mensile — come una busta paga.
+ * Stima del netto del MESE dal lordo mensile, come una busta:
+ * netto = lordo − trattenute + bonus (TI e cuneo sono voci separate).
+ * L'IRPEF usa l'aliquota effettiva del reddito annuo di riferimento
+ * (`annualGrossRef`); TI e indennità sono rapportati ai giorni del mese.
  *
- * Trattenute e bonus sono voci SEPARATE (il bonus non riduce le trattenute):
- *   - Trattenute = contributi IVS (9,19%) + IRPEF + addizionali  → sempre ≥ 9,19%
- *   - Bonus      = trattamento integrativo + cuneo (quota mensile)
- *   - Netto      = lordo − trattenute + bonus
- *
- * Contributi e addizionali si applicano direttamente al lordo del mese.
- * L'IRPEF è progressiva e annuale: si usa l'aliquota IRPEF effettiva ricavata
- * dal reddito annuo di riferimento (`annualGrossRef`, es. proiezione da
- * contratto + 13ª/14ª) applicata all'imponibile del mese.
- * Trattamento integrativo e indennità (L. 207/2024) sono rapportati ai giorni
- * del mese (giorni di calendario / 365), come in busta paga.
  *
  * @param {number} monthGross lordo del mese (turni + eventuale mensilità agg.)
  * @param {number} annualGrossRef reddito annuo lordo di riferimento (per aliquote IRPEF/bonus)
@@ -916,26 +694,19 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
 
   const cont = calcContributi(gross, settings, monthlyBaseGross(settings));
   const contributi = cont.totale;
-  // Imponibile fiscale come lo scrive la busta: lordo meno i soli contributi
-  // DEDUCIBILI (l'Ente Bilaterale a carico dipendente non lo è) più la quota
-  // ditta, che è un fringe benefit tassato pur non essendo trattenuto.
+  // Imponibile come in busta: lordo meno contributi DEDUCIBILI più la quota ditta.
   const imponibile = round2(gross - cont.deducibili + cont.fringeImponibile);
 
-  // La mensilità aggiuntiva viaggia su un binario fiscale separato: in busta ha
-  // un proprio imponibile ("tassazione autonoma") e NON assorbe detrazioni.
-  // I contributi deducibili sono tutti percentuali sul lordo, quindi la stessa
-  // aliquota si applica alla quota di 13ª/14ª.
+  // La mensilità aggiuntiva ha un imponibile proprio (tassazione autonoma) e non
+  // assorbe detrazioni.
   const aliqDeducibile = gross > 0 ? cont.deducibili / gross : 0;
   const extraGross = Math.min(Math.max(0, Number(extraMonthGross) || 0), gross);
   const imponibileExtra = extraGross * (1 - aliqDeducibile);
   const imponibileOrdinario = Math.max(0, imponibile - imponibileExtra);
 
-  // IRPEF come in busta paga:
-  //  - IRPEF LORDA ordinaria = quota del mese sull'imponibile annuo (scala col reddito del mese);
-  //  - DETRAZIONI da lavoro dipendente = importo annuo rapportato ai GIORNI del mese
-  //    (giorni/365), NON alla quota di imponibile. È così che le calcola il sostituto
-  //    d'imposta (verificato su busta reale: 1.955 × 31/365 = 166,04);
-  //  - IRPEF sulla mensilità aggiuntiva = aliquota MARGINALE, senza detrazioni.
+  // IRPEF come in busta: lorda ordinaria in quota dell'imponibile annuo;
+  // detrazioni = importo annuo × giorni/365 (1.955 × 31/365 = 166,04);
+  // mensilità aggiuntiva all'aliquota marginale, senza detrazioni.
   const ratio = ann.imponibile > 0 ? imponibileOrdinario / ann.imponibile : 0;
   const irpefLordaOrdinaria = round2(ann.irpefLorda * ratio);
   const irpefExtra = round2(imponibileExtra * aliquotaMarginale(ann.imponibile, T));
@@ -944,16 +715,11 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   // Le detrazioni si scaricano solo sull'ordinario: l'eventuale eccedenza non
   // abbatte l'imposta della 13ª/14ª, va a conguaglio.
   const irpefNetta = round2(Math.max(0, irpefLordaOrdinaria - detrazioni) + irpefExtra);
-  // Quota di detrazione che trova CAPIENZA nell'imposta. Quando la detrazione
-  // supera l'IRPEF lorda il netto è già giusto (l'imposta si azzera e basta), ma
-  // scrivere «lorda 157 − detrazioni 161 = netta 0» sembra un errore di conto:
-  // in busta compare la parte capiente. Verificato su una busta reale, dove la
-  // detrazione teorica di 160,68 è stampata 157,06, cioè pari all'imposta.
+  // Quota di detrazione capiente: la busta stampa 157,06 dove la teorica è
+  // 160,68, pari all'imposta.
   const detrazioniApplicate = Math.min(detrazioni, irpefLordaOrdinaria);
 
-  // Addizionali: stessa aliquota sull'imponibile del mese, dovute solo con imposta netta.
-  // Se già trattenute da un altro datore (conguaglio a saldo altrove) o sospese
-  // per primo anno di lavoro (nessun anno precedente da cui calcolarle), sono 0.
+  // Addizionali: come sopra, sull'imponibile del mese.
   const pctOr = (v, def) => (Number.isFinite(Number(v)) ? Number(v) : def);
   const aliqReg = pctOr(settings.addRegionalePct, T.ADD_REGIONALE_DEFAULT) / 100;
   const aliqCom = pctOr(settings.addComunalePct, T.ADD_COMUNALE_DEFAULT) / 100;
@@ -961,9 +727,8 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   const addRegionale = addDovute ? round2(imponibile * aliqReg) : 0;
   const addComunale = addDovute ? round2(imponibile * aliqCom) : 0;
 
-  // Trattenute fisse mensili (quota associativa, rata di un prestito...):
-  // voce generica, non fiscale — non tocca imponibile/IRPEF/TI/cuneo, si
-  // sottrae così com'è, come in busta.
+  // Trattenute fisse (quota associativa, prestito...): non fiscali, si sottraggono
+  // così come sono.
   const trattenuteFisse = round2(
     (Array.isArray(settings.fixedMonthlyDeductions) ? settings.fixedMonthlyDeductions : [])
       .reduce((s, v) => s + (Number(v.amount) || 0), 0),
@@ -971,13 +736,9 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
 
   const trattenute = round2(contributi + irpefNetta + addRegionale + addComunale + trattenuteFisse);
 
-  // Trattamento integrativo e indennità (L. 207/2024): quota del mese rapportata
-  // ai giorni (giorni di calendario / 365), come in busta paga. Voci separate,
-  // aggiunte SOLO alla fine: non riducono le trattenute.
-  // Il TI può non essere erogato in busta (il software paghe lo rimanda a conguaglio
-  // in base alle proiezioni): interruttore `noTrattamentoIntegrativo`.
-  // Entrambe TRONCATE a due decimali, non arrotondate: in busta 1.200 × 31/365
-  // fa 101,91 (il valore pieno è 101,9178) e 1.060,92 × 5,3% fa 56,22 (56,2288).
+  // TI e indennità L. 207/2024: quota del mese TRONCATA (1.200 × 31/365 =
+  // 101,91), aggiunte solo alla fine. Il TI può non essere erogato:
+  // `noTrattamentoIntegrativo`.
   const dayFraction = monthDays / 365;
   // Soglia sul reddito presunto e capienza sul progressivo dell'anno
   // (`capienza`, da capienza.js; senza, sul solo mese). → check-ti-capienza.mjs
@@ -993,20 +754,9 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   const bonusCuneo = programmaPaghe(settings).quota(imponibile * cuneoPct);
   const bonus = round2(trattamentoIntegrativo + bonusCuneo);
 
-  // Anticipo TFR in busta (opzionale): quota che matura sul lordo (1/13,5 meno lo
-  // 0,50% al Fondo di garanzia ≈ 6,91%). NON è soggetto a IRPEF ordinaria/contributi,
-  // ma a TASSAZIONE SEPARATA (aliquota media, senza addizionali): a differenza di TI e
-  // cuneo — che sono esenti — qui l'imposta va sottratta. Aliquota stimata (default 23%,
-  // dove cade quasi sempre il reddito di riferimento del TFR) o impostabile a mano.
-  // NOTA APERTA sulla BASE del TFR. Le due buste disponibili la calcolano in due
-  // modi diversi e nessuno dei due è il lordo pieno che usiamo qui:
-  //   - fiduciari giugno: solo la retribuzione ordinaria, senza maggiorazioni;
-  //   - Turismo luglio:   retribuzione + indennità «utili al TFR» + maggiorazione
-  //     domenicale, ma senza il lavoro supplementare e senza TOP STORE — e
-  //     nemmeno così torna, perché la formula dà 67,39 contro i 66,39 stampati.
-  // Due buste che si contraddicono e una che non quadra non bastano a stabilire
-  // una regola: la base resta il lordo finché non arriva un terzo cedolino.
-  // Non tocca il netto del mese in nessuno dei due casi.
+  // Anticipo TFR in busta: matura sul lordo (1/13,5 meno 0,50% ≈ 6,91%), a
+  // tassazione separata (default 23%). La base resta il lordo: le due buste
+  // disponibili la calcolano in modi diversi. → docs/note-motore-net.md
   const tfrLordo = settings.tfrInBusta ? round2(gross * (1 / 13.5 - 0.005)) : 0;
   const aliqTfr = Number.isFinite(Number(settings.tfrTaxRate)) && settings.tfrTaxRate !== ''
     ? Number(settings.tfrTaxRate) / 100
