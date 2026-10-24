@@ -36,6 +36,7 @@ import { exportShiftsExcel, exportShiftsPDF } from '../services/export';
 import ImportModal from './ImportModal';
 import ImportTesto from './ImportTesto';
 import CifraCheCambia from './CifraCheCambia';
+import FlussoOre from './FlussoOre';
 import DebugUso from './DebugUso';
 import TimelineView from './TimelineView';
 import ShareWeekModal from './ShareWeekModal';
@@ -1082,11 +1083,9 @@ export default function CalendarView({
                 sotto — visibili, col loro nome, ma non spacciate per lavoro. */}
             <span className="summary-label">Ore lavorate</span>
             <span className="summary-value">{formatMinutesShort(totalMins - assenze.minuti)}</span>
-            {assenze.minuti > 0 && (
-              <span className="summary-sublabel">
-                + {assenze.dettaglio}
-              </span>
-            )}
+            {assenze.minuti > 0 && <span className="summary-sublabel">+ {assenze.dettaglio}</span>}
+            {pay !== null && totalMins > 0 && payByShift && (
+              <span className="summary-sublabel"><FlussoOre turni={counted} byShift={payByShift} settings={settings} titolo={formatMonthYear(currentMonth)} /></span>)}
             {festivitaDaSegnare.length > 0 && oreFestivita > 0 && onAddShifts && (
               <span className="summary-sublabel festivita-proposta">
                 {festivitaDaSegnare.length === 1 ? 'Festivo' : 'Festivi'} senza turno:{' '}

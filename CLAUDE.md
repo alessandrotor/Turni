@@ -451,6 +451,14 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   Anche un turno che non sposta il lordo (monte ore già pieno) ha il suo
   riscontro: «+0,00 €» in grigio, perché il silenzio si legge come un guasto.
   → `check-cosa-cambia.mjs`
+  **E si vede dove vanno le ore** (prova, ottobre 2026): «Dove vanno le ore →»
+  nel riepilogo apre un diagramma a flussi, dalle giornate (feriali,
+  domeniche, festivi, ferie…) alle voci della busta con gli euro, e sotto le
+  maggiorazioni che stanno sopra ore già contate (`FlussoOre.jsx`). I due
+  flussi che la busta non scrive sono quelli che la spiegano: il «monte ore»
+  che a mese chiuso paga le 103,20 anche se parte delle ore è supplementare,
+  e il «già nel monte», le ore che non aggiungono euro. Riaffetta i campi di
+  `computePayByShift`, non conta niente: `flussoOre()`, → `check-flusso-ore.mjs`
 - **Le assenze riempiono la settimana**, anche quando cadono in coda: in busta
   `4,00 ferie + 99,20 retribuzione = 103,20`. Contarle in ordine cronologico
   faceva perdere ore già maturate a chi andava in ferie a fine periodo.
