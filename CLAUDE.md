@@ -454,7 +454,11 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   **E si vede dove vanno le ore** (prova, ottobre 2026): «Dove vanno le ore →»
   nel riepilogo apre un diagramma a flussi, dalle giornate (feriali,
   domeniche, festivi, ferie…) alle voci della busta con gli euro, e sotto le
-  maggiorazioni che stanno sopra ore già contate (`FlussoOre.jsx`). I due
+  maggiorazioni che stanno sopra ore già contate (`FlussoOre.jsx`). Un
+  selettore dà altre tre viste degli stessi numeri: ore contro euro, le
+  settimane con la linea delle ore del contratto (il PERCHÉ del supplementare,
+  con le ore dell'altro mese nelle settimane a cavallo) e un mosaico degli
+  euro. I due
   flussi che la busta non scrive sono quelli che la spiegano: il «monte ore»
   che a mese chiuso paga le 103,20 anche se parte delle ore è supplementare,
   e il «già nel monte», le ore che non aggiungono euro. Riaffetta i campi di

@@ -104,7 +104,31 @@ verifica('già nel monte: 4,80 h', Math.round(voce(f3, 'giaNelMonte').minuti), 2
 verifica('a zero euro', voce(f3, 'giaNelMonte').euro, 0, '');
 verifica('nessun supplementare', voce(f3, 'supplementare'), undefined, 'entro le 24 a settimana');
 
-// ── 4. Niente da mostrare ────────────────────────────────────────────────
+// ── 4. Le settimane: il supplementare comincia alla linea delle 24 ore ────
+// La vista «settimane» rimette le stesse ore nelle settimane lun-dom. Deve
+// sommare alle voci, e in una settimana tutta nel mese il supplementare deve
+// cominciare esattamente dopo le 24 ore del contratto.
+console.log('\nSettimana per settimana\n');
+const tot = (f, campo) => Math.round(f.settimane.reduce((t, w) => t + w[campo], 0));
+verifica('luglio: quattro settimane', f2.settimane.map((w) => w.inizio), ['2026-07-06', '2026-07-13', '2026-07-20', '2026-07-27'], '');
+verifica('ogni settimana: 24 h ordinarie, 8 supplementari', f2.settimane.map((w) => [w.ordinarie, w.supplementare]),
+  Array(4).fill([1440, 480]), 'la linea è il contratto');
+verifica('le settimane sommano al supplementare', tot(f2, 'supplementare'), Math.round(voce(f2, 'supplementare').minuti), '');
+verifica('e ai suoi euro', cent(f2.settimane.reduce((t, w) => t + w.euroSupplementare, 0)), cent(voce(f2, 'supplementare').euro), '');
+const ore = (w) => w.ferie + w.permesso + w.malattia + w.ordinarie + w.supplementare + w.straordinario + w.festivo + w.festivita;
+verifica('giugno: le settimane contengono ogni ora segnata', Math.round(f1.settimane.reduce((t, w) => t + ore(w), 0)),
+  PIENO.reduce((t, s) => t + calcShiftMinutes(s), 0), '');
+verifica('il monte ore del mensilizzato', f2.monte && [Math.round(f2.monte.pagate), Math.round(f2.monte.monte)], [6192, 6192], '');
+// Una settimana a cavallo: le ore di fine settembre riempiono la soglia della
+// settimana che finisce in ottobre, e si dichiarano.
+const CAVALLO = [T('2026-09-29', '08:00', '16:00'), T('2026-09-30', '08:00', '16:00'), T('2026-10-01', '08:00', '16:00'), T('2026-10-02', '08:00', '16:00')];
+const ottobre = CAVALLO.slice(2);
+const perC = computePayByShift(CAVALLO, S);
+const fc = flussoOre(ottobre, perC, S, CAVALLO);
+verifica('settimana a cavallo: 16 h dall\'altro mese', fc.settimane[0].altroMese, 960, '');
+verifica('e il supplementare comincia prima della linea', fc.settimane[0].supplementare, 480, '8 h su 16 di ottobre');
+
+// ── 5. Niente da mostrare ────────────────────────────────────────────────
 const vuoto = flussoOre([], {}, S);
 verifica('mese vuoto', [vuoto.origini.length, vuoto.voci.length, vuoto.totale], [0, 0, 0], '');
 

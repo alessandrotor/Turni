@@ -1085,7 +1085,7 @@ export default function CalendarView({
             <span className="summary-value">{formatMinutesShort(totalMins - assenze.minuti)}</span>
             {assenze.minuti > 0 && <span className="summary-sublabel">+ {assenze.dettaglio}</span>}
             {pay !== null && totalMins > 0 && payByShift && (
-              <span className="summary-sublabel"><FlussoOre turni={counted} byShift={payByShift} settings={settings} titolo={formatMonthYear(currentMonth)} /></span>)}
+              <span className="summary-sublabel"><FlussoOre turni={counted} tutti={allShifts || counted} byShift={payByShift} settings={settings} titolo={formatMonthYear(currentMonth)} /></span>)}
             {festivitaDaSegnare.length > 0 && oreFestivita > 0 && onAddShifts && (
               <span className="summary-sublabel festivita-proposta">
                 {festivitaDaSegnare.length === 1 ? 'Festivo' : 'Festivi'} senza turno:{' '}
