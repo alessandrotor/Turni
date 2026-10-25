@@ -1,20 +1,7 @@
-// Quanto rischi di dover RIDARE INDIETRO del trattamento integrativo (TI).
-//
-// Il datore, da sostituto d'imposta, paga il TI ogni mese presumendo che il
-// reddito resti quello di gennaio; se a fine anno è più alto, al conguaglio di
-// dicembre (o nel 730) quei soldi tornano indietro. Il rischio è maggiore per chi
-// ha tempo determinato, lavoro intermittente o più datori.
-//
-// Tre cose che l'app non può sapere e vanno dette accanto alla cifra: quanto è
-// stato accreditato davvero (qui si assume la quota piena, il caso peggiore); gli
-// altri datori (la stima è per difetto); le detrazioni diverse da quella da
-// lavoro (nella fascia 15.000–28.000 il modello dice «non spetta» a chiunque
-// superi i 15.000).
-//
-// Oltre i 15.000 € di reddito il TI si perde e quello preso torna indietro, ma è
-// un movimento di cassa, non una perdita: il conto vero è in `costoSoglia`.
-// Il rimedio è chiedere al datore di NON erogarlo (`noTrattamentoIntegrativo`):
-// allora non c'è niente da restituire, per costruzione.
+// Quanto rischi di dover RIDARE INDIETRO del trattamento integrativo (TI): quello
+// pagato ogni mese dal datore che, se il reddito dell'anno supera i 15.000, a
+// dicembre torna indietro. Il conto vero della perdita è in `costoSoglia`.
+// Il rimedio è `noTrattamentoIntegrativo`: non erogato, niente da restituire.
 // → docs/note-motore-restituzione.md
 //
 // Modulo puro: `node src/motore/riscontri/check-restituzione.mjs`.
@@ -43,8 +30,7 @@ export const CAUSA = {
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 const trunc2 = (n) => Math.trunc(n * 100) / 100;
 
-// La differenza fra importi già in centesimi si fa sui centesimi interi: con
-// `trunc2(a - b)`, 595.06 (in realtà 595.0599…) perdeva un centesimo per strada.
+// La differenza fra importi in centesimi si fa sui centesimi interi: `trunc2(a - b)` ne perde uno.
 const menoCent = (a, b) => (Math.round(a * 100) - Math.round(b * 100)) / 100;
 
 /**
@@ -116,20 +102,16 @@ export function rischioRestituzione({ settings: impostazioni = {}, proiezioneAnn
   const decisione = tiDecision(num(proiezioneAnnua), settings);
   const spettante = num(decisione.importoAnnuo);
 
-  // Il TI può essere zero per due motivi opposti: reddito troppo ALTO (rischio
-  // vero: il datore lo accreditava e a dicembre se lo riprende) o troppo BASSO
-  // (sotto la no tax area non è mai stato accreditato, niente da restituire).
-  // Confonderli diceva «devi restituire» a chi guadagna 2.150 € l'anno. Si guarda
-  // la soglia, non il solo `spettante`.
+  // Il TI è zero per due motivi opposti: reddito troppo ALTO (rischio vero) o troppo
+  // BASSO (incapienza: mai accreditato, niente da restituire). Si guarda la soglia,
+  // non il solo `spettante`.
   const sopraSoglia = decisione.redditoStimato > T.TI_SOGLIA_PIENO;
   if (!sopraSoglia) {
     return { ...vuoto, spettante, causa: CAUSA.NESSUNA };
   }
 
-  // Quanto il datore ha verosimilmente accreditato: la stima mese per mese del
-  // conguaglio se c'è (così riquadro e popup dicono la stessa cifra), altrimenti
-  // la quota piena sui giorni trascorsi, il caso peggiore. Un'ipotesi: la cifra
-  // vera la sa il cedolino.
+  // Quanto il datore ha accreditato: la stima mese per mese del conguaglio se c'è,
+  // altrimenti la quota piena sui giorni trascorsi (caso peggiore).
   const erogato = Number.isFinite(erogatoStimato) && erogatoStimato >= 0
     ? trunc2(erogatoStimato)
     : trunc2((T.TI_MASSIMO * giorni) / 365);
@@ -155,14 +137,8 @@ export function rischioRestituzione({ settings: impostazioni = {}, proiezioneAnn
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// QUANTO COSTA DAVVERO SUPERARE LA SOGLIA
-//
-// Sopra si risponde a «quanto ti riprendono» (cassa); qui a «ci perdo?». Quasi
-// no: sopra i 15.000 il TI sparisce (−1.200) ma la detrazione da lavoro salta da
-// 1.955 a 3.100 (art. 13 TUIR) e compensa il 95%. Resta scoperta l'indennità
-// L. 207/2024. Nel punto peggiore sono 129 € l'anno, con una buca larga ~200 € di
-// lordo: una costante strutturale (solo aliquote statali), uguale su CCNL e orari
-// diversi. → check-costo-soglia.mjs, docs/note-motore-restituzione.md
+// QUANTO COSTA DAVVERO SUPERARE LA SOGLIA (la «buca» attorno ai 15.000, non la
+// restituzione). → check-costo-soglia.mjs, docs/note-motore-restituzione.md
 
 /**
  * La forma della buca attorno ai 15.000 €, calcolata sul motore.
@@ -178,8 +154,7 @@ export function rischioRestituzione({ settings: impostazioni = {}, proiezioneAnn
 export function costoSoglia(settings = {}) {
   const netto = (g) => calcNetAnnual(g, settings).net;
 
-  // Il tetto si cerca sull'IMPONIBILE, mai convertendo la soglia in lordo:
-  // `taxableToGross(15000)` dava 16.622, già sopra soglia, e la perdita usciva zero.
+  // Il tetto si cerca sull'IMPONIBILE, non convertendo la soglia in lordo (finiva già sopra).
   const tetto = lordoPerReddito(fiscoDi(settings).TI_SOGLIA_PIENO, settings);
   const nettoTetto = netto(tetto);
 

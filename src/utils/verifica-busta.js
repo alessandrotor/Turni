@@ -2,22 +2,11 @@
 //
 //   node scripts/check-verifica-busta.mjs
 //
-// PERCHÉ ESISTE
-// Per sapere se l'app torna con la busta di un tester, lui doveva mandare il
-// cedolino: nome, codice fiscale, retribuzione, tutto. Qui il confronto lo fa
-// lui, e a chi sviluppa arriva solo `testoDaCondividere`: gli SCARTI fra app e
-// busta, mai le cifre intere. Si sa dove l'app sbaglia e di quanto, non quanto
-// guadagna chi l'ha provata.
+// A chi sviluppa arriva solo `testoDaCondividere`: gli SCARTI fra app e busta, mai le
+// cifre intere. Due livelli: CALCOLO (dal lordo stampato in busta, verifica il motore)
+// e TURNI (il lordo ricavato dai turni, verifica turni e impostazioni).
 //
-// DUE LIVELLI, PERCHÉ DICONO COSE DIVERSE
-//  · CALCOLO — si parte dal lordo STAMPATO in busta e si chiede al motore
-//    contributi, IRPEF, bonus e netto. Non servono turni: verifica il motore,
-//    come fa `check-buste-2026.mjs` sulle buste di chi sviluppa.
-//  · TURNI — il lordo che l'app ricava dai turni segnati in quel mese contro
-//    quello della busta. Verifica turni, maggiorazioni e impostazioni.
-//
-// Modulo puro, senza rete: il riscontro controlla che resti così, perché la
-// pagina promette in grande che la busta non va da nessuna parte.
+// Modulo puro, senza rete: il riscontro controlla che resti così.
 
 import { calcTotalPay, calcShiftMinutes, computePayByShift, hasAnyRate } from '../motore/pay.js';
 import { nettoDelMese, lordoDelMese } from '../motore/net.js';
@@ -34,24 +23,16 @@ import { getContratto } from './ccnl-elenco.js';
 const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
   'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
 
-// Tolleranze: quanto uno scarto può valere senza dire niente.
-//  · contributi: somma di quattro voci (IVS, FIS, CIGS, Ente Bilaterale), ognuna
-//    arrotondata al centesimo per conto suo;
-//  · bonus: centesimi, la busta arrotonda lì;
-//  · imponibile: con la 13ª/14ª la ripartizione fra i due imponibili balla di
-//    ~13 centesimi (scarto noto, `check-buste-2026.mjs`);
-//  · IRPEF e netto: un euro — il netto è pagato all'euro tondo, e la detrazione
-//    ha un euro di scarto noto sopra soglia (`check-ti-mensile.mjs`);
-//  · lordo dai turni: un euro;
-//  · ore: il quarto d'ora a cui la busta arrotonda l'eccedenza.
+// Tolleranze: quanto uno scarto può valere senza dire niente. Contributi e bonus:
+// centesimi; imponibile: ~13 centesimi con la 13ª/14ª; IRPEF, netto e lordo dai turni:
+// un euro (il netto è pagato all'euro tondo); ore: il quarto d'ora.
 const TOLLERANZA = {
   contributi: 0.1, imponibile: 0.2, irpef: 1.01, addizionali: 0.05,
   ti: 0.02, indennita: 0.1, netto: 1.01, lordo: 1, ore: 0.25,
 };
 
-// La PRIMA voce con quell'etichetta, in qualunque colonna: la stessa lettura di
-// `check-buste-2026.mjs`, che su cinque buste torna al centesimo. Sommare tutte
-// le voci che somigliano rischierebbe di contare due volte un imponibile.
+// La PRIMA voce con quell'etichetta, in qualunque colonna (come `check-buste-2026.mjs`):
+// sommare tutte quelle che somigliano rischia di contare due volte un imponibile.
 const importo = (fx, re, sezione = null) =>
   fx.voci.find((v) => re.test(v.etichetta || '') && (!sezione || v.sezione === sezione))?.importo || 0;
 const c2 = (n) => Math.round(n * 100) / 100;
@@ -59,10 +40,8 @@ const c2 = (n) => Math.round(n * 100) / 100;
 export function riga(livello, voce, app, busta, tolleranza, unita = '€') {
   const scarto = c2(app - busta);
   const ok = Math.abs(scarto) <= tolleranza;
-  // UN LATO A ZERO È UNA FUGA: lo scarto coincide con la cifra intera
-  // dell'altro. «Addizionali +12,20 €» con la busta a zero è l'addizionale
-  // dell'app, e da lì si risale al reddito. Trovato dal riscontro sulle buste
-  // vere il 26/09/2026. Il testo da mandare dice solo da che parte c'è.
+  // UN LATO A ZERO È UNA FUGA: lo scarto coincide con la cifra intera dell'altro. Il
+  // testo da mandare dice solo da che parte c'è.
   const soloDa = ok ? null : (c2(busta) === 0 ? 'app' : (c2(app) === 0 ? 'busta' : null));
   return {
     livello, voce, unita, app: c2(app), busta: c2(busta), scarto, soloDa,
@@ -71,52 +50,36 @@ export function riga(livello, voce, app, busta, tolleranza, unita = '€') {
   };
 }
 
-// ── Il lordo, voce per voce ─────────────────────────────────────────────────
+// ── Il lordo, voce per voce ──
 //
-// PERCHÉ ESISTE
-// La riga «Lordo +76,88 €» diceva che qualcosa non tornava e non diceva cosa.
-// Il primo tester che l'ha vista (agosto 2026) non poteva farci niente: i
-// motivi possibili sono cinque o sei e non si distinguono da un totale. Qui il
-// lordo si divide nelle stesse famiglie in cui lo divide il cedolino, e lo
-// scarto finisce nella riga che lo produce: ore segnate in più, un festivo che
-// la busta non conta, un bonus spuntato che in busta non c'è.
-//
-// LE FAMIGLIE sono quelle che la busta stampa su righe sue, e che il motore sa
-// già separare (`computePayByShift`). L'ordine conta: vince la prima che
-// combacia, quindi «Magg. festivo» finisce nei festivi e non nelle ore
-// ordinarie, e «Festività» (non lavorata) resta fra le ordinarie.
-//
-// DUE INVARIANTI, verificate da check-verifica-busta.mjs: le voci dell'app
-// sommano al lordo dell'app e quelle della busta al lordo della busta, al
-// centesimo. Una scomposizione che non torna col totale che spiega sarebbe
-// peggio del totale da solo.
+// Il lordo si divide nelle famiglie in cui lo divide il cedolino, e lo scarto finisce
+// nella riga che lo produce. L'ordine conta: vince la prima che combacia («Magg.
+// festivo» nei festivi, «Festività» non lavorata fra le ordinarie).
+// Due invarianti (check-verifica-busta.mjs): le voci dell'app sommano al lordo
+// dell'app e quelle della busta al lordo della busta, al centesimo.
 export const FAMIGLIE = [
   { id: 'mensilita', voce: '13ª e 14ª', re: EXTRA_MENSILITA },
   { id: 'supplementari', voce: 'Supplementari e straordinari', re: /Supplementar|Straordin/i },
   { id: 'domenicale', voce: 'Maggiorazione domenicale', re: /Domenical|Magg\.?\s*dom/i },
   { id: 'notturno', voce: 'Maggiorazione notturna', re: /Nottur|Magg\.?\s*nott/i },
-  // «Lavoro festivo ordinario» (l'ora intera) e «Magg. festivo»: la busta paga
-  // i festivi lavorati FUORI dalla retribuzione mensile.
+  // «Lavoro festivo ordinario» e «Magg. festivo»: festivi lavorati FUORI dalla retribuzione mensile.
   { id: 'festivo', voce: 'Festivi lavorati', re: /festivo/i, ore: 'max' },
   {
     id: 'ordinarie', voce: 'Ore ordinarie, ferie, permessi',
     re: /Retribuzione|Ferie|Permess|R\.?O\.?L|Ex\s*fest|Festivit|Malattia|Paga base|Conting|Terzo el/i,
   },
-  // Tutto il resto: nell'app bonus e voci fisse, in busta le voci che non
-  // nascono dai turni (premi, indennità). Qui è normale che i NOMI non
-  // coincidano, ed è per questo che la pagina mostra quelli della busta.
+  // Tutto il resto: bonus e voci fisse dell'app, voci non da turni in busta. I NOMI
+  // possono non coincidere, per questo la pagina mostra quelli della busta.
   { id: 'altre', voce: 'Bonus e altre voci', re: null },
-  // Solo dell'app: la maggiorazione scritta a mano nel modulo del turno. In
-  // busta ha il nome di quello che rappresenta, e finisce nella sua famiglia.
+  // Solo dell'app: la maggiorazione scritta a mano nel turno.
   { id: 'manuali', voce: 'Maggiorazioni scritte a mano', re: null },
 ];
 
 const famigliaDi = (etichetta) =>
   FAMIGLIE.find((f) => f.re && f.re.test(etichetta || ''))?.id || 'altre';
 
-// Le ore di una voce, solo se la voce le dichiara E tornano con l'importo:
-// tariffa × ore = importo. Quando non tornano, il numero in penultima posizione
-// non sono ore (una percentuale, una base) e dirlo ore sarebbe inventarlo.
+// Le ore di una voce, solo se la dichiara E tornano con l'importo (tariffa × ore);
+// altrimenti il numero non sono ore.
 function oreDellaVoce(v) {
   const n = v.numeri || [];
   if (v.unita !== 'ORE' || n.length < 3) return null;
@@ -137,12 +100,10 @@ export function lordoBustaPerVoce(fx) {
     per[id].euro += v.importo || 0;
     per[id].voci.push(v.etichetta);
     const ore = oreDellaVoce(v);
-    // «Lavoro festivo ordinario» e «Magg. festivo» sono le STESSE ore scritte
-    // due volte: sommarle le raddoppierebbe.
+    // «Lavoro festivo ordinario» e «Magg. festivo» sono le STESSE ore: non si sommano.
     if (ore != null) per[id].ore = f.ore === 'max' ? Math.max(per[id].ore, ore) : per[id].ore + ore;
   }
-  // La malattia in busta è uno storno fra le trattenute: toglie dalla
-  // retribuzione quello che paga l'INPS. `lordoDaBusta` lo sottrae, e qui pure.
+  // La malattia in busta è uno storno fra le trattenute: `lordoDaBusta` lo sottrae, e qui pure.
   for (const v of fx.voci.filter((x) => x.sezione === 'trattenuta' && STORNO.test(x.etichetta || ''))) {
     per.ordinarie.euro -= v.importo || 0;
   }
@@ -156,8 +117,7 @@ export function lordoAppPerVoce(delMese, settings, payMap, anno, mese, pagaTotal
     const p = payMap[s.id];
     if (!p) continue;
     const ore = calcShiftMinutes(s) / 60;
-    // Stessa regola del motore (`pay.js`): il festivo lavorato sta fuori dal
-    // monte ore, e la busta lo paga su una riga sua.
+    // Come in `pay.js`: il festivo lavorato sta fuori dal monte ore.
     const festivo = tipoTurno(s) === TIPO.LAVORO && isHoliday(s.date, settings);
     const suppl = p.overtimeBase + p.surchargeOvertime + p.straordinarioBase + p.surchargeStraordinario;
     const oreSuppl = (p.overtimeMinutes + p.straordinarioMinutes) / 60;
@@ -187,8 +147,8 @@ export function lordoAppPerVoce(delMese, settings, payMap, anno, mese, pagaTotal
 }
 
 /**
- * Le righe della scomposizione, pronte per la tabella e per il testo. Solo le
- * famiglie che esistono da almeno un lato: una fila di zeri è rumore.
+ * Le righe della scomposizione, per la tabella e per il testo: solo le famiglie
+ * presenti da almeno un lato.
  */
 export function scomponiLordo(app, busta) {
   return FAMIGLIE
@@ -197,8 +157,7 @@ export function scomponiLordo(app, busta) {
       ...riga('lordo', f.voce, app[f.id].euro, busta[f.id].euro, TOLLERANZA.lordo),
       id: f.id,
       oreApp: Math.round(app[f.id].ore * 100) / 100,
-      // Zero ore in busta su una voce in euro vuol dire «non dichiarate», non
-      // «nessuna ora»: si mostra il vuoto, non uno zero che sembra un dato.
+      // Zero ore in busta su una voce in euro = «non dichiarate»: si mostra il vuoto.
       oreBusta: busta[f.id].ore ? Math.round(busta[f.id].ore * 100) / 100 : null,
       vociBusta: busta[f.id].voci,
     }));
@@ -207,13 +166,9 @@ export function scomponiLordo(app, busta) {
 const oreScritte = (n) => `${n.toLocaleString('it-IT', { maximumFractionDigits: 2 })} h`;
 
 /**
- * Cosa vuol dire, in una frase, lo scarto di una famiglia. Resta sul telefono:
- * nomina ore e voci della busta, che nel testo da condividere non vanno.
- *
- * Le frasi dicono la causa PIÙ PROBABILE, non quella certa: l'app non vede il
- * cartellino del datore. Per questo la prima distinzione è sempre fra ore ed
- * euro — ore diverse vuol dire turni segnati diversamente, ore uguali con euro
- * diversi vuol dire una tariffa o una percentuale diversa.
+ * Cosa vuol dire, in una frase, lo scarto di una famiglia. Resta sul telefono: nomina
+ * ore e voci della busta. Dice la causa PIÙ PROBABILE: ore diverse = turni segnati
+ * diversamente, ore uguali con euro diversi = tariffa o percentuale diversa.
  */
 export function spiegaScarto(r) {
   if (r.ok) return null;
@@ -277,8 +232,7 @@ export function confronta(fx, { allShifts = [], settings = {} } = {}) {
   if (!fx?.voci?.length) return { periodo: null, righe: [], turniNelMese: 0, avvisi: ['nessuna voce letta'] };
   if (!fx.periodo) return { periodo: null, righe: [], turniNelMese: 0, avvisi: ['mese della busta non riconosciuto'] };
 
-  // Se la busta non torna con sé stessa, il lettore ha saltato qualcosa, e ogni
-  // scarto qui sotto potrebbe essere suo e non dell'app. Si dice.
+  // Se la busta non torna con sé stessa, ogni scarto sotto potrebbe essere del lettore.
   const guasti = incoerenze(fx);
   if (guasti.length) avvisi.push('la busta non è stata letta per intero: gli scarti vanno presi con cautela');
 
@@ -315,8 +269,7 @@ export function confronta(fx, { allShifts = [], settings = {} } = {}) {
     importo(fx, /Trattamento integrativo/), TOLLERANZA.ti));
   righe.push(riga('calcolo', 'Indennità L. 207/24', n.bonusCuneo, importo(fx, /L\.207/), TOLLERANZA.indennita));
 
-  // Il rimborso del 730 è pagato in busta ma non è reddito del mese: l'app non
-  // può saperlo, e si toglie dal netto stampato prima di confrontare.
+  // Il rimborso del 730 non è reddito del mese: si toglie dal netto stampato.
   if (fx.netto != null) {
     righe.push(riga('calcolo', 'Netto', n.net, fx.netto - b.fuoriReddito, TOLLERANZA.netto));
   }
@@ -391,10 +344,9 @@ export function scartoScritto(r) {
 }
 
 /**
- * Il testo che il tester manda. SOLO scarti e percentuali, più il contesto che
- * serve a capirli (mese, contratto, part-time): nessuna cifra intera, né
- * dell'app né della busta. È la promessa della pagina, e il riscontro la
- * verifica cercando nel testo ogni importo assoluto.
+ * Il testo che il tester manda: SOLO scarti e percentuali più il contesto (mese,
+ * contratto, part-time), nessuna cifra intera. Il riscontro lo verifica cercando ogni
+ * importo assoluto.
  */
 export function testoDaCondividere(esito, { versione = '', settings = {}, partTimePct = null } = {}) {
   const intestazione = [
@@ -417,10 +369,9 @@ export function testoDaCondividere(esito, { versione = '', settings = {}, partTi
       linee.push(`  ${r.voce.padEnd(24)} ${scartoScritto(r).padStart(10)}${r.ok ? '  ✓' : pct}`);
     }
   }
-  // La scomposizione esce con le stesse regole delle righe: scarti, mai cifre.
-  // Vale anche per le ORE: con un lato a zero lo scarto sarebbe il totale di
-  // ore dell'altro lato, e si dice solo da che parte. Le voci che tornano non
-  // si elencano — chi legge cerca dove sta lo scarto, non dove non sta.
+  // La scomposizione esce con le stesse regole: scarti, mai cifre. Anche per le ORE
+  // (con un lato a zero lo scarto sarebbe il totale dell'altro). Le voci che tornano
+  // non si elencano.
   const fuori = (esito.scomposizione || []).filter((r) => !r.ok);
   if (fuori.length) {
     linee.push('Lordo, voce per voce');

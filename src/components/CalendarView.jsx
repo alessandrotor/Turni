@@ -24,9 +24,7 @@ const fmtPct = (pct) => String(Number(pct.toFixed(3))).replace('.', ',');
 
 // Da dove arriva il reddito annuo di riferimento, per dirlo all'utente.
 const PROJECTION_LABEL = {
-  // 'previsione' è il caso normale: maturato finora + quello che resta da
-  // contratto. Gli altri tre restano perché rispondono a domande diverse e la
-  // funzione li tratta ancora a parte (vedi projectAnnualIncome in net.js).
+  // 'previsione' è il caso normale; gli altri tre rispondono a domande diverse (projectAnnualIncome).
   previsione: 'da quanto hai segnato più i mesi che restano',
   contratto: 'da contratto',
   maturato: 'dal maturato annualizzato',
@@ -60,9 +58,8 @@ import { tipoDiErrore, TITOLO_ERRORE } from '../utils/errore-import';
 
 const DAY_HEADERS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
-// I minuti non sono sempre interi: le ore contrattuali mensili nascono da una
-// moltiplicazione (24 × 4,3 = 103,19999…), quindi lo straordinario che ne deriva
-// porta con sé la coda binaria. Senza arrotondare uscirebbe «6h 30.00000000000091m».
+// I minuti non sono sempre interi (24 × 4,3 = 103,19999…): senza arrotondare uscirebbe
+// «6h 30.00000000000091m».
 function formatMinutesShort(mins) {
   const total = Math.round(mins);
   const h = Math.floor(total / 60);
@@ -75,8 +72,6 @@ function formatMinutesShort(mins) {
 const minutiDelGiorno = (turni) => turni.reduce((somma, s) => somma + calcShiftMinutes(s), 0);
 
 // «18–23³⁰»: inizio E fine del turno, nel formato corto di utils/orario-cella.js.
-// Prima la pill diceva la sola ora d'inizio, e un turno spezzato 10–15 + 18–23:30
-// si leggeva «10:00 / 18:00», come due turni qualunque.
 function Ora({ p }) {
   return <>{p.ore}{p.minuti && <sup className="cal-ora-min">{p.minuti}</sup>}</>;
 }
@@ -89,30 +84,24 @@ export default function CalendarView({
   currentMonth,
   onMonthChange,
   shifts,
-  // Turni del mese di PAGA: coincidono con `shifts` salvo contratti
-  // mensilizzati, dove il mese di busta è fatto di settimane intere. La
-  // griglia resta disegnata su `shifts` (il mese di calendario), i totali si
-  // contano su questi.
+  // Turni del mese di PAGA: coincidono con `shifts` salvo contratti mensilizzati. La griglia
+  // resta sul mese di calendario, i totali si contano su questi.
   payrollShifts,
   onAddShift,
   onEditShift,
   onImportShifts,
-  // Crea più giornate in una sola scrittura: serve alla proposta delle
-  // festività non lavorate qui sotto (la stessa usata per le assenze a periodo).
+  // Più giornate in una scrittura sola, per la proposta delle festività non lavorate.
   onAddShifts,
   settings,
   onUpdateSettings,
   allShifts,
   payByShift,
   annualGross,
-  // Reddito dell'anno PROIETTATO a dicembre: e' la grandezza su cui si
-  // misurano le soglie del bonus, che valgono sull'anno intero.
+  // Reddito dell'anno PROIETTATO a dicembre: la grandezza su cui valgono le soglie del bonus.
   annualProjection = 0,
   annualExtras = 0,
   onNavigate,
-  // Giorno da mettere in evidenza arrivando da un'altra pagina (il
-  // calendarietto di Statistiche): la cella si illumina e ci si scorre sopra,
-  // altrimenti si atterra sul mese e tocca ricercare a mano il giorno tappato.
+  // Giorno da evidenziare arrivando da un'altra pagina: la cella si illumina e ci si scorre sopra.
   focusDate = null,
 }) {
   const [importParsed, setImportParsed] = useState(null);
@@ -124,22 +113,17 @@ export default function CalendarView({
   const [nameInput, setNameInput] = useState('');
   // Modifica del nome fuori dall'import (nessun file in attesa): riusa la stessa modale.
   const [editingName, setEditingName] = useState(false);
-  // Quando la modale del nome è stata aperta perché si voleva importare: dopo il
-  // salvataggio si apre il selettore immagini. Il nome è OBBLIGATORIO prima di
-  // caricare una foto, per non spendere token dell'AI a vuoto.
+  // Quando la modale del nome è aperta per importare: dopo il salvataggio si apre il
+  // selettore immagini. Il nome è OBBLIGATORIO prima di caricare una foto.
   const [pickAfterName, setPickAfterName] = useState(false);
   const [importUsage, setImportUsage] = useState(null);
   const [exportBusy, setExportBusy] = useState(false);
   const [exportError, setExportError] = useState(null);
 
-  // Un import da foto in corso tiene occupata l'app: la richiesta al modello è
-  // già stata pagata, e i turni riconosciuti non sono ancora stati confermati.
-  // Un ricaricamento in quel momento butterebbe via tutti e due, quindi
-  // l'aggiornamento aspetta il momento dopo. Vedi utils/occupato.js.
+  // Un import da foto in corso tiene occupata l'app (richiesta già pagata, turni non ancora
+  // confermati): l'aggiornamento aspetta. Vedi utils/occupato.js.
   useOccupato('import', importLoading || !!pendingImportFile || !!importParsed);
-  // Default al mese di CALENDARIO: chi segna i turni pensa in mesi solari, non
-  // in periodi di paga a settimane intere (quelli sono un dettaglio interno
-  // del calcolo del netto, non come l'utente registra le cose giorno per giorno).
+  // Default al mese di CALENDARIO: chi segna i turni pensa in mesi solari.
   const [exportPeriod, setExportPeriod] = useState('calendar');
   // Avvertenza sull'invio della foto: mostrata una volta sola, ricordata nel
   // browser. Vedi `accettatoInvioFoto` in services/gemini.js.
@@ -160,15 +144,13 @@ export default function CalendarView({
   }, []);
   const fileInputRef = useRef(null);
   const nameModalRef = useRef(null);
-  // Anche queste due finestre si chiudono con Esc e tengono il Tab dentro,
-  // come tutte le altre: erano le sole rimaste senza.
+  // Anche queste due finestre si chiudono con Esc e tengono il Tab dentro.
   const avvisoFotoRef = useRef(null);
   useModalDismiss(avvisoFotoRef, () => setMostraAvvisoFoto(false), mostraAvvisoFoto);
   const focusCellRef = useRef(null);
 
-  // Porta sotto gli occhi il giorno arrivato da un'altra pagina. `block:
-  // 'center'` e non 'nearest': su un mese lungo la cella può essere appena
-  // fuori dallo schermo, e uno scroll minimo la lascerebbe sul bordo.
+  // Porta sotto gli occhi il giorno arrivato da un'altra pagina. `block: 'center'` e non
+  // 'nearest': su un mese lungo la cella può restare sul bordo.
   useEffect(() => {
     if (!focusDate || !focusCellRef.current) return;
     focusCellRef.current.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -186,8 +168,7 @@ export default function CalendarView({
     return d >= 1 && d <= daysInMonth ? d : null;
   });
 
-  // Turni raggruppati per data e ordinati per ora di inizio: senza sort le pill
-  // seguirebbero l'ordine di inserimento nell'oggetto, non quello cronologico.
+  // Turni raggruppati per data e ordinati per ora di inizio (non per inserimento).
   const byDate = useMemo(() => {
     const map = {};
     shifts.forEach(s => {
@@ -201,15 +182,12 @@ export default function CalendarView({
 
   // Monthly totals — sul mese di PAGA (vedi prop payrollShifts).
   const counted = payrollShifts || shifts;
-  // Periodo di paga diverso dal mese di calendario: va detto, altrimenti le ore
-  // non corrispondono ai turni visibili sulla griglia e sembrano sbagliate.
+  // Periodo di paga diverso dal mese di calendario: va detto, o le ore sembrano sbagliate.
   const payrollRange = payrollShifts && payrollShifts !== shifts
     ? formatPayrollRange(year, month)
     : null;
-  // Il toggle del periodo esiste solo dove i due periodi differiscono davvero.
-  // Si guarda il CONTRATTO e non `payrollRange`, che diventa null appena si
-  // sceglie il mese di calendario — e il comando sparirebbe subito dopo averlo
-  // usato, senza modo di tornare indietro.
+  // Il toggle del periodo esiste solo dove i due periodi differiscono. Si guarda il CONTRATTO
+  // e non `payrollRange`, che diventa null col mese di calendario (il comando sparirebbe subito).
   const mensilizzato = !settings.onCall && isMensilizzato(settings);
   const periodoPaga = settings.periodoConteggio !== 'calendario';
   const totalMins = useMemo(
@@ -221,15 +199,9 @@ export default function CalendarView({
     [counted, settings, allShifts, payByShift],
   );
 
-  // Giornate pagate senza turno del mese, contate dai turni e non da `pay`:
-  // senza una paga oraria impostata `calcTotalPay` restituisce null, ma le ore
-  // di ferie, malattia e festività esistono lo stesso e vanno mostrate.
-  //
-  // A schermo non si chiamano mai «assenze»: una festività, o un giorno di
-  // ferie concordato, era previsto che non si lavorasse — chiamarlo assenza
-  // suona come un buco da giustificare e confonde. Ogni voce compare col
-  // proprio nome (ferie, permesso, malattia, festività), che è anche quello
-  // che si legge in busta.
+  // Giornate pagate senza turno del mese, contate dai turni e non da `pay` (senza paga oraria
+  // `calcTotalPay` è null, ma le ore esistono). A schermo non si chiamano «assenze»: ogni voce
+  // ha il suo nome (ferie, permesso, malattia, festività), come in busta.
   const assenze = useMemo(() => {
     const per = new Map();
     let minuti = 0;
@@ -249,10 +221,8 @@ export default function CalendarView({
     const dettaglio = voci
       .map(([t, v]) => `${formatMinutesShort(v.minuti)} di ${ETICHETTA[t].toLowerCase()}`)
       .join(' · ');
-    // «3 giorni di ferie · 1 di festività»: la parola «giorni» una volta sola
-    // — ripeterla a ogni voce fa filastrocca — ma il «di» resta su tutte,
-    // altrimenti si legge «7 ferie». Il singolare va scritto (1 giorno):
-    // con una voce sola è l'unico posto in cui si legge.
+    // «3 giorni di ferie · 1 di festività»: «giorni» una volta sola, il «di» su tutte, il
+    // singolare scritto (1 giorno).
     const dettaglioGiorni = voci
       .map(([t, v], i) => {
         const nome = ETICHETTA[t].toLowerCase();
@@ -263,14 +233,9 @@ export default function CalendarView({
     return { minuti, giorni, dettaglio, dettaglioGiorni };
   }, [counted]);
 
-  // Competenze del mese nelle stesse voci del cedolino, così che le due colonne
-  // si possano affiancare davvero. Il punto delicato è il lavoro oltre soglia: la
-  // busta scrive quelle ore INTERE al 130% (6,50 h → 77,89 €), non il solo +30%
-  // (17,98 €) che invece resterebbe fuori dalla base. Sotto la stessa parola
-  // c'erano due grandezze diverse, e il confronto dava sempre torto all'app.
-  //
-  // È una riaffettatura di sola lettura degli stessi totali: le voci sommano a
-  // `pay.total`, che resta il numero in cima.
+  // Competenze del mese nelle stesse voci del cedolino, per affiancare le due colonne. Le ore
+  // oltre soglia la busta le scrive INTERE al 130%, non il solo +30%. Riaffettatura di sola
+  // lettura: le voci sommano a `pay.total`.
   const competenze = useMemo(() => {
     if (!pay) return [];
     const otPct = Number(settings.overtimeSurchargePct) || 0;
@@ -283,10 +248,8 @@ export default function CalendarView({
       : `Ore oltre le ${ore(settings.expectedWeeklyHours)} settimanali del contratto, fino a ${ore(settings.fullTimeWeeklyHours)}.`;
     return [
       {
-        // Ferie e permessi restano DENTRO questa riga: è così che li scrive la
-        // busta (a luglio 2026 le ore «Retribuzione» sono 103,20 anche con
-        // ferie godute nel periodo, senza una voce a parte). La malattia no:
-        // in busta è una voce sua, quindi si sottrae qui e compare sotto.
+        // Ferie e permessi restano DENTRO questa riga, come li scrive la busta. La malattia è
+        // una voce sua: si sottrae qui e compare sotto.
         label: 'Retribuzione',
         value: pay.base - pay.overtimeBase - pay.straordinarioBase - pay.malattiaBase,
         minutes: totalMins - pay.overtimeMinutes - pay.straordinarioMinutes - pay.malattiaMinutes,
@@ -306,55 +269,36 @@ export default function CalendarView({
       { label: 'Malattia', value: pay.malattiaBase, minutes: pay.malattiaMinutes },
       { label: 'Magg. domenicali', value: pay.surchargeSunday },
       { label: 'Magg. festive', value: pay.surchargeHoliday },
-      // Le ore, qui, sono quelle in FASCIA — non quelle del turno: è l'unico
-      // modo per capire il numero, visto che la maggiorazione si paga solo su
-      // quelle. Con il cumulo a «solo la più alta» l'importo può essere zero
-      // pur essendoci ore notturne (le assorbe il domenicale), e va comunque
-      // mostrato: sparire proprio lì lascerebbe il dubbio di un conto perso.
+      // Le ore, qui, sono quelle in FASCIA, non quelle del turno. L'importo può essere zero
+      // (le assorbe il domenicale) e va mostrato lo stesso.
       {
         label: 'Magg. notturne', value: pay.surchargeNight,
         minutes: pay.nightMinutes,
       },
       { label: 'Magg. manuali', value: pay.surchargeManual },
-      // La malattia può valere zero (carenza non pagata) ma le sue ORE esistono
-      // e vanno mostrate: senza questa eccezione la riga sparirebbe proprio nei
-      // giorni in cui serve di più capire dove sono finite le ore.
+      // La malattia può valere zero (carenza) ma le sue ORE esistono e vanno mostrate.
     ].filter(v => v.value >= 0.005 || v.minutes > 0);
   }, [pay, settings, totalMins]);
 
-  // Festività del mese senza alcun turno segnato. Una festività non lavorata
-  // viene pagata — in busta è un giustificativo a sé — ed è la cosa più facile
-  // da dimenticare: sono undici giorni sparsi nell'anno, e chi non lavora quel
-  // giorno non ha motivo di aprire l'app. Qui si PROPONE soltanto: chi è
-  // mensilizzato o non ne ha diritto non tocca niente.
+  // Festività del mese senza alcun turno segnato: una festività non lavorata è pagata e
+  // facile da dimenticare. Qui si PROPONE soltanto.
   const festivitaDaSegnare = useMemo(
     () => festivitaSenzaTurno(year, month, allShifts || shifts, settings),
     [year, month, allShifts, shifts, settings],
   );
   const oreFestivita = minutiGiornoAssenza(settings);
 
-  // Bonus busta paga: quanto manca alla soglia.
-  //
-  // Si misura sulla PROIEZIONE dell'anno, non sul maturato. Le soglie del
-  // trattamento integrativo valgono sul reddito dell'anno intero: calcolare il
-  // margine su quanto si e' incassato finora annuncia uno spazio che non
-  // esiste, perche' i mesi che restano arrivano comunque. Ad agosto, con
-  // 10.000 incassati e la soglia a 16.600, il vecchio conto diceva «puoi
-  // ancora guadagnare 6.600» mentre quattro stipendi se li mangiavano quasi
-  // tutti. E' anche cio' che faceva dire numeri diversi a questa pagina e a
-  // Statistiche, che la proiezione la usava gia'.
+  // Bonus busta paga: quanto manca alla soglia. Si misura sulla PROIEZIONE dell'anno, non sul
+  // maturato: le soglie valgono sull'anno intero, e così questa pagina e Statistiche dicono
+  // lo stesso numero.
   const bonus = useMemo(
     () => calcBonusMargin(annualProjection || annualGross, settings),
     [annualProjection, annualGross, settings],
   );
 
-  // Quanto rischia di dover RIDARE INDIETRO. E' la domanda che la gente si fa
-  // davvero, e fino a settembre 2026 l'app non la sfiorava: sapeva dire se il
-  // bonus spetta adesso, mai quanto costa scoprire a dicembre che non spettava.
-  // Vedi motore/restituzione.js per il modello e per cosa l'app NON puo' sapere.
-  // Il conguaglio di dicembre, come forchetta (motore/conguaglio.js). Solo per
-  // l'anno in corso: per un anno chiuso il conguaglio è già in busta, e la busta
-  // lo sa meglio dell'app. Dal primo momento in cui c'è un reddito da stimare.
+  // Quanto rischia di dover RIDARE INDIETRO (motore/restituzione.js).
+  // Il conguaglio di dicembre, come forchetta (motore/conguaglio.js): solo per l'anno in
+  // corso, perché per un anno chiuso è già in busta.
   const oggi = useOggi();
   const oggiAnno = oggi.getFullYear();
   const conguaglio = useMemo(
@@ -375,9 +319,8 @@ export default function CalendarView({
     [settings, annualProjection, annualGross, year, conguaglio],
   );
 
-  // LA FORMA DELLA BUCA attorno ai 15.000, e dove ci si trova dentro.
-  // Costa una trentina di valutazioni del netto annuo, tutte per bisezione: si
-  // memoizza sulle sole impostazioni perché non dipende dal mese guardato.
+  // LA FORMA DELLA BUCA attorno ai 15.000: una trentina di valutazioni, memoizzate sulle sole
+  // impostazioni perché non dipende dal mese guardato.
   const costo = useMemo(() => costoSoglia(settings), [settings]);
   // La tabella del popup «Come funziona»: al lordo previsto per chi è già
   // oltre il tetto, nel punto appena sopra per chi è ancora sotto.
@@ -400,26 +343,18 @@ export default function CalendarView({
   );
   const mancaOre = useMemo(() => margineInOre(mancaPareggio, settings), [mancaPareggio, settings]);
 
-  // Coi centesimi del motore: arrotondare all'euro e poi scrivere «,00»
-  // (1156,00 per 1.155,86) fingeva una precisione che la cifra non aveva.
+  // Coi centesimi del motore: arrotondare all'euro e scrivere «,00» fingeva precisione.
   const fmt0 = (n) => formatCurrency(n);
 
-  // Gli euro sul singolo turno sono un'OPZIONE, spenta di default: chi non
-  // l'accende trova la griglia e l'agenda identiche a prima. Il totale del mese
-  // ce l'ha comunque, nella barra in alto.
+  // Gli euro sul singolo turno sono un'OPZIONE, spenta di default.
   const mostraEuro = !!settings.mostraEuroPerTurno;
 
-  // Nella cella l'importo va SENZA decimali: `formatCurrency` scrive «55,00 €»
-  // e in uno spazio da tre cifre quei due zeri sono rumore che allontana le
-  // cifre che contano. La cifra esatta resta nel `title` e nell'agenda — è la
-  // stessa distinzione che l'app fa già fra la griglia (colpo d'occhio) e
-  // l'agenda (dettaglio).
+  // Nella cella l'importo va SENZA decimali (lo spazio è da tre cifre); la cifra esatta sta
+  // nel `title` e nell'agenda.
 
-  // Quanto vale una giornata. `null` — non zero — quando la paga oraria manca o
-  // non copre quei turni: uno «0 €» in cella sembrerebbe un turno non pagato,
-  // che è una cosa diversa e falsa. `lordoTurno` sta in pay.js apposta, così
-  // questa somma e il totale del riepilogo escono dalla stessa riga di codice
-  // (riscontro: src/motore/riscontri/check-lordo-turno.mjs).
+  // Quanto vale una giornata. `null`, non zero, quando la paga oraria manca o non copre quei
+  // turni. `lordoTurno` (pay.js) tiene questa somma uguale al totale del riepilogo
+  // (src/motore/riscontri/check-lordo-turno.mjs).
   const euroDelGiorno = useCallback((turni) => {
     if (!payByShift) return null;
     let somma = 0;
@@ -464,8 +399,7 @@ export default function CalendarView({
     tiSimulato: tiSimulati[chiaveMese] ?? null,
   });
   const netVisto = netMonthSimulato || netMonth; // il riquadro del netto mostra la simulazione
-  // Senza turni nel mese niente netto: voci fisse e 13ª/14ª da sole facevano
-  // comparire trattamento integrativo e cuneo su un mese vuoto.
+  // Senza turni nel mese niente netto: voci fisse e 13ª/14ª da sole facevano comparire TI e cuneo.
   const showNetPanel = showNetPanelRaw && counted.length > 0;
   // Quello che la busta aggiunge ai turni, dal motore (`lordoDelMese`): con
   // le competenze dei turni somma al lordo mostrato in barra e nel riepilogo.
@@ -475,11 +409,9 @@ export default function CalendarView({
     perMonthBonus > 0 && (showNetPanel || !onUpdateSettings) && { label: `Bonus di ${formatMonthYear(currentMonth)}`, value: perMonthBonus },
   ].filter(Boolean);
 
-  // Quanto è "coperta" la proiezione dal maturato: i mesi dell'anno in cui ci
-  // sono turni, contro quelli già trascorsi. Se chi usa l'app ha cominciato a
-  // segnare i turni a metà anno, i mesi precedenti valgono zero e il reddito
-  // annuo stimato esce molto più basso del vero — con effetti a cascata su
-  // detrazioni, trattamento integrativo e indennità.
+  // Quanto è «coperta» la proiezione dal maturato: i mesi dell'anno con turni contro quelli
+  // trascorsi. Chi ha cominciato a metà anno ha i mesi precedenti a zero e un reddito stimato
+  // troppo basso.
   const mesiTrascorsi = year === new Date().getFullYear() ? new Date().getMonth() + 1 : 12;
   const mesiConTurni = useMemo(() => {
     const mesi = new Set();
@@ -488,9 +420,8 @@ export default function CalendarView({
     });
     return mesi.size;
   }, [allShifts, year]);
-  // Si avvisa solo quando la proiezione dipende DAVVERO dai soli turni: chi ha
-  // già messo il montante o il reddito annuo a mano ha risolto, e un avviso in
-  // quel caso sarebbe solo rumore.
+  // Si avvisa solo quando la proiezione dipende DAVVERO dai soli turni (non con montante o
+  // reddito annuo a mano).
   const proiezioneParziale = netProjection.source === 'maturato'
     && !(Number(settings.priorTaxableIncome) > 0)
     && !(Number(settings.annualGrossManual) > 0)
@@ -502,21 +433,14 @@ export default function CalendarView({
   const closeNameModal = useCallback(() => { setPendingImportFile(null); setEditingName(false); setPickAfterName(false); }, []);
   useModalDismiss(nameModalRef, closeNameModal, !!pendingImportFile || editingName);
 
-  // Bonus del mese: importo fisso (impostato una volta in Impostazioni),
-  // spuntato mese per mese. `true` = preso questo mese; i valori numerici sono
-  // il formato legacy di quando si digitava un importo diverso ogni volta.
+  // Bonus del mese: importo fisso (Impostazioni), spuntato mese per mese. `true` = preso;
+  // i numeri sono il formato legacy.
   const monthlyBonusEntry = settings.monthlyBonus?.[monthKey];
   const bonusTakenThisMonth = !!monthlyBonusEntry;
   const monthlyBonusAmount = Number(settings.monthlyBonusAmount) || 0;
 
-  // «E se lo prendessi tutti i mesi?» — la domanda che nasce dalla spunta qui
-  // sopra, e che sta accanto a quella e non in Impostazioni: un interruttore
-  // che muove un numero va tenuto sotto l'occhio che quel numero lo guarda.
-  //
-  // È una SIMULAZIONE: non scrive niente in `settings`, e la cifra vera resta
-  // dov'era invece di essere sostituita. Serve a confrontare — un premio di
-  // produttività non si decide, si riceve, e la domanda utile è quanto
-  // varrebbe l'anno se arrivasse sempre.
+  // «E se lo prendessi tutti i mesi?»: una SIMULAZIONE accanto alla spunta, che non scrive in
+  // `settings` e non sostituisce la cifra vera.
   const nomeMese = (m) => new Date(year, m, 1).toLocaleDateString('it-IT', { month: 'long' });
   // «fino ad agosto», «fino a luglio»: la d eufonica davanti ad a-.
   const finoA = (m) => { const n = nomeMese(m); return `fino ${/^a/i.test(n) ? 'ad' : 'a'} ${n}`; };
@@ -530,11 +454,9 @@ export default function CalendarView({
     onUpdateSettings?.({ [chiave]: String(bozza).trim() === '' || !(v >= 0) ? null : { importo: v, fino } });
     setBusteBozza((b) => ({ ...b, [chiave]: null }));
   };
-  // IL PERCHÉ di IRPEF e bonus, coi mesi che lo causano. Nei mesi in cui la
-  // stima del datore supera i 15.000 non dà il bonus ma la detrazione più alta, che lo
-  // sostituisce; sotto, il contrario. Se l'anno finisce dall'altra parte della
-  // soglia, a dicembre lo scambio si rovescia — ed è per questo che le due voci
-  // hanno segni opposti e si compensano.
+  // IL PERCHÉ di IRPEF e bonus, coi mesi che lo causano: dove la stima del datore supera i
+  // 15.000 non c'è il bonus ma la detrazione più alta, sotto il contrario; per questo le due
+  // voci hanno segni opposti.
   const elencoMesi = (idx) => {
     const nomi = idx.map(nomeMese);
     const testo = nomi.length > 4 ? `${nomi.length} mesi`
@@ -567,14 +489,11 @@ export default function CalendarView({
 
   const [simulaBonus, setSimulaBonus] = useState(false);
   const settingsBonusOgniMese = useMemo(() => {
-    // Da questo mese a dicembre: i mesi passati sono andati come sono andati
-    // (spuntati o no, o dentro il montante), e simulare un premio preso a
-    // febbraio non risponde a nessuna domanda che si possa ancora decidere.
+    // Da questo mese a dicembre: i mesi passati sono andati come sono andati.
     const tutti = {};
     const primo = year === oggiAnno ? new Date().getMonth() : (year > oggiAnno ? 0 : 12);
     for (let m = primo; m < 12; m += 1) tutti[`${year}-${String(m + 1).padStart(2, '0')}`] = true;
-    // I mesi già spuntati vincono: possono portare un importo diverso (formato
-    // legacy), e una simulazione non deve riscriverli con quello fisso di oggi.
+    // I mesi già spuntati vincono: possono avere un importo diverso (formato legacy).
     return { ...settings, monthlyBonus: { ...tutti, ...(settings.monthlyBonus || {}) } };
   }, [settings, year, oggiAnno]);
   const proiezioneBonusOgniMese = useMemo(
@@ -583,14 +502,10 @@ export default function CalendarView({
     }),
     [annualGross, annualExtras, settingsBonusOgniMese, year],
   );
-  // Confronto sulla stessa base della striscia del trattamento integrativo
-  // (`proiezione`), non su un'altra: due numeri sotto lo stesso riquadro che
-  // partono da basi diverse sono il modo più rapido di non essere creduti.
+  // Confronto sulla stessa base della striscia del trattamento integrativo (`proiezione`).
   const differenzaBonus = proiezioneBonusOgniMese.value - proiezione;
-  // IL CONGUAGLIO DELLA SIMULAZIONE. La casella cambiava il previsto di fine
-  // anno ma non il conguaglio, che è la domanda vera: «se lo prendessi sempre,
-  // a dicembre cosa succede?». Stesso motore, stesse impostazioni simulate,
-  // stessa proiezione simulata; la cifra vera sopra non si tocca.
+  // IL CONGUAGLIO DELLA SIMULAZIONE: stesso motore, impostazioni e proiezione simulate; la
+  // cifra vera sopra non si tocca.
   const conguaglioSimulato = useMemo(
     () => (simulaBonus && year === oggiAnno ? stimaConguaglio({
       anno: year, allShifts, settings: settingsBonusOgniMese, payMap: payByShift || {},
@@ -602,11 +517,8 @@ export default function CalendarView({
   // già spuntati tutti la domanda non ha nessuna risposta da dare.
   const puoSimulareBonus = monthlyBonusAmount > 0 && differenzaBonus >= 0.005;
 
-  // COSA FA AL TRATTAMENTO INTEGRATIVO, che è il motivo per cui la domanda
-  // viene fatta: il lordo da solo non risponde. La soglia dei 15.000 non è una
-  // linea oltre cui si perde tutto — è una buca larga un paio di centinaia di
-  // euro e profonda ~129 (vedi motore/restituzione.js) — e i tre casi vogliono
-  // tre risposte diverse, non tre intensità dello stesso allarme.
+  // COSA FA AL TRATTAMENTO INTEGRATIVO: i tre casi (sotto, buca, oltre) vogliono tre risposte
+  // diverse (motore/restituzione.js).
   const posizioneSimulata = useMemo(
     () => posizioneRispettoSoglia(proiezioneBonusOgniMese.value, settings, costo),
     [proiezioneBonusOgniMese, settings, costo],
@@ -622,17 +534,13 @@ export default function CalendarView({
           testo: `Ti porterebbe oltre i ${fmt0(costo.tetto)} di lordo: il trattamento integrativo non spetta più, e nel punto peggiore ci rimetti ~${fmt0(costo.perditaMax)} l'anno.`,
         };
       }
-      // Oltre la buca: il TI non spetta, ma la detrazione più alta lo ha già
-      // compensato. Gridare qui è il difetto che `costoSoglia` esiste per
-      // togliere — si dice, e si dice che non costa.
+      // Oltre la buca: il TI non spetta ma la detrazione più alta l'ha già compensato.
       return {
         tono: 'neutro',
         testo: `Ti porterebbe oltre i ${fmt0(costo.tetto)}: il trattamento integrativo non spetta più, ma saresti abbastanza oltre da non rimetterci niente.`,
       };
     }
-    // Già dentro la buca: prenderlo ogni mese può farne USCIRE. È l'unico caso
-    // in cui la risposta giusta è guadagnare di più, ed è anche l'unico
-    // azionabile — vale la pena dirlo.
+    // Già dentro la buca: prenderlo ogni mese può farne USCIRE, l'unico caso azionabile.
     if (posizione === POSIZIONE.DENTRO && posizioneSimulata === POSIZIONE.OLTRE) {
       return { tono: 'ok', testo: 'Ti farebbe uscire dalla buca dei 15.000: torneresti in pari.' };
     }
@@ -644,8 +552,7 @@ export default function CalendarView({
     setImportLoading(true);
     setImportError(null);
     try {
-      // Client del proxy caricato on-demand: serve solo a chi importa da
-      // immagine, non deve pesare sull'avvio (come services/export.js).
+      // Client del proxy caricato on-demand: non deve pesare sull'avvio.
       const { parseShiftsFromImage } = await import('../services/gemini');
       const { shifts: parsed, usage } = await parseShiftsFromImage(file, name);
       setImportUsage(usage);
@@ -662,9 +569,7 @@ export default function CalendarView({
   // Avvio import dal pulsante: il nome è obbligatorio. Se manca, si chiede PRIMA
   // di aprire il selettore immagini (così non si carica nulla senza nome).
   function startImport() {
-    // La prima volta si dice dove va la foto, PRIMA di sceglierla: è l'unico
-    // momento in cui l'avvertenza può ancora cambiare la decisione. Dopo, il
-    // file è già scelto e il messaggio diventa un ostacolo da scacciare.
+    // La prima volta si dice dove va la foto, PRIMA di sceglierla: dopo diventa un ostacolo.
     if (!accettatoInvioFoto()) { setMostraAvvisoFoto(true); return; }
     if (settings.workerName) { fileInputRef.current?.click(); return; }
     setNameInput('');
@@ -696,11 +601,9 @@ export default function CalendarView({
     setEditingName(false);
     setPickAfterName(false);
     if (file) runImport(file, name);
-    // Click SINCRONO, senza setTimeout: WebKit consuma l'indicatore di gesto
-    // utente appena il click esce dal turno dell'evento, e su iOS Safari il
-    // selettore immagini non si aprirebbe — in silenzio, proprio al primo
-    // import. L'input vive fuori dalla modale (è nella barra import), quindi
-    // è già montato: non serve aspettare il re-render.
+    // Click SINCRONO, senza setTimeout: WebKit consuma l'indicatore di gesto utente appena il
+    // click esce dal turno dell'evento, e su iOS Safari il selettore non si aprirebbe. L'input
+    // vive fuori dalla modale, quindi è già montato.
     else if (pick) fileInputRef.current?.click();
   }
 
@@ -721,10 +624,8 @@ export default function CalendarView({
     setExportBusy(true);
     setExportError(null);
     try {
-      // Scelta esplicita fra mese di calendario (come l'utente segna i turni,
-      // default) e mese di paga a settimane intere (utile solo per confrontare
-      // con la busta aziendale) — vedi selettore accanto ai pulsanti. Il
-      // periodo finisce nel titolo del documento solo se non è il calendario.
+      // Scelta esplicita fra mese di calendario (default) e mese di paga (per confrontare con la
+      // busta). Il periodo finisce nel titolo del documento solo se non è il calendario.
       const exportShifts = exportPeriod === 'payroll' ? counted : shifts;
       const periodo = exportPeriod === 'payroll' ? (payrollRange || '') : '';
       if (format === 'xlsx') await exportShiftsExcel(exportShifts, currentMonth, periodo);
@@ -904,18 +805,13 @@ export default function CalendarView({
           onEditShift={onEditShift}
           settings={settings}
           focusDate={focusDate}
-          // L'agenda non riceveva `payByShift`: sapeva le ore e non gli euro,
-          // ed era l'unica vista dell'app a non avere in mano il numero che
-          // l'utente cerca.
+          // L'agenda riceve `payByShift` per mostrare anche gli euro.
           payByShift={payByShift}
           mostraEuro={mostraEuro}
         />
       ) : (
-        // Le righe dei giorni hanno TUTTE la stessa altezza, quella della più
-        // alta (`1fr` con un contenitore senza altezza: le tracce si
-        // allineano alla maggiore). Prima ogni riga prendeva l'altezza dei
-        // suoi contenuti: una pill che va a capo o un doppio turno allungava
-        // una sola settimana, e il calendario perdeva la proporzione.
+        // Le righe dei giorni hanno TUTTE la stessa altezza, quella della più alta (`1fr` con un
+        // contenitore senza altezza): altrimenti una pill a capo allunga una sola settimana.
         <div
           className="cal-grid"
           style={{ gridTemplateRows: `auto repeat(${Math.ceil(cells.length / 7)}, minmax(4.5rem, 1fr))` }}
@@ -933,9 +829,8 @@ export default function CalendarView({
             const today = isToday(date);
             const weekend = isWeekend(date);
 
-            // La cella è un contenitore cliccabile, non un pulsante: annidare
-            // controlli dentro un role="button" è invalido e confonde gli screen
-            // reader. I comandi veri sono i <button> qui dentro.
+            // La cella è un contenitore cliccabile, non un pulsante (annidare controlli in un
+            // role="button" è invalido): i comandi veri sono i <button> qui dentro.
             return (
               <div
                 key={dateStr}

@@ -1,21 +1,8 @@
-// Ferie, permessi e malattia: giorni che in busta paga contano ORE anche se
-// non si è lavorato. Senza di loro le ore dell'app restano sotto quelle del
-// cedolino.
+// Ferie, permessi e malattia: giorni che in busta contano ORE anche se non si è
+// lavorato. Le «godute» del cedolino sono un montante progressivo dell'anno, non le
+// assenze del periodo (serve la differenza fra due mesi). Vedi RILASCIO.md.
 //
-// ATTENZIONE A COSA SIGNIFICA «GODUTE» SUL CEDOLINO — qui c'era un errore.
-// Fino al 1° settembre 2026 queste righe citavano «5,50 ore di ferie e 4,50 di
-// permessi godute» sulla busta di luglio 2026 come se fossero assenze cadute in
-// QUEL periodo. Non lo sono: Zucchetti stampa le godute come MONTANTE
-// PROGRESSIVO dell'anno, e quelle ore risalgono a marzo. Il numero sul cedolino
-// non dice quando sono state consumate, quindi non dimostra niente sul periodo
-// — e infatti 5,50 non è nemmeno un multiplo delle 4 h di una giornata.
-//
-// Per sapere quante ferie cadono in un mese serve la DIFFERENZA fra il montante
-// di quel mese e quello del mese prima. Vedi RILASCIO.md, che usa proprio
-// questa differenza per la busta di agosto 2026.
-//
-// Estensioni esplicite sugli import: come negli altri moduli di `utils/`, così
-// il file resta importabile da Node puro per i riscontri in `scripts/`.
+// Estensioni esplicite sugli import: il file resta importabile da Node puro.
 import { dayNumber } from './date.js';
 
 /** @typedef {import('./impostazioni.js').Impostazioni} Impostazioni */
@@ -25,11 +12,8 @@ export const TIPO = {
   FERIE: 'ferie',
   PERMESSO: 'permesso',
   MALATTIA: 'malattia',
-  // Festività non lavorata: una giornata che NON si lavora ma viene pagata.
-  // In busta compare come giustificativo a sé («GO Festivita'», verificato su
-  // un cedolino di agosto) e vale le ore di una giornata di contratto.
-  // Da non confondere con il festivo LAVORATO, che è un turno normale e prende
-  // la maggiorazione festiva: quello resta di tipo LAVORO.
+  // Festività non lavorata: giornata pagata e non lavorata, un giustificativo a sé
+  // in busta. Il festivo LAVORATO resta di tipo LAVORO e prende la maggiorazione.
   FESTIVITA: 'festivita',
 };
 
@@ -51,12 +35,8 @@ export const ICONA = {
   [TIPO.FESTIVITA]: '🎊',
 };
 
-// I turni salvati prima di questa funzione non hanno `type`: sono lavoro.
-// Nessuna migrazione dei dati, il valore mancante ha già il significato giusto.
-// L'elenco arriva da TIPI_ASSENZA invece di essere riscritto qui: quando si è
-// aggiunta la festività, questa riga era l'unico punto in cui il tipo nuovo
-// sarebbe stato ignorato in silenzio — il turno sarebbe tornato «lavoro» e
-// avrebbe preso le maggiorazioni di un giorno lavorato.
+// I turni salvati senza `type` sono lavoro (nessuna migrazione). L'elenco arriva da
+// TIPI_ASSENZA, così un tipo nuovo non torna «lavoro» in silenzio.
 export function tipoTurno(shift) {
   const t = shift?.type;
   return TIPI_ASSENZA.includes(t) ? t : TIPO.LAVORO;
@@ -66,22 +46,15 @@ export function isAssenza(shift) {
   return tipoTurno(shift) !== TIPO.LAVORO;
 }
 
-// Giorni lavorativi a settimana su cui si spalma l'orario contrattuale.
-// Sei è il caso tipico del lavoro a turni (la busta di riferimento espone 26
-// giorni INPS al mese, cioè sei a settimana); chi fa la settimana corta lo
-// cambia in Impostazioni.
+// Giorni lavorativi a settimana su cui si spalma l'orario contrattuale (sei è il
+// caso tipico del lavoro a turni); si cambia in Impostazioni.
 export const GIORNI_LAVORATIVI_DEFAULT = 6;
 
 /**
  * Ore che vale un giorno intero di assenza, in minuti.
  *
- * È il «tot di ore segnate in automatico» del cedolino: ore settimanali diviso
- * giorni lavorativi. Per un part-time 60% del CCNL Turismo — 24 ore su sei
- * giorni — fa esattamente 4 ore al giorno.
- *
- * `absenceDailyHours` in Impostazioni sovrascrive il calcolo quando il
- * contratto conta le assenze diversamente (campo vuoto = calcolato, stesso
- * schema di `straordinarioSurchargePct` e `tfrTaxRate`).
+ * È il «tot di ore» del cedolino: ore settimanali / giorni lavorativi.
+ * `absenceDailyHours` in Impostazioni lo sovrascrive (vuoto = calcolato).
  */
 export function minutiGiornoAssenza(settings = {}) {
   const manuale = settings.absenceDailyHours;
@@ -118,14 +91,8 @@ export function giorniEventoMalattia(allShifts) {
   return out;
 }
 
-// Parametri della malattia, con i valori di ripiego.
-//
-// ATTENZIONE: a differenza di contributi e aliquote fiscali — riscontrati voce
-// per voce su buste reali — questi NON sono verificati su nessun cedolino:
-// nessuna delle buste disponibili contiene malattia. La struttura (carenza a
-// giorni, percentuale diversa prima e dopo) è quella dello schema INPS, ma
-// quanto paga davvero dipende dal CCNL e va corretto in Impostazioni con la
-// busta sotto mano. La UI deve dirlo.
+// Parametri della malattia, con i valori di ripiego. NON verificati su nessun
+// cedolino: vanno corretti in Impostazioni con la busta sotto mano, e la UI lo dice.
 export const MALATTIA_DEFAULT = {
   carenzaGiorni: 3,   // i primi giorni di ogni evento, a carico del CCNL o non pagati
   carenzaPct: 0,      // quanto si prende in quei giorni
@@ -136,15 +103,8 @@ export const MALATTIA_DEFAULT = {
  * Percentuale della retribuzione oraria che spetta per un'assenza.
  *
  * Ferie e permessi valgono il 100%: in busta stanno dentro la retribuzione
- * ordinaria, non come voce a parte.
- *
- * ATTESO, NON ANCORA RISCONTRATO. È il comportamento che segue dalla
- * mensilizzazione — la retribuzione del mese è fissa (103,20 h), e le assenze
- * retribuite riempiono quel monte invece di aggiungersi — ma nessuna busta
- * disponibile lo mostra: quella di luglio 2026 era citata come prova e non lo
- * era (le ore «godute» che riporta sono un montante che risale a marzo, vedi
- * in cima al file). La busta di agosto 2026 è la prima occasione di vederlo
- * davvero, perché contiene ferie cadute nel periodo.
+ * ordinaria. Atteso, non ancora riscontrato su una busta: le assenze retribuite
+ * riempiono il monte ore invece di aggiungersi.
  *
  * @param {object} shift
  * @param {Impostazioni} settings

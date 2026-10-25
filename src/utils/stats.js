@@ -1,10 +1,7 @@
-// Aggregazione mensile per la pagina Statistiche: stessa aritmetica del
-// riepilogo di Calendario (calcTotalPay, calcNetMonthly), solo raggruppata
-// su un intero anno invece che su un mese alla volta. Nessuna formula nuova
-// qui dentro — se un numero non torna con Calendario, il bug è altrove.
+// Aggregazione mensile per la pagina Statistiche: stessa aritmetica del riepilogo di
+// Calendario (calcTotalPay, calcNetMonthly), raggruppata su un anno. Nessuna formula nuova.
 //
-// Estensione esplicita sugli import: stesso motivo di net.js e pay.js — così
-// il modulo resta importabile da Node puro, se in futuro serve un riscontro.
+// Estensione esplicita sugli import: il modulo resta importabile da Node.
 import { calcShiftMinutes, calcTotalPay, hasAnyRate, isSunday } from '../motore/pay.js';
 import { parseDate, getDaysInMonth, formatDate, dayNumber } from './dates.js';
 import { isHoliday } from '../motore/holidays.js';
@@ -14,31 +11,21 @@ import { progressiviDellAnno } from '../motore/conguaglio.js';
 import { capienzaProgressiva } from '../motore/capienza.js';
 import { nettoDelMeseConPremio } from '../motore/premio-risultato.js';
 
-// Raggruppa per MESE DI CALENDARIO, non di paga: è la vista d'insieme
-// dell'anno, e l'utente ragiona in mesi solari (stessa scelta già fatta per
-// l'export dei turni in CalendarView). Su un CCNL mensilizzato il totale ore
-// di un mese qui può differire da quello che Calendario mostra per lo stesso
-// mese (che conta sul mese di PAGA, a settimane intere): non è una
-// discrepanza, sono due tagli diversi sugli stessi turni.
+// Raggruppa per MESE DI CALENDARIO, non di paga (vista d'insieme dell'anno): su un CCNL
+// mensilizzato il totale ore di un mese può differire da Calendario, che conta sul mese
+// di PAGA. Sono due tagli degli stessi turni.
 //
 // @param {number} year
 // @param {Array} allShifts TUTTI i turni (contesto per gli straordinari)
 // @param {object} settings
 // @param {object|null} payByShift mappa già calcolata da `computePayByShift`
-// Il reddito di riferimento del netto è quello DEL MESE
-//   (`nettoDelMese` → lordo del mese × 12), lo stesso di Calendario
-//   (`useMonthlyNet.js`). Qui si passava la proiezione annua, rimasta indietro
-//   quando Calendario è passato alla regola del software paghe: lo stesso mese
-//   aveva due netti, con bonus in una pagina e senza nell'altra.
-//   → check-netto-coerente.mjs
+// Il reddito di riferimento del netto è quello DEL MESE (`nettoDelMese`), lo stesso di
+// Calendario (`useMonthlyNet.js`). → check-netto-coerente.mjs
 // @param {boolean} enableNetCalc gate del motore fiscale (beta)
 // @returns {Array<{monthIndex, shiftsCount, totalMinutes, ordinaryMinutes,
-//   overtimeMinutes, straordinarioMinutes, gross, net}>} un elemento per ogni
-//   mese CON ALMENO UN TURNO, in ordine cronologico — i mesi vuoti non
-//   compaiono. `overtimeMinutes` sono le supplementari (fra soglia-contratto
-//   e soglia-full-time, o l'unica fascia per chi lavora a chiamata),
-//   `straordinarioMinutes` quelle oltre il full-time — stessa distinzione a
-//   due soglie di `computePayByShift` in pay.js, non una fascia unica.
+//   overtimeMinutes, straordinarioMinutes, gross, net}>} un elemento per ogni mese CON
+//   ALMENO UN TURNO, in ordine cronologico. `overtimeMinutes` sono le supplementari,
+//   `straordinarioMinutes` quelle oltre il full-time (due soglie, come in pay.js).
 export function monthlyBreakdown(year, allShifts, settings = {}, payByShift = null, enableNetCalc = true) {
   const shiftsByMonth = new Map();
   for (const s of allShifts || []) {
@@ -59,12 +46,8 @@ export function monthlyBreakdown(year, allShifts, settings = {}, payByShift = nu
     if (!monthShifts || monthShifts.length === 0) continue;
 
     const totalMinutes = monthShifts.reduce((sum, s) => sum + calcShiftMinutes(s), 0);
-    // computePayByShift assegna supplementari/straordinari a ogni turno
-    // indipendentemente dalla paga oraria (sono soglie sulle ORE, non
-    // sull'importo): ma calcTotalPay si rifiuta di aggregarle senza una paga
-    // configurata (`hasAnyRate`), quindi senza paga oraria la ripartizione
-    // qui non è disponibile — stesso limite del riepilogo di Calendario, non
-    // uno nuovo di questa pagina.
+    // Senza paga oraria `calcTotalPay` non aggrega (`hasAnyRate`): la ripartizione non è
+    // disponibile, come nel riepilogo di Calendario.
     const pay = canPay ? calcTotalPay(monthShifts, settings, allShifts, payByShift) : null;
     const overtimeMinutes = pay ? pay.overtimeMinutes : 0;
     const straordinarioMinutes = pay ? pay.straordinarioMinutes : 0;
@@ -90,11 +73,9 @@ export function monthlyBreakdown(year, allShifts, settings = {}, payByShift = nu
 }
 
 /**
- * Ore di ogni GIORNO dell'anno, divise per fascia — la base del calendarietto
- * di riepilogo. Le fasce arrivano da `computePayByShift` (mappa `payByShift`),
- * che le assegna turno per turno cumulando sulla settimana o sul mese di paga:
- * un giorno può quindi essere in parte ordinario e in parte supplementare, ed
- * è giusto che sia così — la soglia non cade a mezzanotte.
+ * Ore di ogni GIORNO dell'anno, divise per fascia (la base del calendarietto). Le fasce
+ * arrivano da `computePayByShift`: un giorno può essere in parte ordinario e in parte
+ * supplementare, la soglia non cade a mezzanotte.
  *
  * @returns {Map<string, {totalMinutes, overtimeMinutes, straordinarioMinutes,
  *   shiftsCount, sunday, holiday}>} chiave 'YYYY-MM-DD', solo i giorni con
@@ -124,9 +105,7 @@ export function dailyBreakdown(year, allShifts, settings = {}, payByShift = null
       // un colore solo per cella.
       if (!day.assenzaTipo) day.assenzaTipo = t;
     }
-    // Senza paga oraria `computePayByShift` non viene calcolata a monte: le
-    // fasce restano a zero e il giorno risulta tutto ordinario. È lo stesso
-    // limite del riepilogo di Calendario, non uno nuovo di questa vista.
+    // Senza paga oraria le fasce restano a zero: il giorno risulta tutto ordinario.
     const p = payByShift?.[s.id];
     if (p) {
       day.overtimeMinutes += p.overtimeMinutes;
@@ -147,13 +126,11 @@ export const STREAK_LUNGA = 7;
  *
  * @returns {Array<{start, end, days}>} date ISO comprese
  */
-// Un giorno conta come LAVORATO se contiene ore che non sono assenza. Una
-// giornata di sole ferie o di sola malattia non è lavoro: interrompe la serie
-// dei giorni consecutivi, ed è proprio il riposo che quella serie cerca.
+// Un giorno conta come LAVORATO se ha ore che non sono assenza: ferie o malattia
+// interrompono la serie, ed è il riposo che la serie cerca.
 export function isGiornoLavorato(day) {
-  // `|| 0` non è difensivo per abitudine: senza, un giorno privo del campo
-  // (dati vecchi, o un riscontro che costruisce la mappa a mano) darebbe
-  // `480 > undefined` = false e sparirebbe da ogni conteggio, in silenzio.
+  // `|| 0`: senza, un giorno privo del campo darebbe `480 > undefined` = false e
+  // sparirebbe da ogni conteggio, in silenzio.
   return day.totalMinutes > (day.assenzaMinutes || 0);
 }
 
@@ -181,11 +158,8 @@ export function workStreaks(byDay) {
 }
 
 /**
- * Totali dell'anno per la card di riepilogo: quello che un lavoratore a turni
- * guarda per primo, e che nessuna altra vista dell'app mette insieme.
- *
- * `longestStreak` è l'unico numero qui che non si ricava a occhio dal
- * calendario, ed è quello che su lavoro a turni salta di più.
+ * Totali dell'anno per la card di riepilogo. `longestStreak` è l'unico numero che non
+ * si ricava a occhio dal calendario.
  */
 export function yearSummary(byDay) {
   let workedDays = 0;
@@ -250,10 +224,8 @@ export function daysInLongStreaks(streaks, min = STREAK_LUNGA) {
  * `null` nei buchi prima del primo e dopo l'ultimo giorno. Stessa convenzione
  * lunedì-primo della griglia grande in CalendarView.
  *
- * Sempre 42 celle (6 settimane), anche quando il mese ne riempirebbe 5: così
- * tutti i mesi hanno la stessa altezza e, affiancati nella griglia dell'anno,
- * i totali sotto restano incolonnati. 42 basta sempre — il caso peggiore è
- * offset 6 + 31 giorni = 37 celle.
+ * Sempre 42 celle (6 settimane): tutti i mesi hanno la stessa altezza e i totali sotto
+ * restano incolonnati.
  */
 export function monthGrid(year, monthIndex) {
   const days = getDaysInMonth(year, monthIndex);

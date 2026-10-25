@@ -1,33 +1,18 @@
-// DOVE VANNO LE ORE DEL MESE: da che giornate vengono e in quale voce della
-// busta finiscono. È il diagramma a flussi del riepilogo, ma qui non si
-// calcola niente di nuovo: si RIAFFETTANO i campi che `computePayByShift` ha
-// già prodotto per ogni turno. Un conto rifatto qui prima o poi direbbe una
-// cifra diversa dal totale del mese, e allora nessuno dei due sarebbe credibile.
+// DOVE VANNO LE ORE DEL MESE: da che giornate vengono (feriali, domeniche, festivi,
+// ferie…) e in quale voce della busta finiscono. Non calcola niente di nuovo: RIAFFETTA
+// i campi che `computePayByShift` ha già prodotto per ogni turno.
 //
-// A sinistra le ore segnate, per tipo di giornata (feriali, domeniche, festivi
-// lavorati, ferie, permessi, festività, malattia). A destra le voci in cui la
-// busta le paga, con gli euro: retribuzione ordinaria (dove stanno anche ferie
-// e permessi, come in busta), supplementare, straordinario, lavoro festivo,
-// malattia. Due flussi che la busta non scrive ma che spiegano le sue cifre:
-//  - «monte ore»: a mese chiuso la retribuzione paga il monte ore intero anche
-//    quando parte delle ore è già andata in supplementare (luglio 2026: 103,20
-//    ore ordinarie più le supplementari). Quelle ore non vengono da nessun
-//    turno: è il contratto che le garantisce.
-//  - «già nel monte»: ore lavorate entro le 24 della settimana in un mese che
-//    ha già il monte pieno. Non aggiungono euro, e il diagramma lo dice invece
-//    di farle sparire.
-// Domenicale, notturno e maggiorazioni a mano NON sono ore in più: sono
-// percentuali sopra ore già contate. Stanno a parte, in `maggiorazioni`.
+// Due flussi che la busta non scrive ma che spiegano le sue cifre: «monte ore» (a mese
+// chiuso la retribuzione paga il monte intero anche se parte delle ore è supplementare)
+// e «già nel monte» (ore entro le 24 della settimana in un mese col monte già pieno:
+// non aggiungono euro). Domenicale, notturno e maggiorazioni a mano sono percentuali
+// sopra ore già contate, in `maggiorazioni`.
 //
-// Per la vista «settimane» (`settimane`) le stesse ore si rimettono nelle
-// settimane lun-dom, perché il supplementare si conta lì: oltre le ore del
-// contratto. Una settimana a cavallo di due mesi porta con sé le ore
-// dell'altro mese (`altroMese`): riempiono la soglia anche se non si vedono
-// qui, ed è il motivo per cui il supplementare può cominciare prima della linea.
+// `settimane`: le stesse ore rimesse nelle settimane lun-dom, dove si conta il
+// supplementare; `altroMese` sono le ore dell'altro mese in una settimana a cavallo.
 //
-// La proprietà che conta (→ riscontri/check-flusso-ore.mjs): voci più
-// maggiorazioni fanno `calcTotalPay(...).total` al centesimo, e ogni ora
-// segnata arriva in una voce sola.
+// Proprietà che conta (→ riscontri/check-flusso-ore.mjs): voci più maggiorazioni fanno
+// `calcTotalPay(...).total` al centesimo, e ogni ora arriva in una voce sola.
 
 import { calcShiftMinutes, isSunday } from './pay.js';
 import { isHoliday } from './holidays.js';

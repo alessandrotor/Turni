@@ -1,20 +1,12 @@
-// Leggere il tabellone dei turni da un'immagine, SUL TELEFONO: la parte pura.
+// Leggere il tabellone dei turni da un'immagine, SUL TELEFONO: la parte pura. Qui non
+// c'è né il browser né il lettore di caratteri (Tesseract, in services/lettore-immagine.js):
+// solo i conti su una matrice di grigi e sul testo restituito, così si verificano in
+// Node (→ scripts/check-tabellone.mjs).
 //
-// Qui non c'è né il browser né il lettore di caratteri (Tesseract, in
-// services/lettore-immagine.js): solo i conti su una matrice di grigi e sul
-// testo che il lettore restituisce. Così si verificano in Node senza immagini
-// vere (→ scripts/check-tabellone.mjs).
-//
-// IL FORMATO è uno solo, quello del tabellone Excel misurato su due settimane
-// vere (ottobre 2026): una colonna coi nomi, una con le ore, poi sette giorni
-// da due celle ciascuno (inizio, fine). Ogni persona occupa una o due righe:
-// la seconda porta il secondo turno dei giorni spezzati. Gli orari sono
-// decimali («9,50» = 9:30) e «X» è il riposo. Su quelle due settimane la
-// lettura cella per cella ha dato 183 turni giusti su 184.
-//
-// Perché CELLA PER CELLA e non l'immagine intera: sulla tabella intera il
-// lettore mescola colonne e righe e sbaglia quasi tutto, anche su uno
-// screenshot pulito. Ritagliata la cella, deve leggere una parola sola.
+// Il FORMATO è uno solo, il tabellone Excel: una colonna coi nomi, una con le ore, poi
+// sette giorni da due celle (inizio, fine). Ogni persona occupa una o due righe (la
+// seconda porta il secondo turno). Gli orari sono decimali («9,50» = 9:30), «X» è il
+// riposo. Si legge CELLA PER CELLA: sulla tabella intera il lettore mescola colonne e righe.
 
 // Linee della griglia: righe e colonne in cui la maggior parte dei pixel è
 // più scura del vicinato. La soglia è LOCALE (rispetto alla media attorno), non
@@ -87,11 +79,9 @@ export function colonne(vx) {
   return { nome: [vx[0], vx[1]], giorni };
 }
 
-// Il ritaglio di una cella, pronto per il lettore: ingrandito (o rimpicciolito)
-// a 60 px di altezza, POI in bianco e nero. L'ordine conta: la soglia sui
-// pixel già ingranditi dà bordi puliti, quella prima dà lettere a gradini, e
-// sulle tabelle vere si passava da 183 turni giusti su 184 a 155. Senza il
-// bianco e nero le «R» e le «F» sparivano e «15,50» diventava «15».
+// Il ritaglio di una cella, pronto per il lettore: ingrandito a 60 px di altezza,
+// POI in bianco e nero. L'ordine conta: la soglia sui pixel già ingranditi dà bordi
+// puliti, quella prima lettere a gradini (le «R» e le «F» sparivano).
 export const ALTEZZA_CELLA = 60;
 export function ritaglio(grigi, W, [x0, x1], [y0, y1], margine = 2) {
   const l = x0 + margine, t = y0 + margine;
@@ -176,11 +166,10 @@ function somiglianza(a, b) {
 
 const MESI = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
 
-// Le date dall'intestazione («LUNEDI 19-ott»). Ogni giorno letto propone un
-// lunedì (la sua data meno la sua posizione) e vince il più proposto: un 9
-// letto come 5 su un giorno solo non sposta la settimana (è capitato: «15-ott»
-// sopra il 19). L'anno è quello che mette la data più vicina a oggi. null se
-// non si legge nessun giorno: allora le date le chiede l'anteprima.
+// Le date dall'intestazione («LUNEDI 19-ott»). Ogni giorno letto propone un lunedì (la
+// sua data meno la sua posizione) e vince il più proposto, così un 9 letto come 5 non
+// sposta la settimana. L'anno è quello che mette la data più vicina a oggi. null se non
+// si legge nessun giorno: allora le date le chiede l'anteprima.
 export function dateDaIntestazione(testi, oggi) {
   const l = lunediVotato(testi, oggi);
   return l ? Array.from({ length: 7 }, (_, d) => new Date(l.data.getFullYear(), l.data.getMonth(), l.data.getDate() + d)) : null;
@@ -206,17 +195,14 @@ export function lunediVotato(testi, oggi) {
 }
 
 const minuti = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3));
-// Un turno dura più di zero e al massimo 13 ore: il riposo minimo è di 11 ore
-// consecutive ogni 24 (art. 7 D.Lgs. 66/2003). Oltre, è un orario letto male
-// («17:00» diventato «7:00»): meglio perderlo che importarlo sbagliato.
+// Un turno dura più di zero e al massimo 13 ore (riposo minimo di 11 ore ogni 24, art. 7
+// D.Lgs. 66/2003): oltre, è un orario letto male («17:00» diventato «7:00»).
 const durataPlausibile = (a, b) => { const d = (minuti(b) - minuti(a) + 1440) % 1440; return d > 0 && d <= 13 * 60; };
 
 const GIORNI = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
-// Le celle lette di una persona (una riga di 14 testi per fascia) diventano il
-// testo di «Incolla turni», che fa il resto: anteprima, doppioni, ferie, date
-// da confermare. Un formato di scambio che esiste già, invece di un secondo
-// percorso verso il salvataggio.
+// Le celle lette di una persona diventano il testo di «Incolla turni», che fa il resto
+// (anteprima, doppioni, ferie, date): un formato di scambio che esiste già.
 export function testoDaRighe(righe, date) {
   const linee = [];
   for (let g = 0; g < 7; g++) {
@@ -234,11 +220,9 @@ export function testoDaRighe(righe, date) {
   return linee.join('\n');
 }
 
-// ── Le foto: niente griglia, il righello ───────────────────────────────────
-// Su una foto (di uno schermo, di un foglio) le linee spesso non si vedono e
-// la griglia non si trova. Allora la riga la indica chi usa l'app, col
-// righello, e le COLONNE si ricavano dagli orari: ogni colonna ha orari in
-// qualche riga, e gli inizi dei turni di una colonna stanno tutti allineati.
+// ── Le foto: niente griglia, il righello ──
+// Su una foto le linee spesso non si vedono: la riga la indica chi usa l'app col
+// righello, e le COLONNE si ricavano dagli orari (gli inizi di una colonna sono allineati).
 
 // Raddrizza attorno a (cx, cy) ciò che è inclinato di `gradi` nel verso di
 // CSS `rotate()` (positivo = scende verso destra): la fascia inclinata del
@@ -283,11 +267,9 @@ export function coppieDaParole(parole) {
   return coppie;
 }
 
-// Le colonne: gli inizi dei turni raggruppati per posizione orizzontale. Le
-// colonne di un tabellone hanno passo regolare: una colonna in cui non si è
-// letto niente (tutta riposi, o tagliata dal bordo) si ricostruisce dal passo,
-// altrimenti tutti i giorni dopo scivolerebbero di uno. `larghezza` è quella
-// dell'immagine: fin lì si cercano colonne.
+// Le colonne: gli inizi dei turni raggruppati per posizione orizzontale. Hanno passo
+// regolare: una colonna senza letture (tutta riposi, o tagliata) si ricostruisce dal passo,
+// altrimenti i giorni dopo scivolerebbero di uno. `larghezza` è quella dell'immagine.
 export function colonneDaCoppie(coppie, larghezza = Infinity) {
   const xs = coppie.map((c) => c.x).sort((a, b) => a - b);
   const tolleranza = (coppie.map((c) => c.largo).sort((a, b) => a - b)[Math.floor(coppie.length / 2)] || 50) * 1.5;
@@ -339,9 +321,8 @@ export function testoDaFascia(testiCelle, primo = 0) {
   return testiCelle.flatMap((t, col) => turniDaTestoCella(t).map((o) => `${GIORNI[(primo + col) % 7]} ${o}`)).join('\n');
 }
 
-// Le celle della fascia scelta col righello, pronte per il lettore: raddrizzate,
-// col contrasto steso, SENZA soglia. Sulla foto di uno schermo la soglia
-// mangiava i «:» e le cifre sottili (13 turni giusti su 20 invece di 16).
+// Le celle della fascia scelta col righello, pronte per il lettore: raddrizzate, col
+// contrasto steso, SENZA soglia (mangiava i «:» e le cifre sottili).
 export function celleDellaFascia(grigi, W, H, { y0, y1, gradi = 0 }, colonneX) {
   const g = ruotaGrigi(grigi, W, H, gradi, W / 2, (y0 + y1) / 2);
   const t = Math.max(0, Math.round(y0)), b = Math.min(H, Math.round(y1)), h = Math.max(1, b - t);

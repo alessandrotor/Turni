@@ -2,50 +2,16 @@
 //
 //   node scripts/check-conguaglio.mjs
 //
-// IL MECCANISMO (certo)
-// Ogni mese il datore trattiene e accredita come se quel mese durasse tutto
-// l'anno: lordo del mese × 12 decide IRPEF, detrazioni, trattamento integrativo
-// e indennità L. 207/24 (verificato su cinque buste, `check-ti-mensile.mjs`).
-// A dicembre rifà il conto sul reddito VERO dell'anno, e la differenza è il
-// conguaglio. Qui si fanno i due conti con lo stesso motore e si sottraggono:
-// nessuna regola nuova, solo `nettoDelMese` contro `calcNetAnnual`.
+// Ogni mese il datore trattiene come se quel mese durasse tutto l'anno (lordo del
+// mese × 12); a dicembre rifà il conto sul reddito vero, e la differenza è il
+// conguaglio. Qui si fanno i due conti con lo stesso motore (`nettoDelMese` contro
+// `calcNetAnnual`) e si sottraggono: nessuna regola nuova.
 //
-// Un reddito uguale tutti i mesi dà conguaglio zero: il software trattiene già
-// giusto. Il conguaglio nasce dai mesi DIVERSI — un'estate piena, la 13ª, un
-// mese sotto soglia e uno sopra — ed è per questo che chi lavora a turni ce
-// l'ha quasi sempre.
-//
-// LA FORCHETTA (probabile)
-// Non si dà una cifra: si fanno variare le incognite che si possono misurare,
-// e si mostra dove cadono gli estremi. L'anno è la proiezione del motore
-// (vedi `stimaConguaglio`); senza proiezione, anche:
-//  · I MESI CHE RESTANO: come da contratto, o come la media di quelli passati.
-//  · COME ERANO I MESI DEL MONTANTE: tutti uguali, o alterni del 20% sopra e
-//    sotto (le buste 2026 vanno da 1.099 a 2.048 €). A parità di somma
-//    cambia chi ha preso il bonus, e con lui le tasse trattenute.
-//
-// Una prima versione variava il solo bonus già accreditato, «pieno» contro
-// «regola mensile», e dava a un profilo reale da 170 € a credito a 790 € a
-// debito. Era una combinazione che non esiste: bonus accreditato come nei mesi
-// bassi, IRPEF trattenuta come nei mesi alti. Fatta variare la distribuzione
-// dei mesi, che muove bonus e IRPEF insieme, lo stesso profilo sta fra 170 e
-// 105 € a credito — bonus e detrazione si compensano, come in `costoSoglia`.
-//
-// LA 14ª NEL SUO MESE, non spalmata. Il montante fino a luglio contiene la 14ª
-// di giugno: diviso in sette parti uguali dava 1.294 € al mese, appena sopra i
-// 1.250, e nessun mese col bonus. Il popup del bonus diceva «888 € presi
-// finora», questo «+999 € te li ridanno»: due schermate, due anni diversi. Le
-// buste dicono il contrario del modello — bonus a febbraio, maggio e luglio,
-// niente a giugno — ed è quello che esce togliendo la 14ª prima di dividere.
-// Resta un'ipotesi: il bonus vero lo scrive il cedolino, e chi lo copia nel
-// popup (`tiAccreditatoMontante`) lo fa valere al posto del modello.
-//
-// Il bonus accreditato finora (`tiFinora`) esce da qui ed è lo stesso che
-// mostra il riquadro del bonus: una sola ipotesi per le due schermate.
-//
-// COSA NON SA (e la pagina lo dice): altri datori o redditi, detrazioni che
-// non sono da lavoro (figli, spese), la fine del contratto. Queste NON
-// allargano la forchetta, perché non si possono stimare: si scrivono.
+// Non una cifra ma una forchetta: l'anno è la proiezione del motore
+// (`stimaConguaglio`) e si fa variare solo come erano i mesi del montante (uguali o
+// alterni), che muove bonus e IRPEF insieme. La 14ª sta nel suo mese, non spalmata.
+// Il bonus accreditato finora (`tiFinora`) è lo stesso del riquadro del bonus.
+// Altri datori, detrazioni non da lavoro e fine del contratto non si stimano: si scrivono.
 //
 // Modulo puro, senza React e senza browser.
 
@@ -98,11 +64,8 @@ export function saldoConguaglio(mesi, impostazioni = {}, { tiMontanteNoto = null
     giorni += m.giorni;
     return n.trattamentoIntegrativo;
   });
-  // Quello che le buste del montante hanno fatto davvero, se lo ha copiato:
-  // vale al posto della stima, ripartito sui mesi come li ripartiva il
-  // modello (o in parti uguali se il modello non ne vedeva). Il montante è
-  // un totale, e diviso in parti uguali sbagliava di 170 € l'IRPEF di
-  // gennaio–agosto contro il progressivo stampato in busta.
+  // Quello che le buste del montante hanno fatto davvero, se copiato: vale al posto
+  // della stima, ripartito sui mesi come li ripartiva il modello.
   const sostituisci = (perMese, noto) => {
     if (noto == null) return;
     const idx = mesi.map((m, i) => (m.montante && m.lordo > 0 ? i : -1)).filter((i) => i >= 0);
@@ -127,9 +90,8 @@ export function saldoConguaglio(mesi, impostazioni = {}, { tiMontanteNoto = null
     trattamentoIntegrativo: r2(ti - tiDovuto),
     indennita: r2(cuneo - a.bonusCuneo),
   };
-  // Le due colonne da cui nascono le voci: quanto è passato in busta mese per
-  // mese, e quanto è dovuto sull'anno. «IRPEF −317 €» da solo non si capisce;
-  // «trattenute 900, dovute 1.217» sì.
+  // Le due colonne da cui nascono le voci: quanto è passato in busta, e quanto è
+  // dovuto sull'anno.
   const dettaglio = {
     irpef: { mesi: r2(irpef), anno: r2(irpefDovuta) },
     trattamentoIntegrativo: { mesi: r2(ti), anno: r2(tiDovuto) },
@@ -139,9 +101,7 @@ export function saldoConguaglio(mesi, impostazioni = {}, { tiMontanteNoto = null
     voci,
     dettaglio,
     annoSottoSoglia: a.imponibile <= fiscoDi(settings).TI_SOGLIA_PIENO,
-    // Il reddito su cui si misurano i 15.000 (lordo meno contributi): a
-    // schermo va questo accanto alla soglia, non il lordo, o «16.000 €,
-    // sotto i 15.000» sembrerebbe un errore.
+    // Il reddito su cui si misurano i 15.000 (lordo meno contributi), non il lordo.
     redditoAnno: r2(a.imponibile),
     saldo: r2(voci.irpef + voci.trattamentoIntegrativo + voci.indennita),
     lordoAnno: r2(lordoAnno),
@@ -235,12 +195,9 @@ export function mesiDellAnno({
     const { lordo, extraMese, premioMese } = lordoDelMese(effettiva, anno, m, settings);
     mesi.push({ lordo, extra: extraMese, premio: premioMese, giorni: lordo > 0 ? giorni : 0 });
   }
-  // LA PROIEZIONE DEL MOTORE, non una somma rifatta qui. Con `totaleAnno` (il
-  // valore di `projectAnnualIncome`, lo stesso del riquadro del bonus) i mesi
-  // che restano si scalano finché l'anno fa esattamente quella cifra. Prima il
-  // conguaglio sommava i mesi per conto suo: il riquadro diceva «superi i
-  // 15.000» e il popup, sugli stessi dati, «resti sotto». I mesi passati non
-  // si toccano: sono fatti, e il bonus già preso viene da lì.
+  // LA PROIEZIONE DEL MOTORE, non una somma rifatta qui: con `totaleAnno` (di
+  // `projectAnnualIncome`) i mesi che restano si scalano finché l'anno fa quella
+  // cifra. I mesi passati non si toccano.
   if (Number.isFinite(totaleAnno) && totaleAnno > 0) {
     const futuri = mesi.map((m, i) => (i >= meseOggi && m.lordo > 0 ? i : -1)).filter((i) => i >= 0);
     const fermo = mesi.reduce((t, m, i) => t + (futuri.includes(i) ? m.extra : m.lordo), 0);
@@ -304,19 +261,13 @@ export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi, proie
   let mesiCentrale = [];
   const noto = tiMontanteNoto(settings);
   const irpefNota = irpefMontanteNota(settings);
-  // L'ANNO È LA PROIEZIONE DEL MOTORE, anche agli estremi. Prima gli estremi
-  // rifacevano l'anno coi mesi che restano da contratto o in media: con una
-  // proiezione di 17.341 € il riquadro diceva «superi i 15.000» e la forchetta
-  // andava «da 140 € a credito a 130 € a debito», perché il lato a credito era
-  // un anno da 15.568, sotto la soglia. Due anni diversi nella stessa riga.
-  // Ora la forchetta fa variare solo quello che la proiezione non decide: come
-  // erano i mesi del montante. Contratto e media restano per chi non ha una
-  // proiezione da passare.
+  // L'ANNO È LA PROIEZIONE DEL MOTORE, anche agli estremi: la forchetta fa variare
+  // solo come erano i mesi del montante. Contratto e media restano per chi non ha
+  // una proiezione da passare.
   const centro = Number.isFinite(proiezioneAnnua) && proiezioneAnnua > 0 ? 'proiezione' : 'contratto';
   for (const scenario of centro === 'proiezione' ? ['proiezione'] : ['contratto', 'media']) {
-    // Con una cifra delle buste la distribuzione non si fa più variare:
-    // moverebbe l'altra voce lasciando ferma questa, la combinazione che non
-    // esiste (vedi l'intestazione).
+    // Con una cifra delle buste la distribuzione non si fa variare: muoverebbe l'altra
+    // voce lasciando ferma questa.
     for (const montanteAlterno of noto == null && irpefNota == null ? [false, true] : [false]) {
       const esito = mesiDellAnno({
         anno, allShifts, settings, payMap, oggi, montanteAlterno,
@@ -346,10 +297,8 @@ export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi, proie
     irpefMontanteNota: irpefNota,
     // Le buste dell'anno, per l'intestazione: chi è assunto a luglio ne ha sei.
     busteAnno: mesiCentrale.filter((m) => m.lordo > 0).length,
-    // PERCHÉ bonus e IRPEF si muovono: i mesi in cui la regola mensile ha
-    // deciso diversamente dall'anno. Sopra 1.250 € il datore non dà il bonus
-    // ma applica la detrazione più alta; sotto, il contrario. Solo con la
-    // decisione automatica: a mano, la ragione è la scelta, non il mese.
+    // PERCHÉ bonus e IRPEF si muovono: i mesi in cui la regola mensile ha deciso
+    // diversamente dall'anno. Solo con la decisione automatica.
     mesiSopraSoglia: modoTrattamentoIntegrativo(settings) === 'auto'
       ? mesiCentrale.map((m, i) => (m.lordo > 0 && centrale.sopraMesi[i] ? i : -1)).filter((i) => i >= 0)
       : null,

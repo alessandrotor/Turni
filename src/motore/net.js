@@ -1,6 +1,5 @@
-// Stima del NETTO secondo la fiscalità italiana 2026 (BETA): contributi, IRPEF,
-// detrazioni, addizionali, trattamento integrativo e cuneo. Funzioni pure.
-// È una stima, non sostituisce la busta né il conguaglio.
+// Stima del netto (fiscalità 2026, BETA): contributi, IRPEF, detrazioni, addizionali,
+// trattamento integrativo e cuneo. Funzioni pure.
 
 import { getCcnl, monthlyContractHours } from './ccnl.js';
 import { contributiDiLegge } from './contributi-legge.js';
@@ -16,8 +15,7 @@ import { programmaPaghe } from './programmi-paghe/index.js';
 
 export { TAX_2026 };
 
-// La busta chiude ogni voce a due decimali; alcune (competenze esenti, quota
-// Ente Bilaterale ditta) le tronca: 1.200 × 31/365 = 101,9178 → 101,91.
+// Arrotondamento e troncamento a due decimali, come nel cedolino.
 export const round2 = (x) => Math.round(x * 100) / 100;
 export const trunc2 = (x) => Math.floor(x * 100 + 1e-9) / 100;
 
@@ -63,8 +61,7 @@ export function calcContributi(gross, settings = {}, ebBase = 0, mesi = 1) {
   let deducibili = 0;
   let fringeImponibile = 0;
 
-  // L'imponibile previdenziale è arrotondato all'euro (luglio 2026: 1.173,48 →
-  // IVS su 1.173,00 = 107,80; sul lordo pieno uscirebbe 107,84).
+  // L'imponibile previdenziale è arrotondato all'euro.
   const baseInps = Math.round(g);
 
   const ivs = round2(baseInps * T.ALIQUOTA_IVS);
@@ -72,8 +69,7 @@ export function calcContributi(gross, settings = {}, ebBase = 0, mesi = 1) {
   totale += ivs;
   deducibili += ivs;
 
-  // FIS e CIGS sono contributi di legge, con aliquota per dimensione aziendale;
-  // `contributiExtra` è per trattenute davvero contrattuali (oggi nessuna).
+  // FIS e CIGS: contributi di legge; `contributiExtra` per trattenute contrattuali.
   const minori = [
     ...contributiDiLegge(settings, ccnl.ammortizzatori),
     ...(ccnl.contributiExtra || []),
@@ -86,16 +82,14 @@ export function calcContributi(gross, settings = {}, ebBase = 0, mesi = 1) {
     deducibili += importo;
   }
 
-  // Ente Bilaterale: base a sé (minimo tabellare + contingenza, al part-time).
-  // Qui ripiega su `ebBase`, che include il terzo elemento: scarto sotto il
-  // centesimo, non vale un campo in Impostazioni. → docs/note-motore-net.md
+  // Ente Bilaterale: base a sé (`ebBase`), non il lordo. → docs/note-motore-net.md
   const eb = ccnl.enteBilaterale;
   const base = Math.max(0, Number(settings.ebtBase) || Number(ebBase) || 0);
   if (eb && base > 0) {
     const importo = round2(base * ((Number(eb.pct) || 0) / 100));
     righe.push({ label: eb.label, pct: Number(eb.pct) || 0, base, importo, deducibile: false });
     totale += importo;
-    // Quota ditta: fringe benefit, TRONCATA in busta (948,05 × 0,20% = 1,89).
+    // Quota ditta: fringe benefit, troncata.
     fringeImponibile += programmaPaghe(settings).quota(base * ((Number(eb.quotaDitta) || 0) / 100));
   }
 
@@ -149,10 +143,8 @@ function bonusCuneo(redditoComplessivo, redditoLavoro, T = FISCO_ULTIMO) {
   return redditoLavoro * cuneoPercent(redditoComplessivo, redditoLavoro, T);
 }
 
-// Trattamento integrativo. La capienza si confronta con la detrazione da lavoro
-// meno 75 €; l'indennità L. 207/2024 resta fuori dal metro. Viene dalla norma,
-// non da una busta: se un cedolino dice altro, vince il cedolino.
-// → docs/note-motore-net.md
+// Trattamento integrativo: la capienza si confronta con la detrazione da lavoro
+// meno 75 €; l'indennità L. 207/2024 resta fuori dal metro. → docs/note-motore-net.md
 export function trattamentoIntegrativo(reddito, irpef, detLavoro, T = FISCO_ULTIMO) {
   if (reddito > T.TI_SOGLIA_MAX) return 0;
   if (reddito <= T.TI_SOGLIA_PIENO) {
@@ -162,9 +154,7 @@ export function trattamentoIntegrativo(reddito, irpef, detLavoro, T = FISCO_ULTI
   return Math.min(T.TI_MASSIMO, Math.max(0, diff));
 }
 
-// Aliquota contributiva DEDUCIBILE totale (IVS + contributi minori del CCNL).
-// L'Ente Bilaterale resta fuori: è trattenuto ma non deducibile, e la sua base
-// non è il lordo.
+// Aliquota contributiva DEDUCIBILE totale (IVS + minori del CCNL, senza Ente Bilaterale).
 export function deductibleContribRate(settings = {}) {
   const ccnl = getCcnl(settings.ccnl);
   const extra = [
@@ -179,11 +169,9 @@ export function deductibleContribRate(settings = {}) {
 // `taxableToGross` serve al riferimento mensile del programma paghe.
 
 /**
- * Reddito complessivo ai fini IRPEF, su cui la legge misura le soglie del
- * trattamento integrativo: lordo meno contributi DEDUCIBILI (fondo pensione e
- * cassa sanitaria compresi) più il fringe benefit della quota ditta.
- * È l'unica definizione: pannello, riquadro e soglia lorda la chiedono qui.
- * → check-bonus.mjs
+ * Reddito complessivo ai fini IRPEF: lordo meno contributi DEDUCIBILI più il
+ * fringe benefit della quota ditta. Unica definizione, usata da pannello,
+ * riquadro e soglia lorda. → check-bonus.mjs
  *
  * @param {{deducibili: number, fringeImponibile: number}|null} [contributi] i contributi già calcolati, per non rifare il
  *   lavoro quando chi chiama li ha già.
@@ -196,9 +184,8 @@ export function redditoComplessivo(gross, settings = {}, contributi = null) {
 
 /**
  * Il trattamento integrativo spetta in QUESTO mese? Il datore decide sul reddito
- * presunto dell'anno (`lordoPresuntoAnno()` in capienza.js), non sul mese: torna
- * su sei buste su sei. → check-reddito-presunto.mjs
- * Senza progressivo vale lordo del mese × 12. → check-ti-mensile.mjs
+ * presunto dell'anno (`lordoPresuntoAnno()` in capienza.js), non sul mese.
+ * Senza progressivo vale lordo del mese × 12. → check-reddito-presunto.mjs
  */
 export function tiSpettaQuestoMese(lordoMese, settings = {}, lordoPresunto = null) {
   const modo = modoTrattamentoIntegrativo(settings);
@@ -242,9 +229,7 @@ export function tiSospeso(settings = {}) {
   return modoTrattamentoIntegrativo(settings) === 'mai';
 }
 
-/**
- * I due campi insieme, sempre: scriverne uno solo li disallinea.
- */
+/** I due campi insieme, sempre: scriverne uno solo li disallinea. */
 export function patchTiSospeso(sospeso) {
   return { noTrattamentoIntegrativo: !!sospeso, tiModo: sospeso ? 'mai' : 'auto' };
 }
@@ -326,7 +311,6 @@ function monthAccrues(year, monthIndex, hire) {
 }
 
 /**
- * Frazione di mensilità aggiuntiva effettivamente maturata (0..1).
  * Frazione di mensilità aggiuntiva maturata (0..1), in dodicesimi sul periodo di
  * competenza: luglio–giugno per la 14ª, anno solare per la 13ª. Assunzione
  * 29/12/2025 → 14ª di giugno 2026 = 6/12. Senza data di assunzione, 1.
@@ -357,9 +341,8 @@ export function extraMonthAccrual(kind, year, settings = {}) {
   return matured / 12;
 }
 
-// Mensilità aggiuntive GIÀ arrivate entro il mese indicato (indice 0-11),
-// espresse in mensilità equivalenti: una 14ª maturata a metà pesa 0,5.
-// A luglio (6) la quattordicesima di giugno (5) è già arrivata; la tredicesima no.
+// Mensilità aggiuntive già arrivate entro il mese (indice 0-11), in mensilità
+// equivalenti: una 14ª maturata a metà pesa 0,5.
 export function receivedExtraMonthsCount(settings, monthIndex, year) {
   let n = 0;
   if (settings.hasQuattordicesima && monthIndex >= EXTRA_MONTHS.quattordicesima) {
@@ -528,10 +511,8 @@ export function projectAnnualIncome(
     return { value: extras(annualize(recurring)), source: 'maturato', voci, mesiTrascorsi: monthsElapsed };
   }
 
-  // ── Previsione IN AVANTI: maturato reale + resto dell'anno da contratto ──
-  // Non si annualizza il passato: ogni euro in più sposta la previsione di un
-  // euro. Il mese in corso vale per i giorni che restano, oggi compreso; un anno
-  // chiuso non ha futuro, uno non iniziato è tutto futuro.
+  // Previsione IN AVANTI: maturato reale + resto dell'anno da contratto, senza
+  // annualizzare il passato. Il mese in corso vale per i giorni che restano.
   // → docs/note-motore-net.md, check-proiezione.mjs
   const annoOggi = now.getFullYear();
   const giorniMese = new Date(annoOggi, now.getMonth() + 1, 0).getDate();
@@ -680,7 +661,6 @@ export function tiDecision(annualGrossRef, settings = {}) {
  * L'IRPEF usa l'aliquota effettiva del reddito annuo di riferimento
  * (`annualGrossRef`); TI e indennità sono rapportati ai giorni del mese.
  *
- *
  * @param {number} monthGross lordo del mese (turni + eventuale mensilità agg.)
  * @param {number} annualGrossRef reddito annuo lordo di riferimento (per aliquote IRPEF/bonus)
  * @param {Impostazioni} settings addRegionalePct / addComunalePct / tfrInBusta
@@ -704,9 +684,8 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   const imponibileExtra = extraGross * (1 - aliqDeducibile);
   const imponibileOrdinario = Math.max(0, imponibile - imponibileExtra);
 
-  // IRPEF come in busta: lorda ordinaria in quota dell'imponibile annuo;
-  // detrazioni = importo annuo × giorni/365 (1.955 × 31/365 = 166,04);
-  // mensilità aggiuntiva all'aliquota marginale, senza detrazioni.
+  // IRPEF come in busta: lorda ordinaria in quota dell'imponibile annuo; detrazioni =
+  // importo annuo × giorni/365; mensilità aggiuntiva all'aliquota marginale, senza detrazioni.
   const ratio = ann.imponibile > 0 ? imponibileOrdinario / ann.imponibile : 0;
   const irpefLordaOrdinaria = round2(ann.irpefLorda * ratio);
   const irpefExtra = round2(imponibileExtra * aliquotaMarginale(ann.imponibile, T));
@@ -715,8 +694,7 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   // Le detrazioni si scaricano solo sull'ordinario: l'eventuale eccedenza non
   // abbatte l'imposta della 13ª/14ª, va a conguaglio.
   const irpefNetta = round2(Math.max(0, irpefLordaOrdinaria - detrazioni) + irpefExtra);
-  // Quota di detrazione capiente: la busta stampa 157,06 dove la teorica è
-  // 160,68, pari all'imposta.
+  // Quota di detrazione capiente: la busta stampa solo la parte che trova imposta.
   const detrazioniApplicate = Math.min(detrazioni, irpefLordaOrdinaria);
 
   // Addizionali: come sopra, sull'imponibile del mese.
@@ -736,9 +714,8 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
 
   const trattenute = round2(contributi + irpefNetta + addRegionale + addComunale + trattenuteFisse);
 
-  // TI e indennità L. 207/2024: quota del mese TRONCATA (1.200 × 31/365 =
-  // 101,91), aggiunte solo alla fine. Il TI può non essere erogato:
-  // `noTrattamentoIntegrativo`.
+  // TI e indennità L. 207/2024: quota del mese TRONCATA, aggiunte solo alla fine.
+  // Il TI può non essere erogato (`noTrattamentoIntegrativo`).
   const dayFraction = monthDays / 365;
   // Soglia sul reddito presunto e capienza sul progressivo dell'anno
   // (`capienza`, da capienza.js; senza, sul solo mese). → check-ti-capienza.mjs
@@ -747,16 +724,14 @@ export function calcNetMonthly(monthGross, annualGrossRef, settings = {}, monthD
   esitoTi.senzaCapienza = esitoTi.spetta && !(capienza ? capienza.capiente : ann.trattamentoIntegrativo > 0);
   const trattamentoIntegrativo = esitoTi.spetta && !esitoTi.senzaCapienza
     ? programmaPaghe(settings).quota((ann.trattamentoIntegrativo || T.TI_MASSIMO) * dayFraction) : 0;
-  // L'indennità L. 207/2024 NON è una quota annua spalmata sui giorni: in busta
-  // è la percentuale di fascia applicata all'imponibile fiscale DEL MESE, quindi
-  // segue le ore effettivamente lavorate (verificato: 4,8% × 1.849,65 = 88,78).
+  // L'indennità L. 207/2024 è la percentuale di fascia sull'imponibile DEL MESE,
+  // non una quota annua spalmata sui giorni.
   const cuneoPct = cuneoPercent(ann.imponibile, ann.imponibile, T);
   const bonusCuneo = programmaPaghe(settings).quota(imponibile * cuneoPct);
   const bonus = round2(trattamentoIntegrativo + bonusCuneo);
 
-  // Anticipo TFR in busta: matura sul lordo (1/13,5 meno 0,50% ≈ 6,91%), a
-  // tassazione separata (default 23%). La base resta il lordo: le due buste
-  // disponibili la calcolano in modi diversi. → docs/note-motore-net.md
+  // Anticipo TFR in busta: matura sul lordo (≈ 6,91%), a tassazione separata
+  // (default 23%). → docs/note-motore-net.md
   const tfrLordo = settings.tfrInBusta ? round2(gross * (1 / 13.5 - 0.005)) : 0;
   const aliqTfr = Number.isFinite(Number(settings.tfrTaxRate)) && settings.tfrTaxRate !== ''
     ? Number(settings.tfrTaxRate) / 100
