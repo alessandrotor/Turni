@@ -1,31 +1,12 @@
 // Le percentuali copiate dal cedolino, tradotte in quello che l'app si aspetta.
 //
-// IL PROBLEMA
-// La busta usa due convenzioni diverse nei nomi delle voci, e non lo dichiara.
-// Verificato su diciassette cedolini reali (CCNL turismo, pubblici esercizi),
-// con i conti che tornano al centesimo sulla paga base di 8,44942 €/h:
-//
-//   «Magg. dom. 10%»          base × 0,10   →  10 è la SOLA maggiorazione
-//   «Magg. nott. 25% P.E.»    base × 0,25   →  25 è la SOLA maggiorazione
-//   «Supplementare 30% P.E.»  base × 1,30   →  30 è la maggiorazione, ma
-//                                              l'ora è pagata intera al 130%
-//   «Magg. fest. 120%»        base × 1,20   →  120 è il TOTALE: ogni ora di
-//                                              quel giorno vale il 120% del
-//                                              normale, cioè +20%
-//
-// L'app chiede sempre «quanto in più». Tre voci su quattro si copiano così
-// come sono; il festivo no. Chi scrive 120 dove andava 20 si ritrova un giorno
-// festivo gonfiato dell'83% — 125,47 € invece di 68,44 — e nulla glielo dice.
-//
-// PERCHÉ SI PUÒ CONVERTIRE SENZA INDOVINARE
-// Perché sopra il 100% non esiste ambiguità. La maggiorazione più alta trovata
-// nei CCNL italiani è il 75% (straordinario notturno festivo, Multiservizi e
-// Industria); i metalmeccanici arrivano al 65%. Nessun contratto supera il
-// 100%, quindi un valore che lo supera non è una maggiorazione: è un totale.
-//
-// La fascia 76–99 invece resta ambigua — non è un totale (quelli partono da
-// 100) ma è più alta di qualunque contratto noto. Lì si avvisa e non si tocca:
-// segnalare un dubbio è diverso dal risolverlo al posto di chi scrive.
+// La busta usa due convenzioni nei nomi delle voci (17 cedolini reali, base 8,44942 €/h):
+//   «Magg. dom. 10%» e «Magg. nott. 25%»  → la SOLA maggiorazione
+//   «Supplementare 30%»                   → maggiorazione, l'ora è pagata intera al 130%
+//   «Magg. fest. 120%»                    → il TOTALE (+20%)
+// L'app chiede sempre «quanto in più»: chi scrive 120 dove andava 20 si ritrova un festivo
+// gonfiato dell'83%. Sopra il 100% non c'è ambiguità (la maggiorazione più alta nei CCNL italiani
+// è il 75%), quindi è un totale e si converte. La fascia 76–99 è ambigua: si avvisa e non si tocca.
 
 /** La maggiorazione più alta riscontrata in un CCNL italiano. */
 export const MAGGIORAZIONE_MASSIMA_NOTA = 75;
@@ -35,10 +16,8 @@ export const MAGGIORAZIONE_MASSIMA_NOTA = 75;
  *
  * @param {number|string} grezzo il valore appena scritto nel campo
  * @returns {{valore:number|string, convertito:boolean, sospetto:boolean, originale:number}}
- *   `valore` è ciò che va salvato — invariato quando non c'è nulla da fare,
- *   compreso il caso di un campo vuoto, che deve restare vuoto e non diventare
- *   zero. `convertito` dice che il numero è stato cambiato; `sospetto` che
- *   merita un'occhiata ma è stato lasciato com'è.
+ *   `valore` è ciò che va salvato (invariato se non c'è nulla da fare, anche un campo vuoto);
+ *   `convertito` dice che il numero è stato cambiato; `sospetto` che merita un'occhiata.
  */
 export function normalizzaMaggiorazione(grezzo) {
   const invariato = { valore: grezzo, convertito: false, sospetto: false, originale: 0 };

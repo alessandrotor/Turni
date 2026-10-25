@@ -1,14 +1,5 @@
-// Calcolo del «Cosa cambia?»: impatto sul mese e sull'anno di una modifica a un turno.
-//
-// PERCHÉ ESISTE
-// Chi usa l'app valuta di continuo variazioni: fare due ore in più, coprire un
-// turno notturno, cedere una giornata o scambiare l'orario. La domanda immediata
-// è pratica: «quanto mi entra in tasca netto?» e «rischio di sforare la soglia
-// del trattamento integrativo?».
-//
-// Questo modulo calcola la differenza (delta) fra il mese PRIMA e il mese DOPO,
-// usando lo stesso motore di calcolo già collaudato (pay.js e net.js).
-// È una funzione pura, senza React e senza dipendenze dal DOM.
+// Calcolo del «Cosa cambia?»: impatto sul mese e sull'anno di una modifica a un turno (la
+// differenza fra il mese PRIMA e DOPO, con lo stesso motore di pay.js e net.js). Funzione pura.
 
 import { isMensilizzato, monthlyContractHours } from '../motore/ccnl.js';
 import { calcShiftMinutes, calcTotalPay, computePayByShift, hasAnyRate } from '../motore/pay.js';
@@ -23,11 +14,8 @@ import { nettoDelMeseConPremio } from '../motore/premio-risultato.js';
 import { calcBonusMargin, BONUS_STATUS } from '../motore/bonus.js';
 import { getDaysInMonth } from './dates.js';
 
-// IL MESE IN CORSO SALE COI TURNI, come la barra del calendario: stesso
-// motore, stessa data (`oggi`), quindi ogni turno mostra di quanto la fa
-// salire. Prima qui si presumeva il monte ore già pieno — giusto per la busta
-// di fine mese, ma la cifra del modulo e quella della barra si contraddicevano.
-// → check-cosa-cambia.mjs, check-mese-in-corso.mjs
+// IL MESE IN CORSO SALE COI TURNI, come la barra del calendario: stesso motore, stessa data
+// (`oggi`). → check-cosa-cambia.mjs, check-mese-in-corso.mjs
 const durata = (min) => formatDeltaMinutes(Math.abs(min)).replace('+', '');
 
 // «di cui 4h 48m supplementari»: le ore pagate in più dentro il delta.
@@ -112,9 +100,8 @@ export function calcolaCosaCambia({
     const mapDopo = computePayByShift(shiftsAfter, settings, { oggi });
     const pagaPrima = calcTotalPay(monthShiftsBefore, settings, shiftsBefore, mapPrima);
     const pagaDopo = calcTotalPay(monthShiftsAfter, settings, shiftsAfter, mapDopo);
-    // Stessa composizione e stesso netto del pannello di Calendario: vedi
-    // `lordoDelMese` e `nettoDelMese` in net.js. I mesi prima non cambiano: un
-    // progressivo solo, per la capienza.
+    // Stessa composizione e stesso netto del pannello di Calendario (`lordoDelMese`,
+    // `nettoDelMese`). I mesi prima non cambiano: un progressivo solo, per la capienza.
     const prima = lordoDelMese(pagaPrima?.total, year, month, settings);
     const dopo = lordoDelMese(pagaDopo?.total, year, month, settings);
     const prog = progressiviDellAnno({ anno: year, allShifts: shiftsBefore, settings, payMap: mapPrima, oggi })[month];
@@ -147,11 +134,8 @@ export function calcolaCosaCambia({
     const annualAfter = computeAnnualGrossFromShifts(year, shiftsAfter, settings, payMapAfter, oggi);
     const projAfter = projectAnnualIncome(annualAfter.total, annualAfter.extras, settings, year, { oggi });
 
-    // La soglia dei 15.000 vale sul REDDITO COMPLESSIVO, e la proiezione è un
-    // LORDO: confrontarli direttamente faceva gridare «supera la soglia» con
-    // ~1.500 € d'anticipo, mentre la striscia del bonus diceva ancora che
-    // c'era margine. Si chiede alla stessa funzione della striscia.
-    // → check-cosa-cambia.mjs
+    // La soglia dei 15.000 vale sul REDDITO COMPLESSIVO e la proiezione è un LORDO: si chiede
+    // alla stessa funzione della striscia del bonus. → check-cosa-cambia.mjs
     const prima = calcBonusMargin(projBefore.value, settings);
     const dopo = calcBonusMargin(projAfter.value, settings);
     const sotto = (b) => b.status === BONUS_STATUS.PIENO || b.status === BONUS_STATUS.ATTESA;
@@ -185,9 +169,8 @@ export function calcolaCosaCambia({
     deltaSupplementareMin: (payAfter?.overtimeMinutes || 0) - (payBefore?.overtimeMinutes || 0),
     deltaStraordinarioMin: (payAfter?.straordinarioMinutes || 0) - (payBefore?.straordinarioMinutes || 0),
     testoDiCui: testoDiCui(payAfter, payBefore),
-    // Più ore e nemmeno un euro: il mese ha già le ore ordinarie del monte ore,
-    // e la busta non ne paga di più (luglio 2026: 109,5 lavorate, 103,20
-    // pagate). Un «+0 €» senza il perché sembra un guasto.
+    // Più ore e nemmeno un euro: il mese ha già il monte ore pieno e la busta non ne paga di più.
+    // Un «+0 €» senza il perché sembra un guasto.
     testoMonte: deltaMinuti > 0 && Math.abs(deltaLordo) < 0.005 && isMensilizzato(settings) && !settings.onCall
       ? `${new Date(year, month, 1).toLocaleDateString('it-IT', { month: 'long' }).replace(/^./, (c) => c.toUpperCase())} ha già le ${(Math.round(monthlyContractHours(settings) * 10) / 10).toLocaleString('it-IT')} h ordinarie che la busta paga: fino a ${settings.expectedWeeklyHours} h a settimana questo turno non aggiunge euro.`
       : null,

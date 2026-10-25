@@ -1,14 +1,9 @@
-// Correzione degli orari con i minuti a :50.
+// Correzione degli orari con i minuti a :50. Sul foglio turni «16,50» vuol dire **16:30**: gli
+// import da foto fatti prima della conversione in `services/gemini.js` (`toHHMM`) sono entrati
+// sbagliati, e ogni turno così vale venti minuti più del dovuto.
 //
-// Sul foglio turni gli orari sono scritti in decimale: «16,50» vuol dire
-// **16:30**, non 16:50. Gli import da foto fatti prima della conversione in
-// `services/gemini.js` (`toHHMM`, che oggi porta i minuti 50 a 30) sono entrati
-// sbagliati, e ogni turno così vale venti minuti più del dovuto — abbastanza da
-// far scollare le ore del mese da quelle della busta paga.
-//
-// Qui c'è solo la regola, senza localStorage: si riscontra con Node puro
-// (`scripts/check-correzione-orari.mjs`). La parte che scrive sta in
-// `services/correzioni.js`.
+// Qui c'è solo la regola, senza localStorage (`scripts/check-correzione-orari.mjs`); la parte che
+// scrive sta in `services/correzioni.js`.
 
 // Un orario 'HH:50' diventa 'HH:30'. Qualunque altro minuto resta com'è.
 function correggiOrario(hhmm) {

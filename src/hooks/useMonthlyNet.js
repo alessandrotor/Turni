@@ -9,18 +9,12 @@ import { capienzaProgressiva, simulaTi } from '../motore/capienza';
 import { conFisco } from '../motore/fisco/index.js';
 import { nettoDelMeseConPremio } from '../motore/premio-risultato';
 
-// Netto stimato del mese (beta): calcolato PARTENDO DAL MESE, come una busta
-// paga. Estratto da CalendarView per leggibilità — la logica è identica.
-// Trattenute (contributi + IRPEF + addizionali) e bonus (trattamento
-// integrativo + cuneo) sono voci separate: il bonus non abbatte le trattenute.
-// L'IRPEF, progressiva e annuale, usa come riferimento il reddito annuo pieno
-// (proiezione da contratto + 13ª/14ª); se il contratto non è impostato si
-// ripiega sul reddito maturato.
-// Voci fisse mensili (ricorrenti) e bonus (per singolo mese): sommati al lordo,
-// e inclusi nella proiezione annua (possono far superare le soglie del TI).
+// Netto stimato del mese (beta), calcolato PARTENDO DAL MESE come una busta. Estratto da
+// CalendarView. Trattenute (contributi + IRPEF + addizionali) e bonus (trattamento integrativo +
+// cuneo) sono voci separate. Voci fisse e bonus sono sommati al lordo e inclusi nella proiezione.
 //
-// Riceve gli aggregati già pronti (pay del mese, reddito annuo) e restituisce
-// tutti i valori derivati usati dal riepilogo.
+// Riceve gli aggregati già pronti (pay del mese, reddito annuo) e restituisce i valori derivati
+// usati dal riepilogo.
 export default function useMonthlyNet({
   year, month, settings, pay, annualGross, annualExtras = 0, daysInMonth, allShifts = [], payMap,
   tiSimulato = null,
@@ -29,23 +23,15 @@ export default function useMonthlyNet({
   const monthKey = `${year}-${String(month + 1).padStart(2, '0')}`;
   const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
     .reduce((s, v) => s + (Number(v.amount) || 0), 0);
-  // Il bonus del mese è un importo fisso (impostato una volta in Impostazioni),
-  // spuntato mese per mese dal calendario: la mappa contiene `true` per i mesi
-  // in cui è stato preso. I valori numerici sono il formato legacy (prima che
-  // il bonus diventasse un importo fisso) e restano quelli, invariati.
+  // Il bonus del mese è un importo fisso spuntato mese per mese (`true`); i numeri sono il formato legacy.
   const monthlyBonusAmount = Number(settings.monthlyBonusAmount) || 0;
   const resolveBonusEntry = (v) => (typeof v === 'number' ? v : (v ? monthlyBonusAmount : 0));
   const perMonthBonus = resolveBonusEntry(settings.monthlyBonus?.[monthKey]);
 
   // Reddito annuo di riferimento (aliquota IRPEF + decisione automatica TI):
   //  - 'stimato': stima annua (contratto/RAL/a chiamata) + voci fisse ×12 + bonus dell'anno;
-  //  - 'ytd': reddito maturato (montante+turni+voci fisse+bonus finora) annualizzato sui mesi trascorsi.
-  // Stessa funzione usata dalla pagina Statistiche (vedi `projectAnnualIncome`
-  // in net.js): un'unica fonte evita che le due pagine mostrino cifre diverse
-  // per lo stesso anno. Il riferimento NON dipende dal mese che si sta
-  // sfogliando — stessa scelta già fatta per le 13ª/14ª in
-  // `computeAnnualGrossFromShifts`: aprire dicembre non deve cambiare aliquota
-  // e soglie del bonus di tutto l'anno.
+  //  - 'ytd': reddito maturato annualizzato sui mesi trascorsi.
+  // Stessa funzione di Statistiche (`projectAnnualIncome`); NON dipende dal mese sfogliato.
   const netProjection = useMemo(
     () => projectAnnualIncome(annualGross, annualExtras, settings, year, {
       enableNetCalc: ENABLE_NET_CALC, oggi,
@@ -54,32 +40,21 @@ export default function useMonthlyNet({
   );
   const netBasis = netProjection.value;
 
-  // Paga dei turni + 13ª/14ª del mese + voci fisse + bonus: la composizione sta
-  // in `lordoDelMese`, la stessa di Statistiche, di «cosa cambia» e del
-  // confronto con la busta. Voci fisse e bonus restano calcolati qui sopra
-  // perché il riepilogo li mostra uno per uno.
+  // Paga dei turni + 13ª/14ª + voci fisse + bonus: la composizione è in `lordoDelMese`. Voci
+  // fisse e bonus restano qui perché il riepilogo li mostra uno per uno.
   const meseLordo = lordoDelMese(
     pay?.total, year, month, settings, { enableNetCalc: ENABLE_NET_CALC },
   );
   const { lordo: monthGross, extraMese: extraThisMonth, premioMese } = meseLordo;
-  // IL RIFERIMENTO DEL MESE, non quello dell'anno.
-  //
-  // Il software paghe non proietta l'anno: prende il lordo del mese, lo
-  // moltiplica per dodici e da lì decide fascia, detrazione e bonus. L'app
-  // faceva come la legge — guardava l'anno — e per questo prometteva un
-  // trattamento integrativo che in busta spesso non c'era, e detrazioni della
-  // fascia sbagliata. Il conto tornava a dicembre col conguaglio, ma il netto
-  // di ogni mese era sbagliato, ed è l'unico numero su cui si decide qualcosa.
-  //
-  // La proiezione annua resta e serve ancora: è quella che il pannello mostra
-  // per spiegare l'aliquota, e quella su cui si misura il margine del bonus.
+  // IL RIFERIMENTO DEL MESE, non quello dell'anno: il software paghe moltiplica per dodici il
+  // lordo del mese e da lì decide fascia, detrazione e bonus. La proiezione annua resta per
+  // spiegare l'aliquota e per il margine del bonus.
   const riferimento = useMemo(
     () => riferimentoAnnuoDelMese(monthGross, settings),
     [monthGross, settings],
   );
-  // La capienza del trattamento integrativo si costruisce sull'anno: il
-  // progressivo dei mesi prima di questo (capienza.js).
-  // L'anno si calcola UNA volta: sfogliare i mesi estrae soltanto l'elemento.
+  // La capienza del trattamento integrativo si costruisce sull'anno (progressivo dei mesi prima,
+  // capienza.js), calcolato UNA volta: sfogliare i mesi estrae soltanto l'elemento.
   const progressiviAnno = useMemo(
     () => (ENABLE_NET_CALC ? progressiviDellAnno({ anno: year, allShifts, settings, payMap: payMap || {}, oggi }) : null),
     [year, allShifts, settings, payMap, oggi],
@@ -91,10 +66,8 @@ export default function useMonthlyNet({
       settings, daysInMonth, year, capienzaProgressiva(monthGross - premioMese, settings, progressivo)) : null),
     [monthGross, extraThisMonth, premioMese, settings, daysInMonth, year, progressivo],
   );
-  // UNA SIMULAZIONE del tratt. integrativo, per il solo riquadro del netto:
-  // `tiSimulato` true/false lo forza presente o assente (capienza compresa),
-  // `null` lascia decidere il motore. Tutto il resto — regola del mese,
-  // conguaglio, riquadro della soglia — resta su `netMonth`, quello vero.
+  // UNA SIMULAZIONE del tratt. integrativo, per il solo riquadro del netto: `tiSimulato`
+  // true/false lo forza presente o assente, `null` lascia decidere il motore.
   const forzaTi = (presente) => (netMonth ? simulaTi(netMonth, daysInMonth, presente, conFisco(settings, year)) : null);
   // Quanto varrebbe, se ci fosse: la cifra del riquadro anche quando è spento.
   const tiSePresente = useMemo(

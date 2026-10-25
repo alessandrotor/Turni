@@ -1,34 +1,16 @@
-// Lettura dei cedolini PDF, senza dipendenze e senza rete.
+// Lettura dei cedolini PDF, senza dipendenze e senza rete: sono documenti personali e non
+// passano da nessun servizio esterno. Un lettore solo per Node e per il browser: cambia solo
+// come si decomprime un flusso (`inflateSync` in Node, `DecompressionStream` nel browser);
+// chi chiama passa i BYTE e la funzione di decompressione.
 //
-// PERCHE' UN LETTORE FATTO IN CASA
-// I cedolini sono documenti personali: nome, codice fiscale, indirizzo di casa,
-// datore di lavoro e retribuzione, tutto sulla stessa pagina. Non passano da
-// nessun servizio esterno — niente OCR in rete, niente AI. Restano sul
-// dispositivo di chi li possiede.
-//
-// UN LETTORE SOLO PER NODE E PER IL BROWSER
-// Fino al 26/09/2026 viveva in `scripts/lib/cedolino.mjs` e leggeva con `fs` e
-// `zlib`. Ora serve anche alla pagina «Confronta con la busta», dove il tester
-// sceglie il PDF sul telefono: la logica è questa, e l'unica cosa che cambia è
-// come si decomprime un flusso — `inflateSync` in Node, `DecompressionStream`
-// nel browser. Chi chiama passa i BYTE e la funzione di decompressione; così la
-// convalida con ancoraggio di `leggi-cedolini.mjs` prova anche il browser.
-//
-// COME SONO FATTI
-// Li produce tutti lo stesso software di paghe (Zucchetti), per entrambi i
-// datori e anche per la Certificazione Unica. Tre cose da sapere:
-//
+// Li produce tutti lo stesso software di paghe (Zucchetti). Tre cose da sapere:
 //  1. Il testo sta in flussi compressi con deflate.
-//  2. I caratteri NON sono ASCII: il font e' CID a due byte, e l'indice del
-//     glifo vale il codice ASCII meno 0x1D. Da qui `SCARTO_GLIFO`.
-//  3. La posizione arriva dagli operatori Tm/Td/TD/T*, e senza di essa il
-//     cedolino e' una collana di cifre senza etichette. Con essa si ricostruisce
-//     la riga, che e' l'unita' che conta: «codice, voce, tariffa, quantita',
-//     importo».
-//
-// Vanno letti SOLO i flussi di contenuto. I programmi dei font contengono byte
-// che sembrano stringhe e numeri: senza il filtro finiscono nel testo estratto
-// come rumore, ed e' esattamente cio' che e' successo al primo tentativo.
+//  2. I caratteri NON sono ASCII: il font è CID a due byte, e l'indice del glifo vale il
+//     codice ASCII meno 0x1D (`SCARTO_GLIFO`).
+//  3. La posizione arriva dagli operatori Tm/Td/TD/T*; senza, il cedolino è una collana di
+//     cifre senza etichette. Con essa si ricostruisce la riga: «codice, voce, tariffa,
+//     quantità, importo».
+// Vanno letti SOLO i flussi di contenuto: i programmi dei font contengono byte che sembrano testo.
 
 const SCARTO_GLIFO = 0x1d;
 
@@ -201,11 +183,8 @@ export async function righeDaByte(byte, inflate) {
 /**
  * Decompressione deflate nel browser, senza librerie.
  *
- * TOLLERANTE COME ZLIB, ed è la differenza che conta. Fra la fine del deflate e
- * `endstream` il PDF lascia un ritorno a capo: `inflateSync` lo ignora,
- * `DecompressionStream` rifiuta TUTTO il flusso («Trailing junk found after the
- * end of the compressed stream»). Il primo giro leggeva zero flussi su undici e
- * restituiva un cedolino vuoto. Quindi: via gli a capo in coda, e se l'errore
+ * Tollerante come zlib: fra la fine del deflate e `endstream` il PDF lascia un a capo che
+ * `DecompressionStream` rifiuta ("Trailing junk"). Via gli a capo in coda, e se l'errore
  * arriva dopo che il testo è già uscito, si tiene il testo.
  * → check-verifica-busta.mjs, che confronta questa strada con quella di Node.
  */

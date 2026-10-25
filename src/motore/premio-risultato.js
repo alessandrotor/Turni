@@ -1,26 +1,15 @@
-// Il bonus come PREMIO DI RISULTATO: tassato a parte, non con l'IRPEF.
+// Il bonus come PREMIO DI RISULTATO: tassato a parte con un'imposta sostitutiva (aliquota per anno
+// in fisco/index.js), fino a 5.000 € l'anno nel biennio, per chi l'anno prima ha avuto al massimo
+// 80.000 € di lavoro dipendente. I contributi INPS restano.
 //
-// I premi di risultato previsti da un accordo aziendale o territoriale pagano
-// un'imposta sostitutiva invece dell'IRPEF (aliquota per anno in
-// fisco/index.js: 1% nel 2026 e nel 2027, 5% prima e dopo); fino a 5.000 € l'anno
-// nel biennio (3.000 € prima), per chi l'anno prima ha avuto al massimo
-// 80.000 € di reddito da lavoro dipendente. I contributi INPS restano, e
-// l'imposta si paga sul premio al netto di quelli.
+// NON è il caso di ogni «bonus»: quello della busta di riferimento è un'indennità nell'imponibile
+// normale, quindi il default è spento (`bonusPremioRisultato`). Dalla norma, nessuna busta del
+// progetto ha un premio detassato. → check-premio-risultato.mjs
 //
-// NON è il caso di ogni «bonus»: quello della busta di riferimento è
-// un'indennità nell'imponibile normale (IVS calcolato anche su di lei, agosto
-// 2026), quindi il default resta spento e lo accende chi lo sa
-// (`bonusPremioRisultato`). Dalla norma, nessuna busta del progetto ha un
-// premio detassato. → check-premio-risultato.mjs
-//
-// Come entra nel netto: il mese si calcola SENZA il premio (IRPEF, detrazioni,
-// regola dei 1.250 €, capienza: il premio non è reddito complessivo, perché un
-// reddito a imposta sostitutiva non concorre a formarlo), poi il premio si
-// aggiunge con i suoi contributi e la sua imposta. Che anche il programma paghe
-// tolga il premio dal lordo × 12 della regola mensile NON è verificato.
-//
-// Il tetto annuo non si controlla mese per mese: 120 € al mese sono 1.440 €
-// l'anno, lontani dai 5.000. Lo dice il riscontro, non un `Math.min`.
+// Il mese si calcola SENZA il premio (non è reddito complessivo), poi il premio si aggiunge con i
+// suoi contributi e la sua imposta. Che anche il programma paghe lo tolga dal lordo × 12 della
+// regola mensile NON è verificato. Il tetto annuo non si controlla mese per mese (lo dice il
+// riscontro, non un `Math.min`).
 
 import { nettoDelMese, calcContributi, monthlyBaseGross } from './net.js';
 import { aliquotaPremio, conFisco } from './fisco/index.js';

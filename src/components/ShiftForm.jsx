@@ -26,10 +26,8 @@ const SURCHARGE_PRESETS = [
   { label: '50%', value: 50 },
 ];
 
-// Ore di una giornata di assenza: nascono da una divisione (40 h ÷ 6 giorni),
-// quindi si portano dietro la coda binaria — «6.666666666666667» finiva dritto
-// dentro il campo e dentro l'hint. Due decimali bastano al mezzo quarto d'ora,
-// e `Number(...)` toglie gli zeri inutili così 4 resta 4 e non «4,00».
+// Ore di una giornata di assenza: nascono da una divisione (40 h ÷ 6), con la coda binaria.
+// Due decimali bastano; `Number(...)` toglie gli zeri inutili (4, non «4,00»).
 function oreArrotondate(ore) {
   return Number(ore.toFixed(2));
 }
@@ -41,9 +39,8 @@ function getInitialState(modal, settings, turni) {
     return {
       kind: tipoTurno(s),
       date: s.date,
-      // Un turno salvato porta i propri orari e NON riceve la proposta: sarebbe
-      // una modifica che nessuno ha chiesto, su un dato già scelto. Il ripiego
-      // serve solo a chi converte un'assenza in lavoro, che orari non ne ha.
+      // Un turno salvato porta i propri orari e NON riceve la proposta. Il ripiego serve a chi
+      // converte un'assenza in lavoro, che orari non ne ha.
       startTime: s.startTime ?? ORARI_DEFAULT.startTime,
       endTime: s.endTime ?? ORARI_DEFAULT.endTime,
       breakMinutes: s.breakMinutes ?? 0,
@@ -59,14 +56,9 @@ function getInitialState(modal, settings, turni) {
       note: s.note ?? '',
     };
   }
-  // Gli orari NON sono più un numero scritto qui: vengono dai turni già
-  // segnati (vedi utils/orari-proposti.js). Chi non ha storico riceve
-  // 08:00–16:00 come sempre, quindi il primo turno in assoluto non cambia.
-  //
-  // La proposta si calcola UNA VOLTA, all'apertura, e di proposito non segue il
-  // campo Data: riscrivere gli orari sotto le dita di chi sta già digitando
-  // cancellerebbe quello che ha appena messo. È la stessa ragione per cui
-  // `apriAvanzate` qui sotto è calcolato una volta sola.
+  // Gli orari vengono dai turni già segnati (utils/orari-proposti.js); senza storico
+  // 08:00–16:00. La proposta si calcola UNA VOLTA, all'apertura, e non segue il campo Data:
+  // riscrivere gli orari sotto le dita cancellerebbe quello che si è appena messo.
   const data = modal.date ?? formatDate(new Date());
   const proposta = proponiOrari(turni, data);
   return {
@@ -78,8 +70,7 @@ function getInitialState(modal, settings, turni) {
     fonteOrari: proposta.fonte,
     surchargePct: 0,
     absenceHours: String(oreAssenza),
-    // Estremo finale del periodo. Vuoto = una giornata sola, cioè il
-    // comportamento di sempre: chi segna un giorno non vede nulla di nuovo.
+    // Estremo finale del periodo. Vuoto = una giornata sola.
     dateTo: '',
     note: '',
   };
@@ -97,10 +88,8 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
     () => !SURCHARGE_PRESETS.some(p => p.value === Number(initial.current.surchargePct)),
   );
 
-  // Le scorciatoie per chi ruota su più turni. La proposta ne indovina una
-  // sola: queste sono le altre, un tocco l'una. Congelate come lo stato
-  // iniziale — un elenco che si riordina mentre lo si guarda farebbe toccare
-  // il pulsante sbagliato.
+  // Le scorciatoie per chi ruota su più turni: le altre sagome, un tocco l'una. Congelate come
+  // lo stato iniziale (un elenco che si riordina farebbe toccare il pulsante sbagliato).
   const sagome = useRef(null);
   if (sagome.current === null) {
     sagome.current = sagomeFrequenti(turni, initial.current.date).slice(0, MAX_SAGOME);
@@ -108,9 +97,8 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
 
   const dialogRef = useRef(null);
 
-  // Il tocco fuori bersaglio arrivato mentre c'era del lavoro da perdere: la
-  // finestra lo segnala e torna normale da sola. Mezzo secondo è quanto dura
-  // il movimento — più a lungo diventerebbe uno stato, e questo è un cenno.
+  // Il tocco fuori bersaglio con del lavoro da perdere: la finestra lo segnala (mezzo secondo)
+  // e torna normale da sola.
   const [trattieni, setTrattieni] = useState(false);
   useEffect(() => {
     if (!trattieni) return undefined;
@@ -120,9 +108,7 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
 
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }));
 
-  // Mezz'ora avanti o indietro senza aprire l'orologio del telefono: il turno
-  // che differisce dal solito di solito differisce di lì (06:30, 14:30), e il
-  // selettore nativo a rulli su quel gesto costa più tocchi e sbaglia spesso.
+  // Mezz'ora avanti o indietro senza aprire l'orologio del telefono.
   const PASSO_ORARIO = 30;
   const passoOrario = (field, nome, verso) => (
     <button
@@ -138,11 +124,9 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
   const assenzaSelezionata = isAssenza({ type: form.kind });
   const isEdit = modal.type === 'edit';
 
-  // ── Periodo ───────────────────────────────────────────────────────────────
-  // Le righe si RIGENERANO quando cambiano le date: tenere le spunte di un
-  // periodo precedente le farebbe riferire a giorni diversi da quelli che si
-  // stanno guardando. Le correzioni fatte a mano vivono in `modifiche`, che si
-  // azzera insieme alla proposta.
+  // ── Periodo ──
+  // Le righe si RIGENERANO quando cambiano le date; le correzioni a mano vivono in
+  // `modifiche`, che si azzera insieme alla proposta.
   const periodoAttivo = assenzaSelezionata && !isEdit && !!form.dateTo;
   const [modifiche, setModifiche] = useState({});
   const chiaveProposta = `${form.date}|${form.dateTo}`;
@@ -162,14 +146,9 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
   const cambiaRiga = (data, patch) =>
     setModifiche(m => ({ ...m, [data]: { ...(m[data] || {}), ...patch } }));
 
-  // Maggiorazione e note vivono sotto «Altro», chiuso di default: la finestra
-  // resta corta per il caso comune, che è segnare un turno e basta. Se però il
-  // turno in modifica ha già uno dei due valori la sezione parte aperta —
-  // nascondere un dato che c'è è peggio di una riga in più.
-  //
-  // Calcolato UNA volta dallo stato iniziale, non da `form`: `open` è un
-  // attributo normale, e ricalcolarlo a ogni render richiuderebbe la sezione
-  // mentre ci si sta scrivendo dentro.
+  // Maggiorazione e note vivono sotto «Altro», chiuso di default; se il turno in modifica ha già
+  // uno dei due valori parte aperta. Calcolato UNA volta dallo stato iniziale, non da `form`:
+  // ricalcolarlo richiuderebbe la sezione mentre ci si scrive.
   const apriAvanzate = Number(initial.current.surchargePct) > 0
     || initial.current.note !== '';
 
@@ -187,25 +166,14 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
     setForm(f => ({ ...f, surchargePct: val }));
   };
 
-  // NIENTE DOMANDE QUI DENTRO.
-  //
-  // Fino al 31 agosto 2026 questo modulo, se il turno era di domenica o toccava
-  // la notte, apriva un riquadro che chiedeva la maggiorazione mentre si stava
-  // ancora compilando: campo percentuale, «Imposta», «Non ne ho». Non bloccava
-  // il salvataggio, ma stava in mezzo — e una domanda che compare mentre stai
-  // facendo un'altra cosa è attrito, anche quando la si può ignorare.
-  //
-  // Il modulo del turno serve a segnare il turno. La domanda arriva dopo, fuori
-  // di qui, in un avviso che non copre niente: `AvvisoMaggiorazione.jsx`, montato
-  // da App al salvataggio. La regola su QUANDO chiedere non è cambiata di una
-  // riga: è sempre `maggiorazioneDaChiedere` in utils/configurazione.js.
+  // NIENTE DOMANDE QUI DENTRO: la domanda sulle maggiorazioni arriva dopo il salvataggio, in
+  // `AvvisoMaggiorazione.jsx` montato da App. La regola su QUANDO chiedere è
+  // `maggiorazioneDaChiedere` in utils/configurazione.js.
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Periodo: una giornata per ogni riga spuntata, e via i turni che quelle
-    // giornate coprono — non si può lavorare ed essere in ferie lo stesso
-    // giorno. Il caso di sempre (una data sola) prosegue più sotto invariato.
+    // Periodo: una giornata per ogni riga spuntata, e via i turni che quelle giornate coprono.
     if (periodoAttivo) {
       const scelte = righe.filter(r => r.selezionato);
       if (!scelte.length) return;
@@ -227,15 +195,12 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
       note: form.note.trim(),
     };
     // Un'assenza non ha orari né pausa né maggiorazione: porta solo una durata.
-    // Salvare anche i campi del lavoro lascerebbe in giro dati che non
-    // significano niente e che il motore dovrebbe imparare a ignorare.
     const shift = assenzaSelezionata
       ? {
           ...base,
           type: form.kind,
-          // `parseNum` e non `Number`: su parecchie tastiere italiane in questo
-          // campo finisce «4,5», e `Number('4,5')` fa NaN — che con `|| 0`
-          // diventa una giornata di ferie da ZERO ore, salvata in silenzio.
+          // `parseNum` e non `Number`: «4,5» fa NaN, che con `|| 0` diventa una giornata di
+          // ferie da ZERO ore salvata in silenzio.
           durationMinutes: Math.max(0, Math.round(parseNum(form.absenceHours) * 60)),
         }
       : {
@@ -292,11 +257,8 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
   const nomeTipo = NOME[form.kind];
   const titolo = `${isEdit ? 'Modifica' : 'Nuovo'} ${nomeTipo}`;
 
-  // Il tocco sull'area scura attorno alla finestra. Finché non c'è niente da
-  // perdere chiude come ha sempre fatto; appena c'è, smette — e invece di
-  // chiedere «sei sicuro?» la finestra si scuote e mette in evidenza la ✕, che
-  // è dove si esce. Nessun tocco in più per nessuno, e niente da leggere.
-  // Il perché per esteso sta in `utils/bozza.js`.
+  // Il tocco sull'area scura: chiude finché non c'è niente da perdere; appena c'è, la finestra
+  // si scuote e mette in evidenza la ✕. Il perché in `utils/bozza.js`.
   const esciSeNienteDaPerdere = () => {
     if (!bozzaDaSalvare({ iniziale: initial.current, form, modifiche })) {
       onClose();
@@ -307,19 +269,15 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
   const chiudiDaFuori = (e) => {
     if (e.target === e.currentTarget) esciSeNienteDaPerdere();
   };
-  // Esc è un'uscita dello stesso genere: chiude finché non c'è niente da
-  // perdere, poi fa lo stesso cenno verso la ✕. Chiudeva sempre, e un periodo
-  // di venti righe corrette se ne andava con un tasto.
+  // Esc è un'uscita dello stesso genere: chiude finché non c'è niente da perdere.
   useModalDismiss(dialogRef, esciSeNienteDaPerdere);
 
   return (
     <div className="modal-overlay" onClick={chiudiDaFuori}>
       <div
         ref={dialogRef}
-        // La classe si toglie da sé con un timer e non con `animationend`:
-        // chi ha chiesto meno animazioni al sistema ha le durate azzerate da
-        // `prefers-reduced-motion`, e quell'evento arriverebbe subito — cioè
-        // resterebbe senza nessuna risposta al suo tocco.
+        // La classe si toglie con un timer e non con `animationend`: con `prefers-reduced-motion`
+        // l'evento arriverebbe subito.
         className={`modal${trattieni ? ' modal--trattieni' : ''}`}
         role="dialog"
         aria-modal="true"

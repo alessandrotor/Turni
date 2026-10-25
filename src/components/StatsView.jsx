@@ -41,9 +41,7 @@ const conArticolo = (prep, iso) => {
 // Da dove arriva la proiezione annua, per dirlo all'utente — stessa etichetta
 // che il pannello netto di Calendario usa per lo stesso valore.
 const PROJECTION_LABEL = {
-  // 'previsione' è il caso normale: maturato finora + quello che resta da
-  // contratto. Gli altri tre restano perché rispondono a domande diverse e la
-  // funzione li tratta ancora a parte (vedi projectAnnualIncome in net.js).
+  // 'previsione' è il caso normale; gli altri tre rispondono a domande diverse (projectAnnualIncome).
   previsione: 'da quanto hai segnato più i mesi che restano',
   contratto: 'da contratto',
   maturato: 'dal maturato annualizzato',
@@ -72,11 +70,9 @@ function dayCategory(day) {
   return 'ord';
 }
 
-// Riepilogo dell'anno sui dati già inseriti: un calendarietto a colpo d'occhio
-// (dodici mesi, un colore per giorno) più i totali che nessuna altra vista
-// mette insieme. Le cifre economiche vengono dalle stesse funzioni che usa
-// Calendario — vedi `computeAnnualGrossFromShifts`/`projectAnnualIncome` in
-// motore/net.js — così le due pagine non possono divergere.
+// Riepilogo dell'anno sui dati già inseriti: un calendarietto (un colore per giorno) più i totali.
+// Le cifre economiche vengono dalle stesse funzioni di Calendario (`computeAnnualGrossFromShifts`,
+// `projectAnnualIncome`), così le due pagine non divergono.
 export default function StatsView({ allShifts, settings, payByShift, onNavigate, onOpenMonth, onOpenDay }) {
   const yearsWithData = useMemo(() => {
     const set = new Set((allShifts || []).map(s => Number(s.date.slice(0, 4))));
@@ -89,8 +85,7 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
   );
   const minYear = yearsWithData[0] ?? currentYear;
   const maxYear = yearsWithData[yearsWithData.length - 1] ?? currentYear;
-  // Chiuso di partenza, come il pannello gemello in Calendario: la spiegazione
-  // serve a chi la cerca, non deve allungare la pagina a chi guarda il numero.
+  // Chiuso di partenza, come il pannello gemello in Calendario.
   const [showCalcolo, setShowCalcolo] = useState(false);
 
   const annualGross = useMemo(
@@ -132,9 +127,7 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
   const netSoFar = useMemo(() => months.reduce((s, m) => s + m.net, 0), [months]);
   const bonus = useMemo(() => calcBonusMargin(projection.value, settings), [projection, settings]);
 
-  // Stessa etichetta della fascia 1 che usa il riepilogo di Calendario: chi
-  // lavora a chiamata non ha una soglia part-time/full-time da distinguere,
-  // resta un'unica fascia chiamata straordinario.
+  // Stessa etichetta della fascia 1 del riepilogo di Calendario (a chiamata: una sola fascia).
   const tier1Label = settings.onCall ? 'Straordinarie' : 'Supplementari';
   const hasSup = summary.overtimeMinutes > 0;
   const hasStr = summary.straordinarioMinutes > 0;
@@ -265,10 +258,7 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
                         if (day.holiday) parts.push('festivo');
                         else if (day.sunday) parts.push('domenica');
                         if (streakDays.has(iso)) parts.push(`serie di ${STREAK_LUNGA}+ giorni`);
-                        // Solo i giorni CON turni sono bottoni: su un giorno
-                        // vuoto non c'è niente da aprire, e 365 bersagli inerti
-                        // per anno sarebbero solo rumore per chi naviga da
-                        // tastiera o con uno screen reader.
+                        // Solo i giorni CON turni sono bottoni: 365 bersagli inerti sarebbero rumore per la tastiera.
                         return (
                           <button
                             type="button"

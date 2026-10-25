@@ -1,30 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 
-// Stato che vive nel localStorage del browser — che per quest'app NON è una
-// cache: è l'archivio. Non c'è server, non c'è account, e quello che non entra
-// qui dentro non esiste da nessun'altra parte.
+// Stato che vive nel localStorage del browser, che per quest'app NON è una cache: è l'archivio.
 //
-// PERCHÉ L'ERRORE NON SI PUÒ PIÙ INGOIARE
-// Fino al 31 agosto 2026 questo file conteneva `catch { /* ignore quota errors */ }`
-// e restituiva comunque il valore nuovo. Lo stato React si aggiornava, quindi il
-// turno appena inserito COMPARIVA nel calendario, i totali si muovevano, tutto
-// sembrava a posto — e al ricaricamento non c'era più. Con un mese di
-// inserimenti la perdita era totale, e la si scopriva solo dopo.
-//
-// Un'app che promette di ricordare non può fallire in silenzio proprio in quello.
-// Ora il fallimento sale a chi chiama, che deve dirlo a schermo.
-//
-// PERCHÉ LA SCRITTURA È IN UN EFFETTO E NON DENTRO L'UPDATER
-// Stava dentro la funzione passata a `setValueState`, cioè un effetto collaterale
-// dentro un updater — che React può rieseguire (StrictMode, rendering
-// concorrente). Significa poter scrivere su disco un valore che React poi scarta.
-// Qui la scrittura segue il valore invece di precederlo: parte dopo il render,
-// una volta sola per ogni cambio.
+// L'errore di scrittura non si ingoia: un `catch` vuoto faceva comparire il turno nel calendario
+// per poi perderlo al ricaricamento. Il fallimento sale a chi chiama, che deve dirlo a schermo.
+// La scrittura è in un effetto e non dentro l'updater (React può rieseguirlo): segue il valore
+// invece di precederlo.
 
-// I browser non concordano sul nome dell'errore di quota: Chrome e Safari usano
-// QuotaExceededError (codice 22), Firefox NS_ERROR_DOM_QUOTA_REACHED (1014).
-// Distinguerlo conta perché il rimedio è diverso: fare spazio, oppure
-// riabilitare lo storage.
+// I browser non concordano sul nome dell'errore di quota (Chrome e Safari QuotaExceededError,
+// Firefox NS_ERROR_DOM_QUOTA_REACHED): il rimedio è diverso dal riabilitare lo storage.
 function descriviErroreScrittura(err) {
   const nome = err?.name || '';
   const codice = err?.code;
@@ -46,11 +30,8 @@ function descriviErroreScrittura(err) {
     };
 }
 
-// Se il JSON salvato non si legge, i byte NON si buttano: il primo salvataggio
-// successivo riscriverebbe la chiave e li perderebbe, mentre in parte si
-// possono ancora recuperare a mano. Si copiano in una chiave a parte, una sola
-// volta (la prima copia è la più vicina a com'erano). Niente domande: chi apre
-// l'app non è lì per questo, e i dati ci sono se servono.
+// Se il JSON salvato non si legge, i byte NON si buttano: si copiano in una chiave a parte, una
+// sola volta (la prima copia è la più vicina all'originale). Niente domande.
 export const SUFFISSO_ILLEGGIBILE = '__illeggibile';
 
 export function leggiSalvato(storage, key, initialValue) {
@@ -79,8 +60,7 @@ export default function useLocalStorage(key, initialValue) {
 
   const [erroreSalvataggio, setErroreSalvataggio] = useState(null);
 
-  // Il primo giro non scrive: il valore appena letto è già quello sul disco, e
-  // riscriverlo significherebbe soltanto poter fallire senza motivo.
+  // Il primo giro non scrive: il valore appena letto è già quello sul disco.
   const primoGiro = useRef(true);
 
   useEffect(() => {

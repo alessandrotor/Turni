@@ -2,23 +2,14 @@
 //
 //   node scripts/check-import-turni.mjs
 //
-// Il modello legge un foglio e restituisce turni; tra la sua risposta e
-// l'archivio stanno tre regole, qui in un posto solo perché l'anteprima e il
-// salvataggio non possano raccontare due cose diverse.
-//
-//  · L'ANNO. Un foglio turni scrive «Lun 5», quasi mai l'anno, e il modello
-//    mette quello in corso. Il 28 dicembre, importando gennaio, i turni finivano
-//    undici mesi indietro — e l'anteprima mostrava solo «05/01». Una data a più
-//    di sei mesi da oggi si porta all'anno che la mette più vicina: nessuno
-//    importa da foto un foglio di un anno fa.
-//  · I GIORNI GIÀ PRESI da ferie, permessi, malattia. `addShifts` toglie il
-//    lavoro dai giorni di assenza, perché non si può lavorare ed essere in
-//    ferie lo stesso giorno; l'import invece li sommava, e quel giorno contava
-//    due volte nel monte ore e nel lordo.
-//  · I CAMPI. La risposta porta con sé testo grezzo, codice, riga e colonna
-//    abbinate — servono all'anteprima, non all'archivio. Salvati con lo spread
-//    finivano per sempre in localStorage e in ogni backup, e la riga abbinata
-//    può contenere il nome di un collega.
+// Tre regole fra la risposta del modello e l'archivio, in un posto solo perché anteprima e
+// salvataggio non dicano cose diverse:
+//  · L'ANNO: il foglio scrive «Lun 5», quasi mai l'anno, e il modello mette quello in corso. Una
+//    data a più di sei mesi da oggi si porta all'anno che la mette più vicina.
+//  · I GIORNI GIÀ PRESI da ferie, permessi, malattia: `addShifts` toglie il lavoro da quei giorni,
+//    l'import invece li sommava (due volte nel monte ore).
+//  · I CAMPI: testo grezzo, codice, riga e colonna servono all'anteprima, non all'archivio (la riga
+//    abbinata può contenere il nome di un collega).
 
 import { isIsoDate, parseDate, formatDate } from './dates.js';
 import { isAssenza } from '../motore/assenze.js';

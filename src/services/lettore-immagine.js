@@ -1,13 +1,8 @@
-// Il tabellone da un'immagine, letto SUL TELEFONO (prova).
-//
-// Il lettore di caratteri è Tesseract, compilato in WebAssembly. Si scarica la
-// prima volta che serve, ~4,5 MB, e DAL SITO DI TURNI (`/ocr`, copiato lì dalla
-// build: vite.config.js), mai da un CDN: l'immagine e i nomi non escono dal
-// telefono, e nemmeno la richiesta di sapere che li si sta leggendo. Per lo
-// stesso motivo `workerBlobURL: false`: il worker è un file del sito, e la CSP
-// non deve aprire `blob:` agli script.
-//
-// La parte che si può verificare senza browser sta in utils/tabellone.js.
+// Il tabellone da un'immagine, letto SUL TELEFONO (prova). Il lettore è Tesseract in WebAssembly,
+// scaricato la prima volta (~4,5 MB) DAL SITO DI TURNI (`/ocr`, copiato dalla build: vite.config.js),
+// mai da un CDN, così immagine e nomi non escono dal telefono. `workerBlobURL: false`: il worker è
+// un file del sito e la CSP non deve aprire `blob:`. La parte verificabile senza browser sta in
+// utils/tabellone.js.
 
 import {
   trovaGriglia, fasce, colonne, ritaglio, persone, trovaPersona, dateDaIntestazione, lunediVotato, testoDaRighe,

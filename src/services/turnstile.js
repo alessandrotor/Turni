@@ -1,13 +1,6 @@
-// Turnstile invisibile: prova al proxy che dall'altra parte c'è un browser vero.
-//
-// È l'unica difesa seria contro uno script che ha decompilato l'app e conosce
-// l'URL del proxy: i tetti di volume limitano il danno, questo lo previene.
-// Per chi usa l'app è trasparente — nessun quadratino da spuntare, nessuna
-// immagine da riconoscere.
-//
-// Il token si chiede SOLO al momento dell'import, non all'avvio: caricare lo
-// script di Cloudflare a ogni apertura peserebbe su chi non usa mai l'import,
-// e i token scadono comunque dopo pochi minuti.
+// Turnstile invisibile: prova al proxy che dall'altra parte c'è un browser vero (difesa contro uno
+// script che conosce l'URL del proxy). Il token si chiede SOLO al momento dell'import, non
+// all'avvio: lo script di Cloudflare pesa e i token scadono in pochi minuti.
 
 const SITEKEY = import.meta.env.VITE_TURNSTILE_SITEKEY || '';
 const SCRIPT = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
@@ -49,15 +42,9 @@ const IN_VISTA = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%)
   + 'background:#fff;padding:16px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.3);'
   + 'display:flex;flex-direction:column;align-items:center;gap:10px;font:600 15px system-ui,sans-serif;color:#0f172a;';
 
-// Un solo giro di giostra: disegna il widget, aspetta il token, pulisce.
-//
-// LA CASELLA DEVE POTERSI TOCCARE. Con `interaction-only` il widget resta
-// invisibile finché Cloudflare non decide che serve un tocco — e su telefono,
-// reti mobili e browser che bloccano i tracciatori succede spesso. Il riquadro
-// stava fisso a -9999px: la casella compariva dove nessuno poteva vederla,
-// scadeva due volte e l'import falliva con «verifica non superata». Chi
-// provava da un computer passava in silenzio e non se ne accorgeva.
-// → check-proxy-difese.mjs
+// Un solo giro di giostra: disegna il widget, aspetta il token, pulisce. La casella DEVE POTERSI
+// TOCCARE: con `interaction-only` il widget resta invisibile finché Cloudflare non chiede un
+// tocco, e a -9999px nessuno poteva vederla (la verifica falliva). → check-proxy-difese.mjs
 async function unTentativo() {
   const box = document.createElement('div');
   box.style.cssText = FUORI;
@@ -88,10 +75,8 @@ async function unTentativo() {
           box.style.cssText = FUORI;
           spiega.style.display = 'none';
         },
-        // Il CODICE d'errore va conservato, non buttato. Il 18 agosto un
-        // «110200» (dominio non in elenco) è costato un'ora di diagnosi
-        // perché a video arrivava solo «verifica non riuscita»: il codice
-        // dice in un secondo se è configurazione, rete o blocco del browser.
+        // Il CODICE d'errore va conservato: dice in un secondo se è configurazione, rete o blocco
+        // del browser (un «110200» è costato un'ora di diagnosi).
         'error-callback': chiudi((codice) => {
           console.warn('turnstile: errore', codice);
           reject(new Error(`verifica fallita (${codice ?? 'senza codice'})`));
@@ -111,12 +96,9 @@ async function unTentativo() {
  * Ottiene un token di verifica. Restituisce '' se Turnstile non è configurato
  * (sviluppo locale senza sitekey), così il flusso resta identico.
  *
- * Riprova UNA volta prima di arrendersi. Non è prudenza generica: il primo
- * tentativo fallisce in casi che al secondo non si ripresentano — la
- * configurazione del widget appena cambiata e non ancora propagata ai bordi di
- * Cloudflare, lo script caricato ma non ancora pronto, un singolo pacchetto
- * perso. Senza il secondo tentativo ognuno di questi costa all'utente l'intero
- * import: deve chiudere l'errore e riscegliere la foto da capo.
+ * Riprova UNA volta: il primo tentativo fallisce in casi che al secondo non si ripresentano
+ * (configurazione non ancora propagata, script non pronto, pacchetto perso), e ognuno
+ * costerebbe all'utente l'intero import.
  */
 export async function ottieniToken() {
   if (!SITEKEY) return '';

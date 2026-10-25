@@ -1,24 +1,9 @@
 import { useState, useEffect } from 'react';
 import { consigliatiMancanti } from '../utils/configurazione';
 
-// Il promemoria di quello che resta da sistemare.
-//
-// COSA FACEVA PRIMA, E PERCHÉ NON PUÒ PIÙ FARLO
-// Diceva «Imposta la paga oraria», e compariva all'apertura su un'app vuota.
-// Non serve più, per due ragioni: la paga adesso è bloccante al primo turno
-// (DatiMinimi.jsx), quindi non si può più arrivare lontano senza; e soprattutto
-// il percorso scelto non chiede NIENTE all'apertura — chiedere a chi non ha
-// ancora capito cosa fa l'app è il modo migliore per farsi rispondere a caso.
-//
-// COSA FA ADESSO
-// Compare solo a chi sta già usando l'app — almeno un turno segnato, i dati
-// minimi a posto — e dice quante cose restano e in che direzione sbagliano i
-// conti senza di loro. Non è una richiesta: è un'informazione che si può
-// chiudere.
-//
-// Il CONTRATTO non è elencato qui di proposito: ha già il suo avviso sotto il
-// totale del mese, dove c'è un importo da qualificare. Ripeterlo in due posti
-// lo farebbe sembrare più urgente di quanto la sua natura rimandabile giustifichi.
+// Il promemoria di quello che resta da sistemare. Compare solo a chi sta già usando l'app (almeno un
+// turno, dati minimi a posto), dice quante cose restano e in che direzione sbagliano i conti, e si
+// può chiudere. Il CONTRATTO non è elencato: ha già il suo avviso sotto il totale del mese.
 
 // Quante voci nominare. Oltre tre diventa un elenco di compiti, e un elenco di
 // compiti si chiude senza leggerlo.
@@ -46,9 +31,7 @@ export default function SetupPrompt({ settings, parla = false, onSistema, onChiu
 
   const nominate = mancanti.slice(0, DA_NOMINARE);
   const altre = mancanti.length - nominate.length;
-  // «l'app conta di meno» e «di più» non sono lo stesso avviso: la prima
-  // direzione toglie soldi che ci sono, la seconda ne promette che non
-  // arriveranno. Chi legge deve sapere quale delle due lo riguarda.
+  // «l'app conta di meno» e «di più» non sono lo stesso avviso: chi legge deve sapere quale lo riguarda.
   const soloMeno = nominate.every((c) => c.direzione === 'meno');
   const soloPiu = nominate.every((c) => c.direzione === 'piu');
   const verso = soloMeno

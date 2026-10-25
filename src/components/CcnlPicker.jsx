@@ -1,33 +1,14 @@
 import { useState, useRef, useEffect, useMemo, useId } from 'react';
 import { CCNL_LIST, getContratto } from '../utils/ccnl-elenco';
 
-// Scelta del contratto, con la tendina di ricerca.
+// Scelta del contratto, con la tendina di ricerca. È un componente perché serve in due posti
+// (Impostazioni e l'avviso sotto il primo totale in euro). La tendina è opaca di proposito: la
+// `<datalist>` nativa è illeggibile nella WebView di Android.
 //
-// PERCHÉ È UN COMPONENTE E NON PIÙ CODICE DENTRO IMPOSTAZIONI
-// Serve in due posti: nella pagina Impostazioni e nell'avviso che compare sotto
-// il primo totale in euro. Due copie della stessa tendina divergerebbero, e
-// questa in particolare ha un comportamento che è facile sbagliare (la scelta
-// deve scattare PRIMA del blur, o la lista si chiude senza registrare niente).
-//
-// La tendina è opaca di proposito: la `<datalist>` nativa è illeggibile nella
-// WebView di Android, ed è il motivo per cui esiste tutto questo codice invece
-// di tre righe di HTML.
-//
-// DUE DIFETTI CORRETTI NELL'ESTRARLA — vedi COSE-NUOVE.md §D6 e §D7
-//
-// 1. IL CONTRATTO SCRITTO MA NON SCELTO. Si digitava «commercio», non si
-//    cliccava la voce, si salvava: a schermo restava scritto il contratto, ma il
-//    dato salvato era `''`. L'utente credeva di avere il contratto impostato e
-//    stava usando le regole generiche — quelle che valgono 45 € al mese in più
-//    del vero. Mentiva in silenzio, e proprio sul parametro che pesa di più.
-//    Ora, uscendo dal campo, il testo torna a dire la verità: o il contratto
-//    scelto, o vuoto.
-//
-// 2. NON SI USAVA DA TASTIERA. `onKeyDown` intercettava solo Escape: le frecce
-//    non scorrevano l'elenco e, essendo un input dentro un form, **Invio
-//    inviava l'intero modulo** invece di scegliere la voce. Chi non usa il dito
-//    non poteva selezionare un contratto. Ora ci sono ↓ ↑ Invio, e Invio non
-//    esce più dal componente.
+// Due difetti corretti nell'estrarla (COSE-NUOVE.md §D6 e §D7):
+// 1. un contratto scritto ma non scelto restava `''` nel dato, e l'app usava regole generiche
+//    (+45 € al mese): uscendo dal campo il testo torna a dire la verità;
+// 2. da tastiera Invio inviava l'intero modulo: ora ↓ ↑ Invio scelgono la voce.
 
 const MAX_VOCI = 50; // l'elenco CNEL ne ha oltre mille
 
@@ -43,9 +24,7 @@ export default function CcnlPicker({ value, onChange, id, autoFocus = false }) {
 
   useEffect(() => () => clearTimeout(timerBlur.current), []);
 
-  // Se il contratto cambia da fuori (ripristino di un backup, reset), il testo
-  // deve seguirlo: mostrare un nome che non corrisponde al dato salvato è
-  // esattamente il difetto che questo componente esiste per chiudere.
+  // Se il contratto cambia da fuori (ripristino, reset) il testo deve seguirlo.
   useEffect(() => {
     setTesto(getContratto(value || '').label);
   }, [value]);
@@ -77,9 +56,7 @@ export default function CcnlPicker({ value, onChange, id, autoFocus = false }) {
     if (e.target.value.trim() === '') onChange('');
   };
 
-  // D6: uscendo dal campo, il testo deve tornare a dire la verità. Se c'è un
-  // contratto scelto si rimette il suo nome; se non c'è, si svuota. Quello che
-  // NON può restare è un nome scritto a mano che non corrisponde a niente.
+  // D6: uscendo dal campo il testo torna a dire la verità (il contratto scelto, o vuoto).
   const chiudi = () => {
     setAperta(false);
     setEvidenziata(-1);

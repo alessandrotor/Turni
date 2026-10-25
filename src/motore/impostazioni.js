@@ -1,21 +1,12 @@
-// LE IMPOSTAZIONI DEL MOTORE: ogni chiave che il motore legge, una riga.
+// LE IMPOSTAZIONI DEL MOTORE: ogni chiave che il motore legge, una riga. Le funzioni ricevono un
+// oggetto `impostazioni` piatto, e questo è il suo contratto: cosa c'è, a quale dei cinque gruppi
+// appartiene, cosa vuol dire. Da un'altra app: `calcolaMese()` coi cinque ingressi (index.js li
+// traduce con `impostazioniDa()`), oppure le funzioni una per una con un oggetto scritto secondo
+// questa tabella.
 //
-// Le funzioni del motore ricevono un oggetto `impostazioni` piatto. Questo è
-// il suo contratto: cosa c'è, a quale dei cinque gruppi appartiene, cosa vuol
-// dire. Chi usa il motore da un'altra app ha due strade: `calcolaMese()` coi
-// cinque ingressi (index.js li traduce qui con `impostazioniDa()`), oppure le
-// funzioni una per una con un oggetto scritto secondo questa tabella.
-//
-// I NOMI sono quelli che Turni salva nel telefono di chi lo usa, e per questo
-// non si cambiano: rinominarli voleva dire migrare i dati di tutti, per un
-// motore che non diventa più portabile per questo. Quello che conta è che
-// siano tutti qui, documentati, e che non ne compaia uno nuovo di nascosto:
-// lo controlla `check-impostazioni-motore.mjs`, che confronta questa tabella
-// con le chiavi che il codice legge davvero.
-//
-// I gruppi sono quelli del piano (docs/motore-portabile.md): il contratto, il
-// lavoratore, il periodo (quello che cambia mese per mese), il programma paghe
-// e il fisco dell'anno, più le scelte su come presentare il calcolo.
+// I NOMI sono quelli che Turni salva nel telefono di chi lo usa: non si cambiano (servirebbe
+// migrare i dati di tutti). `check-impostazioni-motore.mjs` confronta la tabella con le chiavi che
+// il codice legge davvero. Gruppi: docs/motore-portabile.md.
 
 /**
  * Le impostazioni: ogni chiave della tabella qui sotto, tutte facoltative.

@@ -1,28 +1,18 @@
-// Turni scritti a parole: «Lun 8-16, Mar 10-18, Mer riposo», o con le date
-// («05/10 8:00-16:00», «5 ottobre 14.30-22»). Il testo di un messaggio, di
-// un'email, di un foglio copiato.
+// Turni scritti a parole: «Lun 8-16, Mar 10-18, Mer riposo», o con le date («05/10 8:00-16:00»,
+// «5 ottobre 14.30-22»).
 //
 //   node scripts/check-testo-turni.mjs
 //
-// TUTTO IN LOCALE. Il testo non va a nessun servizio: nessuna rete, nessun
-// modello. È la ragione per cui l'import da testo non chiede il consenso che
-// chiede la foto, e la frase «non viene inviato» deve restare vera.
+// TUTTO IN LOCALE: il testo non va a nessun servizio (per questo non chiede il consenso della
+// foto), e la frase «non viene inviato» deve restare vera.
 //
-// COSA SA FARE, e cosa no, dichiarato qui perché l'anteprima lo ripete:
-//  · riconosce i GIORNI (nome del giorno, `gg/mm`, `gg/mm/aaaa`, `5 ottobre`)
-//    e gli INTERVALLI (`8-16`, `8:00-16:00`, `14.30-22`, `dalle 8 alle 16`);
-//  · più intervalli nello stesso giorno sono più turni;
-//  · «riposo», «libero», «ferie», «permesso», «malattia» non sono turni: si
-//    contano e si dicono, ma fanno avanzare i giorni (un «Mer riposo» in mezzo
-//    sposta il «Gio» che segue);
-//  · NON sa scegliere una persona in una tabella con tanti nomi: un testo, una
-//    persona. Per le tabelle c'è la foto.
+// Riconosce i GIORNI (nome del giorno, `gg/mm`, `gg/mm/aaaa`, `5 ottobre`) e gli INTERVALLI
+// (`8-16`, `8:00-16:00`, `14.30-22`, `dalle 8 alle 16`); più intervalli nello stesso giorno sono
+// più turni; «riposo», «libero», «ferie», «permesso», «malattia» si contano ma fanno avanzare i
+// giorni. NON sa scegliere una persona in una tabella con tanti nomi: per quelle c'è la foto.
 //
-// LA DATA QUANDO C'È SOLO IL GIORNO DELLA SETTIMANA. «Lun» non dice quale
-// lunedì. Il primo è quello più vicino a oggi (entro tre giorni, avanti o
-// indietro), i seguenti vanno avanti in ordine. Non si indovina in silenzio: la
-// data risolta è la prima cosa che l'anteprima mostra, e si può correggere con
-// «Parti da».
+// Con il solo giorno della settimana, il primo è il più vicino a oggi (entro tre giorni) e i
+// seguenti vanno avanti; la data risolta è la prima cosa dell'anteprima, correggibile con «Parti da».
 
 import { parseDate, formatDate } from './dates.js';
 import { avvicinaAnno } from './import-turni.js';

@@ -2,17 +2,10 @@
 //
 //   node scripts/check-confronto-montante.mjs
 //
-// Il montante è l'imponibile INPS dei progressivi della busta: TUTTO il lordo
-// da gennaio (o dall'assunzione) al mese scelto — turni, ferie, voci fisse,
-// premi, 14ª. L'avviso di prima lo confrontava con la paga dei soli turni
-// segnati in quei mesi, e gridava «non torna» a chi i mesi passati non li ha
-// mai segnati: 10.358 € di montante contro 4.571 € di turni, con un montante
-// giusto al centesimo. Un avviso che scatta quando i dati sono corretti
-// insegna a ignorarlo.
-//
-// Ora si confronta solo quando OGNI mese coperto ha dei turni, e col lordo del
-// mese del motore (`lordoDelMese`: turni + voci fisse + bonus spuntato +
-// 13ª/14ª), cioè la stessa grandezza che la busta somma nel progressivo.
+// Il montante è l'imponibile INPS dei progressivi: TUTTO il lordo da gennaio al mese scelto (turni,
+// ferie, voci fisse, premi, 14ª). Confrontarlo con i soli turni gridava «non torna» a chi i mesi
+// passati non li ha segnati. Si confronta solo quando OGNI mese coperto ha dei turni, e col lordo
+// del mese del motore (`lordoDelMese`).
 //
 // Modulo puro, senza React e senza browser.
 

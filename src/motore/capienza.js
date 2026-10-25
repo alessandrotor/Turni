@@ -1,19 +1,12 @@
 // La capienza del trattamento integrativo, mese per mese: sul PROGRESSIVO.
 //
-// Sotto i 15.000 il trattamento spetta solo se c'è IRPEF da compensare:
-// imposta lorda oltre la detrazione da lavoro meno 75 € (DL 3/2020, art. 1).
-// Per un po' l'app lo verificava sul solo mese (lordo × 12), e un mese a metà
-// da 534 € perdeva il trattamento anche dopo nove mesi pieni. Il programma
-// paghe ragiona sul progressivo dell'anno: la capienza costruita fino a quel
-// mese. E a inizio anno, senza progressivo, il datore lo eroga e smette dopo,
-// se serve: il conto vero lo fa il conguaglio.
+// Sotto i 15.000 il trattamento spetta solo se c'è IRPEF da compensare (imposta lorda oltre la
+// detrazione da lavoro meno 75 €, DL 3/2020 art. 1). Il programma paghe ragiona sul progressivo
+// dell'anno: la base è la MEDIA dei mesi con un lordo (compreso questo), riportata a dodici mesi;
+// il primo mese lo concede (il conto vero lo fa il conguaglio). La soglia dei 1.250 € al mese
+// resta sul mese (check-ti-mensile).
 //
-// Quindi la base è la MEDIA dei mesi dell'anno con un lordo (compreso questo),
-// riportata a dodici mesi; il primo mese lo concede. La soglia dei 1.250 € al
-// mese resta sul mese (check-ti-mensile): è un'altra regola, verificata.
-//
-// Indicato da chi mantiene il progetto, NON ancora riscontrato su una busta:
-// serve un mese basso dopo mesi pieni. → check-ti-capienza.mjs
+// Indicato da chi mantiene il progetto, NON ancora riscontrato su una busta. → check-ti-capienza.mjs
 
 import { redditoComplessivo, irpefLorda, detrazioneLavoro, nettoDelMese } from './net.js';
 import { fiscoDi } from './fisco/index.js';
@@ -56,12 +49,10 @@ export function lordoPresuntoAnno(lordoMese, settings = {}, progressivo = null) 
 }
 
 /**
- * Il netto del mese col tratt. integrativo FORZATO presente o assente: la
- * simulazione del suo riquadro nel netto (NetPillole.jsx). Cambia SOLO quella
- * riga: forzare la decisione mensile spostava anche la fascia delle detrazioni
- * (`riferimentoAnnuoDelMese`), e il netto si muoveva di 119 € per un
- * trattamento di 102. La quota è quella che la busta stampa: 1.200 € sui
- * giorni del mese, troncata. → check-ti-capienza.mjs
+ * Il netto del mese col tratt. integrativo FORZATO presente o assente: la simulazione del suo
+ * riquadro nel netto (NetPillole.jsx). Cambia SOLO quella riga (forzare la decisione mensile
+ * spostava anche la fascia delle detrazioni). La quota è quella della busta: 1.200 € sui giorni
+ * del mese, troncata. → check-ti-capienza.mjs
  */
 export function nettoSimulandoTi(lordoMese, settings, giorniMese, extraMese, capienza, presente) {
   return simulaTi(nettoDelMese(lordoMese, settings, giorniMese, extraMese, capienza), giorniMese, presente, settings);

@@ -12,12 +12,9 @@ const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabi
  * @param {boolean} active false quando il modale non è montato
  */
 export default function useModalDismiss(ref, onClose, active = true) {
-  // `onClose` arriva quasi sempre scritto al volo (`() => setModal(null)`),
-  // quindi è una funzione nuova a ogni render del genitore. Tenerlo fra le
-  // dipendenze rifaceva l'effetto a ogni render: la pulizia rimetteva il fuoco
-  // sulla cella del calendario dietro il modale, e sul telefono la tastiera si
-  // chiudeva a metà nota — bastava lo scadere degli 8 secondi dell'annulla.
-  // Si legge l'ultimo `onClose` da una ref, e l'effetto vive quanto il modale.
+  // `onClose` arriva scritto al volo, quindi nuovo a ogni render: tra le dipendenze rifaceva l'effetto
+  // e la pulizia rimetteva il fuoco dietro il modale (la tastiera si chiudeva a metà nota). Si legge
+  // l'ultimo da una ref.
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
@@ -26,11 +23,8 @@ export default function useModalDismiss(ref, onClose, active = true) {
     const node = ref.current;
     const previouslyFocused = document.activeElement;
 
-    // Il fuoco ENTRA nel dialogo, altrimenti il blocco del Tab qui sotto non
-    // scatta mai: restava sulla cella che l'aveva aperto, e il Tab successivo
-    // andava alla cella accanto, dietro il velo. Sul contenitore e non sul
-    // primo campo: un campo a fuoco sul telefono apre la tastiera, e chi apre
-    // il modulo per toccare una sagoma non l'ha chiesta.
+    // Il fuoco ENTRA nel dialogo (altrimenti il blocco del Tab non scatta), sul contenitore e non sul
+    // primo campo: un campo a fuoco apre la tastiera del telefono.
     if (node && !node.contains(document.activeElement)) {
       if (!node.hasAttribute('tabindex')) node.setAttribute('tabindex', '-1');
       node.focus({ preventScroll: true });

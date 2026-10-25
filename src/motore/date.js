@@ -23,16 +23,11 @@ export function parseDate(str) {
   return new Date(y, m - 1, d);
 }
 
-// L'app usa ovunque la stringa ISO 'YYYY-MM-DD' come chiave e come criterio di
-// ordinamento (slice per anno/mese, confronti lessicografici). Una data fuori
-// formato passerebbe i controlli truthy ma non combacerebbe con le celle del
-// calendario: qui si verifica sia il formato sia che sia un giorno reale.
-// Numero progressivo del giorno, per stabilire se due date sono consecutive.
-// Passa da Date.UTC e NON dalla differenza fra due `Date` locali: con l'ora
-// legale due giorni consecutivi distano 23 o 25 ore, non 24 (in Italia il
-// 29 marzo e il 25 ottobre 2026), e un confronto in millisecondi spezzerebbe
-// la sequenza proprio lì — in silenzio, e solo sui dispositivi con fuso
-// europeo. Lo usano sia le serie di giorni lavorati sia gli eventi di malattia.
+// L'app usa la stringa ISO 'YYYY-MM-DD' come chiave e criterio di ordinamento: una data fuori
+// formato non combacerebbe con le celle del calendario, quindi si verificano formato e giorno reale.
+// Numero progressivo del giorno, per stabilire se due date sono consecutive: passa da Date.UTC e
+// non dalla differenza fra `Date` locali (con l'ora legale due giorni consecutivi distano 23 o 25
+// ore). Lo usano le serie di giorni lavorati e gli eventi di malattia.
 export function dayNumber(iso) {
   return Math.round(
     Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10))) / 86400000,

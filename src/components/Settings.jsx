@@ -20,9 +20,8 @@ import EliminaDati from './EliminaDati';
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
 const toInput = (n) => (n === '' || n == null || !Number(n) ? '' : String(Number(n)).replace('.', ','));
 
-// Mese di riferimento del montante, come 'YYYY-MM' per <input type="month">.
-// In ora LOCALE: `toISOString()` è UTC, e il 1° del mese fra mezzanotte e le
-// due restituiva il mese prima — il confine del montante cadeva un mese indietro.
+// Mese di riferimento del montante, 'YYYY-MM' per <input type="month">, in ora LOCALE
+// (`toISOString()` è UTC e il 1° del mese restituiva il mese prima).
 const currentMonthValue = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -40,16 +39,14 @@ export default function Settings({ settings, onSave }) {
     holidaySurchargePct: settings.holidaySurchargePct ?? 0,
     holidaySundayMode: settings.holidaySundayMode || 'max',
     nightSurchargePct: settings.nightSurchargePct ?? 0,
-    // Non più il ripiego di legge: se l'utente non ha scelto, i campi partono
-    // dalla fascia del suo contratto (per il turismo le 23:00, non le 22:00).
+    // Se l'utente non ha scelto, i campi partono dalla fascia del suo contratto.
     nightStart: fasciaNotturnaRisolta(settings).inizio,
     nightEnd: fasciaNotturnaRisolta(settings).fine,
     nightCumuloMode: settings.nightCumuloMode || CUMULO_DEFAULT,
     patronSaintDate: settings.patronSaintDate || '',
     priorTaxableIncome: toInput(settings.priorTaxableIncome),
-    // Mese fino al quale il montante è comprensivo dei turni. Va scelto
-    // dall'utente: dedurlo dalla data di salvataggio sbagliava di un mese chi
-    // inseriva il dato a inizio mese pensando "fino al mese scorso".
+    // Mese fino al quale il montante comprende i turni: lo sceglie l'utente (dedurlo dalla
+    // data di salvataggio sbagliava di un mese).
     priorIncomeMonth: (settings.priorIncomeDate || '').slice(0, 7) || currentMonthValue(),
     workerName: settings.workerName ?? '',
     onCall: !!settings.onCall,
@@ -102,9 +99,8 @@ export default function Settings({ settings, onSave }) {
   // Il backup in chiaro, mostrato SOLO quando la consegna non è verificabile:
   // è la via di riserva, non un'opzione da tenere sempre a schermo.
   const [backupTesto, setBackupTesto] = useState(null);
-  // Il backup LETTO ma non ancora applicato: finché sta qui dentro non è stato
-  // scritto niente, ed è quello che permette di mostrare le due cifre a
-  // confronto invece di un «sei sicuro?» che non sa di cosa parla.
+  // Il backup LETTO ma non ancora applicato: finché sta qui non è stato scritto niente, e
+  // permette di mostrare le due cifre a confronto.
   const [daRipristinare, setDaRipristinare] = useState(null);
   const backupInputRef = useRef(null);
   const [turniSalvati] = useState(contaTurniSalvati);
@@ -126,11 +122,8 @@ export default function Settings({ settings, onSave }) {
     setSaved(false);
   };
 
-  // Le percentuali si normalizzano quando si LASCIA il campo, non mentre si
-  // scrive: chi digita «120» passa da «1», «12», «120», e convertire a metà
-  // strada sarebbe un campo che combatte con chi ci scrive dentro.
-  // La regola, e il perché sopra il 100% non è un indovinello, stanno in
-  // utils/maggiorazioni.js.
+  // Le percentuali si normalizzano quando si LASCIA il campo, non mentre si scrive (regola
+  // in utils/maggiorazioni.js).
   const [avvisiMagg, setAvvisiMagg] = useState({});
   const controllaMagg = (field) => () => {
     const esito = normalizzaMaggiorazione(form[field]);
@@ -201,11 +194,8 @@ export default function Settings({ settings, onSave }) {
     setSaved(false);
   };
 
-  // Le parole seguono quello che è successo DAVVERO, non l'assenza di errori.
-  // Prima si scriveva «Backup creato» in ogni caso, anche quando il browser
-  // aveva rifiutato il download in silenzio: chi lo leggeva restava senza copia
-  // e senza saperlo. Ora l'unico caso che promette qualcosa è quello in cui il
-  // file è stato scritto sotto i nostri occhi.
+  // Le parole seguono quello che è successo DAVVERO: «Backup creato» solo se il file è stato
+  // scritto sotto i nostri occhi.
   async function handleEsportaBackup() {
     setBackupBusy(true);
     setBackupMsg(null);
@@ -218,9 +208,8 @@ export default function Settings({ settings, onSave }) {
       } else if (esito === ESITO.ANNULLATO) {
         setBackupMsg({ testo: 'Backup annullato: non è stato salvato nessun file.' });
       } else {
-        // NON_VERIFICABILE: il download è partito, ma il browser non dice se è
-        // arrivato. Si chiede all'utente di guardare, e intanto gli si mette in
-        // mano la seconda via — che è l'unica cosa utile da fare qui.
+        // NON_VERIFICABILE: il download è partito ma il browser non dice se è arrivato. Si chiede
+        // di guardare e si offre la seconda via.
         setBackupMsg({
           attenzione: true,
           testo: `Backup di ${turni} turni avviato. Controlla che il file sia davvero fra i download: alcuni browser (Safari in modalità app, quelli dentro Instagram o Facebook) li bloccano senza dirlo. Se non lo trovi, copia il testo qui sotto e incollalo in una nota o in una mail.`,
@@ -239,28 +228,15 @@ export default function Settings({ settings, onSave }) {
       await navigator.clipboard.writeText(backupTesto);
       setBackupMsg({ testo: 'Backup copiato: incollalo subito da qualche parte.' });
     } catch {
-      // Gli appunti possono essere negati (permesso rifiutato, contesto non
-      // sicuro). Il riquadro di testo resta visibile e selezionabile a mano:
-      // è il motivo per cui non lo si nasconde dopo aver copiato.
+      // Gli appunti possono essere negati: il riquadro di testo resta visibile e selezionabile.
       setBackupMsg({ attenzione: true, testo: 'Non riesco a copiare da solo: seleziona il testo qui sotto e copialo a mano.' });
     }
   }
 
-  // IL RIPRISTINO IN DUE TEMPI, E PERCHÉ NON COSTA UN TOCCO IN PIÙ
-  //
-  // Prima c'era un `window.confirm` che diceva «sostituisce TUTTI i turni.
-  // Continuare?». Un tocco lo chiedeva già, ma per una domanda che non sapeva
-  // niente: né quanti turni stavi per perdere, né quanti ne arrivavano, né se
-  // il file era davvero quello giusto. E se rispondevi sì per sbaglio non
-  // c'era modo di tornare indietro, perché nessuno aveva messo da parte una
-  // copia di quello che c'era.
-  //
-  // Adesso il file si legge SENZA scrivere niente (`leggiBackup`), e lo stesso
-  // tocco di prima serve a decidere sapendo: le due cifre a confronto, la data
-  // del backup, e le voci che non si sono potute leggere — che prima entravano
-  // in silenzio. Accanto, la copia dei dati attuali da portare via prima di
-  // sostituirli: è l'annullamento che questa strada non può avere, perché dopo
-  // il ripristino l'app si ricarica e la memoria è già quella nuova.
+  // IL RIPRISTINO IN DUE TEMPI: il file si legge SENZA scrivere niente (`leggiBackup`) e lo
+  // stesso tocco di prima serve a decidere sapendo (due cifre a confronto, data del backup,
+  // voci illeggibili). Accanto, la copia dei dati attuali da portare via: dopo il ripristino
+  // l'app si ricarica e non c'è annulla.
   async function handleImportaBackup(e) {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -289,8 +265,7 @@ export default function Settings({ settings, onSave }) {
         ? ` ${scartati.length} vo${scartati.length === 1 ? 'ce non è stata' : 'ci non sono state'} ripristinat${scartati.length === 1 ? 'a' : 'e'}: nel file non erano leggibili.`
         : '';
       setBackupMsg({ attenzione: scartati.length > 0, testo: `Ripristinati ${turni} turni.${coda} Ricarico l'app…` });
-      // Gli hook useLocalStorage leggono solo all'inizializzazione: senza reload
-      // la schermata continuerebbe a mostrare i dati vecchi.
+      // Gli hook useLocalStorage leggono solo all'inizializzazione: serve il reload.
       setTimeout(() => window.location.reload(), scartati.length ? 3000 : 800);
     } catch (err) {
       setBackupMsg({ errore: true, testo: err.message || 'Ripristino non riuscito.' });
@@ -298,9 +273,8 @@ export default function Settings({ settings, onSave }) {
     }
   }
 
-  // «Portami via quelli di adesso, prima di sostituirli.» Passa dalla stessa
-  // strada dell'esportazione, quindi eredita ESITO e non promette un file che
-  // nessuno ha visto arrivare.
+  // «Portami via quelli di adesso»: passa dalla stessa strada dell'esportazione, quindi
+  // eredita ESITO e non promette un file che nessuno ha visto arrivare.
   async function salvaPrimaDiSostituire() {
     setBackupBusy(true);
     try {
@@ -338,35 +312,16 @@ export default function Settings({ settings, onSave }) {
     }
   }
 
-  // «SALVA» CHE NON SALVAVA E NON DICEVA NIENTE
-  //
-  // Il modulo era un `<form>` senza `noValidate`, quindi la validazione del
-  // browser era accesa; i campi stanno in sedici sezioni `<details>`, quasi
-  // tutte chiuse. Il browser trovava un campo invalido dentro una sezione
-  // chiusa, voleva mostrargli sopra il fumetto «inserisci un valore valido»,
-  // non poteva — quel campo non è a schermo — e allora ANNULLAVA L'INVIO senza
-  // mostrare niente. Solo una riga in console.
-  //
-  // Per chi usa l'app: apri una sezione, scrivi un numero, la richiudi, premi
-  // «Salva impostazioni» e non succede assolutamente nulla. Nemmeno il
-  // «✓ Salvato!». Il pulsante sembra rotto, e non c'è modo di capire perché.
-  //
-  // E scattava su valori LEGITTIMI: `step="0.5"` rendeva invalide 37,25 ore
-  // settimanali, `step="1"` il 66,66% di malattia, e su «ore di una giornata di
-  // assenza» rendeva invalido 6,67 — cioè proprio il numero che il segnaposto
-  // di quel campo suggerisce (40 ÷ 6). Da lì gli `step="any"`: il passo di un
-  // campo non è il posto dove dire quali valori esistono.
-  //
-  // Ora la validazione è nostra: si trova il primo campo che non va, SI APRE LA
-  // SEZIONE che lo contiene, ci si porta il fuoco sopra e solo allora si chiede
-  // al browser di dirlo — che a quel punto ha un campo visibile a cui
-  // attaccarsi. O si salva, o si dice dov'è il problema. Mai il silenzio.
+  // VALIDAZIONE NOSTRA: il form ha sedici `<details>` quasi tutti chiusi, e un campo invalido
+  // in una sezione chiusa farebbe annullare l'invio dal browser SENZA messaggio. Si trova il
+  // primo campo che non va, SI APRE la sezione, ci si porta il fuoco e solo allora si chiede
+  // al browser di dirlo. Gli `step="any"` evitano di rifiutare valori legittimi (37,25 ore,
+  // 66,66%, 6,67).
   function mostraIlProblema(modulo) {
     const storto = [...modulo.elements].find((el) => el.willValidate && !el.checkValidity());
     if (!storto) return false;
 
-    // `<details>` non è controllato da React qui: aprirlo dal DOM regge fino al
-    // prossimo render, che è molto più di quanto serva.
+    // `<details>` non è controllato da React: aprirlo dal DOM regge fino al prossimo render.
     for (let n = storto.parentElement; n; n = n.parentElement) {
       if (n.tagName === 'DETAILS') n.open = true;
     }
@@ -394,10 +349,8 @@ export default function Settings({ settings, onSave }) {
       .filter(v => parseNum(v.amount) > 0)
       .map(v => ({ id: v.id, label: (v.label || '').trim() || 'Trattenuta fissa', amount: parseNum(v.amount) }));
 
-    // Montante: il mese di riferimento (confine turni) è quello scelto
-    // dall'utente. Si conserva come data ISO al primo giorno del mese, perché
-    // il resto dell'app lavora su 'YYYY-MM' via slice. Azzerato se il montante
-    // va a 0.
+    // Montante: il mese di riferimento lo sceglie l'utente. Si conserva come data ISO al primo
+    // del mese (il resto dell'app usa 'YYYY-MM' via slice); azzerato se il montante va a 0.
     const newMontante = parseNum(form.priorTaxableIncome);
     const month = /^\d{4}-\d{2}$/.test(form.priorIncomeMonth)
       ? form.priorIncomeMonth
@@ -459,12 +412,9 @@ export default function Settings({ settings, onSave }) {
     savedTimer.current = setTimeout(() => setSaved(false), 2000);
   };
 
-  // Modifiche non salvate: l'app non deve ricaricarsi da sola per un
-  // aggiornamento mentre qui dentro c'è roba scritta e non ancora confermata
-  // (vedi utils/occupato.js). Si confronta lo stato con l'ultimo salvato invece
-  // di alzare una bandierina in ognuno dei sedici punti che toccano il form:
-  // una bandierina dimenticata non si vede, e il prezzo sarebbe perdere quello
-  // che l'utente aveva scritto.
+  // Modifiche non salvate: l'app non deve ricaricarsi per un aggiornamento (utils/occupato.js).
+  // Si confronta lo stato con l'ultimo salvato invece di alzare una bandierina in ognuno dei
+  // punti che toccano il form.
   const ultimoSalvato = useRef(null);
   const istantanea = JSON.stringify(form);
   if (ultimoSalvato.current === null) ultimoSalvato.current = istantanea;
@@ -480,8 +430,7 @@ export default function Settings({ settings, onSave }) {
   // 0,2666… non va mostrato per intero: due decimali bastano, e gli interi
   // restano interi (0,30 e non 0,3000).
   const fmtPct = (pct) => String(Number(Number(pct).toFixed(2))).replace('.', ',');
-  // Dai settings salvati, non dal form: un elenco che cambia mentre si digita
-  // è rumore, e per di più direbbe «sistemato» prima che lo sia davvero.
+  // Dai settings salvati, non dal form: un elenco che cambia mentre si digita è rumore.
   const statoConfig = statoConfigurazione(settings);
 
   const hourlyRate = parseNum(form.hourlyRate);
@@ -501,10 +450,8 @@ export default function Settings({ settings, onSave }) {
       workingDaysPerWeek: parseNum(form.workingDaysPerWeek),
     }) / 60
   ).toFixed(2).replace('.', ',');
-  // Fascia notturna del contratto scelto, e se quella impostata se ne discosta.
-  // Non si allinea da sola: chi ha copiato gli orari dal proprio cedolino ha
-  // ragione anche quando il contratto dice altro, e sovrascriverglieli in
-  // silenzio sarebbe il modo peggiore di «aiutarlo».
+  // Fascia notturna del contratto scelto, e se quella impostata se ne discosta. Non si allinea
+  // da sola: chi ha copiato gli orari dal cedolino ha ragione anche se il contratto dice altro.
   const fasciaCcnl = ccnlPreset.fasciaNotturna;
   const fasciaDiversaDalCcnl = !!fasciaCcnl
     && (form.nightStart !== fasciaCcnl.inizio || form.nightEnd !== fasciaCcnl.fine);
@@ -669,18 +616,14 @@ export default function Settings({ settings, onSave }) {
                   id="expected-hours"
                   type="number"
                   className="form-input"
-                  // `required` e `min="1"` invece di `min="0"`: lo zero qui non
-                  // è un valore basso, è un dato mancante travestito. Manda a
-                  // zero la soglia dei supplementari — ogni ora lavorata
-                  // diventa supplementare — e le ore di una giornata di ferie.
+                  // `required` e `min="1"`: lo zero è un dato mancante travestito (ogni ora
+                  // diventerebbe supplementare).
                   required
                   min="1"
                   max="84"
                   step="any"
-                  // `?? ''` e non `|| ''`: con `||` uno zero salvato si
-                  // ripresentava come CAMPO VUOTO, identico a «non l'ho ancora
-                  // messo», e chi lo guardava credeva valesse il default 40.
-                  // Lo zero era invisibile e sopravviveva ai riavvii.
+                  // `?? ''` e non `|| ''`: con `||` uno zero salvato si ripresentava come campo
+                  // VUOTO, identico a «non l'ho ancora messo».
                   value={form.expectedWeeklyHours ?? ''}
                   onChange={set('expectedWeeklyHours')}
                 />

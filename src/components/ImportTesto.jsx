@@ -8,21 +8,15 @@ import { minutesDiff, formatMinutes } from '../utils/dates';
 import { ShiftPreviewRow } from './ImportModal';
 import Righello from './Righello';
 
-// «Incolla i turni da un messaggio»: il testo si legge sul telefono, non va a
-// nessun servizio (utils/testo-turni.js). Per questo non ha l'avviso della foto.
+// «Incolla i turni da un messaggio»: il testo si legge sul telefono, non va a nessun servizio
+// (utils/testo-turni.js), per questo non ha l'avviso della foto. Il modulo è uno solo: si incolla e
+// sotto compare cosa è stato capito; l'unica cosa da toccare è «Parti da», solo quando le date sono
+// dedotte dal nome del giorno.
 //
-// Il modulo è uno solo: si incolla, e sotto compare subito cosa è stato capito.
-// Niente passaggio intermedio, niente domande: l'unica cosa che si può toccare
-// è «Parti da», e compare solo quando le date sono state dedotte dal nome del
-// giorno («Lun» non dice quale lunedì).
-//
-// Il testo può arrivare anche da «Condividi → Turni» (share_target nel manifest,
-// vite.config.js): allora il modulo si apre già pieno. Letto una volta sola e
-// tolto dall'indirizzo, come la scorciatoia in App.jsx: un ricaricamento non lo
-// riapre, e il tasto Indietro fa quello che ci si aspetta.
-//
-// Un'IMMAGINE condivisa invece la lascia il service worker in una cache
-// (public/condividi-sw.js) e qui arriva solo `?immagine_condivisa`.
+// Il testo può arrivare da «Condividi → Turni» (share_target nel manifest, vite.config.js): il
+// modulo si apre pieno, letto una volta e tolto dall'indirizzo come la scorciatoia in App.jsx. Un'
+// IMMAGINE condivisa la lascia il service worker in una cache (public/condividi-sw.js) e qui arriva
+// solo `?immagine_condivisa`.
 let immagineCondivisa = false;
 let condiviso = (() => {
   try {

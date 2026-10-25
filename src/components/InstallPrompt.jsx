@@ -1,31 +1,15 @@
 import { useState, useEffect } from 'react';
 
-// Banner "Installa app", in due nature diverse.
-//
-// SU iOS protegge i dati. Safari cancella lo storage dei siti non aperti per
-// sette giorni, e le web app aggiunte alla Home ne sono esenti: lì installare è
-// l'unica difesa dei turni (vedi utils/installazione.js). Quando e se parlare lo
-// decide App, perché deve anche zittire il promemoria in alto: qui arriva solo
-// `installaIOS`.
-//
-// ALTROVE è una comodità. Su Android/desktop Chromium (Chrome, Edge, Samsung
-// Internet) usa l'evento nativo `beforeinstallprompt`. Firefox (mobile e
-// desktop) non lo implementa — è un'API solo Chromium — quindi senza un ramo
-// dedicato il banner resterebbe invisibile in silenzio: su Firefox per Android
-// si mostrano le istruzioni dal menu del browser. Firefox desktop non ha alcun
-// modo nativo di installare una PWA (scelta di Mozilla, non un'API mancante):
-// lì solo un avviso generico, nessun pulsante che prometta ciò che non può fare.
-//
-// Non compare quando l'app è già installata.
+// Banner "Installa app", in due nature. SU iOS protegge i dati (vedi utils/installazione.js): quando
+// parlare lo decide App, qui arriva solo `installaIOS`. ALTROVE è una comodità: su Chromium si usa
+// l'evento `beforeinstallprompt`; Firefox Android non lo ha e mostra le istruzioni dal menu;
+// Firefox desktop non può installare una PWA, lì solo un avviso generico. Non compare se l'app è
+// già installata.
 
 const DISMISS_KEY = 'turni_install_dismissed';
 
-// localStorage può LANCIARE, non solo fallire: Safari con i cookie di terze
-// parti bloccati, `dom.storage.enabled=false`, WebView ristrette. Qui la lettura
-// avviene dentro un useEffect e in App non c'è error boundary a monte: senza
-// protezione l'eccezione smonterebbe l'intero albero, cioè schermo bianco al
-// posto di un banner mancante. Stesso trattamento del resto del repo
-// (useLocalStorage, backup).
+// localStorage può LANCIARE (cookie bloccati, WebView ristrette): senza protezione l'eccezione
+// smonterebbe l'albero (App non ha un error boundary a monte).
 const leggiFlag = (k) => {
   try { return localStorage.getItem(k); } catch { return null; }
 };
@@ -42,9 +26,8 @@ export const isIOS = () =>
   // iPadOS si presenta come Mac con touch
   (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
 
-// Firefox per Android: non espone `beforeinstallprompt`, ma supporta
-// "Aggiungi a schermata Home" dal menu del browser. Su iOS "Firefox" è solo
-// una skin di Safari (WebKit imposto da Apple), quindi lì vale già isIOS().
+// Firefox per Android: niente `beforeinstallprompt`, ma "Aggiungi a schermata Home" dal menu. Su
+// iOS "Firefox" è WebKit, quindi vale già isIOS().
 const isFirefoxAndroid = () => /firefox/i.test(window.navigator.userAgent)
   && /android/i.test(window.navigator.userAgent);
 
@@ -93,9 +76,7 @@ export default function InstallPrompt({ installaIOS = false, sospeso = false, on
   }, []);
 
   if (installaIOS) {
-    // Il motivo prima delle istruzioni: «aggiungi a Home» senza il perché è
-    // un invito come tanti, e si chiude. Il backup accanto non è un ripiego
-    // di cortesia: per chi non vuole un'icona in più è l'unica altra difesa.
+    // Il motivo prima delle istruzioni, e il backup accanto come altra difesa per chi non installa.
     return (
       <div className="install-banner install-banner--ios" role="status">
         <img className="install-banner-icon" src="/pwa-192x192.png" alt="" width="40" height="40" />
@@ -123,9 +104,8 @@ export default function InstallPrompt({ installaIOS = false, sospeso = false, on
   };
 
   const install = async () => {
-    // `prompt()` si può chiamare UNA volta sola per evento: senza questa guardia
-    // un doppio tocco mentre si attende `userChoice` produce una rejection non
-    // gestita. `deferred` non basta, viene azzerato solo dopo l'attesa.
+    // `prompt()` si può chiamare UNA volta per evento: senza guardia un doppio tocco produce una
+    // rejection non gestita (`deferred` si azzera solo dopo l'attesa).
     if (!deferred || installing) return;
     setInstalling(true);
     try {

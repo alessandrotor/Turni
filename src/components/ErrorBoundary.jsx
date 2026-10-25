@@ -2,27 +2,11 @@ import { Component } from 'react';
 import { esportaBackup, costruisciBackup, contaTurniSalvati } from '../services/backup';
 import { ESITO } from '../services/export';
 
-// Rete di sicurezza attorno all'app.
-//
-// Senza, un'eccezione durante il render smonta TUTTO: React lascia il div
-// radice vuoto e chi usa l'app si trova uno schermo bianco, senza messaggi e
-// senza vie d'uscita. Non è teorico — basta un turno con un campo inatteso o
-// un NaN finito dove serve un numero.
-//
-// Il punto non è mostrare un messaggio gentile: è che i turni vivono SOLO nel
-// localStorage di quel telefono. Se l'app non si apre, mesi di lavoro
-// diventano irraggiungibili, e la prima cosa che verrebbe in mente a chiunque
-// — disinstallare e reinstallare — li cancella per sempre. Quindi da questa
-// schermata si deve poter portare via i propri dati.
-//
-// Funziona perché `costruisciBackup()` legge direttamente da localStorage e
-// non tocca lo stato di React: continua a valere anche quando l'interfaccia è
-// morta. È questa la ragione per cui il salvagente regge proprio nel momento
-// in cui serve.
-//
-// ATTENZIONE a cosa NON copre: gli error boundary intercettano gli errori di
-// RENDER, non quelli dentro i gestori di eventi né quelli asincroni. Copre il
-// caso che porta allo schermo bianco, non tutto.
+// Rete di sicurezza attorno all'app. Senza, un'eccezione durante il render lascia lo schermo bianco,
+// e poiché i turni vivono SOLO nel localStorage del telefono, disinstallare e reinstallare li
+// cancella per sempre: da questa schermata si devono poter portare via i propri dati.
+// Funziona perché `costruisciBackup()` legge direttamente da localStorage senza toccare lo stato di
+// React. Non copre gli errori nei gestori di eventi né quelli asincroni, solo quelli di RENDER.
 export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
@@ -35,9 +19,7 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     this.setState({ componentStack: info?.componentStack || null });
-    // Resta in console per chi apre gli strumenti di sviluppo. Non si manda a
-    // nessuno: l'app non ha telemetria degli errori, e uno stack può contenere
-    // dati dei turni.
+    // Resta in console: l'app non ha telemetria, e uno stack può contenere dati dei turni.
     console.error('Errore non gestito, app fermata:', error, info);
   }
 
@@ -46,12 +28,8 @@ export default class ErrorBoundary extends Component {
     try {
       const { turni, esito, testo } = await esportaBackup();
 
-      // «Al sicuro» va detto solo quando lo sappiamo. Qui, più che altrove: chi
-      // legge questa schermata sta già guardando un'app rotta, e se prende per
-      // buona una rassicurazione falsa chiude tutto convinto di avere una
-      // copia. Con la consegna non verificabile si mostra subito il testo da
-      // copiare — la stessa via di riserva del caso peggiore, offerta prima che
-      // serva invece che dopo.
+      // «Al sicuro» solo quando lo sappiamo: con la consegna non verificabile si mostra subito il
+      // testo da copiare.
       if (esito === ESITO.SALVATO) {
         this.setState({ esito: { testo: `Backup salvato: ${turni} turni al sicuro.` } });
       } else if (esito === ESITO.ANNULLATO) {
@@ -66,10 +44,8 @@ export default class ErrorBoundary extends Component {
         });
       }
     } catch (err) {
-      // Ultimo salvagente. `esportaBackup` passa da `deliver`, che in uno stato
-      // già rotto può fallire. Qui si scende al minimo indispensabile —
-      // leggere localStorage e trasformarlo in testo — che non dipende da
-      // niente e non può rompersi a sua volta.
+      // Ultimo salvagente: `esportaBackup` passa da `deliver`, che in uno stato rotto può fallire.
+      // Si scende al minimo (leggere localStorage e farne testo).
       try {
         this.setState({
           esito: {
@@ -101,9 +77,7 @@ export default class ErrorBoundary extends Component {
     if (!this.state.error) return this.props.children;
 
     const { error, componentStack, esito, testoGrezzo } = this.state;
-    // Anche questo conteggio è protetto: se localStorage è inaccessibile
-    // (Safari coi cookie bloccati) non deve far cadere la schermata che
-    // esiste apposta per non cadere.
+    // Anche questo conteggio è protetto: se localStorage è inaccessibile non deve far cadere la schermata.
     let turni = null;
     try { turni = contaTurniSalvati(); } catch { turni = null; }
 

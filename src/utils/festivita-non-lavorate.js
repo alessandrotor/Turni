@@ -1,35 +1,18 @@
-// Le festività di un mese in cui non c'è nessun turno segnato.
-//
-// PERCHÉ ESISTE
-// Una festività non lavorata viene pagata — in busta compare come giustificativo
-// a sé («GO Festivita'», verificato su un cedolino di agosto) e vale le ore di
-// una giornata di contratto. Ma è anche la cosa più facile da dimenticare: sono
-// undici o dodici giorni sparsi nell'anno, e chi non lavora quel giorno non ha
-// nessun motivo per aprire l'app.
-//
-// L'app però sa già quali giorni sono festivi (`isHoliday`, che copre le
-// festività nazionali, la Pasqua calcolata e il santo patrono impostato).
-// Quindi può accorgersene e proporre.
-//
-// PROPONE, NON AGGIUNGE
-// Questo modulo dice soltanto QUALI giorni sarebbero candidati. Crearli è una
-// scelta di chi usa l'app: chi ha un contratto mensilizzato, o semplicemente
-// non ha diritto alla festività pagata, non deve ritrovarsi il mese gonfiato da
-// ore che non ha inserito.
+// Le festività di un mese in cui non c'è nessun turno segnato. Una festività non lavorata è pagata
+// (in busta è un giustificativo a sé) ed è facile da dimenticare: l'app sa già quali giorni sono
+// festivi (`isHoliday`) e PROPONE; crearli è una scelta di chi usa l'app (un mensilizzato può non
+// averne diritto).
 //
 // Riscontro: `node scripts/check-festivita.mjs`.
 
-// Estensioni esplicite: senza, Node puro non importa il modulo e i riscontri in
-// `scripts/` non partono.
+// Estensioni esplicite: senza, Node puro non importa il modulo.
 import { formatDate, getDaysInMonth } from './dates.js';
 import { isHoliday } from '../motore/holidays.js';
 
 /**
  * I giorni festivi del mese senza alcun turno segnato.
  *
- * «Alcun turno» vale per QUALUNQUE tipo: se il primo maggio c'è già una
- * giornata di ferie, o un turno lavorato, non è un candidato — l'utente ha già
- * detto la sua su quel giorno.
+ * «Alcun turno» vale per QUALUNQUE tipo: se c'è già ferie o lavoro, non è un candidato.
  *
  * @param {number} anno
  * @param {number} mese indice 0-11, come `Date.getMonth()`

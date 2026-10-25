@@ -1,42 +1,15 @@
-// «C'è qualcosa da perdere?»: la domanda che il modulo del turno si fa prima di
-// lasciarsi chiudere da un tocco.
+// «C'è qualcosa da perdere?»: la domanda che il modulo del turno si fa prima di lasciarsi
+// chiudere da un tocco sull'area scura attorno.
 //
-// COS'ERA PRIMA
-// `ShiftForm.jsx` chiudeva la finestra al primo tocco sull'area scura attorno:
-// `onClick={(e) => e.target === e.currentTarget && onClose()}`. Su un telefono
-// quell'area è la parte più grande dello schermo, e il tocco accidentale è
-// banale — il pollice che scivola, il dito appoggiato mentre si legge.
+// Non una conferma «annulla modifiche?» (costa un tocco a tutti per un errore che capita a
+// uno), e un annulla DOPO non esiste: una bozza chiusa non è mai stata scritta da nessuna
+// parte. Finché non c'è niente da perdere il tocco fuori chiude; appena c'è, smette e la
+// finestra si muove indicando la ✕. Il caso che conta è il PERIODO DI ASSENZA (venti
+// giornate corrette riga per riga).
 //
-// Il caso peggiore non è il turno da otto tocchi: è il PERIODO DI ASSENZA. Si
-// imposta il primo e l'ultimo giorno, si tolgono i riposi, si corregge riga per
-// riga chi ha orari diversi — venti giornate, il lavoro manuale più lungo che
-// l'app chieda — e un tocco fuori bersaglio azzerava tutto senza un segnale.
-//
-// PERCHÉ NON UNA CONFERMA «ANNULLA MODIFICHE?»
-// Perché è la domanda che il progetto ha già deciso di non fare: costa un tocco
-// a TUTTI, ogni volta, per un errore che capita a uno — ed è esattamente il
-// genere di avviso che si impara a chiudere a riflesso, portandosi dietro anche
-// quelli che contavano (vedi `AvvisoAnnulla.jsx`, stessa ragione).
-//
-// E perché qui non si può nemmeno fare l'altra metà della regola, l'annulla
-// DOPO: un turno cancellato esiste ancora per otto secondi, una bozza chiusa no
-// — non è mai stata scritta da nessuna parte.
-//
-// COSA SI FA INVECE
-// Niente domande e nessun tocco in più. Finché non c'è niente da perdere il
-// tocco fuori chiude come sempre; appena c'è, quel tocco smette di chiudere e
-// la finestra risponde con un movimento che indica la ✕. Le due vie d'uscita
-// volute — la ✕ e «Annulla» — restano quelle di prima, perché si toccano
-// apposta e non per sbaglio.
-//
-// PERCHÉ UN MODULO A PARTE, PURO
-// Il difetto che questa funzione può avere è silenzioso in tutte e due le
-// direzioni: se dicesse sempre «sì» la finestra non si chiuderebbe più col
-// tocco fuori, se dicesse sempre «no» la protezione sparirebbe senza che niente
-// lo dica. E ne ha un terzo, peggiore: basta aggiungere un campo al modulo e
-// scordarsi di elencarlo qui perché quel campo resti scoperto — di nuovo in
-// silenzio. Da qui `scripts/check-bozza.mjs`, che l'elenco non lo dà per buono:
-// lo confronta con i campi che `ShiftForm.jsx` modifica davvero.
+// Modulo puro: un campo nuovo nel modulo che nessuno elenca qui resterebbe scoperto in
+// silenzio, per questo `scripts/check-bozza.mjs` confronta l'elenco con i campi che
+// `ShiftForm.jsx` modifica davvero.
 
 /**
  * I campi del modulo che l'utente può toccare.
@@ -57,10 +30,8 @@ export const CAMPI_BOZZA = [
   'note',
 ];
 
-// I campi passano dagli `<input>`, che restituiscono sempre stringhe: `30` e
-// `'30'` sono lo stesso valore per chi guarda lo schermo, e devono esserlo
-// anche qui. Senza questo, toccare un preset della pausa e rimetterlo com'era
-// lascerebbe la finestra bloccata per un numero che non è cambiato.
+// I campi passano dagli `<input>`, che restituiscono stringhe: `30` e `'30'` sono lo stesso
+// valore anche qui, altrimenti rimettere un preset com'era lascerebbe la finestra bloccata.
 function normalizza(valore) {
   if (valore === null || valore === undefined) return '';
   return String(valore).trim();

@@ -1,18 +1,7 @@
-// Il riquadro del trattamento integrativo, sotto il calendario.
-//
-// Stava dentro CalendarView, ed era la parte più affollata della schermata:
-// margine, barra, previsto, maturato, montante, conguaglio e simulazione, sette
-// cose di fila senza una gerarchia. Chi lo apriva leggeva «Margine prima della
-// soglia: 1.005 €» con la barra verde e nessun avviso, e capiva che col
-// prossimo stipendio sarebbe stato fuori: il margine era sull'ANNO, ma non lo
-// diceva. E la soglia stava solo come etichetta sotto la barra.
-//
-// L'ordine ora è quello delle domande: 1) sto sotto o sopra? 2) cos'è la
-// soglia, per me? 3) dove sono sulla barra? 4) cosa succede a dicembre?
-// 5) e se prendessi il premio tutti i mesi? Una risposta per riga.
-//
-// Qui non si calcola niente: ogni cifra arriva dal calendario, che la prende
-// dal motore (CLAUDE.md, «il motore è il cuore»).
+// Il riquadro del trattamento integrativo, sotto il calendario. L'ordine è quello delle domande:
+// 1) sto sotto o sopra? 2) cos'è la soglia, per me? 3) dove sono sulla barra? 4) cosa succede a
+// dicembre? 5) e se prendessi il premio tutti i mesi? Una risposta per riga. Il margine è sull'ANNO,
+// e lo dice. Qui non si calcola niente: ogni cifra arriva dal calendario, che la prende dal motore.
 
 import { formatCurrency } from '../motore/pay';
 import { euroCella, scriviForchetta } from '../utils/formato';
@@ -43,10 +32,8 @@ export default function RiquadroTI({
   const perche = <button type="button" className="linklike" onClick={onPerche}>perché?</button>;
   const tetto = bonus.thresholdFullGross;
 
-  // 1) LO STATO, in una riga. I tre casi non sono tre intensità dello stesso
-  // allarme (vedi `costoSoglia`): sotto si dice il margine, dentro la buca
-  // quanto manca al pari, oltre che non si perde niente. La cassa — il
-  // trattamento già preso che torna indietro — si dice come cassa.
+  // 1) LO STATO, in una riga. I tre casi non sono tre intensità dello stesso allarme (vedi
+  // `costoSoglia`); la cassa (il trattamento già preso che torna indietro) si dice come cassa.
   let stato;
   if (rischio.causa === CAUSA.RINUNCIATO) {
     stato = (

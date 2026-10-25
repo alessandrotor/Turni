@@ -1,11 +1,7 @@
-// I tre popup fiscali del calendario: perché ogni mese è diverso, il
-// conguaglio di dicembre, come funziona il trattamento integrativo.
-//
-// Stavano dentro CalendarView, che era arrivato a 2.211 righe; ora quel file
-// non può più crescere (check-dimensioni.mjs). Qui non si calcola NIENTE: ogni
-// cifra arriva già fatta dal calendario, che la prende dal motore. Un popup
-// che rifà un conto per conto suo è il difetto che CLAUDE.md chiama «il motore
-// è il cuore».
+// I tre popup fiscali del calendario: perché ogni mese è diverso, il conguaglio di dicembre, come
+// funziona il trattamento integrativo. Stanno qui perché CalendarView non può più crescere
+// (check-dimensioni.mjs). Qui non si calcola NIENTE: ogni cifra arriva dal calendario, che la
+// prende dal motore.
 
 import { useRef } from 'react';
 import useModalDismiss from '../hooks/useModalDismiss';
@@ -39,11 +35,9 @@ function Finestra({ titolo, onChiudi, children }) {
   );
 }
 
-// PERCHÉ OGNI MESE È DIVERSO. La regola del programma paghe (lordo del
-// stima dell'anno, `tiSpettaQuestoMese`) e il suo effetto su QUESTO mese, con
-// le righe e i nomi della busta. Le cifre sono quelle di `nettoDelMese`:
-// le stesse del riquadro da cui si apre. Verificata su buste Zucchetti
-// (check-ti-mensile.mjs): lo si dice, senza promettere che ogni
+// PERCHÉ OGNI MESE È DIVERSO. La regola del programma paghe (`tiSpettaQuestoMese`) e il suo
+// effetto su QUESTO mese, con le righe e i nomi della busta. Le cifre sono quelle di `nettoDelMese`.
+// Verificata su buste Zucchetti (check-ti-mensile.mjs): lo si dice, senza promettere che ogni
 // programma paghe faccia uguale.
 export function PopupMese({
   netMonth, currentMonth, conguaglio, meseSiInverte, forchettaScritta, tiNelMese, minimoTi, onChiudi, onApriConguaglio,
@@ -176,11 +170,8 @@ export function PopupConguaglio({
   );
 }
 
-// I CONTI DELLA SOGLIA, per chi tocca «perché?». Il pericolo da
-// togliere è uno solo: considerare i ~100 € al mese già spesi.
-// «Meno tasse e altre voci» non si scompone in detrazione (+1.145) e
-// indennità 207/2024 (−~70): a schermo basta la somma, che esce dal
-// motore (`costoSoglia`) e non da costanti scritte qui.
+// I CONTI DELLA SOGLIA, per chi tocca «perché?». «Meno tasse e altre voci» non si scompone in
+// detrazione e indennità 207/2024: basta la somma, che esce dal motore (`costoSoglia`).
 export function PopupSoglia({
   erogato, alTuoLordo, proiezione, costo, tabellaSoglia, posizione, mancaPareggio, onChiudi,
 }) {
