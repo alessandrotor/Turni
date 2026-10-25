@@ -68,7 +68,7 @@ async function grigiDa(file) {
   const rgba = ctx.getImageData(0, 0, W, H).data;
   const grigi = new Uint8Array(W * H);
   for (let i = 0; i < grigi.length; i++) grigi[i] = (rgba[4 * i] * 299 + rgba[4 * i + 1] * 587 + rgba[4 * i + 2] * 114) / 1000;
-  return { grigi, W, H };
+  return { grigi, W, H, quadro: tela };
 }
 
 // La cella (già alta 60 px e in bianco e nero: utils/tabellone.js) con un
@@ -91,11 +91,11 @@ export async function apriTabellone(file, { oggi, nome, avanza = () => {} }) {
   avanza('scarico');
   await avviaLettori();
   avanza('nomi');
-  const { grigi, W, H } = await grigiDa(file);
+  const { grigi, W, H, quadro } = await grigiDa(file);
   const { hy, vx } = trovaGriglia(grigi, W, H);
   const col = colonne(vx);
   const [testa, ...righe] = fasce(hy);
-  if (!col || !righe.length) return apriFoto(await avviaLettore(), grigi, W, H, avanza);
+  if (!col || !righe.length) return apriFoto(await avviaLettore(), grigi, W, H, avanza, quadro);
 
   const intestazione = [];
   for (let g = 0; g < 7 && (lunediVotato(intestazione, oggi)?.voti || 0) < 2; g += QUANTI) {
@@ -144,7 +144,12 @@ export async function turniDi(tabellone, persona, { avanza = () => {} } = {}) {
 // Una FOTO, senza griglia da trovare: si leggono gli orari di tutta
 // l'immagine solo per capire dove stanno le colonne. La riga la sceglie chi
 // usa l'app, col righello (components/Righello.jsx).
-async function apriFoto(w, grigi, W, H, avanza) {
+// L'anteprima del righello è la STESSA immagine che il lettore ha letto, già
+// rimpicciolita, come data URL. Mostrare il file originale con un blob URL su
+// un Pixel 8a dava l'immagine rotta (ottobre 2026) — una foto da 12-50 MP da
+// decodificare una seconda volta, coi due lettori ancora in memoria. Così la
+// fascia sta anche sulle stesse coordinate dei conti.
+async function apriFoto(w, grigi, W, H, avanza, quadro) {
   avanza('colonne');
   await w.setParameters({ tessedit_pageseg_mode: '11', tessedit_char_whitelist: '0123456789: ' });
   const { data } = await w.recognize(tela({ ...contrasto(grigi), w: W, h: H }), {}, { blocks: true });
@@ -152,7 +157,7 @@ async function apriFoto(w, grigi, W, H, avanza) {
     .map((p) => ({ testo: p.text, x0: p.bbox.x0 - 20, x1: p.bbox.x1 - 20, y0: p.bbox.y0 - 20, y1: p.bbox.y1 - 20 }));
   const colonneX = colonneDaCoppie(coppieDaParole(parole), W);
   if (colonneX.length < 2) return { errore: 'formato' };
-  return { foto: true, grigi, W, H, colonneX };
+  return { foto: true, grigi, W, H, colonneX, anteprima: quadro.toDataURL('image/jpeg', 0.8) };
 }
 
 // La fascia del righello, `{ y0, y1, gradi }` in pixel dell'immagine letta.

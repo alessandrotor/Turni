@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 // Il righello: quando in una FOTO la griglia non si trova (lo schermo di un
 // gestionale, un foglio storto), la riga la indica chi la guarda. Una fascia
@@ -13,17 +13,11 @@ import { useEffect, useRef, useState } from 'react';
 const GIORNI = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
 const NOMI = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
 
-export default function Righello({ file, larghezza, altezza, iniziale, onLeggi }) {
-  const [url, setUrl] = useState('');
+export default function Righello({ src, larghezza, altezza, iniziale, onLeggi }) {
+  const [rotta, setRotta] = useState(false);
   const [fascia, setFascia] = useState(iniziale || { centro: 0.5, alta: 0.09, gradi: 0, primo: 0 });
   const quadro = useRef(null);
   const presa = useRef(null);
-
-  useEffect(() => {
-    const u = URL.createObjectURL(file);
-    setUrl(u);
-    return () => URL.revokeObjectURL(u);
-  }, [file]);
 
   // Trascinare: la fascia intera (si sposta) o un bordo (si allarga).
   const inizia = (modo) => (e) => {
@@ -62,7 +56,9 @@ export default function Righello({ file, larghezza, altezza, iniziale, onLeggi }
       <p className="import-match" style={{ marginBottom: '.4rem' }}>Trascina la fascia sulla tua riga.</p>
       <div ref={quadro} onPointerMove={muovi} onPointerUp={lascia} onPointerCancel={lascia}
         style={{ position: 'relative', width: '100%', maxWidth: `calc(40vh * ${larghezza / altezza})`, margin: '0 auto', touchAction: 'none', userSelect: 'none', overflow: 'hidden', borderRadius: 6 }}>
-        {url && <img src={url} alt="Il tabellone" draggable={false} style={{ display: 'block', width: '100%' }} />}
+        {/* Senza immagine la fascia si posa lo stesso: lo spazio resta nelle proporzioni della foto. */}
+        {rotta ? <div style={{ aspectRatio: `${larghezza} / ${altezza}`, background: 'var(--c-bg)' }} />
+          : <img src={src} alt="" draggable={false} onError={() => setRotta(true)} style={{ display: 'block', width: '100%' }} />}
         <div onPointerDown={inizia('sposta')} role="slider" aria-label="La tua riga" tabIndex={0}
           aria-valuenow={Math.round(fascia.centro * 100)} aria-valuemin={0} aria-valuemax={100}
           onKeyDown={(e) => {
