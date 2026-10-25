@@ -6,37 +6,18 @@ import { isMensilizzato, monthlyContractHours } from './ccnl.js';
 import { isAssenza, tipoTurno, percentualeAssenza, giorniEventoMalattia, TIPO } from './assenze.js';
 import { minutiNotturniPagati, pctNotturnoAggiuntiva, straordinarioNotturno } from './notturno.js';
 
-// UNA SOLA STRADA PER LA PAGA, e non è una preferenza di stile.
-//
-// Il percorso vero è `computePayByShift` → `calcTotalPay`: è lì che stanno il
-// monte ore del mese e il supplementare a settimana, le maggiorazioni che non
-// si cumulano, le assenze che riempiono la soglia senza generare straordinari.
-// È l'unico percorso riscontrato sulle buste reali —
-// `check-supplementare-settimanale`, `check-busta-luglio-2026`.
-//
-// Fino al 1° settembre 2026 qui accanto ne vivevano altre quattro, esportate e
-// mai chiamate da nessuno: `calcPay(ore, paga)` che moltiplicava e basta,
-// `calcShiftPay` che calcolava un turno IGNORANDO la soglia mensile (e lo
-// ammetteva nel proprio commento), più `calcShiftHours` e `calcWeekTotals`,
-// resti di quando l'app ragionava a settimane. Non erano disordine: erano una
-// trappola. Nomi autorevoli, export pubblico, e un numero diverso da quello
-// riscontrato per chiunque le avesse chiamate credendole il motore.
-//
-// Chi aggiunge qui un secondo modo di calcolare la paga si porti il riscontro
-// sulla busta, oppure non lo aggiunga.
+// UNA SOLA STRADA PER LA PAGA: `computePayByShift` → `calcTotalPay`, l'unico
+// percorso riscontrato sulle buste reali (`check-supplementare-settimanale`,
+// `check-busta-luglio-2026`). Chi aggiunge un secondo modo di calcolare la paga
+// si porti il riscontro sulla busta, oppure non lo aggiunga.
 
-// Ferie, permessi e malattia non hanno orari: portano una durata già in minuti,
-// perché in busta valgono un numero fisso di ore e non un intervallo. Il
-// controllo sta qui e non nei chiamanti così ore, totali e statistiche
-// continuano a funzionare senza sapere che tipo di giornata stanno sommando.
+// Ferie, permessi e malattia non hanno orari: portano una durata già in minuti
+// (`durationMinutes`), così ore, totali e statistiche non devono distinguerli.
 export function calcShiftMinutes(shift) {
   if (shift?.durationMinutes != null) return Math.max(0, Number(shift.durationMinutes) || 0);
   const total = minutesDiff(shift.startTime, shift.endTime);
   return Math.max(0, total - (shift.breakMinutes || 0));
 }
-
-
-
 
 // Parsing robusto di numeri all'italiana: accetta "7123,28", "17.213,28"
 // e anche "7123.28". La virgola, se presente, è il separatore decimale.
@@ -83,13 +64,9 @@ export function isSunday(dateStr) {
   return parseDate(dateStr).getDay() === 0;
 }
 
-// Maggiorazioni di un turno, tenute DISTINTE per tipo (percentuali):
-// domenicale (se domenica), festiva (se festività), manuale (impostata sul turno).
-// Se il turno è sia domenica sia festivo, le due si combinano secondo
-// settings.holidaySundayMode ('max' default | 'sum' | 'holiday'), perché i CCNL variano;
-// qui la combinazione decide anche a QUALE delle due va attribuita la quota, così
-// il riepilogo può dire quanto della paga viene da domeniche e quanto da festivi.
-// A parità, in modalità 'max', la quota va al festivo: è la ragione più specifica.
+// Maggiorazioni di un turno, DISTINTE per tipo (percentuali): domenicale,
+// festiva, manuale. Se è sia domenica sia festivo valgono `holidaySundayMode`
+// ('max' default | 'sum' | 'holiday'); in 'max' a parità la quota va al festivo.
 export function getShiftSurchargeParts(shift, settings) {
   let sunday = isSunday(shift.date) ? (Number(settings?.sundaySurchargePct) || 0) : 0;
   let holiday = isHoliday(shift.date, settings) ? (Number(settings?.holidaySurchargePct) || 0) : 0;
@@ -104,10 +81,8 @@ export function getShiftSurchargeParts(shift, settings) {
   return { sunday, holiday, manual: Number(shift.surchargePct) || 0 };
 }
 
-// NB: il notturno NON sta qui. Queste sono percentuali che valgono sul turno
-// INTERO perché dipendono dal giorno; il notturno vale solo sui minuti che
-// cadono nella fascia oraria, quindi ha un modulo suo (motore/notturno.js) e
-// entra nel calcolo più sotto, in computePayByShift.
+// Il notturno NON sta qui: vale solo sui minuti in fascia, ha un modulo suo
+// (notturno.js).
 
 // Percentuale di maggiorazione totale per un turno: la somma delle tre componenti.
 export function getShiftSurchargePct(shift, settings) {
@@ -115,43 +90,15 @@ export function getShiftSurchargePct(shift, settings) {
   return p.sunday + p.holiday + p.manual;
 }
 
-// Minuti compresi nella fascia [lo, hi) dell'intervallo [before, after).
-// Serve a spezzare un turno che attraversa una soglia (es. inizia sotto il
-// full-time e finisce sopra) fra le due fasce senza contarli due volte.
+// Minuti compresi nella fascia [lo, hi) dell'intervallo [before, after): spezza
+// un turno che attraversa una soglia senza contarlo due volte.
 function minutesInBand(before, after, lo, hi) {
   return Math.max(0, Math.min(after, hi) - Math.max(before, lo));
 }
 
-// Calcola la paga di ogni turno tenendo conto delle maggiorazioni per ore
-// eccedenti, su DUE soglie:
-//  - supplementari: ore oltre il contratto (part-time) ma entro il full-time,
-//    maggiorazione `overtimeSurchargePct`;
-//  - straordinari: ore oltre il full-time, maggiorazione
-//    `straordinarioSurchargePct` (vuoto = eredita quella dei supplementari,
-//    stesso pattern di `tfrTaxRate` in net.js — così chi non tocca il campo
-//    nuovo ha lo stesso comportamento di prima).
-// La soglia full-time non si applica a chi lavora "a chiamata" (onCall): non
-// esiste un contratto part-time da cui distinguerla, resta una sola soglia
-// giornaliera come sempre.
-//
-// Tre modalità per la soglia-contratto (supplementari):
-//  - contratto (default): oltre le ore da contratto nella settimana (lun-dom);
-//  - contratto MENSILIZZATO (es. Turismo): DUE regole insieme, e servono
-//    tutte e due. Le ore ORDINARIE sono il monte ore del mese (24 × 4,3 =
-//    103,20), comunque si distribuiscano: luglio 2026 ne ha 109,5 lavorate e
-//    la busta ne paga 103,20, settembre 100,5 con le ferie e ne paga 103,20.
-//    Il SUPPLEMENTARE invece si conta a SETTIMANA, oltre le ore da contratto,
-//    nel giorno in cui lo si fa. Contarlo sul mese (le ore oltre 103,20) dava
-//    11,55 h a settembre contro le 14,25 stampate, e la domenicale su ore che
-//    la busta paga come supplementari. → check-supplementare-settimanale.mjs
-//  - a chiamata (onCall): oltre la soglia giornaliera (dailyOvertimeThreshold).
-//    Ha la precedenza: chi lavora a chiamata non ha un orario mensilizzato da
-//    rispettare, né una soglia full-time (vedi sopra).
-// Minuti di STRAORDINARIO di ogni turno, contati a settimana (lun-dom) sul
-// lavoro effettivo: ferie e permessi non sono lavoro prestato, e le ore festive
-// hanno la loro riga in busta (stessa regola del supplementare, sotto). La
-// settimana a cavallo di due mesi resta una: le ore di fine settembre contano
-// per le 40 della settimana che finisce in ottobre.
+// Minuti di STRAORDINARIO di ogni turno, contati a settimana (lun-dom) sul lavoro
+// effettivo: ferie e permessi non sono lavoro prestato, le ore festive hanno la
+// loro riga in busta. Una settimana a cavallo di due mesi resta una.
 function straordinarioPerSettimana(allShifts, settings, sogliaMin) {
   const ordinati = [...allShifts].sort((a, b) =>
     (a.date + (a.startTime || '')).localeCompare(b.date + (b.startTime || '')));
@@ -169,8 +116,7 @@ function straordinarioPerSettimana(allShifts, settings, sogliaMin) {
   return esito;
 }
 
-// Le assenze prima, poi il lavoro in ordine cronologico: vedi sotto, in
-// computePayByShift, perché le ferie riempiono la soglia e non la superano.
+// Le assenze prima, poi il lavoro in ordine cronologico (vedi computePayByShift).
 function assenzePrima(a, b) {
   const pesoA = isAssenza(a) ? 0 : 1;
   const pesoB = isAssenza(b) ? 0 : 1;
@@ -180,12 +126,9 @@ function assenzePrima(a, b) {
 
 // Minuti di SUPPLEMENTARE di ogni turno sul mensilizzato, a settimana (lun-dom):
 // le ore oltre il contratto, nel giorno in cui si superano. Ferie, permessi e
-// malattia riempiono la settimana; la festività NON lavorata no — è già dentro
-// il monte ore del mese, e ad agosto 2026 contarla dava 22,5 h contro 17,5.
-// Fuori anche il festivo lavorato, che in busta ha la sua riga, e le ore già
-// straordinarie. Una settimana a cavallo resta una: il 2 agosto 2026 chiude
-// una settimana di luglio, e le sue 2,5 h oltre le 24 sono nella busta di agosto.
-// Il permesso `presunto` di cosa-cambia.js riempie il mese, non la settimana.
+// malattia riempiono la settimana; la festività NON lavorata no (è già nel monte
+// ore). Fuori anche il festivo lavorato e le ore già straordinarie. Il permesso
+// `presunto` di cosa-cambia.js riempie il mese, non la settimana.
 function supplementarePerSettimana(allShifts, settings, sogliaMin, straordinario) {
   const settimane = new Map();
   for (const s of allShifts) {
@@ -209,17 +152,12 @@ function supplementarePerSettimana(allShifts, settings, sogliaMin, straordinario
 }
 
 // Quanto vale un minuto ordinario lavorato nel mese del mensilizzato: le ore
-// ordinarie pagate sono il monte ore, non quelle lavorate. 1 se il mese non
-// è ancora pieno: lì si mostrano le ore segnate (supplementari a parte), e la
-// parte ordinaria sale fino al monte man mano che il mese si riempie, senza
-// salti. Il festivo lavorato ha la sua riga e resta fuori.
+// ordinarie pagate sono il monte ore, non quelle lavorate. Il festivo lavorato
+// ha la sua riga e resta fuori.
 //
-// IL MESE IN CORSO sale coi turni (`inCorso`): le ordinarie sono le ore
-// segnate MENO i supplementari, fino al monte. Con la regola dei mesi chiusi
-// le ore supplementari riempivano anche il monte: a ottobre 2026, 133 h
-// segnate di cui 39 supplementari davano il monte già pieno a metà mese, e i
-// turni aggiunti dopo non muovevano il lordo di un euro — sembrava un guasto.
-// A mese chiuso vale la busta: il monte ore spetta comunque. → check-mese-in-corso.mjs
+// Il mese IN CORSO (`inCorso`) sale coi turni: ordinarie = ore segnate meno
+// supplementari, fino al monte. A mese chiuso vale la busta.
+// → check-mese-in-corso.mjs
 function quotaOrdinaria(turni, settings, monteMin, supplementare, straordinario, inCorso = false) {
   let lavoro = 0;
   let assenze = 0;
@@ -241,11 +179,17 @@ function quotaOrdinaria(turni, settings, monteMin, supplementare, straordinario,
 }
 
 // Serve l'insieme completo dei turni per raggruppare correttamente.
-// Ritorna una mappa { [shiftId]: { base, surcharge, overtimeMinutes, ... } }.
+// Ritorna { [shiftId]: { base, surcharge, overtimeMinutes, ... } }.
+// `oggi` (facoltativo): il mese che la contiene (e i successivi) è «in corso» e le
+// ordinarie salgono coi turni; senza, ogni mese è chiuso, come in busta.
 //
-// `oggi` (facoltativo): con la data, il mese che la contiene (e quelli dopo)
-// sono «in corso» e le ore ordinarie salgono coi turni segnati; senza, ogni
-// mese è contato come chiuso, come sulla busta.
+// Soglia del supplementare (le ore oltre il contratto):
+//  - a chiamata (`onCall`): oltre la soglia giornaliera, ha la precedenza;
+//  - mensilizzato (Turismo): ordinarie = monte ore del mese, supplementare a
+//    SETTIMANA nel giorno in cui si supera. → check-supplementare-settimanale.mjs
+//  - altrimenti: oltre le ore da contratto nella settimana (lun-dom).
+// Lo straordinario (oltre il full-time, `straordinarioSurchargePct`; vuoto = come i
+// supplementari) non si applica a chi lavora a chiamata.
 export function computePayByShift(allShifts, settings, { oggi = null } = {}) {
   const otPct = Number(settings?.overtimeSurchargePct) || 0;
   const extraPctRaw = settings?.straordinarioSurchargePct;
@@ -257,10 +201,8 @@ export function computePayByShift(allShifts, settings, { oggi = null } = {}) {
     : mensile
       ? monthlyContractHours(settings) * 60
       : (Number(settings?.expectedWeeklyHours) || 0) * 60;
-  // Lo STRAORDINARIO è sempre a settimana: lavoro oltre l'orario normale di
-  // 40 ore settimanali (D.Lgs. 66/2003, art. 1 e 3). Sul mensilizzato si contava
-  // sul mese (40 × 4,3 = 172 h), e chi faceva 45 ore in una settimana e poche
-  // nelle altre non ne vedeva nessuna. → check-straordinario-settimanale.mjs
+  // Lo STRAORDINARIO è sempre a settimana, oltre 40 ore (D.Lgs. 66/2003, art. 1 e 3).
+  // → check-straordinario-settimanale.mjs
   const fullTimeThresholdMin = onCall ? 0 : (Number(settings?.fullTimeWeeklyHours) || 0) * 60;
   const applyOvertime = thresholdMin > 0 && otPct > 0;
   const applyExtra = !onCall && fullTimeThresholdMin > 0 && extraPct > 0;
@@ -270,20 +212,12 @@ export function computePayByShift(allShifts, settings, { oggi = null } = {}) {
     ? supplementarePerSettimana(allShifts, settings, (Number(settings?.expectedWeeklyHours) || 0) * 60, straordinarioSett)
     : null;
 
-  // La carenza si conta per EVENTO di malattia, quindi va ricavata da tutti i
-  // turni in una volta: un giorno isolato non sa di che evento fa parte.
+  // La carenza si conta per EVENTO di malattia: va ricavata da tutti i turni.
   const eventoMalattia = giorniEventoMalattia(allShifts);
 
-  // Raggruppa per giorno (a chiamata), per mese (mensilizzato) o per settimana
-  // (contratto).
-  //
-  // Sul mensilizzato il raggruppamento SEGUE `periodoConteggio`, cioè la stessa
-  // scelta che decide quali turni si vedono a schermo. Finché non lo faceva,
-  // chi sceglieva «mese di calendario» otteneva un ibrido: i turni dell'1-31
-  // ma con le quote di supplementare calcolate su gruppi a settimane intere,
-  // che sconfinano nel mese dopo. La ripartizione fra ore ordinarie e
-  // supplementari che ne usciva non era né quella di una regola né quella
-  // dell'altra, e non corrispondeva a nessuna busta.
+  // Raggruppa per giorno (a chiamata), mese (mensilizzato) o settimana (contratto).
+  // Sul mensilizzato segue `periodoConteggio`, come i turni visibili a schermo:
+  // senza, «mese di calendario» dava un ibrido che non era la busta.
   const perCalendario = settings?.periodoConteggio === 'calendario';
   const groups = new Map();
   for (const s of allShifts) {
@@ -299,27 +233,10 @@ export function computePayByShift(allShifts, settings, { oggi = null } = {}) {
 
   const result = {};
   for (const [chiave, groupShifts] of groups.entries()) {
-    // LE ASSENZE PRIMA, poi il lavoro in ordine cronologico.
-    //
-    // Non è un vezzo: decide quante ore risultano supplementari, e lo si vede
-    // sulla busta di agosto 2026. Quel mese ha quindici giorni di ferie che
-    // cominciano il 31, cioè DOPO che la soglia mensile è già stata superata.
-    //
-    // In ordine puramente cronologico il motore incontrava quelle 4 ore a
-    // soglia piena: le scartava dai supplementari — giustamente, un'assenza non
-    // si paga in più — ma così non riempivano più la soglia, e altrettante ore
-    // di lavoro restavano ordinarie. Risultato: 13,55 ore supplementari contro
-    // le 17,50 stampate, esattamente 4 ore di meno.
-    //
-    // La busta fa l'opposto, e lo dichiara nella propria aritmetica:
-    //   4,00 ferie + 99,20 retribuzione = 103,20 (il monte ore fisso)
-    //   + 17,50 supplementare
-    // Le ferie stanno DENTRO le ore fisse, non oltre.
-    //
-    // Vale in generale, non solo per agosto: chi va in ferie a fine mese si
-    // vedeva sottrarre ore supplementari già maturate, e l'effetto cresceva con
-    // la durata dell'assenza. Fra assenze, e fra turni di lavoro, l'ordine
-    // resta quello cronologico — cambia solo quale dei due gruppi viene prima.
+    // LE ASSENZE PRIMA, poi il lavoro in ordine cronologico: riempiono la soglia
+    // del monte ore (busta: 4,00 ferie + 99,20 retribuzione = 103,20). In ordine
+    // cronologico le ferie di fine mese non la riempivano e si perdevano ore
+    // supplementari (agosto 2026: 13,55 h contro 17,50). → docs/note-motore-pay.md
     groupShifts.sort(assenzePrima);
     const quota = supplementareSett
       ? quotaOrdinaria(groupShifts, settings, thresholdMin, supplementareSett, straordinarioSett, meseOggi != null && chiave >= meseOggi) : 1;
@@ -338,24 +255,11 @@ export function computePayByShift(allShifts, settings, { oggi = null } = {}) {
       // non prende il domenicale, non ci si è andati.
       const parts = assenza ? { sunday: 0, holiday: 0, manual: 0 } : getShiftSurchargeParts(s, settings);
 
-      // LE ORE FESTIVE STANNO FUORI DAL CONTEGGIO DELLE ECCEDENZE.
-      //
-      // In busta un giorno festivo lavorato ha una riga sua — «Lavoro festivo
-      // ordinario» al 100%, piu' «Magg. festivo» — e quelle ore NON compaiono
-      // fra le supplementari. Contarle in entrambi i posti le pagava al 130% +
-      // 20% invece che al 120%.
-      //
-      // Si mettono da parte PRIMA della soglia, non solo dopo: e' la differenza
-      // fra le due letture possibili, e la busta di giugno 2026 la decide.
-      // 145,20 ore lavorate, 13,75 festive, soglia 103,20 →
-      //   131,45 − 103,20 = 28,25 supplementari, esattamente quanto stampato.
-      // Lasciandole nel monte ore (togliendole solo dalle supplementari) le 6,75
-      // ore del 2 giugno riempirebbero parte della soglia e ne uscirebbero
-      // 35,00. Vedi scripts/check-festivo-supplementare.mjs.
-      //
-      // Si guarda il GIORNO con `isHoliday`, non `parts.holiday`: con la
-      // maggiorazione festiva impostata a zero quest'ultimo sarebbe zero, e le
-      // ore rientrerebbero di nascosto fra le supplementari.
+      // Le ore FESTIVE stanno fuori dal conteggio delle eccedenze: in busta hanno una
+      // riga loro. Si tolgono PRIMA della soglia, non solo dopo (giugno 2026:
+      // 131,45 − 103,20 = 28,25 h, come stampato). Si guarda il GIORNO con
+      // `isHoliday`, non `parts.holiday`, che con maggiorazione a zero varrebbe 0.
+      // → check-festivo-supplementare.mjs
       const festivoLavorato = !assenza && isHoliday(s.date, settings);
 
       // Sul mensilizzato lo straordinario è già deciso a settimana, e le sue ore
@@ -363,11 +267,8 @@ export function computePayByShift(allShifts, settings, { oggi = null } = {}) {
       const straordSett = straordinarioSett?.get(s.id) || 0;
       const before = cumMin;
       const after = cumMin + (festivoLavorato ? 0 : m - straordSett);
-      // Le assenze RIEMPIONO la soglia contrattuale — è così che la busta
-      // arriva comunque alle ore del mese quando ci sono ferie — ma non
-      // possono essere supplementari o straordinarie: in un giorno di ferie
-      // non si lavora, e pagarle in più sarebbe un guadagno per essere stati
-      // assenti.
+      // Le assenze RIEMPIONO la soglia contrattuale, ma non possono essere
+      // supplementari o straordinarie.
       const supplementareMin = supplementareSett ? (supplementareSett.get(s.id) || 0)
         : (!assenza && !festivoLavorato && applyOvertime)
           ? minutesInBand(before, after, thresholdMin, applyExtra && !mensile ? fullTimeThresholdMin : Infinity)
@@ -384,22 +285,14 @@ export function computePayByShift(allShifts, settings, { oggi = null } = {}) {
       // paga il monte ore, non le ore lavorate (vedi `quotaOrdinaria`).
       const shiftBase = assenza ? m * ratePerMin * (pctAssenza / 100)
         : (ordinariMin * (festivoLavorato ? 1 : quota) + supplementareMin + straordinarioMin) * ratePerMin;
-      // Quota di `base` che spetta alle ore oltre soglia. Serve al riepilogo per
-      // ricomporre le voci COME LE STAMPA LA BUSTA: il cedolino non scrive il
-      // solo +30%, scrive le ore supplementari intere al 130%
-      // (`overtimeBase + surchargeOvertime`) e la retribuzione ordinaria al
-      // netto di quelle (`base − overtimeBase − straordinarioBase`). Senza
-      // questo dato le due colonne non sono confrontabili.
+      // Quota di `base` delle ore oltre soglia: la busta scrive le supplementari
+      // intere al 130%, non il solo +30%.
       const overtimeBase = supplementareMin * ratePerMin;
       const straordinarioBase = straordinarioMin * ratePerMin;
-      // Le maggiorazioni restano separate perché il riepilogo del mese le
-      // mostra una per una: un unico totale non dice quale voce si scosta da
-      // quella stampata in busta. `surcharge` resta la loro somma, invariata.
-      // La domenicale NON si cumula col supplementare né con lo straordinario:
-      // la maggiore assorbe la minore, come fra domenica e festivo. Sulle ore
-      // oltre soglia di una domenica resta solo l'eventuale differenza. Settembre
-      // 2026: 15,5 ore di domenica, 5,75 pagate come domenicale — le altre
-      // 9,75 erano supplementari. Si calcola sulle ore vere, non sulla quota.
+      // Maggiorazioni separate: il riepilogo le mostra una per una. La domenicale
+      // NON si cumula con supplementare e straordinario (la maggiore assorbe la
+      // minore): settembre 2026, 15,5 h di domenica = 5,75 domenicali + 9,75
+      // supplementari. Si calcola sulle ore vere, non sulla quota.
       const orarioMin = ratePerMin * (assenza ? 0 : 1);
       const surchargeSunday = orarioMin * (ordinariMin * parts.sunday
         + supplementareMin * Math.max(0, parts.sunday - (applyOvertime ? otPct : 0))
@@ -413,15 +306,8 @@ export function computePayByShift(allShifts, settings, { oggi = null } = {}) {
       const surchargeStraordinario = (straordinarioBase * extraPct
         + notteStraord.minuti * ratePerMin * Math.max(0, notteStraord.pct - extraPct)) / 100;
 
-      // Notturno: si paga sui MINUTI in fascia, non sul turno intero — un
-      // 20:00–02:00 ha quattro ore notturne e due diurne. E si aggiunge come
-      // SUPPLEMENTO su quanto il turno prende già, perché i CCNL non cumulano
-      // le maggiorazioni: la maggiore assorbe la minore (vedi notturno.js).
-      // Con la maggiorazione notturna a zero questo blocco vale zero e il
-      // motore resta identico a prima — è ciò che gli script di riscontro
-      // sulle buste reali continuano a dimostrare.
-      // Il tetto sui minuti pagati vive in notturno.js, cosi' motore e
-      // interfaccia usano la stessa regola invece di due copie che divergono.
+      // Notturno: sui MINUTI in fascia, come SUPPLEMENTO su quanto il turno prende
+      // già (le maggiorazioni non si cumulano). Regola e tetto in notturno.js.
       const notteMin = assenza ? 0 : minutiNotturniPagati(s, settings, m);
       const nightBase = notteMin * ratePerMin;
       const surchargeNight = Math.max(0, notteMin - notteStraord.minuti) * ratePerMin
@@ -465,25 +351,12 @@ export function computePayByShift(allShifts, settings, { oggi = null } = {}) {
   return result;
 }
 
-
-// Totale paga con dettaglio maggiorazioni. Ritorna null se nessuna paga
-// oraria è configurata. `allShifts` (default = shifts) fornisce il contesto
-// settimanale per il calcolo degli straordinari.
-// `byShift` opzionale: mappa già calcolata con computePayByShift(allShifts, settings).
-// Passarla evita di ricostruirla a ogni chiamata (è O(N) su TUTTA la storia dei
-// turni): con più viste che chiamano questa funzione, ricalcolarla ogni volta
-// rallenta l'app man mano che i turni crescono.
 /**
- * Il lordo di UN turno: base + tutte le maggiorazioni.
+ * Il lordo di UN turno: base + tutte le maggiorazioni. Una somma sola, in un
+ * posto solo: `calcTotalPay` accumula questi due addendi, e se la cella del
+ * calendario ne facesse una sua i numeri divergerebbero di qualche centesimo.
+ * → src/motore/riscontri/check-lordo-turno.mjs
  *
- * Sembra una somma da scrivere sul posto, e invece deve stare qui. Il totale
- * del mese (`calcTotalPay`) accumula esattamente questi due addendi: se la
- * cella del calendario ne facesse una sua, prima o poi i due numeri
- * divergerebbero di qualche centesimo e nessuno saprebbe quale credere. Una
- * somma sola, in un posto solo — è la regola dichiarata in testa a questo file.
- *
- * `src/motore/riscontri/check-lordo-turno.mjs` verifica che la somma dei lordi dei turni di
- * un mese sia identica al totale di quel mese.
  *
  * @param {{base?: number, surcharge?: number}|null} voce una voce di `computePayByShift`
  * @returns {number} euro lordi del turno
@@ -493,6 +366,9 @@ export function lordoTurno(voce) {
   return (Number(voce.base) || 0) + (Number(voce.surcharge) || 0);
 }
 
+// Totale paga con dettaglio maggiorazioni; null se manca la paga oraria.
+// `allShifts` dà il contesto settimanale; `byShift` (da computePayByShift) evita di
+// ricostruire la mappa, che è O(N) su tutta la storia.
 export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = null) {
   if (!hasAnyRate(settings)) return null;
   const map = byShift || computePayByShift(allShifts, settings);
@@ -550,10 +426,8 @@ export function calcTotalPay(shifts, settings, allShifts = shifts, byShift = nul
   };
 }
 
-// `useGrouping: 'always'`: in italiano il punto delle migliaia parte da cinque
-// cifre, e il riepilogo scriveva «2317,25 €» sotto la barra che diceva
-// «2.317 €». Stessa scelta di `numeroIt` in CalendarView, stesso fallback per
-// le WebView vecchie.
+// `useGrouping: 'always'`: l'it-IT raggruppa le migliaia da cinque cifre, e il
+// riepilogo scriveva «2317,25 €» sotto la barra che diceva «2.317 €».
 export function formatCurrency(amount) {
   const n = Number.isFinite(Number(amount)) ? Number(amount) : 0;
   try {
