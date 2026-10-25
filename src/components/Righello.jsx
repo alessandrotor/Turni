@@ -13,7 +13,7 @@ import { useRef, useState } from 'react';
 const GIORNI = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
 const NOMI = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
 
-export default function Righello({ src, larghezza, altezza, iniziale, onLeggi }) {
+export default function Righello({ src, larghezza, altezza, colonne = [], iniziale, onLeggi }) {
   const [rotta, setRotta] = useState(false);
   const [fascia, setFascia] = useState(iniziale || { centro: 0.5, alta: 0.09, gradi: 0, primo: 0 });
   const quadro = useRef(null);
@@ -70,10 +70,21 @@ export default function Righello({ src, larghezza, altezza, iniziale, onLeggi })
             borderRadius: 4, cursor: 'grab', touchAction: 'none', boxShadow: '0 0 0 9999px rgba(15, 23, 42, .35)' }}>
           {bordo('alto')}
           {bordo('basso')}
+          {/* Il giorno di ogni colonna trovata, sopra la fascia: si vede cosa
+              cambia toccando i giorni sotto (ottobre 2026: «1ª col.» da solo
+              non si capiva e sembrava non fare niente). La fascia è larga il
+              104% dell'immagine, da qui la conversione. */}
+          {colonne.map((x, i) => (
+            <span key={x} aria-hidden="true" style={{ position: 'absolute', top: -20, left: `${((2 + (x / larghezza) * 100) / 104) * 100}%`,
+              fontSize: 11, fontWeight: 800, lineHeight: '16px', padding: '0 4px', borderRadius: 4,
+              background: i === 0 ? 'var(--c-primary, #2563eb)' : '#fff', color: i === 0 ? '#fff' : 'var(--c-primary, #2563eb)' }}>
+              {GIORNI[(fascia.primo + i) % 7]}
+            </span>
+          ))}
         </div>
       </div>
-      <div role="group" aria-label="Il giorno della prima colonna" style={{ display: 'flex', gap: '.25rem', alignItems: 'center', margin: '.5rem 0' }}>
-        <span className="import-match" style={{ margin: 0, whiteSpace: 'nowrap' }}>1ª col.</span>
+      <p className="import-match" style={{ margin: '.5rem 0 .25rem' }}>Che giorno è la prima colonna?</p>
+      <div role="group" aria-label="Il giorno della prima colonna" style={{ display: 'flex', gap: '.25rem', alignItems: 'center', marginBottom: '.5rem' }}>
         {GIORNI.map((g, i) => (
           <button key={NOMI[i]} type="button" className="btn-import" aria-pressed={fascia.primo === i} aria-label={NOMI[i]}
             onClick={() => setFascia({ ...fascia, primo: i })}

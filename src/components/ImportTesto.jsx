@@ -158,7 +158,7 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
               {immagine?.fase && <p className="import-match">⏳ {FASI[immagine.fase]}…</p>}
               {immagine?.errore && <p className="import-match import-match--warn">⚠️ {immagine.errore}</p>}
               {conRighello && (
-                <Righello src={tabRef.current.anteprima} larghezza={tabRef.current.W} altezza={tabRef.current.H}
+                <Righello src={tabRef.current.anteprima} colonne={tabRef.current.colonneX} larghezza={tabRef.current.W} altezza={tabRef.current.H}
                   iniziale={origine?.righello} onLeggi={leggiFascia} />
               )}
               {/* Di chi sono i turni letti, e come si cambia: un tocco. */}
