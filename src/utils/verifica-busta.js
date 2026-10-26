@@ -221,9 +221,9 @@ export function turniDelMese(allShifts, anno, mese, settings = {}) {
 /**
  * Confronta una busta letta con l'app.
  *
- * @param {object} fx il cedolino come lo restituisce `leggiCedolinoDaRighe`
- * @param {{ allShifts: Array, settings: object }} app
- * @returns {{ periodo, righe: Array, turniNelMese: number, avvisi: string[] }}
+ * @param {Object} fx il cedolino come lo restituisce `leggiCedolinoDaRighe`
+ * @param {{ allShifts?: Array, settings?: Object }} [app]
+ * @returns {{ periodo: any, righe: Array, scomposizione?: any, turniNelMese: number, avvisi: string[] }}
  *   `righe` porta anche le cifre intere, che servono a mostrare la tabella sul
  *   telefono; NON escono dal telefono — esce solo `testoDaCondividere`.
  */
@@ -347,6 +347,10 @@ export function scartoScritto(r) {
  * Il testo che il tester manda: SOLO scarti e percentuali più il contesto (mese,
  * contratto, part-time), nessuna cifra intera. Il riscontro lo verifica cercando ogni
  * importo assoluto.
+ */
+/**
+ * @param {Object} esito
+ * @param {{ versione?: string, settings?: Object, partTimePct?: number | null }} [opzioni]
  */
 export function testoDaCondividere(esito, { versione = '', settings = {}, partTimePct = null } = {}) {
   const intestazione = [

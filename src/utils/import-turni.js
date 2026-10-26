@@ -21,7 +21,7 @@ const MEZZO_ANNO = 183;
 export function avvicinaAnno(iso, oggi = new Date()) {
   if (!isIsoDate(iso)) return iso;
   const base = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate());
-  const distanza = (d) => Math.abs(d - base) / GIORNO_MS;
+  const distanza = (d) => Math.abs(+d - +base) / GIORNO_MS;
   const data = parseDate(iso);
   if (distanza(data) <= MEZZO_ANNO) return iso;
   let migliore = data;

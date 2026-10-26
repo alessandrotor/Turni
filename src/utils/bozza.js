@@ -40,10 +40,7 @@ function normalizza(valore) {
 /**
  * C'è lavoro non salvato dentro il modulo del turno?
  *
- * @param {object} arg
- * @param {object} arg.iniziale lo stato con cui la finestra si è aperta
- * @param {object} arg.form lo stato adesso
- * @param {object} arg.modifiche correzioni riga per riga del periodo di assenza
+ * @param {{ iniziale?: object, form?: object, modifiche?: object }} [arg]
  * @returns {boolean}
  */
 export function bozzaDaSalvare({ iniziale, form, modifiche } = {}) {

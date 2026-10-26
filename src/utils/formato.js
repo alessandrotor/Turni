@@ -11,7 +11,7 @@
 export function numeroIt(n) {
   const v = Math.round(n);
   try {
-    return new Intl.NumberFormat('it-IT', { useGrouping: 'always', maximumFractionDigits: 0 }).format(v);
+    return new Intl.NumberFormat('it-IT', { useGrouping: /** @type {any} */ ('always'), maximumFractionDigits: 0 }).format(v);
   } catch {
     return v.toLocaleString('it-IT');
   }

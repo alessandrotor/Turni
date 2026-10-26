@@ -130,7 +130,7 @@ export function controllaBusta(dati) {
  *
  * `valore: null` significa togliere la chiave.
  *
- * @param {object} dati backup già passato da `controllaBusta`
+ * @param {Object} dati backup già passato da `controllaBusta`
  * @param {object} turniBuoni i turni sopravvissuti a `vagliaTurni`
  */
 export function pianoRipristino(dati, turniBuoni) {
@@ -208,6 +208,7 @@ export function scriviConRitorno(piano, storage) {
  * riscontro (`check-elimina-dati.mjs`). Non si ferma al primo errore: cancella tutto
  * quello che può e dice cosa non ha potuto.
  *
+ * @param {{ localStorage?: any, sessionStorage?: any, caches?: any, indexedDB?: any }} [strumenti]
  * @returns {Promise<{ ok: boolean, errori: string[] }>}
  */
 export async function eliminaTuttoIlLocale({ localStorage: ls, sessionStorage: ss, caches: cc, indexedDB: idb } = {}) {

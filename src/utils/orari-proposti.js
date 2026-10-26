@@ -58,6 +58,7 @@ const quandoE = (v) => {
 // fine non viene dopo l'inizio il turno scavalca la mezzanotte: 20:00–02:00
 // finisce alle 26:00, non alle 2 del mattino dello stesso giorno.
 const minuti = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
+/** @returns {[number, number]} */
 function intervallo(inizio, fine) {
   const a = minuti(inizio);
   let b = minuti(fine);
@@ -77,7 +78,7 @@ const siSovrappongono = ([a1, a2], [b1, b2]) => Math.max(a1, b1) < Math.min(a2, 
  *   2. a pari conteggio, chi è stato usato più vicino alla data bersaglio;
  *   3. a pari distanza, ordine alfabetico della chiave «inizio|fine».
  *
- * @param {Array<object>} turni tutti i turni salvati
+ * @param {Array<Object>} turni tutti i turni salvati
  * @param {string} data data ISO del turno che si sta segnando
  * @returns {Array<{startTime, endTime, breakMinutes, quante, distanza}>}
  */
@@ -94,7 +95,7 @@ export function sagomeFrequenti(turni, data) {
 
     const quando = quandoE(t.date);
     if (!quando) continue;
-    const distanza = Math.abs(quando - bersaglio) / GIORNO_MS;
+    const distanza = Math.abs(+quando - +bersaglio) / GIORNO_MS;
     if (distanza > FINESTRA_GIORNI) continue;
 
     const chiave = `${t.startTime}|${t.endTime}`;
@@ -118,7 +119,7 @@ export function sagomeFrequenti(turni, data) {
   const occupa = (g) => giaNelGiorno.some(i => siSovrappongono(i, intervallo(g.startTime, g.endTime)));
 
   return [...gruppi.values()]
-    .sort((a, b) => occupa(a) - occupa(b)
+    .sort((a, b) => Number(occupa(a)) - Number(occupa(b))
       || b.quante - a.quante
       || a.distanza - b.distanza
       || a.chiave.localeCompare(b.chiave))

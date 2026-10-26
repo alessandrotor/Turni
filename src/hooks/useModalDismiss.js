@@ -7,7 +7,7 @@ const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabi
  * dentro al dialogo (Tab non deve portare sui controlli della pagina sotto,
  * che per l'utente non sono nemmeno raggiungibili col dito).
  *
- * @param {React.RefObject<HTMLElement>} ref contenitore del modale
+ * @param {{ current: HTMLElement | null }} ref contenitore del modale
  * @param {() => void} onClose
  * @param {boolean} active false quando il modale non è montato
  */
@@ -37,7 +37,7 @@ export default function useModalDismiss(ref, onClose, active = true) {
       }
       if (e.key !== 'Tab' || !node) return;
 
-      const items = [...node.querySelectorAll(FOCUSABLE)].filter(el => !el.disabled && el.offsetParent !== null);
+      const items = [.../** @type {NodeListOf<HTMLButtonElement>} */ (node.querySelectorAll(FOCUSABLE))].filter(el => !el.disabled && el.offsetParent !== null);
       if (items.length === 0) return;
       const first = items[0];
       const last = items[items.length - 1];

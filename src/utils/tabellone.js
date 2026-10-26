@@ -83,7 +83,12 @@ export function colonne(vx) {
 // POI in bianco e nero. L'ordine conta: la soglia sui pixel già ingranditi dà bordi
 // puliti, quella prima lettere a gradini (le «R» e le «F» sparivano).
 export const ALTEZZA_CELLA = 60;
-export function ritaglio(grigi, W, [x0, x1], [y0, y1], margine = 2) {
+/**
+ * @param {number[]} xs  [x0, x1]
+ * @param {number[]} ys  [y0, y1]
+ */
+export function ritaglio(grigi, W, /** @type {any} */ xs, /** @type {any} */ ys, margine = 2) {
+  const [x0, x1] = xs, [y0, y1] = ys;
   const l = x0 + margine, t = y0 + margine;
   const w0 = Math.max(1, x1 - x0 - 2 * margine), h0 = Math.max(1, y1 - y0 - 2 * margine);
   const h = ALTEZZA_CELLA, w = Math.max(1, Math.round(w0 * h / h0));
@@ -185,7 +190,7 @@ export function lunediVotato(testi, oggi) {
     const mese = m ? MESI.indexOf(m[2].replace(/0/g, 'o')) : -1;
     if (mese < 0 || Number(m[1]) > 31) return;
     const anni = [-1, 0, 1].map((d) => new Date(oggi.getFullYear() + d, mese, Number(m[1]) - i));
-    const lunedi = anni.sort((a, b) => Math.abs(a - oggi) - Math.abs(b - oggi))[0];
+    const lunedi = anni.sort((a, b) => Math.abs(+a - +oggi) - Math.abs(+b - +oggi))[0];
     const k = lunedi.getTime();
     voti.set(k, (voti.get(k) || 0) + 1);
   });

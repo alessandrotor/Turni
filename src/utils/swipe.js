@@ -11,9 +11,9 @@ export const SWIPE_MAX_MS = 700;
 
 /**
  * @param {object} gesto
- * @param {number} gesto.dx spostamento orizzontale in px (positivo = verso destra)
- * @param {number} gesto.dy spostamento verticale in px
- * @param {number} gesto.ms durata del gesto
+ * @param {number} [gesto.dx] spostamento orizzontale in px (positivo = verso destra)
+ * @param {number} [gesto.dy] spostamento verticale in px
+ * @param {number} [gesto.ms] durata del gesto
  * @returns {-1|0|1} -1 mese precedente, 1 mese successivo, 0 niente
  */
 export function direzioneSwipe({ dx = 0, dy = 0, ms = 0 } = {}) {

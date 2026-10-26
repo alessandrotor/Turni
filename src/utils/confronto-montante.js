@@ -18,6 +18,7 @@ export function scartoRilevante(montante, turni) {
 }
 
 /**
+ * @param {{ anno: number, settings?: Object, allShifts?: Array, payMap?: Object|null }} arg
  * @returns {null | { lordoTurni:number, mesi:number, scarto:number, avvisa:boolean }}
  *   `null` quando il confronto non ha senso: niente montante in quest'anno, o
  *   almeno un mese coperto senza turni segnati.

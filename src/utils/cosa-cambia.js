@@ -56,6 +56,7 @@ export function formatDeltaMinutes(mins) {
  * @param {Object|null} params.originalShift turno prima della modifica (null per nuovo inserimento)
  * @param {Array|Object} params.allShifts turni attuali
  * @param {Object} params.settings impostazioni utente
+ * @param {Date} [params.oggi]
  * @returns {Object|null}
  */
 export function calcolaCosaCambia({

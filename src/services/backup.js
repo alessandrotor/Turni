@@ -113,7 +113,7 @@ export async function leggiBackup(file) {
  *
  * O passa tutto, o non cambia niente: vedi `utils/backup-contenuto.js`.
  *
- * @param {object} arg l'esito di `leggiBackup`
+ * @param {{ dati: Object, turniBuoni: Array, scartati?: Array }} arg l'esito di `leggiBackup`
  * @returns {{turni: number, scartati: Array}}
  * @throws {Error} in italiano, e dicendo se i dati di prima sono ancora lì
  */
@@ -123,8 +123,8 @@ export function applicaBackup({ dati, turniBuoni, scartati = [] }) {
   if (!esito.ok) {
     const quota = esito.errore?.name === 'QuotaExceededError'
       || esito.errore?.name === 'NS_ERROR_DOM_QUOTA_REACHED'
-      || esito.errore?.code === 22
-      || esito.errore?.code === 1014;
+      || /** @type {any} */ (esito.errore)?.code === 22
+      || /** @type {any} */ (esito.errore)?.code === 1014;
 
     // Il messaggio dice cosa non è riuscito e SE i dati di prima sono ancora al loro posto.
     const perche = quota

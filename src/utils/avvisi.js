@@ -21,16 +21,20 @@
 export const DURATA_ANNULLA = 8000;
 
 /** Gli avvisi che si contendono il fondo dello schermo, dal più urgente. */
+/** @type {Array<'annulla'|'maggiorazione'|'aggiornamento'>} */
+/** @type {Array<'annulla'|'maggiorazione'|'aggiornamento'>} */
+/** @type {Array<'annulla'|'maggiorazione'|'aggiornamento'>} */
+/** @type {Array<'annulla'|'maggiorazione'|'aggiornamento'>} */
 export const ORDINE = ['annulla', 'maggiorazione', 'aggiornamento'];
 
 /**
  * Chi deve comparire, dato cosa c'è in ballo.
  *
  * @param {object} stato
- * @param {boolean} stato.modaleAperto un modulo è aperto: non parla nessuno
- * @param {boolean} stato.annulla c'è una cancellazione ancora annullabile
- * @param {boolean} stato.maggiorazione c'è una domanda sulle maggiorazioni
- * @param {boolean} stato.aggiornamento c'è una versione nuova pronta
+ * @param {boolean} [stato.modaleAperto] un modulo è aperto: non parla nessuno
+ * @param {boolean} [stato.annulla] c'è una cancellazione ancora annullabile
+ * @param {boolean} [stato.maggiorazione] c'è una domanda sulle maggiorazioni
+ * @param {boolean} [stato.aggiornamento] c'è una versione nuova pronta
  * @returns {'annulla'|'maggiorazione'|'aggiornamento'|null}
  */
 export function avvisoDaMostrare({

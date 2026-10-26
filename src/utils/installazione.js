@@ -14,8 +14,8 @@ export const KEY_INSTALLA_IOS_RIFIUTATO = 'turni_install_ios_rifiutato';
  * Il browser può cancellare i dati da solo? Vero solo per iOS fuori dalla Home.
  *
  * @param {object} ambiente
- * @param {boolean} ambiente.ios iPhone o iPad, qualunque browser (su iOS sono tutti WebKit)
- * @param {boolean} ambiente.standalone già aperta dalla schermata Home
+ * @param {boolean} [ambiente.ios] iPhone o iPad, qualunque browser (su iOS sono tutti WebKit)
+ * @param {boolean} [ambiente.standalone] già aperta dalla schermata Home
  */
 export function datiARischio({ ios = false, standalone = false } = {}) {
   return ios && !standalone;
@@ -25,8 +25,10 @@ export function datiARischio({ ios = false, standalone = false } = {}) {
  * Tocca all'avviso iOS «aggiungila alla Home»?
  *
  * @param {object} stato
- * @param {number} stato.turni quanti turni ci sono: senza, non c'è niente da perdere
- * @param {boolean} stato.rifiutato ha già detto di no a QUESTA domanda
+ * @param {boolean} [stato.ios]
+ * @param {boolean} [stato.standalone]
+ * @param {number} [stato.turni] quanti turni ci sono: senza, non c'è niente da perdere
+ * @param {boolean} [stato.rifiutato] ha già detto di no a QUESTA domanda
  */
 export function chiedereInstallazioneIOS({
   ios = false, standalone = false, turni = 0, rifiutato = false,
@@ -42,9 +44,9 @@ export function chiedereInstallazioneIOS({
  * Ultimo il banner di installazione fuori da iOS, una comodità.
  *
  * @param {object} stato
- * @param {boolean} stato.strisciaInBasso la striscia in fondo sta parlando
- * @param {boolean} stato.installaIOS `chiedereInstallazioneIOS` è vera
- * @param {boolean} stato.promemoria `promemoriaHaDaDire` è vera
+ * @param {boolean} [stato.strisciaInBasso] la striscia in fondo sta parlando
+ * @param {boolean} [stato.installaIOS] `chiedereInstallazioneIOS` è vera
+ * @param {boolean} [stato.promemoria] `promemoriaHaDaDire` è vera
  * @returns {'installa'|'promemoria'|'comodita'|null} chi può parlare; il banner
  *   di comodità poi decide da sé se il browser gli dà qualcosa da proporre.
  */

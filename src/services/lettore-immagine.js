@@ -87,6 +87,12 @@ function tela(r) {
 // Primo passo: griglia, date e nomi. `avanza(fase)` dice a che punto si è.
 // Col nome già noto ci si ferma alla sua riga: i nomi sotto si leggono solo se
 // si tocca «cambia» (`tuttiINomi`). Delle date bastano due giorni d'accordo.
+/** @typedef {(fase: string) => void} Avanza */
+
+/**
+ * @param {File | Blob} file
+ * @param {{ oggi: Date, nome?: string, avanza?: Avanza }} opzioni
+ */
 export async function apriTabellone(file, { oggi, nome, avanza = () => {} }) {
   avanza('scarico');
   await avviaLettori();
@@ -125,6 +131,11 @@ export async function tuttiINomi(tab) {
 
 // Secondo passo: le righe di UNA persona, solo quelle. I turni dei colleghi
 // non vengono nemmeno letti.
+/**
+ * @param {any} tabellone
+ * @param {any} persona
+ * @param {{ avanza?: Avanza }} [opzioni]
+ */
 export async function turniDi(tabellone, persona, { avanza = () => {} } = {}) {
   avanza('turni');
   const { grigi, W, col, righe, date } = tabellone;
@@ -162,6 +173,12 @@ async function apriFoto(w, grigi, W, H, avanza, quadro) {
 
 // La fascia del righello, `{ y0, y1, gradi }` in pixel dell'immagine letta.
 // `primo` è il giorno della prima colonna (0 = lunedì).
+/**
+ * @param {any} foto
+ * @param {any} fascia
+ * @param {number} primo
+ * @param {{ avanza?: Avanza }} [opzioni]
+ */
 export async function turniDellaFascia(foto, fascia, primo, { avanza = () => {} } = {}) {
   avanza('turni');
   const w = await avviaLettore();

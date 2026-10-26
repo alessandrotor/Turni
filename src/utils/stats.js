@@ -119,13 +119,6 @@ export function dailyBreakdown(year, allShifts, settings = {}, payByShift = null
 // Sette giorni filati vuol dire una settimana senza un giorno di riposo.
 export const STREAK_LUNGA = 7;
 
-/**
- * Tutte le serie di giorni lavorati CONSECUTIVI, dalla più lunga alla più
- * corta. Si fermano ai confini dell'anno: una serie a cavallo di capodanno
- * viene spezzata fra i due anni.
- *
- * @returns {Array<{start, end, days}>} date ISO comprese
- */
 // Un giorno conta come LAVORATO se ha ore che non sono assenza: ferie o malattia
 // interrompono la serie, ed è il riposo che la serie cerca.
 export function isGiornoLavorato(day) {
@@ -134,6 +127,13 @@ export function isGiornoLavorato(day) {
   return day.totalMinutes > (day.assenzaMinutes || 0);
 }
 
+/**
+ * Tutte le serie di giorni lavorati CONSECUTIVI, dalla più lunga alla più
+ * corta. Si fermano ai confini dell'anno: una serie a cavallo di capodanno
+ * viene spezzata fra i due anni.
+ *
+ * @returns {Array<{start, end, days}>} date ISO comprese
+ */
 export function workStreaks(byDay) {
   const dates = Array.from(byDay.keys()).filter(k => isGiornoLavorato(byDay.get(k))).sort();
   const runs = [];

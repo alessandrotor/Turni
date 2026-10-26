@@ -20,7 +20,7 @@ export const TITOLO_ERRORE = {
 
 /** Un errore dell'import con la sua famiglia attaccata. */
 export function erroreImport(tipo, messaggio) {
-  const e = new Error(messaggio);
+  const e = /** @type {Error & { tipo?: string }} */ (new Error(messaggio));
   e.tipo = tipo;
   return e;
 }

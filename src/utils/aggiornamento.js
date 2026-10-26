@@ -26,11 +26,11 @@ export const INTERVALLO_CONTROLLO = 15 * 60_000;
  * Cosa fare adesso.
  *
  * @param {object} stato
- * @param {boolean} stato.pronto           una versione nuova è scaricata e in attesa
- * @param {boolean} stato.occupato         c'è del lavoro in sospeso (vedi utils/occupato.js)
- * @param {boolean} stato.visibile         l'app è in primo piano
- * @param {number}  stato.msNascosta       da quanti ms è in secondo piano (0 se visibile)
- * @param {number}  stato.msDallUltimoControllo  da quanti ms non si controlla
+ * @param {boolean} [stato.pronto]          una versione nuova è scaricata e in attesa
+ * @param {boolean} [stato.occupato]        c'è del lavoro in sospeso (vedi utils/occupato.js)
+ * @param {boolean} [stato.visibile]        l'app è in primo piano
+ * @param {number}  [stato.msNascosta]      da quanti ms è in secondo piano (0 se visibile)
+ * @param {number}  [stato.msDallUltimoControllo] da quanti ms non si controlla
  * @returns {{azione: 'applica'|'controlla'|'niente', perche: string}}
  */
 export function decidiAggiornamento({

@@ -16,7 +16,7 @@ let caricamento = null;
 function caricaScript() {
   if (window.turnstile) return Promise.resolve();
   if (caricamento) return caricamento;
-  caricamento = new Promise((resolve, reject) => {
+  caricamento = /** @type {Promise<void>} */ (new Promise((resolve, reject) => {
     const s = document.createElement('script');
     s.src = SCRIPT;
     s.async = true;
@@ -27,7 +27,7 @@ function caricaScript() {
       reject(new Error('script non caricato'));
     };
     document.head.appendChild(s);
-  });
+  }));
   return caricamento;
 }
 
