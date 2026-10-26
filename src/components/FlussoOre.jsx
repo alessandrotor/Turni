@@ -28,7 +28,10 @@ const VISTE = [['flussi', 'Flussi'], ['oreuro', 'Ore/€'], ['settimane', 'Setti
 const SPIEGA = {
   monte: 'Monte ore: la busta paga comunque le ore del contratto, anche quelle già andate in supplementare.',
   // «0 €» da solo non si capiva (ottobre 2026): si dice il monte e perché.
-  giaNelMonte: (min, monte) => `Oltre il monte ore: lo stipendio paga ${monte ? ore(monte) : 'un monte ore fisso'} al mese. Le altre ${ore(min)} restano entro le ore del contratto della loro settimana: non sono supplementari, quindi non aggiungono euro.`,
+  // Né «0 €» né «oltre il monte ore» si capivano (ottobre 2026: «sono ore di
+  // un altro mese?»). Il perché vero è la lunghezza del mese: lo stipendio
+  // paga la media di 4,3 settimane, e i mesi lunghi si pareggiano coi corti.
+  giaNelMonte: (min, monte, sett, mese) => `Stipendio fisso: paga sempre ${ore(monte)}, cioè ${ore(sett * 60)} × ${(monte / (sett * 60)).toLocaleString('it-IT', { maximumFractionDigits: 2 })} settimane, la media di un mese. ${mese} ne ha di più: ${ore(min)} entro le ${ore(sett * 60)} settimanali restano dentro quella cifra. Nei mesi corti, come febbraio, è il contrario: stessa paga con meno ore.`,
   // Come la busta di settembre 2026: le ore oltre la soglia sono le ULTIME
   // della settimana, e la settimana finisce di domenica. È la prassi più
   // comune, ma nessuna norma la impone: un datore può contarle altrimenti.
@@ -90,7 +93,7 @@ function Finestra({ turni, tutti, byShift, settings, titolo, onChiudi }) {
                     className={`periodo-btn${vista === id ? ' active' : ''}`} onClick={() => setVista(id)}>{nome}</button>
                 ))}
               </span>
-              {vista === 'flussi' && <Flussi f={f} entra={entra} />}
+              {vista === 'flussi' && <Flussi f={f} entra={entra} sett={Number(settings.expectedWeeklyHours) || 0} mese={titolo.split(' ')[0]} />}
               {vista === 'oreuro' && <OreEuro f={f} entra={entra} />}
               {vista === 'settimane' && <Settimane f={f} settings={settings} entra={entra} />}
               {vista === 'mosaico' && <Mosaico f={f} entra={entra} />}
@@ -129,7 +132,7 @@ function colonna(nodi, scala) {
   });
 }
 
-function Flussi({ f, entra }) {
+function Flussi({ f, entra, sett, mese }) {
   const XS = 92, XD = 214, B = 9;
   const d = useMemo(() => {
     const tot = Math.max(1, f.origini.reduce((t, o) => t + o.minuti, 0));
@@ -155,8 +158,8 @@ function Flussi({ f, entra }) {
   }, [f]);
   const spiegazioni = [
     f.origini.some((o) => o.id === 'monte') && SPIEGA.monte,
-    f.voci.some((v) => v.id === 'giaNelMonte')
-      && SPIEGA.giaNelMonte(f.voci.find((v) => v.id === 'giaNelMonte').minuti, f.monte?.monte),
+    f.voci.some((v) => v.id === 'giaNelMonte') && f.monte && sett > 0
+      && SPIEGA.giaNelMonte(f.voci.find((v) => v.id === 'giaNelMonte').minuti, f.monte.monte, sett, mese),
     domenicaOltre(f) >= 0.5 && SPIEGA.domenica(domenicaOltre(f)),
   ].filter(Boolean);
   return (
@@ -180,9 +183,9 @@ function Flussi({ f, entra }) {
           <g key={n.id}>
             <rect x={XD} y={n.y} width={B} height={n.h} rx={2} fill={COLORE[n.id]} />
             <text x={XD + B + 6} y={n.y + 12} style={{ fontSize: 14, fontWeight: 800, fill: 'var(--c-text)' }}>
-              {n.id === 'giaNelMonte' ? '0 € in più' : formatCurrency(n.euro)}
+              {n.id === 'giaNelMonte' ? `${ore(n.minuti)} · 0 €` : formatCurrency(n.euro)}
             </text>
-            <text x={XD + B + 6} y={n.y + 25} style={testo}>{n.nome} · {ore(n.minuti)}</text>
+            <text x={XD + B + 6} y={n.y + 25} style={testo}>{n.id === 'giaNelMonte' ? n.nome : `${n.nome} · ${ore(n.minuti)}`}</text>
           </g>
         ))}
       </svg>
