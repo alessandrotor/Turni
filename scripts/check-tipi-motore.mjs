@@ -17,7 +17,7 @@ import { dirname, join } from 'node:path';
 const RADICE = join(dirname(fileURLToPath(import.meta.url)), '..');
 const tsc = join(RADICE, 'node_modules', 'typescript', 'bin', 'tsc');
 // Il motore (src/motore/jsconfig.json) e il resto dell'app che non è React
-// (src/jsconfig.json: utils, services, hooks, config).
+// (src/jsconfig.json: utils, services, hooks, config, componenti).
 for (const cartella of ['src/motore', 'src']) {
   const r = spawnSync(process.execPath, [tsc, '-p', join(RADICE, cartella, 'jsconfig.json')], { encoding: 'utf8' });
   const uscita = `${r.stdout || ''}${r.stderr || ''}`.trim();
@@ -28,4 +28,4 @@ FALLITO i tipi di ${cartella} non tornano`);
     process.exit(1);
   }
 }
-console.log('OK     i tipi del motore e di utils/services/hooks tornano (0 segnalazioni)');
+console.log('OK     i tipi del motore e di tutta l’app tornano (0 segnalazioni)');

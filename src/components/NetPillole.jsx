@@ -16,7 +16,7 @@
 
 import { formatCurrency } from '../motore/pay';
 
-function Mobile({ nome, cifra, attivo, simulato, onTocca, titolo, nelLordo = false }) {
+function Mobile({ nome, cifra, attivo, simulato = false, onTocca, titolo, nelLordo = false }) {
   return (
     <button
       type="button"

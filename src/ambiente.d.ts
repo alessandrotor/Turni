@@ -16,3 +16,5 @@ interface Window {
 declare module 'virtual:pwa-register' {
   export function registerSW(opzioni?: object): (ricarica?: boolean) => Promise<void>;
 }
+
+declare module "*.css";

@@ -34,6 +34,7 @@ const ascoltatori = new Set();
  * con modifiche non salvate in Impostazioni o una foto in riconoscimento le
  * butterebbe via. Restituisce la disiscrizione.
  */
+/** @returns {() => void} */
 export function iscrivitiOccupato(fn) {
   ascoltatori.add(fn);
   return () => ascoltatori.delete(fn);

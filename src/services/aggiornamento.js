@@ -113,12 +113,14 @@ export function avviaAggiornamenti() {
  * Serve a rendere invisibile l'aggiornamento in secondo piano: App ci mette da parte la
  * schermata aperta e il mese guardato, e al ritorno li rimette.
  */
+/** @returns {() => void} */
 export function primaDiRicaricare(fn) {
   primaDelRicarico.add(fn);
   return () => primaDelRicarico.delete(fn);
 }
 
 /** Iscrive una funzione allo stato «c'è una versione pronta». Restituisce la disiscrizione. */
+/** @returns {() => void} */
 export function iscrivitiAggiornamenti(fn) {
   ascoltatori.add(fn);
   // Se la versione era già pronta prima dell'iscrizione, lo si sa subito:

@@ -78,7 +78,7 @@ export function monthlyBreakdown(year, allShifts, settings = {}, payByShift = nu
  * supplementare, la soglia non cade a mezzanotte.
  *
  * @returns {Map<string, {totalMinutes, overtimeMinutes, straordinarioMinutes,
- *   shiftsCount, sunday, holiday}>} chiave 'YYYY-MM-DD', solo i giorni con
+ *   shiftsCount, sunday, holiday, assenzaMinutes, assenzaTipo}>} chiave 'YYYY-MM-DD', solo i giorni con
  *   almeno un turno.
  */
 export function dailyBreakdown(year, allShifts, settings = {}, payByShift = null) {

@@ -137,7 +137,7 @@ export default function App() {
   const [storedSettings, setSettings, erroreImpostazioni] = useLocalStorage('turni_settings', DEFAULT_SETTINGS);
   // Un solo avviso anche se falliscono entrambi (stesso guasto: lo storage non accetta
   // scritture). Vincono i turni, inseriti a mano.
-  const erroreSalvataggio = erroreTurni || erroreImpostazioni;
+  const erroreSalvataggio = /** @type {{ testo: string, rimedio: string } | null} */ (erroreTurni || erroreImpostazioni);
   // `stats` passa dal flag anche in ripresa: una vista che non esiste più lascerebbe lo
   // schermo vuoto.
   const [view, setView] = useState(
@@ -149,9 +149,9 @@ export default function App() {
   ));
   // Dalla scorciatoia il modulo è già aperto sul giorno di oggi al primo render, non «si
   // apre da solo» dopo un istante.
-  const [modal, setModal] = useState( // null | {type:'add',date} | {type:'edit',shift}
-    SCORCIATOIA === 'oggi' ? { type: 'add', date: formatDate(new Date()) } : null,
-  );
+  const [modal, setModal] = useState(/** @type {any} */ ( // null | {type:'add',date} | {type:'edit',shift}
+    SCORCIATOIA === 'oggi' ? { type: 'add', date: formatDate(new Date()) } : null
+  ));
   // Giorno su cui atterrare arrivando dal calendarietto di Statistiche.
   const [focusDate, setFocusDate] = useState(null);
 

@@ -71,7 +71,7 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
     setOrigine(null);
     try {
       const { apriTabellone } = await import('../services/lettore-immagine');
-      const tab = await apriTabellone(file, { oggi: new Date(), nome, avanza });
+      const tab = /** @type {any} */ (await apriTabellone(file, { oggi: new Date(), nome, avanza }));
       if (tab.errore) { setImmagine({ errore: 'Non riconosco questa tabella: non trovo né le righe né gli orari.' }); return; }
       tabRef.current = { ...tab, file };
       if (tab.foto) { setImmagine({ righello: true }); return; }

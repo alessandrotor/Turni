@@ -19,7 +19,7 @@ const scriviFlag = (k, v) => {
 
 export const isStandalone = () =>
   window.matchMedia?.('(display-mode: standalone)').matches ||
-  window.navigator.standalone === true;
+  /** @type {any} */ (window.navigator).standalone === true;
 
 export const isIOS = () =>
   /iphone|ipad|ipod/i.test(window.navigator.userAgent) ||

@@ -48,7 +48,6 @@ export default function Settings({ settings, onSave }) {
     // Mese fino al quale il montante comprende i turni: lo sceglie l'utente (dedurlo dalla
     // data di salvataggio sbagliava di un mese).
     priorIncomeMonth: (settings.priorIncomeDate || '').slice(0, 7) || currentMonthValue(),
-    workerName: settings.workerName ?? '',
     onCall: !!settings.onCall,
     annualGrossManual: toInput(settings.annualGrossManual),
     dailyOvertimeThreshold: settings.dailyOvertimeThreshold ?? '',
@@ -373,7 +372,6 @@ export default function Settings({ settings, onSave }) {
       patronSaintDate: form.patronSaintDate,
       priorTaxableIncome: newMontante,
       priorIncomeDate,
-      workerName: form.workerName.trim(),
       onCall: form.onCall,
       annualGrossManual: parseNum(form.annualGrossManual),
       dailyOvertimeThreshold: parseNum(form.dailyOvertimeThreshold),

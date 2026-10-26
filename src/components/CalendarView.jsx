@@ -386,7 +386,7 @@ export default function CalendarView({
 
   // Netto stimato del mese (beta), in useMonthlyNet. Il tratt. integrativo si
   // può simulare presente o assente, mese per mese, dal suo riquadro.
-  const [tiSimulati, setTiSimulati] = useState({});
+  const [tiSimulati, setTiSimulati] = useState(/** @type {Record<string, boolean>} */ ({}));
   const chiaveMese = `${year}-${String(month + 1).padStart(2, '0')}`;
   const {
     monthKey, perMonthBonus, fixedMonthlyTotal,
