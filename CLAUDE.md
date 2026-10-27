@@ -458,13 +458,13 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   selettore dà altre tre viste degli stessi numeri: ore contro euro, le
   settimane con la linea delle ore del contratto (il PERCHÉ del supplementare,
   con le ore dell'altro mese nelle settimane a cavallo) e un mosaico degli
-  euro. I due
-  flussi che la busta non scrive sono quelli che la spiegano: il «monte ore»
-  che a mese chiuso paga le 103,20 anche se parte delle ore è supplementare,
-  e le ore «nello stipendio fisso», che non aggiungono euro. Il perché va detto
-  con la lunghezza del mese: lo stipendio paga 24 h × 4,3 settimane, i mesi
-  lunghi ne hanno di più e i corti di meno. «0 €» e poi «oltre il monte ore»
-  da soli non si capivano («sono ore di un altro mese?»). Riaffetta i campi di
+  euro. Il monte
+  ore si DISEGNA, non si spiega: nei Flussi la retribuzione è una scatola
+  grande quanto le 103,2 h del contratto, che le ore ordinarie riempiono;
+  quelle che non ci stanno (un mese lungo) escono a righe, «+8,3 h · 0 €», e
+  dove non arrivano resta il bordo tratteggiato. Prima erano due voci a parte
+  con una riga di spiegazione ciascuna («monte ore», «nello stipendio fisso»),
+  e non si capivano: «sono ore di un altro mese?». Riaffetta i campi di
   `computePayByShift`, non conta niente: `flussoOre()`, → `check-flusso-ore.mjs`
 - **Le assenze riempiono la settimana**, anche quando cadono in coda: in busta
   `4,00 ferie + 99,20 retribuzione = 103,20`. Contarle in ordine cronologico

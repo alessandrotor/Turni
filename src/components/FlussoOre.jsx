@@ -26,12 +26,6 @@ const COLORE = {
 };
 const VISTE = [['flussi', 'Flussi'], ['oreuro', 'Ore/€'], ['settimane', 'Settimane'], ['mosaico', 'Mosaico']];
 const SPIEGA = {
-  monte: 'Monte ore: la busta paga comunque le ore del contratto, anche quelle già andate in supplementare.',
-  // «0 €» da solo non si capiva (ottobre 2026): si dice il monte e perché.
-  // Né «0 €» né «oltre il monte ore» si capivano (ottobre 2026: «sono ore di
-  // un altro mese?»). Il perché vero è la lunghezza del mese: lo stipendio
-  // paga la media di 4,3 settimane, e i mesi lunghi si pareggiano coi corti.
-  giaNelMonte: (min, monte, sett, mese) => `Stipendio fisso: paga sempre ${ore(monte)}, cioè ${ore(sett * 60)} × ${(monte / (sett * 60)).toLocaleString('it-IT', { maximumFractionDigits: 2 })} settimane, la media di un mese. ${mese} ne ha di più: ${ore(min)} entro le ${ore(sett * 60)} settimanali restano dentro quella cifra. Nei mesi corti, come febbraio, è il contrario: stessa paga con meno ore.`,
   // Come la busta di settembre 2026: le ore oltre la soglia sono le ULTIME
   // della settimana, e la settimana finisce di domenica. È la prassi più
   // comune, ma nessuna norma la impone: un datore può contarle altrimenti.
@@ -93,7 +87,7 @@ function Finestra({ turni, tutti, byShift, settings, titolo, onChiudi }) {
                     className={`periodo-btn${vista === id ? ' active' : ''}`} onClick={() => setVista(id)}>{nome}</button>
                 ))}
               </span>
-              {vista === 'flussi' && <Flussi f={f} entra={entra} sett={Number(settings.expectedWeeklyHours) || 0} mese={titolo.split(' ')[0]} />}
+              {vista === 'flussi' && <Flussi f={f} entra={entra} />}
               {vista === 'oreuro' && <OreEuro f={f} entra={entra} />}
               {vista === 'settimane' && <Settimane f={f} settings={settings} entra={entra} />}
               {vista === 'mosaico' && <Mosaico f={f} entra={entra} />}
@@ -132,60 +126,91 @@ function colonna(nodi, scala) {
   });
 }
 
-function Flussi({ f, entra, sett, mese }) {
+// La retribuzione è una SCATOLA grande quanto il monte ore del contratto
+// (103,2 h): le ore ordinarie la riempiono. Quelle che non ci stanno — un mese
+// lungo — escono a righe sotto la scatola, «+8,3 h · 0 €»; se non la
+// riempiono, resta il bordo vuoto. Due voci a parte («monte ore», «nello
+// stipendio fisso») con una riga di spiegazione ciascuna non si capivano: il
+// grafico deve dirlo da solo (ottobre 2026).
+function Flussi({ f, entra }) {
   const XS = 92, XD = 214, B = 9;
   const d = useMemo(() => {
-    const tot = Math.max(1, f.origini.reduce((t, o) => t + o.minuti, 0));
+    const origini = f.origini.filter((o) => o.id !== 'monte');
+    const flussi = f.flussi.filter((x) => x.da !== 'monte')
+      .map((x) => (x.a === 'giaNelMonte' ? { ...x, a: 'retribuzione', oltre: true } : x));
+    const lavorate = flussi.filter((x) => x.a === 'retribuzione').reduce((t, x) => t + x.minuti, 0);
+    const capienza = f.monte ? f.monte.monte : lavorate;
+    const voci = f.voci.filter((v) => v.id !== 'giaNelMonte')
+      .map((v) => (v.id === 'retribuzione' ? { ...v, posto: Math.max(lavorate, capienza) } : v));
+    const tot = Math.max(1, origini.reduce((t, o) => t + o.minuti, 0));
     const scala = 230 / tot;
-    const sx = colonna(f.origini, scala);
-    const dx = colonna(f.voci, scala);
+    const sx = colonna(origini, scala);
+    const dx = colonna(voci.map((v) => ({ ...v, minuti: v.posto ?? v.minuti, veri: v.minuti })), scala);
     // Ogni flusso occupa una fetta della barra da cui parte e di quella in cui
-    // arriva, nell'ordine delle colonne: i nastri si incrociano il meno possibile.
+    // arriva, nell'ordine delle colonne: i nastri si incrociano il meno
+    // possibile, e quelli oltre la scatola arrivano per ultimi, sotto.
     const uscita = Object.fromEntries(sx.map((n) => [n.id, n.y]));
     const entrata = Object.fromEntries(dx.map((n) => [n.id, n.y]));
     const oD = Object.fromEntries(dx.map((n, i) => [n.id, i]));
     const oS = Object.fromEntries(sx.map((n, i) => [n.id, i]));
-    const nastri = [...f.flussi].sort((a, b) => oS[a.da] - oS[b.da] || oD[a.a] - oD[b.a]).map((x) => {
+    const nastri = [...flussi].sort((a, b) => oS[a.da] - oS[b.da] || oD[a.a] - oD[b.a] || Number(!!a.oltre) - Number(!!b.oltre)).map((x) => {
       const h = Math.max(1, x.minuti * scala);
       const y0 = uscita[x.da]; uscita[x.da] += h;
       return { ...x, h, y0 };
     });
-    for (const n of [...nastri].sort((a, b) => oD[a.a] - oD[b.a] || oS[a.da] - oS[b.da])) {
+    for (const n of [...nastri].sort((a, b) => oD[a.a] - oD[b.a] || Number(!!a.oltre) - Number(!!b.oltre) || oS[a.da] - oS[b.da])) {
       n.y1 = entrata[n.a]; entrata[n.a] += n.h;
     }
     const alto = Math.max(...[...sx, ...dx].map((n) => n.y + Math.max(30, n.h))) + 2;
-    return { sx, dx, nastri, alto };
+    return { sx, dx, nastri, alto, scala, lavorate, capienza };
   }, [f]);
-  const spiegazioni = [
-    f.origini.some((o) => o.id === 'monte') && SPIEGA.monte,
-    f.voci.some((v) => v.id === 'giaNelMonte') && f.monte && sett > 0
-      && SPIEGA.giaNelMonte(f.voci.find((v) => v.id === 'giaNelMonte').minuti, f.monte.monte, sett, mese),
-    domenicaOltre(f) >= 0.5 && SPIEGA.domenica(domenicaOltre(f)),
-  ].filter(Boolean);
+  const spiegazioni = [domenicaOltre(f) >= 0.5 && SPIEGA.domenica(domenicaOltre(f))].filter(Boolean);
+  const scatola = (n) => {
+    const pieno = Math.min(d.lavorate, d.capienza) * d.scala;
+    const cap = d.capienza * d.scala;
+    const oltre = Math.max(0, d.lavorate - d.capienza);
+    return (
+      <>
+        {d.capienza > d.lavorate && <rect x={XD + 0.75} y={n.y + 0.75} width={B - 1.5} height={cap - 1.5} rx={2}
+          fill="none" stroke={COLORE.retribuzione} strokeWidth={1.5} strokeDasharray="3 2" />}
+        <rect x={XD} y={n.y} width={B} height={Math.max(1.5, pieno)} rx={2} fill={COLORE.retribuzione} />
+        {oltre >= 0.5 && (
+          <>
+            <rect x={XD} y={n.y + cap + 1} width={B} height={Math.max(1.5, oltre * d.scala - 1)} rx={2} fill="url(#flusso-oltre)" />
+            <text x={XD + B + 6} y={n.y + cap + Math.max(8, (oltre * d.scala) / 2) + 4} style={testo}>+{ore(oltre)} · 0 €</text>
+          </>
+        )}
+      </>
+    );
+  };
   return (
     <>
       <svg viewBox={`0 0 ${L} ${d.alto}`} width="100%" role="img"
         aria-label={f.voci.map((v) => `${v.nome} ${ore(v.minuti)}, ${formatCurrency(v.euro)}`).join('; ')}>
+        <defs>
+          <pattern id="flusso-oltre" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="5" height="5" fill={COLORE.retribuzione} fillOpacity={0.15} />
+            <rect width="2" height="5" fill={COLORE.retribuzione} fillOpacity={0.6} />
+          </pattern>
+        </defs>
         {d.nastri.map((n, i) => {
           const x0 = XS + B, x1 = XD, mx = (x0 + x1) / 2;
           const p = `M${x0},${n.y0} C${mx},${n.y0} ${mx},${n.y1} ${x1},${n.y1} L${x1},${n.y1 + n.h}`
             + ` C${mx},${n.y1 + n.h} ${mx},${n.y0 + n.h} ${x0},${n.y0 + n.h} Z`;
-          return <path key={`${n.da}>${n.a}`} d={p} fill={COLORE[n.a]} fillOpacity={0.32} style={entra(i)} />;
+          return <path key={`${n.da}>${n.a}${n.oltre ? '+' : ''}`} d={p} fill={COLORE[n.a]} fillOpacity={n.oltre ? 0.12 : 0.32} style={entra(i)} />;
         })}
         {d.sx.map((n) => (
           <g key={n.id}>
-            <rect x={XS} y={n.y} width={B} height={n.h} rx={2} fill={n.id === 'monte' ? 'var(--c-border)' : 'var(--c-muted)'} />
+            <rect x={XS} y={n.y} width={B} height={n.h} rx={2} fill="var(--c-muted)" />
             <text x={XS - 6} y={n.y + 11} textAnchor="end" style={{ fontSize: 12, fontWeight: 600, fill: 'var(--c-text)' }}>{n.nome}</text>
             <text x={XS - 6} y={n.y + 24} textAnchor="end" style={testo}>{ore(n.minuti)}</text>
           </g>
         ))}
         {d.dx.map((n) => (
           <g key={n.id}>
-            <rect x={XD} y={n.y} width={B} height={n.h} rx={2} fill={COLORE[n.id]} />
-            <text x={XD + B + 6} y={n.y + 12} style={{ fontSize: 14, fontWeight: 800, fill: 'var(--c-text)' }}>
-              {n.id === 'giaNelMonte' ? `${ore(n.minuti)} · 0 €` : formatCurrency(n.euro)}
-            </text>
-            <text x={XD + B + 6} y={n.y + 25} style={testo}>{n.id === 'giaNelMonte' ? n.nome : `${n.nome} · ${ore(n.minuti)}`}</text>
+            {n.id === 'retribuzione' ? scatola(n) : <rect x={XD} y={n.y} width={B} height={n.h} rx={2} fill={COLORE[n.id]} />}
+            <text x={XD + B + 6} y={n.y + 12} style={{ fontSize: 14, fontWeight: 800, fill: 'var(--c-text)' }}>{formatCurrency(n.euro)}</text>
+            <text x={XD + B + 6} y={n.y + 25} style={testo}>{n.nome} · {ore(n.veri)}</text>
           </g>
         ))}
       </svg>
