@@ -35,6 +35,7 @@ import ImportModal from './ImportModal';
 import ImportTesto from './ImportTesto';
 import CifraCheCambia from './CifraCheCambia';
 import FlussoOre from './FlussoOre';
+import { flussoOre } from '../motore/flusso-ore';
 import DebugUso from './DebugUso';
 import TimelineView from './TimelineView';
 import ShareWeekModal from './ShareWeekModal';
@@ -234,51 +235,32 @@ export default function CalendarView({
   }, [counted]);
 
   // Competenze del mese nelle stesse voci del cedolino, per affiancare le due colonne. Le ore
-  // oltre soglia la busta le scrive INTERE al 130%, non il solo +30%. Riaffettatura di sola
-  // lettura: le voci sommano a `pay.total`.
+  // oltre soglia la busta le scrive INTERE al 130%. Sono le voci di `flussoOre`, le stesse di
+  // «Dove vanno le ore»: due conti diversi davano «Retribuzione 117h 30m» qui e 103,2 h là.
   const competenze = useMemo(() => {
-    if (!pay) return [];
+    if (!pay || !payByShift) return [];
     const otPct = Number(settings.overtimeSurchargePct) || 0;
     const extraPctRaw = settings.straordinarioSurchargePct;
     const extraPct = (extraPctRaw === '' || extraPctRaw == null) ? otPct : (Number(extraPctRaw) || 0);
-    // A chiamata non c'è soglia part-time/full-time: una fascia, lo straordinario.
-    const tier1Label = settings.onCall ? 'Straordinario' : 'Supplementare';
     const ore = (h) => `${String(Number(h) || 0).replace('.', ',')} h`;
-    const tier1Tip = settings.onCall ? `Ore oltre le ${ore(settings.dailyOvertimeThreshold)} della giornata.`
-      : `Ore oltre le ${ore(settings.expectedWeeklyHours)} settimanali del contratto, fino a ${ore(settings.fullTimeWeeklyHours)}.`;
-    return [
-      {
-        // Ferie e permessi restano DENTRO questa riga, come li scrive la busta. La malattia è
-        // una voce sua: si sottrae qui e compare sotto.
-        label: 'Retribuzione',
-        value: pay.base - pay.overtimeBase - pay.straordinarioBase - pay.malattiaBase,
-        minutes: totalMins - pay.overtimeMinutes - pay.straordinarioMinutes - pay.malattiaMinutes,
-        nota: (pay.ferieMinutes > 0 || pay.permessoMinutes > 0) ? [
-          pay.ferieMinutes > 0 ? `${formatMinutesShort(pay.ferieMinutes)} di ferie` : '',
-          pay.permessoMinutes > 0 ? `${formatMinutesShort(pay.permessoMinutes)} di permesso` : '',
-        ].filter(Boolean).join(' · ') : null,
-      },
-      {
-        label: `${tier1Label} +${fmtPct(otPct)}%`, tag: 'overtime', tip: tier1Tip,
-        value: pay.overtimeBase + pay.surchargeOvertime, minutes: pay.overtimeMinutes,
-      },
-      {
-        label: `Straordinario +${fmtPct(extraPct)}%`, tag: 'overtime', tip: `Ore oltre le ${ore(settings.fullTimeWeeklyHours)} della settimana.`,
-        value: pay.straordinarioBase + pay.surchargeStraordinario, minutes: pay.straordinarioMinutes,
-      },
-      { label: 'Malattia', value: pay.malattiaBase, minutes: pay.malattiaMinutes },
-      { label: 'Magg. domenicali', value: pay.surchargeSunday },
-      { label: 'Magg. festive', value: pay.surchargeHoliday },
-      // Le ore, qui, sono quelle in FASCIA, non quelle del turno. L'importo può essere zero
-      // (le assorbe il domenicale) e va mostrato lo stesso.
-      {
-        label: 'Magg. notturne', value: pay.surchargeNight,
-        minutes: pay.nightMinutes,
-      },
-      { label: 'Magg. manuali', value: pay.surchargeManual },
-      // La malattia può valere zero (carenza) ma le sue ORE esistono e vanno mostrate.
-    ].filter(v => v.value >= 0.005 || v.minutes > 0);
-  }, [pay, settings, totalMins]);
+    const f = flussoOre(counted, payByShift, settings);
+    const voce = {
+      // Ferie e permessi restano DENTRO la retribuzione, come li scrive la busta.
+      retribuzione: { label: 'Retribuzione', nota: [pay.ferieMinutes > 0 && `${formatMinutesShort(pay.ferieMinutes)} di ferie`,
+        pay.permessoMinutes > 0 && `${formatMinutesShort(pay.permessoMinutes)} di permesso`].filter(Boolean).join(' · ') || null },
+      // A chiamata non c'è soglia part-time/full-time: una fascia, lo straordinario.
+      supplementare: { label: `${settings.onCall ? 'Straordinario' : 'Supplementare'} +${fmtPct(otPct)}%`, tag: 'overtime',
+        tip: settings.onCall ? `Ore oltre le ${ore(settings.dailyOvertimeThreshold)} della giornata.`
+          : `Ore oltre le ${ore(settings.expectedWeeklyHours)} settimanali del contratto, fino a ${ore(settings.fullTimeWeeklyHours)}.` },
+      straordinario: { label: `Straordinario +${fmtPct(extraPct)}%`, tag: 'overtime', tip: `Ore oltre le ${ore(settings.fullTimeWeeklyHours)} della settimana.` },
+      festivo: { label: 'Lavoro festivo' }, malattia: { label: 'Malattia' },
+      domenicale: { label: 'Magg. domenicali', senzaOre: true }, notturno: { label: 'Magg. notturne' }, manuale: { label: 'Magg. manuali', senzaOre: true },
+    };
+    // Le ore oltre il monte ore non hanno euro: nel riepilogo non sono una voce.
+    return [...f.voci, ...f.maggiorazioni].filter((v) => voce[v.id])
+      .map((v) => ({ ...voce[v.id], value: v.euro, minutes: voce[v.id].senzaOre ? 0 : v.minuti }))
+      .filter(v => v.value >= 0.005 || v.minutes > 0);
+  }, [pay, payByShift, counted, settings]);
 
   // Festività del mese senza alcun turno segnato: una festività non lavorata è pagata e
   // facile da dimenticare. Qui si PROPONE soltanto.
@@ -980,7 +962,7 @@ export default function CalendarView({
             <span className="summary-value">{formatMinutesShort(totalMins - assenze.minuti)}</span>
             {assenze.minuti > 0 && <span className="summary-sublabel">+ {assenze.dettaglio}</span>}
             {pay !== null && totalMins > 0 && payByShift && (
-              <span className="summary-sublabel"><FlussoOre turni={counted} tutti={allShifts || counted} byShift={payByShift} settings={settings} titolo={formatMonthYear(currentMonth)} /></span>)}
+              <span className="summary-sublabel"><FlussoOre turni={counted} tutti={allShifts || counted} byShift={payByShift} settings={settings} titolo={formatMonthYear(currentMonth)} extra={vociOltreTurni} lordo={monthGross} /></span>)}
             {festivitaDaSegnare.length > 0 && oreFestivita > 0 && onAddShifts && (
               <span className="summary-sublabel festivita-proposta">
                 {festivitaDaSegnare.length === 1 ? 'Festivo' : 'Festivi'} senza turno:{' '}

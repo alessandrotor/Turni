@@ -45,17 +45,17 @@ const pocoMovimento = () => {
 };
 const testo = { fontSize: 11, fill: 'var(--c-text-2)' };
 
-export default function FlussoOre({ turni, tutti, byShift, settings, titolo }) {
+export default function FlussoOre({ turni, tutti, byShift, settings, titolo, extra = [], lordo = null }) {
   const [aperto, setAperto] = useState(false);
   return (
     <>
       <button type="button" className="linklike" onClick={() => setAperto(true)}>Dove vanno le ore →</button>
-      {aperto && <Finestra turni={turni} tutti={tutti} byShift={byShift} settings={settings} titolo={titolo} onChiudi={() => setAperto(false)} />}
+      {aperto && <Finestra turni={turni} tutti={tutti} byShift={byShift} settings={settings} titolo={titolo} extra={extra} lordo={lordo} onChiudi={() => setAperto(false)} />}
     </>
   );
 }
 
-function Finestra({ turni, tutti, byShift, settings, titolo, onChiudi }) {
+function Finestra({ turni, tutti, byShift, settings, titolo, extra, lordo, onChiudi }) {
   const ref = useRef(null);
   useModalDismiss(ref, onChiudi, true);
   const f = useMemo(() => flussoOre(turni, byShift, settings, tutti), [turni, byShift, settings, tutti]);
@@ -91,7 +91,19 @@ function Finestra({ turni, tutti, byShift, settings, titolo, onChiudi }) {
               {vista === 'oreuro' && <OreEuro f={f} entra={entra} />}
               {vista === 'settimane' && <Settimane f={f} settings={settings} entra={entra} />}
               {vista === 'mosaico' && <Mosaico f={f} entra={entra} />}
-              <p style={{ margin: '.5rem 0 .2rem', fontWeight: 800 }}>= {formatCurrency(f.totale)} lordi dai turni</p>
+              {/* Lo stesso lordo della barra: le voci che non vengono dalle ore (voci fisse,
+                  bonus, 13ª/14ª) si aggiungono qui. Senza, il grafico diceva 1.542,87 e la
+                  barra 1.672,87 (ottobre 2026). */}
+              {extra.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.35rem', margin: '.5rem 0 0' }}>
+                  {extra.map((v) => (
+                    <span key={v.label} style={{ fontSize: '.8rem', padding: '.2rem .55rem', borderRadius: 999, background: 'var(--c-bg)', border: '1px solid var(--c-border)' }}>
+                      + {v.label.replace(/ di .*/, '')} · <strong>{formatCurrency(v.value)}</strong>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p style={{ margin: '.2rem 0', fontWeight: 800 }}>= {formatCurrency(lordo ?? f.totale)} lordi{extra.length ? ' nel mese' : ' dai turni'}</p>
             </>
           )}
           <div className="modal-footer">
