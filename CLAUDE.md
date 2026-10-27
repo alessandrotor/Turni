@@ -464,7 +464,10 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   quelle che non ci stanno (un mese lungo) escono a righe, «+8,3 h · 0 €», e
   dove non arrivano resta il bordo tratteggiato. Prima erano due voci a parte
   con una riga di spiegazione ciascuna («monte ore», «nello stipendio fisso»),
-  e non si capivano: «sono ore di un altro mese?». Riaffetta i campi di
+  e non si capivano: «sono ore di un altro mese?». E sotto le Settimane due
+  barre rispondono a «come fanno a stare sotto le 24 a settimana ed essere più
+  di 103?»: le ore ordinarie settimana per settimana, e lo stipendio da 4,3
+  settimane con l'avanzo a righe rosse (il «+8,3 h · 0 €» dei Flussi ci porta). Riaffetta i campi di
   `computePayByShift`, non conta niente: `flussoOre()`, → `check-flusso-ore.mjs`
 - **Le assenze riempiono la settimana**, anche quando cadono in coda: in busta
   `4,00 ferie + 99,20 retribuzione = 103,20`. Contarle in ordine cronologico

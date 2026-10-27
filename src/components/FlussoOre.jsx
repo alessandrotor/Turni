@@ -87,7 +87,7 @@ function Finestra({ turni, tutti, byShift, settings, titolo, onChiudi }) {
                     className={`periodo-btn${vista === id ? ' active' : ''}`} onClick={() => setVista(id)}>{nome}</button>
                 ))}
               </span>
-              {vista === 'flussi' && <Flussi f={f} entra={entra} />}
+              {vista === 'flussi' && <Flussi f={f} entra={entra} onSettimane={settings.onCall ? null : () => setVista('settimane')} />}
               {vista === 'oreuro' && <OreEuro f={f} entra={entra} />}
               {vista === 'settimane' && <Settimane f={f} settings={settings} entra={entra} />}
               {vista === 'mosaico' && <Mosaico f={f} entra={entra} />}
@@ -132,7 +132,7 @@ function colonna(nodi, scala) {
 // riempiono, resta il bordo vuoto. Due voci a parte («monte ore», «nello
 // stipendio fisso») con una riga di spiegazione ciascuna non si capivano: il
 // grafico deve dirlo da solo (ottobre 2026).
-function Flussi({ f, entra }) {
+function Flussi({ f, entra, onSettimane }) {
   const XS = 92, XD = 214, B = 9;
   const d = useMemo(() => {
     const origini = f.origini.filter((o) => o.id !== 'monte');
@@ -177,7 +177,9 @@ function Flussi({ f, entra }) {
         {oltre >= 0.5 && (
           <>
             <rect x={XD} y={n.y + cap + 1} width={B} height={Math.max(1.5, oltre * d.scala - 1)} rx={2} fill="url(#flusso-oltre)" />
-            <text x={XD + B + 6} y={n.y + cap + Math.max(8, (oltre * d.scala) / 2) + 4} style={testo}>+{ore(oltre)} · 0 €</text>
+            {/* Il perché sta nella vista Settimane: un tocco ci porta. */}
+            <text x={XD + B + 6} y={n.y + cap + Math.max(8, (oltre * d.scala) / 2) + 4} onClick={onSettimane || undefined}
+              style={{ ...testo, ...(onSettimane ? { cursor: 'pointer', textDecoration: 'underline', fill: 'var(--c-primary)' } : {}) }}>+{ore(oltre)} · 0 € {onSettimane ? '›' : ''}</text>
           </>
         )}
       </>
@@ -318,18 +320,51 @@ function Settimane({ f, settings, entra }) {
         })}
       </div>
       <Legenda voci={usati.map((k) => [k === 'ordinarie' ? 'retribuzione' : k, NOMI[k]])} />
-      {domenicaOltre(f) >= 0.5 && <p className="form-hint" style={{ margin: '.4rem 0 0' }}>{SPIEGA.domenica(domenicaOltre(f))}</p>}
-      {f.monte && (
-        <>
-          <p className="form-hint" style={{ margin: '.6rem 0 .2rem' }}>
-            <b>Monte ore del mese</b> · {ore(Math.min(f.monte.pagate, f.monte.monte))} su {ore(f.monte.monte)}
-          </p>
-          <div style={{ height: 8, borderRadius: 4, background: 'var(--c-bg)', overflow: 'hidden' }}>
-            <i style={{ display: 'block', height: '100%', width: `${Math.min(100, (f.monte.pagate / f.monte.monte) * 100)}%`, background: COLORE.retribuzione }} />
-          </div>
-        </>
-      )}
+      {f.monte && <Stipendio f={f} settings={settings} />}
     </>
+  );
+}
+
+// ── Le stesse ore, viste a settimana e viste dallo stipendio ────────────
+// Sopra le ore che riempiono la retribuzione, settimana per settimana (mai
+// oltre la linea del contratto); sotto quelle che lo stipendio paga, cioè il
+// monte ore. Un mese lungo ha più settimane del 4,3 medio: la differenza esce
+// a righe rosse, senza euro. Ottobre 2026: «come fanno a stare sotto le 24 a
+// settimana e a essere più di 103?» — la risposta è il disegno, non una frase.
+function Stipendio({ f, settings }) {
+  const settimane = f.settimane.map((w) => ({ inizio: w.inizio, min: w.ordinarie + w.ferie + w.permesso + w.festivita }))
+    .filter((w) => w.min >= 0.5);
+  const lavorate = settimane.reduce((t, w) => t + w.min, 0);
+  const { pagate, monte } = f.monte;
+  const oltre = f.voci.find((v) => v.id === 'giaNelMonte')?.minuti || 0;
+  const senzaTurni = Math.max(0, pagate - lavorate);
+  const pc = (min) => `${(min / Math.max(lavorate, monte, pagate + oltre)) * 100}%`;
+  const sett = Number(settings.expectedWeeklyHours) || 0;
+  /** @type {import('react').CSSProperties} */
+  const barra = { display: 'flex', height: 34, borderRadius: 4, overflow: 'hidden' };
+  /** @type {import('react').CSSProperties} */
+  const dentro = { color: '#fff', fontSize: 11, fontWeight: 700, lineHeight: 1.15, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', whiteSpace: 'nowrap' };
+  return (
+    <div style={{ marginTop: '.8rem', fontSize: '.75rem', color: 'var(--c-text-2)' }}>
+      <p style={{ margin: '0 0 .25rem', fontWeight: 700 }}>Le tue ore ordinarie, settimana per settimana · {ore(lavorate)}</p>
+      <div style={barra}>
+        {settimane.map((w) => (
+          <span key={w.inizio} style={{ ...dentro, width: pc(w.min), background: COLORE.retribuzione, borderRight: '2px solid var(--c-card, #fff)' }}>
+            {ore(w.min)}{w.min / Math.max(lavorate, monte, pagate + oltre) > 0.2 && <small style={{ fontWeight: 500 }}>{intervallo(w.inizio)}</small>}
+          </span>
+        ))}
+      </div>
+      <p style={{ margin: '.6rem 0 .25rem', fontWeight: 700 }}>
+        Lo stipendio paga {ore(monte)}{sett > 0 ? ` (${ore(sett * 60)} × ${(monte / (sett * 60)).toLocaleString('it-IT', { maximumFractionDigits: 2 })} settimane)` : ''}
+      </p>
+      <div style={barra}>
+        <span style={{ ...dentro, width: pc(Math.min(pagate, monte)), background: '#059669', fontSize: 13 }}>{ore(pagate)}</span>
+        {pagate < monte && <span style={{ width: pc(monte - pagate), border: '2px dashed #059669', borderLeft: 'none', borderRadius: '0 4px 4px 0' }} />}
+        {oltre >= 0.5 && <span style={{ width: pc(oltre), background: 'repeating-linear-gradient(45deg, #fecaca 0 4px, #fff 4px 8px)', border: '2px dashed #dc2626', borderLeft: 'none', borderRadius: '0 4px 4px 0' }} />}
+      </div>
+      {oltre >= 0.5 && <p style={{ margin: '.2rem 0 0', textAlign: 'right', color: '#b91c1c', fontWeight: 700 }}>+{ore(oltre)} senza euro</p>}
+      {senzaTurni >= 0.5 && <p style={{ margin: '.2rem 0 0', textAlign: 'right', color: '#047857', fontWeight: 700 }}>+{ore(senzaTurni)} pagate senza turni</p>}
+    </div>
   );
 }
 
