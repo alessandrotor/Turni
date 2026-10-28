@@ -4,7 +4,8 @@ import {
 } from '../utils/dates';
 import { calcShiftMinutes, getShiftSurchargePct, formatCurrency, lordoTurno } from '../motore/pay';
 import { minutiNotturniPagati, pctNotturno, fasciaNotturna } from '../motore/notturno';
-import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../motore/assenze';
+import { TIPO, ETICHETTA, tipoTurno } from '../motore/assenze';
+import Icona, { ICONA_TIPO } from './Icona';
 import { isHoliday } from '../motore/holidays';
 
 // Il badge dice quante ore cadono in fascia; il suggerimento dice se valgono davvero di più (la
@@ -155,7 +156,7 @@ export default function TimelineView({
                                   commento risulta «usato» a chi fa il conto
                                   delle classi morte, ed è così che questa era
                                   sopravvissuta.) */}
-                              <span>{ICONA[tipo]}</span>
+                              <span><Icona nome={ICONA_TIPO[tipo]} piastrella /></span>
                               <strong>{ETICHETTA[tipo]}</strong>
                             </div>
                           ) : (
@@ -196,13 +197,13 @@ export default function TimelineView({
                               className="timeline-badge timeline-badge--night"
                               title={spiegaNotturno(notteMin, settings)}
                             >
-                              🌙 {formatMinutes(notteMin)} in fascia
+                              <Icona nome="luna" /> {formatMinutes(notteMin)} in fascia
                             </span>
                           )}
 
                           {!isAssenza && shift.breakMinutes > 0 && (
                             <span className="timeline-badge timeline-badge--break">
-                              ☕ Pausa {shift.breakMinutes}m
+                              <Icona nome="pausa" /> Pausa {shift.breakMinutes}m
                             </span>
                           )}
 
@@ -214,7 +215,7 @@ export default function TimelineView({
 
                           {shift.note && (
                             <span className="timeline-badge timeline-badge--note" title={shift.note}>
-                              💬 {shift.note}
+                              <Icona nome="chat" /> {shift.note}
                             </span>
                           )}
 
@@ -261,7 +262,7 @@ export default function TimelineView({
                   aria-label={`Giorno di riposo: aggiungi un turno il ${d.dayNum}/${month + 1}`}
                 >
                   <span className="timeline-rest-content">
-                    <span className="timeline-rest-label">🌿 Riposo</span>
+                    <span className="timeline-rest-label"><Icona nome="riposo" /> Riposo</span>
                     <span className="timeline-rest-action">+ Aggiungi turno</span>
                   </span>
                 </button>

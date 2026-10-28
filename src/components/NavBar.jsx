@@ -1,10 +1,11 @@
 import { ENABLE_STATS } from '../config/features';
+import Icona from './Icona';
 
 export default function NavBar({ view, onNavigate }) {
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <span className="navbar-icon">🕐</span>
+        <span className="navbar-icon"><Icona nome="orologio" /></span>
         <span className="navbar-title">Turni</span>
       </div>
       <div className="navbar-links">
@@ -12,7 +13,7 @@ export default function NavBar({ view, onNavigate }) {
           className={`nav-link ${view === 'calendar' ? 'active' : ''}`}
           onClick={() => onNavigate('calendar')}
         >
-          <span className="nav-icon">📅</span>
+          <span className="nav-icon"><Icona nome="calendario" /></span>
           <span className="nav-label">Calendario</span>
         </button>
         {/* Statistiche: pagina ancora da decidere, spenta di default.
@@ -23,7 +24,7 @@ export default function NavBar({ view, onNavigate }) {
             className={`nav-link ${view === 'stats' ? 'active' : ''}`}
             onClick={() => onNavigate('stats')}
           >
-            <span className="nav-icon">📊</span>
+            <span className="nav-icon"><Icona nome="statistiche" /></span>
             <span className="nav-label">Statistiche</span>
           </button>
         )}
@@ -31,7 +32,7 @@ export default function NavBar({ view, onNavigate }) {
           className={`nav-link ${view === 'settings' ? 'active' : ''}`}
           onClick={() => onNavigate('settings')}
         >
-          <span className="nav-icon">⚙️</span>
+          <span className="nav-icon"><Icona nome="impostazioni" /></span>
           <span className="nav-label">Impostazioni</span>
         </button>
       </div>

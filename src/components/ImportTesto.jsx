@@ -7,6 +7,7 @@ import { turniDaImportare } from '../utils/import-turni';
 import { minutesDiff, formatMinutes } from '../utils/dates';
 import { ShiftPreviewRow } from './ImportModal';
 import Righello from './Righello';
+import Icona from './Icona';
 
 // «Incolla i turni da un messaggio»: il testo si legge sul telefono, non va a nessun servizio
 // (utils/testo-turni.js), per questo non ha l'avviso della foto. Il modulo è uno solo: si incolla e
@@ -134,7 +135,7 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
   return (
     <>
       <button className="btn-import" onClick={() => setAperto(true)}>
-        📋 Turni da un messaggio o un'immagine
+        <Icona nome="appunti" /> Turni da un messaggio o un'immagine
       </button>
 
       {aperto && (
@@ -152,11 +153,11 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
                 onChange={(e) => { leggiImmagine(e.target.files?.[0]); e.target.value = ''; }} />
               {!immagine?.fase && !conRighello && (
                 <button type="button" className="btn-import" style={{ marginBottom: '.5rem' }} onClick={() => { import('../services/lettore-immagine').then((m) => m.preparaLettore()); fileRef.current?.click(); }}>
-                  📷 Da un'immagine <span className="beta-tag">prova</span>
+                  <Icona nome="fotocamera" /> Da un'immagine <span className="beta-tag">prova</span>
                 </button>
               )}
               {immagine?.fase && <p className="import-match">⏳ {FASI[immagine.fase]}…</p>}
-              {immagine?.errore && <p className="import-match import-match--warn">⚠️ {immagine.errore}</p>}
+              {immagine?.errore && <p className="import-match import-match--warn"><Icona nome="avviso" /> {immagine.errore}</p>}
               {conRighello && (
                 <Righello src={tabRef.current.anteprima} colonne={tabRef.current.colonneX} larghezza={tabRef.current.W} altezza={tabRef.current.H}
                   iniziale={origine?.righello} onLeggi={leggiFascia} />
@@ -164,7 +165,7 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
               {/* Di chi sono i turni letti, e come si cambia: un tocco. */}
               {origine && !immagine && (
                 <p className="import-match" style={{ display: 'flex', gap: '.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                  {origine.nome ? <span>Turni di <strong>{origine.nome}</strong></span> : <span>📏 Dalla fascia scelta</span>}
+                  {origine.nome ? <span>Turni di <strong>{origine.nome}</strong></span> : <span><Icona nome="righello" /> Dalla fascia scelta</span>}
                   <button type="button" className="linklike"
                     onClick={async () => {
                       if (!origine.nome) { setImmagine({ righello: true }); return; }
@@ -221,7 +222,7 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
                     </p>
                   )}
 
-                  {letto.avvisi.map((a) => <p key={a} className="import-match import-match--warn">⚠️ {a}</p>)}
+                  {letto.avvisi.map((a) => <p key={a} className="import-match import-match--warn"><Icona nome="avviso" /> {a}</p>)}
                   {saltatiGiorni.length > 0 && (
                     <p className="import-match import-match--warn">Salto {saltatiGiorni.join(' e ')}.</p>
                   )}
@@ -249,7 +250,7 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
             <div className="modal-footer" style={{ padding: '0 1.25rem 1.25rem' }}>
               <button className="btn btn-secondary" onClick={chiudi}>Annulla</button>
               <button className="btn btn-primary" onClick={conferma} disabled={daSalvare.length === 0}>
-                ✓ Importa {daSalvare.length} turn{daSalvare.length === 1 ? 'o' : 'i'}
+                Importa {daSalvare.length} turn{daSalvare.length === 1 ? 'o' : 'i'}
               </button>
             </div>
           </div>

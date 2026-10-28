@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { eliminaTuttoIlLocale } from '../utils/backup-contenuto';
+import Icona from './Icona';
 
 // «Elimina tutti i dati»: il pieno controllo, per chi lo vuole.
 //
@@ -26,7 +27,7 @@ export default function EliminaDati({ onEsporta, turniSalvati = 0 }) {
     return (
       <div className="backup-row">
         <button type="button" className="btn btn-danger-ghost" onClick={() => setChiedi(true)}>
-          🗑️ Elimina tutti i dati
+          <Icona nome="cestino" /> Elimina tutti i dati
         </button>
       </div>
     );
@@ -46,7 +47,7 @@ export default function EliminaDati({ onEsporta, turniSalvati = 0 }) {
           Annulla
         </button>
         <button type="button" className="btn btn-danger-ghost" onClick={elimina} style={{ flex: 1, marginTop: 0 }}>
-          🗑️ Elimina tutto
+          <Icona nome="cestino" /> Elimina tutto
         </button>
       </div>
       {errore && <p className="form-hint" role="alert" style={{ margin: 0, color: 'var(--c-danger)' }}>{errore}</p>}

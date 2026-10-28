@@ -27,13 +27,7 @@ export const ETICHETTA = {
   [TIPO.FESTIVITA]: 'Festività',
 };
 
-export const ICONA = {
-  [TIPO.LAVORO]: '',
-  [TIPO.FERIE]: '🏖',
-  [TIPO.PERMESSO]: '📄',
-  [TIPO.MALATTIA]: '🌡',
-  [TIPO.FESTIVITA]: '🎊',
-};
+// Le icone dei tipi non stanno qui: sono interfaccia (ICONA_TIPO in components/Icona.jsx).
 
 // I turni salvati senza `type` sono lavoro (nessuna migrazione). L'elenco arriva da
 // TIPI_ASSENZA, così un tipo nuovo non torna «lavoro» in silenzio.

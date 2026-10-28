@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useId } from 'react';
 import { CCNL_LIST, getContratto } from '../utils/ccnl-elenco';
+import Icona from './Icona';
 
 // Scelta del contratto, con la tendina di ricerca. È un componente perché serve in due posti
 // (Impostazioni e l'avviso sotto il primo totale in euro). La tendina è opaca di proposito: la
@@ -129,7 +130,7 @@ export default function CcnlPicker({ value, onChange, id, autoFocus = false }) {
                 // altrimenti chiuderebbe la lista senza registrare la scelta.
                 onMouseDown={(e) => { e.preventDefault(); scegli(c); }}
               >
-                {c.label}{c.verificato ? ' ✓' : ''}
+                {c.label}{c.verificato && <> <Icona nome="ok" /></>}
               </button>
             </li>
           ))}

@@ -2,7 +2,8 @@ import { useState, useRef, useMemo, useEffect } from 'react';
 import { formatDate, formatDayShort, parseDate, minutesDiff, formatMinutes, spostaOrario } from '../utils/dates';
 import { proponiPeriodo, totalePeriodo } from '../motore/periodo-assenza';
 import useModalDismiss from '../hooks/useModalDismiss';
-import { TIPO, ETICHETTA, ICONA, tipoTurno, isAssenza, minutiGiornoAssenza } from '../motore/assenze';
+import { TIPO, ETICHETTA, tipoTurno, isAssenza, minutiGiornoAssenza } from '../motore/assenze';
+import Icona, { ICONA_TIPO } from './Icona';
 import { proponiOrari, sagomeFrequenti, ORARI_DEFAULT, MAX_SAGOME } from '../utils/orari-proposti';
 import { parseNum } from '../motore/pay';
 import { calcolaCosaCambia } from '../utils/cosa-cambia';
@@ -26,8 +27,7 @@ const SURCHARGE_PRESETS = [
   { label: '50%', value: 50 },
 ];
 
-// Ore di una giornata di assenza: nascono da una divisione (40 h ÷ 6), con la coda binaria.
-// Due decimali bastano; `Number(...)` toglie gli zeri inutili (4, non «4,00»).
+// Ore di una giornata di assenza: da una divisione (40 h ÷ 6), coda binaria compresa. Due decimali; `Number(...)` toglie gli zeri (4, non «4,00»).
 function oreArrotondate(ore) {
   return Number(ore.toFixed(2));
 }
@@ -299,7 +299,7 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
                   className={`break-preset-btn ${form.kind === t ? 'active' : ''}`}
                   onClick={() => setForm(f => ({ ...f, kind: t }))}
                 >
-                  {ICONA[t] && `${ICONA[t]} `}{ETICHETTA[t]}
+                  {ICONA_TIPO[t] && <><Icona nome={ICONA_TIPO[t]} piastrella /> </>}{ETICHETTA[t]}
                 </button>
               ))}
             </div>
@@ -618,7 +618,7 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
               <span className="cosa-cambia-ore">({cosaCambia.testoDeltaOre}{cosaCambia.testoDiCui && `, ${cosaCambia.testoDiCui}`})</span>
               {cosaCambia.testoMonte && <span className="cosa-cambia-ore" style={{ width: '100%' }}>{cosaCambia.testoMonte}</span>}
               {cosaCambia.superaSoglia && (
-                <span className="cosa-cambia-avviso">⚠️ Superi la soglia del tratt. integrativo: ~{Math.round(cosaCambia.sogliaLorda).toLocaleString('it-IT')} € lordi (15.000 di reddito)</span>
+                <span className="cosa-cambia-avviso"><Icona nome="avviso" /> Superi la soglia del tratt. integrativo: ~{Math.round(cosaCambia.sogliaLorda).toLocaleString('it-IT')} € lordi (15.000 di reddito)</span>
               )}
             </div>
           )}
@@ -638,7 +638,7 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
               className="btn btn-danger-ghost btn--full"
               onClick={() => onDelete(modal.shift.id)}
             >
-              🗑 Elimina {nomeTipo}
+              <Icona nome="cestino" /> Elimina {nomeTipo}
             </button>
           )}
         </form>

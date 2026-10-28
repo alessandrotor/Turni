@@ -6,6 +6,7 @@ import {
 import { calcShiftMinutes } from '../motore/pay';
 import { TIPO, ETICHETTA, tipoTurno } from '../motore/assenze';
 import useModalDismiss from '../hooks/useModalDismiss';
+import Icona from './Icona';
 
 function nomeFascia(shift, tipo) {
   if (tipo !== TIPO.LAVORO) return ETICHETTA[tipo];
@@ -187,7 +188,7 @@ export default function ShareWeekModal({
                 </span>
                 <div className="share-day-info">
                   {d.shifts.length === 0 ? (
-                    <span className="share-day-rest">🌿 Riposo</span>
+                    <span className="share-day-rest"><Icona nome="riposo" /> Riposo</span>
                   ) : (
                     d.shifts.map((s) => {
                       const t = tipoTurno(s);
@@ -213,7 +214,7 @@ export default function ShareWeekModal({
 
         {copied && (
           <div className="share-copied-toast" role="status">
-            ✓ Testo copiato negli appunti!
+            Testo copiato negli appunti
           </div>
         )}
 
@@ -224,14 +225,14 @@ export default function ShareWeekModal({
             className="btn btn-primary share-btn-main"
             onClick={handleShare}
           >
-            💬 Invia su WhatsApp / Condividi
+            <Icona nome="chat" /> Invia su WhatsApp / Condividi
           </button>
           <button
             type="button"
             className="btn btn-secondary"
             onClick={handleCopy}
           >
-            📋 Copia testo
+            <Icona nome="appunti" /> Copia testo
           </button>
         </div>
       </div>

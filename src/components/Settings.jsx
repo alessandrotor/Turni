@@ -16,6 +16,7 @@ import { minutiGiornoAssenza } from '../motore/assenze';
 import { fasciaNotturnaRisolta, CUMULO_DEFAULT } from '../motore/notturno';
 import { normalizzaMaggiorazione, messaggioMaggiorazione } from '../utils/maggiorazioni';
 import EliminaDati from './EliminaDati';
+import Icona from './Icona';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
 const toInput = (n) => (n === '' || n == null || !Number(n) ? '' : String(Number(n)).replace('.', ','));
@@ -133,7 +134,7 @@ export default function Settings({ settings, onSave }) {
     setAvvisiMagg(a => ({ ...a, [field]: messaggioMaggiorazione(esito) }));
   };
   const avvisoMagg = (field) => (avvisiMagg[field]
-    ? <p className="form-hint form-hint--attenzione">⚠️ {avvisiMagg[field]}</p>
+    ? <p className="form-hint form-hint--attenzione"><Icona nome="avviso" /> {avvisiMagg[field]}</p>
     : null);
 
   const addPreviousRate = () => {
@@ -503,7 +504,7 @@ export default function Settings({ settings, onSave }) {
 
         {/* Paga oraria attuale */}
         <details className="settings-section" open>
-          <summary className="settings-section-title">💰 Paga oraria</summary>
+          <summary className="settings-section-title"><Icona nome="soldi" /> Paga oraria</summary>
           <p className="settings-section-desc">
             Inserisci la tua paga oraria lorda <strong>attuale</strong>. È quella usata per i
             turni di oggi e futuri. Se durante l'anno hai avuto un aumento, registra le paghe
@@ -579,7 +580,7 @@ export default function Settings({ settings, onSave }) {
 
         {/* Ore previste / lavoro a chiamata */}
         <details className="settings-section">
-          <summary className="settings-section-title">📋 Orario di lavoro</summary>
+          <summary className="settings-section-title"><Icona nome="appunti" /> Orario di lavoro</summary>
 
           <label className="check-row">
             <input
@@ -708,7 +709,7 @@ export default function Settings({ settings, onSave }) {
 
         {/* Maggiorazioni */}
         <details className="settings-section">
-          <summary className="settings-section-title">📈 Maggiorazioni</summary>
+          <summary className="settings-section-title"><Icona nome="crescita" /> Maggiorazioni</summary>
           <p className="settings-section-desc">
             Domenicale e festivo vengono applicate <strong>automaticamente</strong> ai turni di
             domenica e nelle festività nazionali (incluse Pasqua e Pasquetta). Gli straordinari
@@ -819,7 +820,7 @@ export default function Settings({ settings, onSave }) {
                 </div>
                 {fasciaCcnl && fasciaDiversaDalCcnl && (
                   <p className="form-hint form-hint--warn">
-                    ⚠️ Il contratto <strong>{ccnlPreset.label}</strong> usa la fascia{' '}
+                    <Icona nome="avviso" /> Il contratto <strong>{ccnlPreset.label}</strong> usa la fascia{' '}
                     <strong>{fasciaCcnl.inizio}–{fasciaCcnl.fine}</strong>, diversa da quella
                     qui sopra. Se l'hai copiata dal tuo cedolino tienila com'è — la busta
                     batte il contratto. Altrimenti{' '}
@@ -944,7 +945,7 @@ export default function Settings({ settings, onSave }) {
 
         {/* Ferie, permessi e malattia */}
         <details className="settings-section">
-          <summary className="settings-section-title">🏖 Ferie, permessi e malattia</summary>
+          <summary className="settings-section-title"><Icona nome="ferie" /> Ferie, permessi e malattia</summary>
           <p className="settings-section-desc">
             In busta una giornata di ferie, permesso, malattia o festività vale un
             <strong> numero fisso di ore</strong>, non l'orario che avresti fatto. Senza
@@ -1038,7 +1039,7 @@ export default function Settings({ settings, onSave }) {
             </div>
           </div>
           <p className="form-hint form-hint--warn">
-            ⚠️ Questi valori <strong>non sono verificati</strong>, a differenza di contributi e
+            <Icona nome="avviso" /> Questi valori <strong>non sono verificati</strong>, a differenza di contributi e
             aliquote fiscali. La struttura è quella dello schema INPS (primi giorni a parte), ma
             quanto prendi davvero dipende dal contratto <em>e dall'azienda</em>.
           </p>
@@ -1053,7 +1054,7 @@ export default function Settings({ settings, onSave }) {
 
         {/* Reddito e bonus Renzi */}
         <details className="settings-section">
-          <summary className="settings-section-title">💶 Reddito e trattamento integrativo (ex bonus Renzi)</summary>
+          <summary className="settings-section-title"><Icona nome="euro" /> Reddito e trattamento integrativo (ex bonus Renzi)</summary>
           <p className="settings-section-desc">
             Nel calendario vedi il tuo <strong>reddito totale</strong> dell'anno e quanto puoi
             ancora guadagnare prima di superare le soglie del trattamento integrativo (ex bonus
@@ -1100,7 +1101,7 @@ export default function Settings({ settings, onSave }) {
 
         {/* CCNL: contributi minori e divisore orario */}
         <details className="settings-section settings-section--beta">
-          <summary className="settings-section-title">📜 CCNL (beta)</summary>
+          <summary className="settings-section-title"><Icona nome="contratto" /> CCNL (beta)</summary>
           <p className="settings-section-desc">
             Oltre all'IVS (9,19%) quasi tutti i contratti prevedono trattenute minori — FIS, CIGS,
             Ente Bilaterale — che pesano qualche euro al mese e che senza il contratto non si possono
@@ -1117,7 +1118,7 @@ export default function Settings({ settings, onSave }) {
             />
             <p className="form-hint">
               {form.ccnl
-                ? (ccnlPreset.verificato ? '✓ Contratto verificato su busta reale.' : 'Contratto selezionato.')
+                ? (ccnlPreset.verificato ? 'Contratto verificato su busta reale.' : 'Contratto selezionato.')
                 : 'Digita e scegli dall\'elenco. Sono elencati i CCNL vigenti dall\'archivio CNEL.'}
             </p>
             {form.ccnl && ccnlPreset.note && (
@@ -1173,7 +1174,7 @@ export default function Settings({ settings, onSave }) {
 
           {form.ccnl && !ccnlPreset.verificato && (
             <p className="form-hint">
-              ⚠️ Aliquote indicative, <strong>non riscontrate su una busta reale</strong>. Se hai il
+              <Icona nome="avviso" /> Aliquote indicative, <strong>non riscontrate su una busta reale</strong>. Se hai il
               cedolino sotto mano, confronta le voci: dove non tornano, il dato giusto è quello.
             </p>
           )}
@@ -1181,7 +1182,7 @@ export default function Settings({ settings, onSave }) {
 
         {/* Turni da un'immagine: letti sul telefono (services/lettore-immagine.js) */}
         <details className="settings-section">
-          <summary className="settings-section-title">📷 Turni da un'immagine</summary>
+          <summary className="settings-section-title"><Icona nome="fotocamera" /> Turni da un'immagine</summary>
           <p className="settings-section-desc">
             L'immagine del tabellone si legge sul telefono e non viene inviata a nessuno.
             Della tabella si leggono solo le righe col tuo nome.
@@ -1193,7 +1194,7 @@ export default function Settings({ settings, onSave }) {
 
         {/* Backup e ripristino: i dati vivono solo in localStorage */}
         <details className="settings-section">
-          <summary className="settings-section-title">💾 Backup e ripristino</summary>
+          <summary className="settings-section-title"><Icona nome="salva" /> Backup e ripristino</summary>
           <p className="settings-section-desc">
             Turni e impostazioni esistono <strong>solo su questo telefono</strong>: non c'è nessun
             account e nessuna copia altrove. Esporta un backup prima di cambiare telefono,
@@ -1308,7 +1309,7 @@ export default function Settings({ settings, onSave }) {
           {backupTesto && (
             <div className="backup-riserva">
               <button type="button" className="btn-secondary" onClick={copiaBackup}>
-                📋 Copia il backup
+                <Icona nome="appunti" /> Copia il backup
               </button>
               <textarea
                 className="backup-riserva-testo"
@@ -1325,7 +1326,7 @@ export default function Settings({ settings, onSave }) {
             compare solo se c'è qualcosa da correggere e sparisce da sola dopo. */}
         {daCorreggere.length > 0 && (
           <details className="settings-section">
-            <summary className="settings-section-title">🛠 Correggi orari a :50</summary>
+            <summary className="settings-section-title"><Icona nome="attrezzi" /> Correggi orari a :50</summary>
             <p className="settings-section-desc">
               Sul foglio turni «16,50» vuol dire <strong>16:30</strong>. Gli import da foto
               più vecchi sono entrati con i minuti sbagliati: <strong>{daCorreggere.length} turni</strong>
@@ -1360,7 +1361,7 @@ export default function Settings({ settings, onSave }) {
                 onClick={handleCorreggiOrari}
                 disabled={backupBusy}
               >
-                🛠 Correggi {daCorreggere.length} turni
+                <Icona nome="attrezzi" /> Correggi {daCorreggere.length} turni
               </button>
               <span className="form-hint">Modifica i turni salvati</span>
             </div>
@@ -1369,7 +1370,7 @@ export default function Settings({ settings, onSave }) {
 
         {/* Tredicesima e quattordicesima */}
         <details className="settings-section">
-          <summary className="settings-section-title">🎁 Tredicesima e quattordicesima</summary>
+          <summary className="settings-section-title"><Icona nome="regalo" /> Tredicesima e quattordicesima</summary>
           <p className="settings-section-desc">
             {/* Lo spazio esplicito serve: JSX mangia il ritorno a capo fra un
                 tag e il testo della riga dopo, e si leggeva «tredicesimaarriva». */}
@@ -1429,11 +1430,11 @@ export default function Settings({ settings, onSave }) {
 
         {/* ══ AVANZATE — fisco e dettagli ═════════════════════════ */}
         <details className="settings-advanced">
-          <summary className="settings-advanced-title">⚙️ Avanzate — fisco e dettagli</summary>
+          <summary className="settings-advanced-title"><Icona nome="impostazioni" /> Avanzate: fisco e dettagli</summary>
 
         {/* TFR in busta */}
         <details className="settings-section">
-          <summary className="settings-section-title">💼 TFR in busta (anticipo)</summary>
+          <summary className="settings-section-title"><Icona nome="valigetta" /> TFR in busta (anticipo)</summary>
           <p className="settings-section-desc">
             Se hai scelto di ricevere il TFR mensilmente in busta invece di accantonarlo,
             attiva questa opzione. Viene aggiunta al netto una quota di circa il
@@ -1476,7 +1477,7 @@ export default function Settings({ settings, onSave }) {
         {/* Addizionali IRPEF — stima netto (gated dal feature flag) */}
         {ENABLE_NET_CALC && (
           <details className="settings-section">
-            <summary className="settings-section-title">🧾 Addizionali IRPEF</summary>
+            <summary className="settings-section-title"><Icona nome="ricevuta" /> Addizionali IRPEF</summary>
             <p className="settings-section-desc">
               Usate per la stima del netto. Variano in base alla tua residenza:
               l'addizionale regionale va da ~1,23% a ~3,33%, la comunale da 0% a ~0,9%.
@@ -1590,7 +1591,7 @@ export default function Settings({ settings, onSave }) {
 
         {/* Paghe precedenti (aumenti) */}
         <details className="settings-section">
-          <summary className="settings-section-title">🔄 Paghe precedenti (aumenti)</summary>
+          <summary className="settings-section-title"><Icona nome="aggiorna" /> Paghe precedenti (aumenti)</summary>
           <p className="settings-section-desc">
             Hai avuto un aumento durante l'anno? Elenca qui le paghe che avevi <strong>prima</strong>,
             indicando fino a quale giorno erano in vigore. I turni <strong>fino a</strong> quella data
@@ -1646,7 +1647,7 @@ export default function Settings({ settings, onSave }) {
 
         {/* Voci fisse mensili */}
         <details className="settings-section">
-          <summary className="settings-section-title">➕ Voci fisse mensili</summary>
+          <summary className="settings-section-title"><Icona nome="piu" /> Voci fisse mensili</summary>
           <p className="settings-section-desc">
             Importi che ricevi <strong>ogni mese</strong> oltre ai turni (indennità di
             flessibilità, superminimo, elemento fisso…). Vengono <strong>sommati al lordo del
@@ -1729,7 +1730,7 @@ export default function Settings({ settings, onSave }) {
         <SezionePrevidenza form={form} set={set} />
         {/* Trattenute fisse mensili */}
         <details className="settings-section">
-          <summary className="settings-section-title">➖ Trattenute fisse mensili</summary>
+          <summary className="settings-section-title"><Icona nome="meno" /> Trattenute fisse mensili</summary>
           <p className="settings-section-desc">
             Importi che ti vengono trattenuti <strong>ogni mese</strong> oltre alle tasse (quota
             associativa, rata di un prestito, altro). Vengono <strong>sottratti dal netto</strong>
@@ -1789,7 +1790,7 @@ export default function Settings({ settings, onSave }) {
 
         <div className="settings-footer">
           <button type="submit" className="btn btn-primary btn--full">
-            {saved ? '✓ Salvato!' : 'Salva impostazioni'}
+            {saved ? 'Salvato' : 'Salva impostazioni'}
           </button>
           {/* Un'informativa che nessuno incontra non informa nessuno. Sta qui in
               fondo alle impostazioni, che è dove la si cerca, e punta a una

@@ -9,6 +9,7 @@ import {
 import { calcBonusMargin, BONUS_STATUS } from '../motore/bonus';
 import { TIPO, ETICHETTA } from '../motore/assenze';
 import { ENABLE_NET_CALC } from '../config/features';
+import Icona from './Icona';
 
 const fmt0 = (n) => formatCurrency(Math.round(n));
 // Ore compatte: «152h» o «152h 30m». Nelle celle del calendarietto e nei
@@ -457,18 +458,18 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
           {bonus.status !== BONUS_STATUS.ATTESA && (
             <div className="bonus-strip">
               <div className="bonus-strip-head">
-                <span className="bonus-strip-title">💶 Trattamento integrativo (ex bonus Renzi)</span>
+                <span className="bonus-strip-title"><Icona nome="euro" /> Trattamento integrativo (ex bonus Renzi)</span>
               </div>
               <span className={`bonus-strip-note ${bonus.status === BONUS_STATUS.OLTRE ? 'bonus-strip-note--warn' : ''}`}>
                 {bonus.status === BONUS_STATUS.PIENO && !bonus.nearThreshold && 'Tratt. integrativo pieno: reddito entro le soglie.'}
-                {bonus.status === BONUS_STATUS.PIENO && bonus.nearThreshold && '⚠️ Vicino ai 15.000 € di reddito.'}
+                {bonus.status === BONUS_STATUS.PIENO && bonus.nearThreshold && <><Icona nome="avviso" /> Vicino ai 15.000 € di reddito.</>}
                 {bonus.status === BONUS_STATUS.PARZIALE && 'Tratt. integrativo ridotto: reddito oltre i 15.000 €.'}
-                {bonus.status === BONUS_STATUS.OLTRE && '🚨 Reddito oltre i 28.000 €: il tratt. integrativo non spetta.'}
+                {bonus.status === BONUS_STATUS.OLTRE && <><Icona nome="allarme" /> Reddito oltre i 28.000 €: il tratt. integrativo non spetta.</>}
               </span>
               {bonus.status === BONUS_STATUS.PIENO && (
                 <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
                   <span className="bonus-strip-label">
-                    {bonus.nearThreshold ? '⚠️ Sei vicino alla soglia' : 'Puoi ancora guadagnare'}
+                    {bonus.nearThreshold ? <><Icona nome="avviso" /> Sei vicino alla soglia</> : 'Puoi ancora guadagnare'}
                   </span>
                   <span className="bonus-strip-value">{fmt0(bonus.marginToFull)}</span>
                   <span className="bonus-strip-note">
@@ -488,7 +489,7 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
               {bonus.status === BONUS_STATUS.OLTRE && (
                 <div className="bonus-strip-body bonus-strip-body--danger">
                   <span className="bonus-strip-note">
-                    🚨 Proiezione annua oltre i 28.000 € di reddito (~{fmt0(bonus.thresholdMaxGross)} lordi): non spetta.
+                    <Icona nome="allarme" /> Proiezione annua oltre i 28.000 € di reddito (~{fmt0(bonus.thresholdMaxGross)} lordi): non spetta.
                   </span>
                 </div>
               )}

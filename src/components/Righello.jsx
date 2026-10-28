@@ -97,7 +97,7 @@ export default function Righello({ src, larghezza, altezza, colonne = [], inizia
         <span aria-hidden="true" title="Inclina">↻</span>
         <input type="range" min={-10} max={10} step={0.5} value={fascia.gradi} aria-label="Inclinazione della fascia"
           onChange={(e) => setFascia({ ...fascia, gradi: Number(e.target.value) })} style={{ flex: 1, minWidth: 0 }} />
-        <button type="button" className="btn btn-primary" onClick={leggi} style={{ whiteSpace: 'nowrap' }}>✓ Leggi la riga</button>
+        <button type="button" className="btn btn-primary" onClick={leggi} style={{ whiteSpace: 'nowrap' }}>Leggi la riga</button>
       </div>
     </div>
   );

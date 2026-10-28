@@ -2,6 +2,7 @@ import { useRef } from 'react';
 import { parseDate, formatDayShort, minutesDiff, formatMinutes } from '../utils/dates';
 import useModalDismiss from '../hooks/useModalDismiss';
 import { turniDaImportare } from '../utils/import-turni';
+import Icona from './Icona';
 
 export function ShiftPreviewRow({ shift }) {
   const mins = minutesDiff(shift.startTime, shift.endTime) - (shift.breakMinutes || 0);
@@ -24,7 +25,7 @@ export function ShiftPreviewRow({ shift }) {
         )}
       </span>
       <span className="import-row-hours">{formatMinutes(Math.max(0, mins))}</span>
-      {shift.note ? <span className="import-row-note" title={shift.note}>💬</span> : <span />}
+      {shift.note ? <span className="import-row-note" title={shift.note}><Icona nome="chat" /></span> : <span />}
     </div>
   );
 }
@@ -85,7 +86,7 @@ export default function ImportModal({ shifts, esistenti = [], workerName, onConf
         <div className="import-body">
           {rigaTrovata && (
             <p className={rigaSospetta ? 'import-match import-match--warn' : 'import-match'}>
-              {rigaSospetta ? '⚠️ ' : ''}Turni trovati per: <strong>{rigaTrovata}</strong>
+              {rigaSospetta && <><Icona nome="avviso" /> </>}Turni trovati per: <strong>{rigaTrovata}</strong>
               {rigaSospetta && workerName && <> (avevi chiesto: <strong>{workerName}</strong>)</>}
             </p>
           )}
@@ -109,7 +110,7 @@ export default function ImportModal({ shifts, esistenti = [], workerName, onConf
         <div className="modal-footer" style={{ padding: '0 1.25rem 1.25rem' }}>
           <button className="btn btn-secondary" onClick={onClose}>Annulla</button>
           <button className="btn btn-primary" onClick={() => onConfirm(shifts)} disabled={daSalvare.length === 0}>
-            ✓ Importa {daSalvare.length} turn{daSalvare.length === 1 ? 'o' : 'i'}
+            Importa {daSalvare.length} turn{daSalvare.length === 1 ? 'o' : 'i'}
           </button>
         </div>
       </div>

@@ -611,5 +611,13 @@ Discendono tutte dalla parola d'ordine qui sopra.
   settimanali mostrandolo identico a «non l'ho ancora messo», mentre mandava a
   zero la soglia dei supplementari: `?? ''`, e `min="1"` dove lo zero è un dato
   mancante travestito.
+- **Icone, non emoji** (ottobre 2026): gli emoji cambiano disegno da un
+  telefono all'altro, sono deboli dove servono (il 🌡 della malattia quasi non
+  si vedeva) e davano all'app l'aria di un modello fatto in fretta. Le icone
+  sono disegnate in `Icona.jsx`, senza librerie: **duotone** (contorno colorato,
+  interno tenue) per menu, bottoni, avvisi e titoli; **piastrella** (quadratino
+  pieno, disegno bianco) solo per le giornate senza turno, che nel calendario
+  devono saltare all'occhio. Ogni cosa ha il suo colore, uguale ovunque. Gli
+  emoji restano solo nel testo condiviso su WhatsApp. Niente «✓» nei bottoni.
 - I calcoli fiscali sono marcati BETA e invitano a farsi controllare da un
   professionista. Non togliere quell'avviso.

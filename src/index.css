@@ -1703,12 +1703,12 @@ input, select, textarea { font: inherit; }
   list-style: none;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start; /* icona e titolo a sinistra, la freccia in fondo */
   gap: .5rem;
 }
 .settings-section-title::-webkit-details-marker { display: none; }
 .settings-section-title::after {
-  content: '▾';
+  content: '▾'; margin-left: auto;
   color: var(--c-muted-text);
   font-weight: 400;
   transition: transform .15s ease;

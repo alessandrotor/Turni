@@ -1,11 +1,12 @@
 import { ENABLE_DEBUG } from '../config/features';
+import Icona from './Icona';
 
 // I token dell'ultimo import da foto, solo in modalità debug.
 export default function DebugUso({ uso }) {
   if (!ENABLE_DEBUG || !uso) return null;
   return (
     <div className="debug-usage">
-      <span className="debug-usage-tag">🐛 DEBUG token</span>
+      <span className="debug-usage-tag"><Icona nome="debug" /> DEBUG token</span>
       <span>prompt <strong>{uso.prompt ?? '—'}</strong></span>
       <span>output <strong>{uso.output ?? '—'}</strong></span>
       <span>thinking <strong>{uso.thinking ?? '—'}</strong></span>

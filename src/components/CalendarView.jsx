@@ -5,7 +5,8 @@ import {
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth, formatPayrollRange,
 } from '../utils/dates';
 import { calcShiftMinutes, calcTotalPay, formatCurrency, lordoTurno } from '../motore/pay';
-import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../motore/assenze';
+import { TIPO, ETICHETTA, tipoTurno } from '../motore/assenze';
+import Icona, { ICONA_TIPO } from './Icona';
 import { isMensilizzato } from '../motore/ccnl';
 import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../motore/bonus';
 import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../motore/restituzione';
@@ -529,7 +530,6 @@ export default function CalendarView({
     return null;
   }, [posizione, posizioneSimulata, costo]);
 
-
   async function runImport(file, name) {
     setImportLoading(true);
     setImportError(null);
@@ -689,7 +689,7 @@ export default function CalendarView({
             title="Condividi i turni della settimana"
             aria-label="Condividi i turni della settimana"
           >
-            💬
+            <Icona nome="chat" />
           </button>
         </div>
 
@@ -742,7 +742,7 @@ export default function CalendarView({
             onClick={startImport}
             disabled={importLoading}
           >
-            {importLoading ? '⏳ Analisi in corso…' : '📤 Importa turni da immagine'}
+            {importLoading ? <><Icona nome="attesa" /> Analisi in corso…</> : <><Icona nome="carica" /> Importa turni da immagine</>}
           </button>
           {settings.workerName && (
             <span className="import-asname">
@@ -856,7 +856,7 @@ export default function CalendarView({
                           ? `Modifica ${ETICHETTA[t].toLowerCase()} del ${dayNum}/${month + 1}`
                           : `Modifica turno ${s.startTime}–${s.endTime}`}
                       >
-                        {assente ? ICONA[t] : <IntervalloCella s={s} />}
+                        {assente ? <Icona nome={ICONA_TIPO[t]} piastrella /> : <IntervalloCella s={s} />}
                       </button>
                     );
                   })}
@@ -1005,7 +1005,7 @@ export default function CalendarView({
                 <div className="net-pillole"><PillolaPremio importo={monthlyBonusAmount} preso={bonusTakenThisMonth} onTocca={handleMonthBonusToggle} /></div>)}
               {pay.shiftsWithoutRate > 0 && (
                 <span className="summary-sublabel summary-sublabel--warn">
-                  ⚠️ {pay.shiftsWithoutRate} turn{pay.shiftsWithoutRate === 1 ? 'o conteggiato' : 'i conteggiati'} a 0 €:
+                  <Icona nome="avviso" /> {pay.shiftsWithoutRate} turn{pay.shiftsWithoutRate === 1 ? 'o conteggiato' : 'i conteggiati'} a 0 €:
                   nessuna paga oraria valida per quelle date
                 </span>
               )}
@@ -1150,7 +1150,7 @@ export default function CalendarView({
                 </div>
                 {proiezioneParziale && !showNetBusta && (
                   <div className="net-subnote net-subnote--warn">
-                    ⚠️ Nel {year} hai turni in {mesiConTurni} mes{mesiConTurni === 1 ? 'e' : 'i'} su{' '}
+                    <Icona nome="avviso" /> Nel {year} hai turni in {mesiConTurni} mes{mesiConTurni === 1 ? 'e' : 'i'} su{' '}
                     {mesiTrascorsi}: i mesi vuoti contano zero e possono cambiare questi numeri.
                   </div>
                 )}
@@ -1290,7 +1290,7 @@ export default function CalendarView({
                     detto qui, accanto al numero che lo causa. */}
                 {proiezioneParziale && (
                   <div className="net-subnote net-subnote--warn">
-                    ⚠️ La stima usa solo i turni inseriti, e nel {year} ne hai in {mesiConTurni}{' '}
+                    <Icona nome="avviso" /> La stima usa solo i turni inseriti, e nel {year} ne hai in {mesiConTurni}{' '}
                     mes{mesiConTurni === 1 ? 'e' : 'i'} su {mesiTrascorsi}: i mesi vuoti contano come
                     zero e abbassano il reddito annuo stimato. Se hai lavorato anche prima, in
                     Impostazioni metti il <strong>reddito annuo previsto</strong> o il{' '}
@@ -1322,7 +1322,7 @@ export default function CalendarView({
             settings={settings} onUpdateSettings={onUpdateSettings} onPerche={() => setContiBonusAperti(true)}
             avvisoMontante={montanteMismatch && (
               <span className="bonus-strip-note bonus-strip-note--warn">
-                ⚠️ Il montante ({fmt0(montante)}) non torna coi mesi segnati {priorMonthLabel ? `fino ${/^a/i.test(priorMonthLabel) ? 'ad' : 'a'} ${priorMonthLabel.toLowerCase()}` : ''} ({fmt0(shiftsCovered)}).
+                <Icona nome="avviso" /> Il montante ({fmt0(montante)}) non torna coi mesi segnati {priorMonthLabel ? `fino ${/^a/i.test(priorMonthLabel) ? 'ad' : 'a'} ${priorMonthLabel.toLowerCase()}` : ''} ({fmt0(shiftsCovered)}).
               </span>
             )}
             conguaglio={conguaglio} forchettaScritta={forchettaScritta} onApriConguaglio={() => setConguaglioAperto(true)}
@@ -1361,7 +1361,7 @@ export default function CalendarView({
             disabled={(exportPeriod === 'payroll' ? counted : shifts).length === 0 || exportBusy}
             onClick={() => handleExport('xlsx')}
           >
-            📊 Excel
+            <Icona nome="statistiche" /> Excel
           </button>
           <button
             type="button"
@@ -1369,14 +1369,14 @@ export default function CalendarView({
             disabled={(exportPeriod === 'payroll' ? counted : shifts).length === 0 || exportBusy}
             onClick={() => handleExport('pdf')}
           >
-            📄 PDF
+            <Icona nome="documento" /> PDF
           </button>
           <button
             type="button"
             className="btn-export"
             onClick={() => setShowShareModal(true)}
           >
-            💬 Settimana
+            <Icona nome="chat" /> Settimana
           </button>
         </div>
         {exportError && <p className="import-error">{exportError}</p>}
@@ -1434,7 +1434,7 @@ export default function CalendarView({
                 l'app. Non viene conservata da nessuno dei due.
               </p>
               <p className="form-hint form-hint--warn">
-                ⚠️ Se il foglio contiene i <strong>nomi dei tuoi colleghi</strong>, partono
+                <Icona nome="avviso" /> Se il foglio contiene i <strong>nomi dei tuoi colleghi</strong>, partono
                 anche quelli — e loro non hanno scelto nulla. Puoi ritagliare la foto sulla
                 tua riga prima di caricarla.
               </p>

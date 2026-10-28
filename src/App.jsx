@@ -28,6 +28,7 @@ import { iscrivitiOccupato } from './utils/occupato';
 import { isAssenza } from './motore/assenze';
 import { turniDaImportare } from './utils/import-turni';
 import { haDatiMinimi, maggiorazioneDaChiedere, promemoriaHaDaDire, KEY_PROMEMORIA_CHIUSO } from './utils/configurazione';
+import Icona from './components/Icona';
 
 const DEFAULT_SETTINGS = {
   hourlyRate: 0,
@@ -462,11 +463,10 @@ export default function App() {
         {/* Il salvataggio non sta funzionando. Sta PRIMA di tutto il resto e non
             si può chiudere: quello che si sta guardando è a schermo ma non su
             disco, e nasconderlo riporterebbe l'app a mentire come faceva prima.
-            `role="alert"` perché venga annunciato anche da uno screen reader:
-            comparire in silenzio sarebbe la stessa cosa che non comparire. */}
+            `role="alert"`: comparire in silenzio a uno screen reader è come non comparire. */}
         {erroreSalvataggio && (
           <div className="salvataggio-ko" role="alert">
-            <strong>⚠️ {erroreSalvataggio.testo}</strong>
+            <strong><Icona nome="avviso" /> {erroreSalvataggio.testo}</strong>
             <p>{erroreSalvataggio.rimedio}</p>
             <button type="button" onClick={() => setView('settings')}>
               Vai al backup

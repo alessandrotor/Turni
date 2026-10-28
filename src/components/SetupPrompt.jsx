@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { consigliatiMancanti } from '../utils/configurazione';
+import Icona from './Icona';
 
 // Il promemoria di quello che resta da sistemare. Compare solo a chi sta già usando l'app (almeno un
 // turno, dati minimi a posto), dice quante cose restano e in che direzione sbagliano i conti, e si
@@ -44,7 +45,7 @@ export default function SetupPrompt({ settings, parla = false, onSistema, onChiu
     <div className="install-banner">
       <div className="install-banner-text">
         <strong>
-          ⚙️ {mancanti.length === 1
+          <Icona nome="impostazioni" /> {mancanti.length === 1
             ? 'Manca ancora una cosa'
             : `Mancano ancora ${mancanti.length} cose`}
         </strong>

@@ -8,6 +8,7 @@ import { euroCella, scriviForchetta } from '../utils/formato';
 import { BONUS_STATUS } from '../motore/bonus';
 import { CAUSA, POSIZIONE } from '../motore/restituzione';
 import { tiSospeso, patchTiSospeso } from '../motore/net';
+import Icona from './Icona';
 
 function Sospendi({ settings, onUpdateSettings }) {
   return (
@@ -45,7 +46,7 @@ export default function RiquadroTI({
   } else if (posizione === POSIZIONE.OLTRE) {
     stato = rischio.daRestituire > 0 ? (
       <div className="bonus-rischio bonus-rischio--anteprima">
-        <span className="bonus-rischio-titolo">⚠️ Supererai la soglia</span>
+        <span className="bonus-rischio-titolo"><Icona nome="avviso" /> Supererai la soglia</span>
         <p className="bonus-spiega">
           A dicembre il datore si riprende il tratt. integrativo già dato: finora
           {' '}<strong>{euroCella(rischio.daRestituire)}</strong>{rischio.rateizzabile ? ', a rate' : ''}.
@@ -54,12 +55,12 @@ export default function RiquadroTI({
         <Sospendi settings={settings} onUpdateSettings={onUpdateSettings} />
       </div>
     ) : (
-      <p className="ti-stato ti-stato--ok">✓ Oltre la soglia, niente da restituire.</p>
+      <p className="ti-stato ti-stato--ok">Oltre la soglia, niente da restituire.</p>
     );
   } else if (posizione === POSIZIONE.DENTRO) {
     stato = (
       <div className="bonus-rischio">
-        <span className="bonus-rischio-titolo">⚠️ Appena sopra la soglia</span>
+        <span className="bonus-rischio-titolo"><Icona nome="avviso" /> Appena sopra la soglia</span>
         <p className="bonus-spiega">
           {rischio.daRestituire > 0 && <>A dicembre torna indietro il tratt. integrativo già dato
             (finora <strong>{euroCella(rischio.daRestituire)}</strong>). </>}
@@ -73,7 +74,7 @@ export default function RiquadroTI({
   } else if (bonus.status === BONUS_STATUS.PIENO && bonus.nearThreshold) {
     stato = (
       <div className="bonus-rischio bonus-rischio--anteprima">
-        <span className="bonus-rischio-titolo">⚠️ Sei vicino alla soglia</span>
+        <span className="bonus-rischio-titolo"><Icona nome="avviso" /> Sei vicino alla soglia</span>
         <p className="bonus-spiega">
           Altri <strong>{euroCella(bonus.marginToFull)}</strong>{bonus.oreResidue !== null && ` (~${bonus.oreResidue} h)`} lordi
           {' '}in tutto l'anno, oltre al previsto, e la superi: a dicembre tornerebbe indietro il
@@ -83,7 +84,7 @@ export default function RiquadroTI({
       </div>
     );
   } else if (bonus.status === BONUS_STATUS.PIENO) {
-    stato = <p className="ti-stato ti-stato--ok">✓ Di questo passo resti sotto la soglia.</p>;
+    stato = <p className="ti-stato ti-stato--ok">Di questo passo resti sotto la soglia.</p>;
   } else {
     stato = <p className="ti-stato">Oltre i 28.000 € di reddito il tratt. integrativo non spetta.</p>;
   }
@@ -98,7 +99,7 @@ export default function RiquadroTI({
   return (
     <div className="bonus-strip">
       <div className="bonus-strip-head">
-        <span className="bonus-strip-title">💶 Trattamento integrativo (ex bonus Renzi)</span>
+        <span className="bonus-strip-title"><Icona nome="euro" /> Trattamento integrativo (ex bonus Renzi)</span>
       </div>
 
       {stato}
