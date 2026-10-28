@@ -759,7 +759,8 @@ input, select, textarea { font: inherit; }
 }
 .cal-cell--weekend { background: #fafafa; }
 .cal-cell--weekend:hover { background: #f3f4f6; }
-.cal-cell--nota, .cal-cell--nota:hover { background: linear-gradient(90deg, var(--c-warning) 3px, var(--c-warning-light) 3px); }
+/* Giorno con nota: un angolo piegato in alto a destra (la striscia a sinistra pesava sulla griglia). Solo l'immagine: il fondo resta quello della cella (oggi, weekend). `--c-nota` per un colore scelto. */
+.cal-cell--nota, .cal-cell--nota:hover { background-image: linear-gradient(225deg, var(--c-nota, var(--c-warning)) 12px, transparent 12px); }
 
 /* Il numero del giorno è il pulsante "aggiungi turno" della cella */
 .cal-cell-add {
