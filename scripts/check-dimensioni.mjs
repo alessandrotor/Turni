@@ -31,7 +31,7 @@ const ECCEZIONI = {
   'src/motore/net.js': 751,
   'src/App.jsx': 630,
   'src/components/ShiftForm.jsx': 648,
-  'src/index.css': 3720,
+  'src/index.css': 3674,
 };
 const CARTELLE = ['src', 'worker/src', 'scripts'];
 const ESTENSIONI = /\.(js|jsx|mjs|css)$/;

@@ -214,6 +214,16 @@ quanto costa scoprire a dicembre che non spettava.
   di fine anno e lasciava fermo dicembre. Simula solo da questo mese a
   dicembre: i mesi passati sono andati come sono andati.
 
+- **Il riquadro del trattamento integrativo dice poco e lo disegna**
+  (`RiquadroTI.jsx`, novembre 2026): aveva una decina di cifre a vista e «si
+  fa confusione». Una risposta in grande con la sua piastrella («ancora ~76
+  ore»), la barra con «oggi», «dic.» e «soglia» a parole e la zona oltre la
+  soglia a righe rosse, poi una riga per risposta, ognuna con la sua
+  piastrella e un numero solo, nel colore della zona della barra di cui parla
+  (rosso «Se la superi», verde «Ti ridanno»). Soglia in euro, cifre della
+  barra e simulazione del premio stanno in «Dettagli». Il costo del superarla
+  si mostra solo a chi ci è vicino.
+
 - **Il conguaglio di dicembre è una forchetta, mai una cifra** (`motore/conguaglio.js`).
   È la differenza fra quanto il datore trattiene mese per mese (lordo × 12) e
   quanto è dovuto sull'anno vero: stesso motore, nessuna regola nuova. L'anno

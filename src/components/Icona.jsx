@@ -51,6 +51,8 @@ const DISEGNI = {
   malattia: '<path d="M10 4a2 2 0 0 1 4 0v10a4 4 0 1 1-4 0z"/>',
   festivita: '<path d="M12 3.5l2.5 5.2 5.6.8-4 4 1 5.6-5.1-2.7-5 2.7 1-5.6-4-4 5.5-.8z"/>',
   ok: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/>',
+  restituisci: '<path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 3v5h5"/><path d="M4 13a8 8 0 0 0 14.5 4.5"/>',
+  dicembre: '<path d="M12 3v13M7 11l5 5 5-5M4 21h16"/>',
 };
 
 // Un colore per cosa, così la stessa cosa ha lo stesso colore ovunque.
@@ -62,11 +64,11 @@ const COLORI = {
   soldi: '#ca8a04', crescita: '#059669', contratto: '#7c3aed', salva: '#2563eb', regalo: '#db2777',
   valigetta: '#92400e', ricevuta: '#0891b2', aggiorna: '#2563eb', piu: '#059669', meno: '#dc2626',
   banca: '#475569', luna: '#4f46e5', pausa: '#92400e', righello: '#d97706', lucchetto: '#475569',
-  malattia: '#dc2626', festivita: '#ca8a04', ok: '#059669', permesso: '#0891b2',
+  malattia: '#dc2626', festivita: '#ca8a04', ok: '#059669', restituisci: '#dc2626', dicembre: '#059669', permesso: '#0891b2',
 };
 
 // Disegni aperti (linee, frecce): un riempimento tenue li impasterebbe.
-const SENZA_FONDO = new Set(['crescita', 'aggiorna', 'carica', 'piu', 'meno', 'attesa', 'statistiche', 'attrezzi', 'riposo']);
+const SENZA_FONDO = new Set(['restituisci', 'dicembre', 'crescita', 'aggiorna', 'carica', 'piu', 'meno', 'attesa', 'statistiche', 'attrezzi', 'riposo']);
 
 // Le giornate senza turno, coi tipi di motore/assenze.js.
 export const ICONA_TIPO = { ferie: 'ferie', permesso: 'documento', malattia: 'malattia', festivita: 'festivita' };

@@ -1993,22 +1993,9 @@ input, select, textarea { font: inherit; }
 }
 
 /* ── Il rischio di restituzione ──────────────────────────────────
-   Il riquadro che dice la cifra invece dello stato. Fondo rosso chiaro come
-   `--danger`, perché qui non si sta descrivendo una condizione: si sta dicendo
-   che dei soldi già incassati tornano indietro. È l'unico posto dell'app in cui
-   un numero è una brutta notizia, e va distinto dal giallo del «sei vicino alla
-   soglia», che invece è ancora rimediabile senza costi. */
-.bonus-rischio {
-  display: flex;
-  flex-direction: column;
-  gap: .55rem;
-  margin-top: .5rem;
-  padding: .85rem;
-  background: var(--c-danger-light);
-  border: 1px solid var(--c-danger);
-  border-radius: var(--radius);
-}
-
+   Il riquadro del trattamento integrativo (RiquadroTI.jsx) dice le cifre con
+   piastrelle colorate: rosso per i soldi che tornano indietro, verde per il
+   conguaglio a credito. Gli stili delle sue righe stanno nel componente. */
 /* Le due cifre affiancate: etichetta a sinistra, importo a destra.
    `tabular-nums` perché incolonnate vanno lette confrontandole, ed è l'unico
    modo perché le cifre stiano davvero una sopra l'altra. */
@@ -2024,25 +2011,6 @@ input, select, textarea { font: inherit; }
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   font-size: 1.05rem;
-}
-
-.bonus-rischio-titolo {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: var(--c-danger);
-  line-height: 1.25;
-}
-
-/* L'anteprima («sei vicino, se la superi restituisci X») parla PRIMA che ci
-   sia qualcosa da restituire davvero: ambra come un avviso da tenere
-   d'occhio, non rosso come un conto già aperto. Stesso riquadro, colore
-   diverso — la differenza deve leggersi a colpo d'occhio quanto il testo. */
-.bonus-rischio--anteprima {
-  background: var(--c-warning-light);
-  border-color: var(--c-warning);
-}
-.bonus-rischio--anteprima .bonus-rischio-titolo {
-  color: var(--c-warning-text);
 }
 
 /* La casella della rinuncia sta DENTRO il riquadro rosso, non in fondo alla
@@ -2078,14 +2046,6 @@ input, select, textarea { font: inherit; }
   border-top: 1px solid var(--c-border);
   padding-top: .45rem;
   margin-top: .1rem;
-}
-
-/* Lo stesso tono dentro il riquadro: frasi, non etichette con cifra. */
-.bonus-spiega {
-  margin: 0;
-  font-size: .9rem;
-  line-height: 1.45;
-  color: var(--c-text);
 }
 
 .bonus-rischio-scelta {
@@ -2462,10 +2422,6 @@ input, select, textarea { font: inherit; }
   margin: .3rem 0;
   font-size: .9rem;
 }
-.ti-stato--ok {
-  font-weight: 600;
-  color: var(--c-success-text);
-}
 .ti-soglia {
   margin: .3rem 0 0;
   font-size: .8rem;
@@ -2667,8 +2623,6 @@ input, select, textarea { font: inherit; }
 
 /* Il conguaglio di dicembre: una riga, la spiegazione nel popup di «perché?». */
 .conguaglio { padding-top: .5rem; border-top: 1px solid var(--c-border); }
-.conguaglio-testa { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; flex-wrap: wrap; font-size: .9rem; }
-.conguaglio-testa strong { font-variant-numeric: tabular-nums; }
 
 /* Simulazione del bonus mensile: chiude il riquadro del trattamento
    integrativo, perché è a quello che la domanda si riferisce. Da spenta costa
