@@ -222,7 +222,11 @@ quanto costa scoprire a dicembre che non spettava.
   piastrella e un numero solo, nel colore della zona della barra di cui parla
   (rosso «Se la superi», verde «Ti ridanno»). Soglia in euro, cifre della
   barra e simulazione del premio stanno in «Dettagli». Il costo del superarla
-  si mostra solo a chi ci è vicino.
+  si mostra solo a chi ci è vicino, come BILANCIA: «perdi il tratt.
+  integrativo» contro «ma paghi meno tasse», e il pezzo scoperto è la perdita
+  vera (`costoSoglia()`). «Ti ridanno 90 €» accanto a «700 € da restituire»
+  sembrava una contraddizione; i 700 € (già presi, ridati a dicembre) stanno
+  in «Dettagli».
 
 - **Il conguaglio di dicembre è una forchetta, mai una cifra** (`motore/conguaglio.js`).
   È la differenza fra quanto il datore trattiene mese per mese (lordo × 12) e
