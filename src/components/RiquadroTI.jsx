@@ -11,7 +11,7 @@
 
 import { formatCurrency } from '../motore/pay';
 import { euroCella, scriviForchetta } from '../utils/formato';
-import { BONUS_STATUS } from '../motore/bonus';
+import { BONUS_STATUS, margineInOre } from '../motore/bonus';
 import { CAUSA, POSIZIONE } from '../motore/restituzione';
 import { tiSospeso, patchTiSospeso } from '../motore/net';
 import Icona from './Icona';
@@ -58,6 +58,36 @@ function Riga({ icona, colore, titolo, sotto, valore, onClick = null }) {
   return onClick
     ? <button type="button" onClick={onClick} style={{ ...stile, cursor: 'pointer' }}>{contenuto}</button>
     : <div style={stile}>{contenuto}</div>;
+}
+
+// «Se la superi», come bilancia (mockup A, novembre 2026). Accanto a «ti ridanno 90 €»,
+// «700 € da restituire» sembrava una contraddizione, e una perdita. Non lo è: superata la
+// soglia il tratt. integrativo sparisce ma la detrazione sale, e le tasse calano quasi
+// altrettanto. Due barre che si pesano: il pezzo a righe che resta scoperto è la perdita
+// vera (`costoSoglia`). Cifre sull'anno intero, tutte dal motore.
+function Bilancia({ costo, titolo, ore }) {
+  const perso = -costo.voci.bonus;
+  const compensa = perso - costo.perditaMax;
+  const quota = `${Math.max(0, Math.min(100, (compensa / perso) * 100))}%`;
+  const barra = { height: '.8rem', borderRadius: 4, margin: '.15rem 0 .45rem' };
+  const riga = { display: 'flex', justifyContent: 'space-between', gap: '.5rem', fontSize: '.85rem' };
+  const righe = `repeating-linear-gradient(45deg, #fee2e2 0 4px, #fca5a5 4px 7px)`;
+  return (
+    <div style={{ borderTop: '1px solid var(--c-border)', paddingTop: '.55rem', marginTop: '.2rem' }}>
+      <div style={{ fontSize: '.75rem', fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: GRIGIO, marginBottom: '.3rem' }}>{titolo}</div>
+      <div style={riga}><span>Perdi il tratt. integrativo</span><strong style={{ color: ROSSO }}>−{euroCella(perso)}</strong></div>
+      <div style={{ ...barra, background: ROSSO }} />
+      <div style={riga}><span>Ma paghi meno tasse</span><strong style={{ color: VERDE }}>+{euroCella(compensa)}</strong></div>
+      <div style={{ ...barra, display: 'flex', overflow: 'hidden' }}>
+        <span style={{ width: quota, background: VERDE }} />
+        <span style={{ flex: 1, background: righe, boxShadow: `inset 0 0 0 1.5px ${ROSSO}` }} />
+      </div>
+      <div style={{ textAlign: 'right' }}>
+        <strong style={{ color: ROSSO, fontSize: '1.05rem' }}>Alla fine ci perdi al massimo {euroCella(costo.perditaMax)}</strong>
+        {ore > 0 && <small style={{ display: 'block', color: 'var(--c-text-2)', fontSize: '.78rem' }}>e bastano ~{ore} ore in più per recuperarli</small>}
+      </div>
+    </div>
+  );
 }
 
 export default function RiquadroTI({
@@ -125,6 +155,7 @@ export default function RiquadroTI({
   // 3) LE ALTRE RISPOSTE, una riga ciascuna.
   // Il costo del superarla si mostra a chi ci è vicino: a 300 ore di distanza è un allarme fuori luogo.
   const daRestituire = posizione === POSIZIONE.DENTRO ? rischio.daRestituire : (vicino ? tiFinora : 0);
+  const bilancia = !sospeso && (vicino || posizione === POSIZIONE.DENTRO) && costo?.perditaMax > 0 && costo.voci?.bonus < 0;
   const cong = conguaglio && {
     titolo: conguaglio.direzione === 'credito' ? 'Ti ridanno' : conguaglio.direzione === 'debito' ? 'Ti riprendono' : 'Conguaglio',
     colore: conguaglio.direzione === 'credito' ? VERDE : conguaglio.direzione === 'debito' ? ROSSO : GRIGIO,
@@ -163,16 +194,18 @@ export default function RiquadroTI({
         </div>
       )}
 
-      {!sospeso && daRestituire > 0 && (
-        <Riga icona="restituisci" colore={ROSSO} titolo={posizione === POSIZIONE.DENTRO ? 'Torna indietro' : 'Se la superi'}
-          sotto="da restituire a dicembre" valore={euroCella(daRestituire)} />
-      )}
-      {posizione === POSIZIONE.DENTRO && costo?.perditaMax > 0 && (
-        <Riga icona="meno" colore={ROSSO} titolo="Ci perdi" sotto="meno IRPEF non basta a compensare" valore={euroCella(costo.perditaMax)} />
-      )}
+      {/* Prima «di questo passo», poi «se la superi»: due situazioni, due titoli. */}
       {cong && (
         <Riga icona="dicembre" colore={cong.colore} titolo={cong.titolo} sotto="a dicembre, di questo passo"
           valore={cong.valore} onClick={onApriConguaglio} />
+      )}
+      {bilancia && (
+        <Bilancia costo={costo} titolo={posizione === POSIZIONE.DENTRO ? 'Perché ci perdi poco' : 'Se la superi'}
+          ore={margineInOre(costo.larghezzaBuca, settings)} />
+      )}
+      {!sospeso && daRestituire > 0 && !bilancia && (
+        <Riga icona="restituisci" colore={ROSSO} titolo={posizione === POSIZIONE.DENTRO ? 'Torna indietro' : 'Se la superi'}
+          sotto="da restituire a dicembre" valore={euroCella(daRestituire)} />
       )}
 
       {sospendi && <Sospendi settings={settings} onUpdateSettings={onUpdateSettings} />}
@@ -196,6 +229,12 @@ export default function RiquadroTI({
               <span><i className="ti-segno ti-segno--previsto" />a dicembre {euroCella(bonus.income)}</span>
               <span><i className="ti-segno ti-segno--soglia" />soglia {euroCella(tetto)}</span>
             </div>
+          )}
+          {bilancia && daRestituire > 0 && (
+            <p className="bonus-strip-note">
+              Dei {euroCella(-costo.voci.bonus)} di tratt. integrativo, {euroCella(daRestituire)} li hai già presi:
+              se la superi li ridai a dicembre, e lo stesso conguaglio ti rende le tasse in più.
+            </p>
           )}
           {puoSimulareBonus && (
             <div className="simula-bonus">
