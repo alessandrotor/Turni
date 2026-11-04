@@ -72,11 +72,17 @@ export function fasce(hy) {
 // da SINISTRA. A destra il tabellone spesso continua, tagliato, o finisce sul
 // bordo dell'immagine: lì non si conta. null se la griglia non ha quella
 // forma: meglio dirlo che leggere a caso.
+// Il nome è la colonna PIÙ LARGA fra le prime: uno screenshot del foglio aperto
+// ha a sinistra anche i numeri di riga (1, 2, 3…), e presi per nomi non davano
+// nessuna persona (novembre 2026).
 export function colonne(vx) {
-  if (vx.length - 1 < 16) return null;
+  const n = vx.length - 1;
+  if (n < 16) return null;
+  let s = 0;
+  for (let c = 1; c <= Math.min(3, n - 16); c++) if (vx[c + 1] - vx[c] > vx[s + 1] - vx[s]) s = c;
   const giorni = [];
-  for (let c = 2; c < 16; c++) giorni.push([vx[c], vx[c + 1]]);
-  return { nome: [vx[0], vx[1]], giorni };
+  for (let c = s + 2; c < s + 16; c++) giorni.push([vx[c], vx[c + 1]]);
+  return { nome: [vx[s], vx[s + 1]], giorni };
 }
 
 // Il ritaglio di una cella, pronto per il lettore: ingrandito a 60 px di altezza,

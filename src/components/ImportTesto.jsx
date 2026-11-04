@@ -77,7 +77,10 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
       tabRef.current = { ...tab, file };
       if (tab.foto) { setImmagine({ righello: true }); return; }
       const io = tab.io || trovaPersona(tab.persone, nome);
-      if (io) await leggiTurni(io); else setImmagine({ persone: tab.persone });
+      // Mai finire in silenzio: un elenco di nomi vuoto non mostrava niente.
+      if (io) await leggiTurni(io);
+      else if (tab.persone.length) setImmagine({ persone: tab.persone });
+      else setImmagine({ errore: 'Vedo la tabella, ma non riesco a leggere i nomi. Prova a ritagliare l\'immagine sulla tabella.' });
     } catch {
       setImmagine({ errore: 'Non sono riuscito a leggere l\'immagine.' });
     }

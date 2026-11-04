@@ -94,7 +94,11 @@ const f = fasce(gr.hy);
 esito(f.length === 8 && !f.some(([a, b]) => b - a < 8), 'le doppie linee fra le persone non sono righe', JSON.stringify(f));
 const col = colonne(gr.vx);
 esito(col && col.giorni.length === 14 && col.nome[0] === 5 && col.giorni[0][0] === 170, 'nome a sinistra, quattordici celle di giorni', JSON.stringify(col));
-esito(colonne([0, 100, 200]) === null, 'una tabella con un\'altra forma non si legge a caso');
+// Lo screenshot del foglio aperto (novembre 2026): a sinistra i numeri di riga.
+const conNumeri = colonne([0, 79, 218, 276, 334, 392, 450, 508, 566, 623, 681, 739, 797, 855, 913, 971, 1029, 1087]);
+esito(conNumeri?.nome[0] === 79 && conNumeri.giorni[0][0] === 276 && conNumeri.giorni[13][1] === 1087,
+  'i numeri di riga del foglio non sono la colonna dei nomi', JSON.stringify(conNumeri));
+esito(colonne([0, 100, 200]) === null,'una tabella con un\'altra forma non si legge a caso');
 const cella = ritaglio(g, W, [170, 220], [40, 70]);
 esito(!cella.vuota && cella.dati.every((v) => v === 0 || v === 255) && ritaglio(g, W, [270, 320], [134, 164]).vuota,
   'la cella esce in bianco e nero, e una cella bianca si salta');
