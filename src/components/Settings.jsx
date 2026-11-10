@@ -27,7 +27,7 @@ const currentMonthValue = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
-export default function Settings({ settings, onSave }) {
+export default function Settings({ settings, onSave, datiInMemoria = null }) { // datiInMemoria: vedi `datiDelBackup`
   const [form, setForm] = useState({
     hourlyRate: toInput(settings.hourlyRate),
     expectedWeeklyHours: settings.expectedWeeklyHours ?? 40,
@@ -105,7 +105,8 @@ export default function Settings({ settings, onSave }) {
   // confronto invece di un «sei sicuro?» che non sa di cosa parla.
   const [daRipristinare, setDaRipristinare] = useState(null);
   const backupInputRef = useRef(null);
-  const [turniSalvati] = useState(contaTurniSalvati);
+  const [turniSulDisco] = useState(contaTurniSalvati);
+  const turniSalvati = datiInMemoria?.turni ? Object.keys(datiInMemoria.turni).length : turniSulDisco;
   // Turni con l'orario a :50 da correggere: letti una volta sola all'apertura,
   // come turniSalvati. Lista vuota = il blocco non compare proprio.
   const [daCorreggere] = useState(elencoOrariDaCorreggere);
@@ -209,7 +210,7 @@ export default function Settings({ settings, onSave }) {
     setBackupMsg(null);
     setBackupTesto(null);
     try {
-      const { turni, esito, testo } = await esportaBackup();
+      const { turni, esito, testo } = await esportaBackup(datiInMemoria);
 
       if (esito === ESITO.SALVATO) {
         setBackupMsg({ testo: `Backup salvato: ${turni} turni.` });
@@ -302,7 +303,7 @@ export default function Settings({ settings, onSave }) {
   async function salvaPrimaDiSostituire() {
     setBackupBusy(true);
     try {
-      const { turni, esito, testo } = await esportaBackup();
+      const { turni, esito, testo } = await esportaBackup(datiInMemoria);
       if (esito === ESITO.SALVATO) {
         setBackupMsg({ testo: `Dati attuali messi al sicuro: ${turni} turni.` });
       } else if (esito === ESITO.ANNULLATO) {

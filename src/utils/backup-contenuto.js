@@ -170,6 +170,24 @@ export function controllaBusta(dati) {
 }
 
 /**
+ * Turni e impostazioni da mettere nel backup.
+ *
+ * Vince lo stato IN MEMORIA, quando chi chiama lo passa: è quello che si vede a schermo. Se il
+ * browser ha rifiutato una scrittura, nel localStorage mancano proprio gli ultimi dati, e il
+ * backup suggerito dall'avviso li avrebbe persi. Senza memoria (il salvagente dell'errore,
+ * che sta fuori dall'app) resta il salvato.
+ *
+ * @param {{ turni?: object, impostazioni?: object } | null} inMemoria
+ * @param {{ turni: object, impostazioni: object }} salvato
+ */
+export function datiDelBackup(inMemoria, salvato) {
+  return {
+    turni: inMemoria?.turni ?? salvato.turni,
+    impostazioni: inMemoria?.impostazioni ?? salvato.impostazioni,
+  };
+}
+
+/**
  * Le scritture da fare, in ordine, prima di farne una sola.
  *
  * `valore: null` significa togliere la chiave. Averle tutte insieme prima di
