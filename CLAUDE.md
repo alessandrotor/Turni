@@ -153,10 +153,11 @@ Tre riscontri non parlano di buste ma di come il codice resta leggibile:
   La documentazione invecchia in silenzio; così invecchia a voce alta.
 - **`check-codice-morto.mjs`**: classi CSS ed export senza nessuno che li usi.
 
-`check-dati-in-uscita.mjs` ispeziona `dist/` e vuole il proxy AI nel bundle:
-su una build locale senza `VITE_AI_PROXY_URL` fallisce senza che ci sia niente
-di rotto. È l'unico falso allarme noto. La telemetria non c'è più (12/10/2026):
-nessun dato d'uso esce dall'app.
+`check-dati-in-uscita.mjs` tiene ferma la `connect-src` della CSP
+(`public/_headers`): gli unici indirizzi a cui il browser lascia mandare dati,
+oggi il sito e il contatore visite. È la garanzia che l'informativa invita a
+verificare con uno strumento terzo, quindi non si allarga senza riscriverla.
+La telemetria non c'è più (12/10/2026): nessun dato d'uso esce dall'app.
 
 `COSE-NUOVE.md` è l'inventario dei difetti noti, e invecchia in silenzio se
 nessuno lo tocca: quando una voce si chiude va marcata lì, col riscontro che la
@@ -596,7 +597,9 @@ Discendono tutte dalla parola d'ordine qui sopra.
   Un turno oltre le 13 ore è rumore (art. 7 D.Lgs. 66/2003, 11 ore di riposo):
   meglio perso che importato sbagliato.
   → `check-tabellone.mjs`. Nel frattempo la lettura con l'IA è SOSPESA
-  (`hasImportAI` in `CalendarView.jsx`), non tolta.
+  (`hasImportAI` in `CalendarView.jsx`), non tolta; da novembre 2026 i suoi
+  indirizzi (proxy IA e Turnstile) sono fuori dalla CSP: riaccenderla vuol
+  dire rimetterli lì, nell'informativa e in `check-dati-in-uscita.mjs`.
 - **Non si scrolla se non è assolutamente necessario.** Vale soprattutto per
   ciò che si apre sopra la pagina: una finestra che costa uno scorrimento per
   arrivare al pulsante che la chiude è una finestra scritta troppo lunga, e la
