@@ -281,13 +281,13 @@ export default function App() {
   }, [allShifts, monthShifts, currentMonth, settings]);
 
   // Mappa paga per turno, calcolata UNA volta (O(N) su tutta la storia) e passata giù.
-  const payByShift = useMemo(() => computePayByShift(allShifts, settings, { oggi: new Date() }), [allShifts, settings]);
+  const oggi = useOggi();
+  const payByShift = useMemo(() => computePayByShift(allShifts, settings, { oggi }), [allShifts, settings, oggi]);
 
   const year = currentMonth.getFullYear();
 
   // Reddito annuo lordo maturato nell'anno visualizzato, più il montante. Dipende dall'ANNO,
   // non dal mese. Stessa funzione della pagina Statistiche (`computeAnnualGrossFromShifts`).
-  const oggi = useOggi();
   const annualGross = useMemo(
     () => computeAnnualGrossFromShifts(year, allShifts, settings, payByShift, oggi),
     [allShifts, settings, year, payByShift, oggi],

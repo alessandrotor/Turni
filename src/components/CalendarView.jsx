@@ -293,13 +293,13 @@ export default function CalendarView({
   );
   // Il bonus preso finora è UNO per tutte le schermate: quello mese per mese
   // del conguaglio. Per un anno chiuso, la quota piena come prima.
-  const tiFinora = conguaglio ? conguaglio.tiFinora : quotaPotenziale(dataDiRiferimento(year, new Date()));
+  const tiFinora = conguaglio ? conguaglio.tiFinora : quotaPotenziale(dataDiRiferimento(year, oggi));
   const rischio = useMemo(
     () => rischioRestituzione({
-      settings, proiezioneAnnua: annualProjection || annualGross, oggi: dataDiRiferimento(year, new Date()),
+      settings, proiezioneAnnua: annualProjection || annualGross, oggi: dataDiRiferimento(year, oggi),
       erogatoStimato: conguaglio ? conguaglio.tiFinora : null,
     }),
-    [settings, annualProjection, annualGross, year, conguaglio],
+    [settings, annualProjection, annualGross, year, conguaglio, oggi],
   );
 
   // LA FORMA DELLA BUCA attorno ai 15.000: una trentina di valutazioni, memoizzate sulle sole
@@ -395,7 +395,7 @@ export default function CalendarView({
   // Quanto è «coperta» la proiezione dal maturato: i mesi dell'anno con turni contro quelli
   // trascorsi. Chi ha cominciato a metà anno ha i mesi precedenti a zero e un reddito stimato
   // troppo basso.
-  const mesiTrascorsi = year === new Date().getFullYear() ? new Date().getMonth() + 1 : 12;
+  const mesiTrascorsi = year === oggiAnno ? oggi.getMonth() + 1 : 12;
   const mesiConTurni = useMemo(() => {
     const mesi = new Set();
     (allShifts || []).forEach(s => {
@@ -474,16 +474,16 @@ export default function CalendarView({
   const settingsBonusOgniMese = useMemo(() => {
     // Da questo mese a dicembre: i mesi passati sono andati come sono andati.
     const tutti = {};
-    const primo = year === oggiAnno ? new Date().getMonth() : (year > oggiAnno ? 0 : 12);
+    const primo = year === oggiAnno ? oggi.getMonth() : (year > oggiAnno ? 0 : 12);
     for (let m = primo; m < 12; m += 1) tutti[`${year}-${String(m + 1).padStart(2, '0')}`] = true;
     // I mesi già spuntati vincono: possono avere un importo diverso (formato legacy).
     return { ...settings, monthlyBonus: { ...tutti, ...(settings.monthlyBonus || {}) } };
-  }, [settings, year, oggiAnno]);
+  }, [settings, year, oggiAnno, oggi]);
   const proiezioneBonusOgniMese = useMemo(
     () => projectAnnualIncome(annualGross, annualExtras, settingsBonusOgniMese, year, {
-      enableNetCalc: ENABLE_NET_CALC, oggi: new Date(),
+      enableNetCalc: ENABLE_NET_CALC, oggi,
     }),
-    [annualGross, annualExtras, settingsBonusOgniMese, year],
+    [annualGross, annualExtras, settingsBonusOgniMese, year, oggi],
   );
   // Confronto sulla stessa base della striscia del trattamento integrativo (`proiezione`).
   const differenzaBonus = proiezioneBonusOgniMese.value - proiezione;
@@ -492,9 +492,9 @@ export default function CalendarView({
   const conguaglioSimulato = useMemo(
     () => (simulaBonus && year === oggiAnno ? stimaConguaglio({
       anno: year, allShifts, settings: settingsBonusOgniMese, payMap: payByShift || {},
-      proiezioneAnnua: proiezioneBonusOgniMese.value, oggi: new Date(),
+      proiezioneAnnua: proiezioneBonusOgniMese.value, oggi,
     }) : null),
-    [simulaBonus, year, oggiAnno, allShifts, settingsBonusOgniMese, payByShift, proiezioneBonusOgniMese],
+    [simulaBonus, year, oggiAnno, allShifts, settingsBonusOgniMese, payByShift, proiezioneBonusOgniMese, oggi],
   );
   // Solo se un bonus esiste E se simularlo cambierebbe qualcosa: a chi li ha
   // già spuntati tutti la domanda non ha nessuna risposta da dare.

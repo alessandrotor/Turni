@@ -96,9 +96,9 @@ export function calcolaCosaCambia({
   // 4-5. Lordo e netto del mese, prima e dopo, come li mostra il calendario.
   const rateAvailable = hasAnyRate(settings);
   const daysInMonth = getDaysInMonth(year, month);
+  const mapPrima = rateAvailable ? computePayByShift(shiftsBefore, settings, { oggi }) : null;
+  const mapDopo = rateAvailable ? computePayByShift(shiftsAfter, settings, { oggi }) : null;
   const conti = () => {
-    const mapPrima = computePayByShift(shiftsBefore, settings, { oggi });
-    const mapDopo = computePayByShift(shiftsAfter, settings, { oggi });
     const pagaPrima = calcTotalPay(monthShiftsBefore, settings, shiftsBefore, mapPrima);
     const pagaDopo = calcTotalPay(monthShiftsAfter, settings, shiftsAfter, mapDopo);
     // Stessa composizione e stesso netto del pannello di Calendario (`lordoDelMese`,
@@ -127,11 +127,11 @@ export function calcolaCosaCambia({
   let sogliaLorda = null;
 
   if (rateAvailable) {
-    const payMapBefore = computePayByShift(shiftsBefore, settings, { oggi });
+    const payMapBefore = mapPrima;
     const annualBefore = computeAnnualGrossFromShifts(year, shiftsBefore, settings, payMapBefore, oggi);
     const projBefore = projectAnnualIncome(annualBefore.total, annualBefore.extras, settings, year, { oggi });
 
-    const payMapAfter = computePayByShift(shiftsAfter, settings, { oggi });
+    const payMapAfter = mapDopo;
     const annualAfter = computeAnnualGrossFromShifts(year, shiftsAfter, settings, payMapAfter, oggi);
     const projAfter = projectAnnualIncome(annualAfter.total, annualAfter.extras, settings, year, { oggi });
 
