@@ -19,7 +19,7 @@
 // originali già cancellati.
 
 import {
-  controllaBusta, vagliaTurni, pianoRipristino, scriviConRitorno, perche,
+  controllaBusta, vagliaTurni, pianoRipristino, scriviConRitorno, perche, datiDelBackup,
   KEY_SHIFTS, KEY_SETTINGS, KEY_CAL_LAYOUT, FORMATO,
 } from '../src/utils/backup-contenuto.js';
 
@@ -212,6 +212,23 @@ const senzaRitorno = finto(PRIMA, { bloccatoDopo: 1 });
 const grave = scriviConRitorno(pianoGrosso, senzaRitorno);
 verifica('nemmeno il ritorno riesce: lo dichiara', grave.tornatoIndietro, false,
   'tacere qui significherebbe lasciar credere che i dati siano sani');
+
+// ── 5. Cosa entra nel backup quando il salvataggio è fallito ───────────────
+// L'avviso «gli ultimi dati NON sono stati salvati» manda a fare un backup. Se il backup
+// leggesse il localStorage, conterrebbe proprio la copia a cui mancano quei dati: deve
+// partire da quello che l'app ha in memoria, cioè da quello che si vede a schermo.
+const sulDisco = { turni: { a: { id: 'a', date: '2026-11-02' } }, impostazioni: { hourlyRate: 9 } };
+const aSchermo = {
+  turni: { a: { id: 'a', date: '2026-11-02' }, b: { id: 'b', date: '2026-11-03' } },
+  impostazioni: { hourlyRate: 10 },
+};
+verifica('scrittura fallita: nel backup c\'è il turno che il disco non ha',
+  Object.keys(datiDelBackup(aSchermo, sulDisco).turni), ['a', 'b'],
+  'il backup suggerito dall\'avviso perderebbe proprio i dati non salvati');
+verifica('e le impostazioni di adesso, non quelle vecchie',
+  datiDelBackup(aSchermo, sulDisco).impostazioni.hourlyRate, 10);
+verifica('senza memoria (il salvagente dell\'errore) resta il disco',
+  datiDelBackup(null, sulDisco), sulDisco);
 
 console.log(falliti === 0
   ? `\n${totale} controlli: o tutto, o niente — e comunque lo si dice.\n`

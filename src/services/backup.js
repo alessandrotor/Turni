@@ -6,7 +6,7 @@ import { deliver } from './export';
 import {
   APP_TAG, FORMATO,
   KEY_SHIFTS, KEY_SETTINGS, KEY_CAL_LAYOUT,
-  controllaBusta, vagliaTurni, pianoRipristino, scriviConRitorno,
+  controllaBusta, vagliaTurni, pianoRipristino, scriviConRitorno, datiDelBackup,
 } from '../utils/backup-contenuto';
 
 // Chiavi, marcatori di formato e regole su cosa è un turno valido stanno in
@@ -51,20 +51,25 @@ export function contaTurniSalvati() {
   return Object.keys(leggi(KEY_SHIFTS, {})).length;
 }
 
-export function costruisciBackup() {
+// `inMemoria`: turni e impostazioni come li tiene l'app (vedi `datiDelBackup`).
+export function costruisciBackup(inMemoria = null) {
+  const { turni, impostazioni } = datiDelBackup(inMemoria, {
+    turni: leggi(KEY_SHIFTS, {}),
+    impostazioni: leggi(KEY_SETTINGS, {}),
+  });
   return {
     app: APP_TAG,
     formato: FORMATO,
     esportatoIl: new Date().toISOString(),
     versioneApp: typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : null,
-    turni: leggi(KEY_SHIFTS, {}),
-    impostazioni: leggi(KEY_SETTINGS, {}),
+    turni,
+    impostazioni,
     vistaCalendario: leggiGrezzo(KEY_CAL_LAYOUT) || null,
   };
 }
 
-export async function esportaBackup() {
-  const backup = costruisciBackup();
+export async function esportaBackup(inMemoria = null) {
+  const backup = costruisciBackup(inMemoria);
   const testo = JSON.stringify(backup, null, 2);
   // btoa non regge i caratteri non ASCII (le note dei turni sono in italiano):
   // si passa per UTF-8 prima di codificare in base64.

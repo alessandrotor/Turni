@@ -540,7 +540,7 @@ export default function App() {
             tornava a «mese di paga» a ogni salvataggio, cancellando in silenzio
             una scelta fatta dal calendario. */}
         {view === 'settings' && (
-          <Settings settings={settings} onSave={updateSettings} />
+          <Settings settings={settings} onSave={updateSettings} datiInMemoria={{ turni: shifts, impostazioni: storedSettings }} />
         )}
 
         {view === 'verifica' && (
