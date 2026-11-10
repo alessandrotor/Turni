@@ -366,7 +366,10 @@ Per un part-time 60% Turismo — 24 ore su sei giorni — fa esattamente 4 h/gio
 - malattia → dipende dalla **carenza**, che si conta **per evento**, non per
   anno. `giorniEventoMalattia(allShifts)` numera ogni giorno di malattia dentro
   la propria sequenza di giorni consecutivi; i primi `malattiaCarenzaGiorni`
-  prendono `malattiaCarenzaPct`, gli altri `malattiaPct`.
+  prendono `malattiaCarenzaPct`, gli altri `malattiaPct`. La sequenza
+  prosegue oltre i giorni di riposo (`giorniDiRiposo`) e le festività senza
+  un turno di lavoro: una malattia di due settimane è un evento solo anche
+  senza le domeniche.
 
 La consecutività si misura con `dayNumber(iso)`, che passa da `Date.UTC`: con
 l'ora legale due giorni consecutivi distano 23 o 25 ore, e una differenza in
