@@ -14,16 +14,22 @@ import { ETICHETTA, TIPO, tipoTurno } from '../motore/assenze';
 // striscia dicesse «Eliminato» e basta, dopo due tocchi rapidi non ci sarebbe
 // modo di sapere quale turno si sta per far tornare. Dicendo giorno e orari,
 // «Annulla» è una scelta invece di una scommessa.
-export default function AvvisoAnnulla({ turno, onAnnulla, onChiudi }) {
+//
+// SOSTITUZIONE: ferie salvate dove c'era lavoro, o viceversa, lo tolgono
+// (`utils/sostituzioni.js`). Stessa striscia; «Annulla» rimette com'era.
+export default function AvvisoAnnulla({ descritti = [], sostituiti = false, onAnnulla, onChiudi }) {
+  const turno = descritti[0];
   const tipo = tipoTurno(turno);
   const giorno = Number(String(turno?.date ?? '').slice(8, 10)) || '';
   const che = tipo === TIPO.LAVORO
     ? `Turno del ${giorno}, ${turno?.startTime}–${turno?.endTime}`
     : `${ETICHETTA[tipo]} del ${giorno}`;
+  const testo = !sostituiti ? `${che} — eliminato.`
+    : descritti.length > 1 ? `Sostituite ${descritti.length} giornate.` : `Sostituito: ${che}.`;
 
   return (
     <div className="avviso-agg avviso-annulla" role="status" aria-live="polite">
-      <span className="avviso-agg-testo">{che} — eliminato.</span>
+      <span className="avviso-agg-testo">{testo}</span>
       <div className="avviso-agg-azioni">
         <button type="button" className="btn btn-primary" onClick={onAnnulla}>
           Annulla

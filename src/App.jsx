@@ -20,12 +20,13 @@ import SistemaMancanti from './components/SistemaMancanti';
 import AvvisoMaggiorazione from './components/AvvisoMaggiorazione';
 import AvvisoAggiornamento from './components/AvvisoAggiornamento';
 import AvvisoAnnulla from './components/AvvisoAnnulla';
-import { avvisoDaMostrare, DURATA_ANNULLA } from './utils/avvisi';
+import { avvisoDaMostrare } from './utils/avvisi';
+import useAnnulla from './hooks/useAnnulla';
+import { turniSostituiti } from './utils/sostituzioni';
 import { iscrivitiAggiornamenti, applicaAggiornamento, primaDiRicaricare } from './services/aggiornamento';
 import useOccupato from './hooks/useOccupato';
 import useOggi from './hooks/useOggi';
 import { iscrivitiOccupato } from './utils/occupato';
-import { isAssenza } from './motore/assenze';
 import { turniDaImportare } from './utils/import-turni';
 import { haDatiMinimi, maggiorazioneDaChiedere, promemoriaHaDaDire, KEY_PROMEMORIA_CHIUSO } from './utils/configurazione';
 import Icona from './components/Icona';
@@ -190,28 +191,19 @@ export default function App() {
     setSettings(prev => ({ ...prev, ...patch }));
   }, [setSettings]);
 
-  const addShift = useCallback((shiftData) => {
-    const id = genId();
-    setShifts(prev => ({ ...prev, [id]: { ...shiftData, id } }));
-  }, [setShifts]);
-
-  // Molte giornate in UNA scrittura sola, togliendo i turni che coprono (non si può
-  // lavorare ed essere in ferie lo stesso giorno): un solo render e un solo salvataggio.
+  // Molte giornate in UNA scrittura sola, togliendo gli id dati: un solo render e un solo salvataggio.
+  // Un turno con `id` lo sostituisce.
   const addShifts = useCallback((lista, idsDaRimuovere = []) => {
     if (!lista?.length) return;
     setShifts(prev => {
       const next = { ...prev };
       for (const id of idsDaRimuovere) delete next[id];
       for (const dati of lista) {
-        const id = genId();
+        const id = dati.id ?? genId();
         next[id] = { ...dati, id };
       }
       return next;
     });
-  }, [setShifts]);
-
-  const updateShift = useCallback((shift) => {
-    setShifts(prev => ({ ...prev, [shift.id]: shift }));
   }, [setShifts]);
 
   const deleteShift = useCallback((id) => {
@@ -319,11 +311,17 @@ export default function App() {
 
   // Il modale manda un turno solo (caso di sempre) oppure una LISTA piu' gli
   // id da rimuovere, quando si segna un periodo di assenza.
-  const salvaDavvero = useCallback((dati, idsDaRimuovere = [], tipoModale) => {
-    if (Array.isArray(dati)) addShifts(dati, idsDaRimuovere);
-    else if (tipoModale === 'add') addShift(dati);
-    else updateShift(dati);
-  }, [addShift, addShifts, updateShift]);
+  // Ferie dove c'era lavoro, o viceversa, lo sostituiscono (`utils/sostituzioni.js`); quello
+  // che esce, compreso il turno modificato com'era, torna con «Annulla».
+  const { annullabile, offri: offriAnnulla, annulla, chiudi: chiudiAnnulla } = useAnnulla(shifts, setShifts);
+  const salvaDavvero = useCallback((dati, idsDaRimuovere = []) => {
+    const lista = (Array.isArray(dati) ? dati : [dati]).map(d => ({ ...d, id: d.id ?? genId() }));
+    const sostituiti = turniSostituiti(allShifts, lista);
+    const tolti = [...sostituiti, ...idsDaRimuovere.map(id => shifts[id])].filter((t, i, a) => t && a.indexOf(t) === i);
+    addShifts(lista, tolti.map(t => t.id));
+    const modificati = lista.filter(n => shifts[n.id]).map(n => shifts[n.id]);
+    if (tolti.length) offriAnnulla({ rimossi: [...tolti, ...modificati], aggiunti: lista.map(n => n.id), descritti: tolti, sostituiti: true });
+  }, [allShifts, shifts, addShifts, offriAnnulla]);
 
   // Il primo turno non si salva senza paga e ore (utils/configurazione.js): resta qui in
   // attesa e si salva appena i dati arrivano.
@@ -351,25 +349,9 @@ export default function App() {
     setOccupatoAltrove(chiavi.some(k => k !== 'modale' && k !== 'annulla'));
   }), []);
 
-  // L'ultimo turno cancellato, finché si fa in tempo a rimetterlo. Vive qui e
-  // non nel modulo perché il modulo si smonta nell'istante della cancellazione.
-  const [annullabile, setAnnullabile] = useState(null);
-
-  // La finestra si chiude da sola: il timer sta in un effetto con la sua pulizia (in
-  // StrictMode un `setTimeout` sparso lascerebbe due timer).
-  useEffect(() => {
-    if (!annullabile) return undefined;
-    const t = setTimeout(() => setAnnullabile(null), DURATA_ANNULLA);
-    return () => clearTimeout(t);
-  }, [annullabile]);
-
   // Niente ricaricamenti con del lavoro in sospeso; il caso grave è `inAttesa`, un turno
   // GIÀ COMPILATO e non ancora salvato.
   useOccupato('modale', !!modal || !!inAttesa || sistemaAperto);
-
-  // Anche l'annulla è lavoro in sospeso: la chiave si spegne da sé (`useOccupato` la lega
-  // allo stato), così non resta accesa per sempre.
-  useOccupato('annulla', !!annullabile);
 
   // Un istante prima dell'aggiornamento si mette da parte cosa si stava guardando (vedi RIPRESA).
   useEffect(() => primaDiRicaricare(() => {
@@ -391,14 +373,14 @@ export default function App() {
 
   const handleSaveShift = useCallback((dati, idsDaRimuovere = []) => {
     if (!haDatiMinimi(settings)) {
-      setInAttesa({ dati, idsDaRimuovere, tipoModale: modal?.type });
+      setInAttesa({ dati, idsDaRimuovere });
       setModal(null);
       return;
     }
-    salvaDavvero(dati, idsDaRimuovere, modal?.type);
+    salvaDavvero(dati, idsDaRimuovere);
     setModal(null);
     proponiMaggiorazione(dati);
-  }, [modal, settings, salvaDavvero, proponiMaggiorazione]);
+  }, [settings, salvaDavvero, proponiMaggiorazione]);
 
   // La cancellazione avviene SUBITO; la via di ritorno viene dopo (utils/avvisi.js). Si
   // tiene il turno per intero, non il solo id: il record è già tolto dalla mappa.
@@ -408,32 +390,15 @@ export default function App() {
     setModal(null);
     // Cancellare è «la prossima cosa»: la domanda sulle maggiorazioni cede il posto.
     setAvviso(null);
-    if (turno) setAnnullabile(turno);
-  }, [shifts, deleteShift]);
-
-  // Rimettere il turno è `updateShift`: torna lo stesso record con lo STESSO id, e non
-  // riparte la domanda sulle maggiorazioni. Se nel frattempo il giorno ha qualcosa che non
-  // può convivere (ferie dove c'era lavoro, o viceversa) la striscia si ritira: rimetterlo
-  // darebbe lavoro e ferie nello stesso giorno.
-  useEffect(() => {
-    if (!annullabile) return;
-    const assenza = isAssenza(annullabile);
-    const conflitto = Object.values(shifts).some(s =>
-      s.date === annullabile.date && s.id !== annullabile.id && isAssenza(s) !== assenza);
-    if (conflitto) setAnnullabile(null);
-  }, [shifts, annullabile]);
-
-  const annullaCancellazione = useCallback(() => {
-    if (annullabile) updateShift(annullabile);
-    setAnnullabile(null);
-  }, [annullabile, updateShift]);
+    if (turno) offriAnnulla({ rimossi: [turno] });
+  }, [shifts, deleteShift, offriAnnulla]);
 
   // Dati minimi arrivati: si scrivono con updateSettings (PATCH), mai con setSettings, che
   // porterebbe via i campi che questo modulo non conosce.
   const completaDatiMinimi = useCallback((patch) => {
     updateSettings(patch);
     if (inAttesa) {
-      salvaDavvero(inAttesa.dati, inAttesa.idsDaRimuovere, inAttesa.tipoModale);
+      salvaDavvero(inAttesa.dati, inAttesa.idsDaRimuovere);
       // Anche il primo turno può essere di domenica: le impostazioni appena scritte non sono
       // ancora in `settings`, quindi si valuta sull'unione.
       const turno = Array.isArray(inAttesa.dati) ? inAttesa.dati[0] : inAttesa.dati;
@@ -602,9 +567,9 @@ export default function App() {
 
       {chiParla === 'annulla' && (
         <AvvisoAnnulla
-          turno={annullabile}
-          onAnnulla={annullaCancellazione}
-          onChiudi={() => setAnnullabile(null)}
+          {...annullabile}
+          onAnnulla={annulla}
+          onChiudi={chiudiAnnulla}
         />
       )}
 

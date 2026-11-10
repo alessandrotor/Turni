@@ -29,7 +29,6 @@ const ECCEZIONI = {
   'src/components/CalendarView.jsx': 1553,
   'src/components/Settings.jsx': 1809,
   'src/motore/net.js': 751,
-  'src/App.jsx': 630,
   'src/components/ShiftForm.jsx': 648,
   'src/index.css': 3674,
 };
