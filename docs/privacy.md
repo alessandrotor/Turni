@@ -84,12 +84,46 @@ privacy): per questo non c'è nessun banner.
 
 **Non ne viene raccolta nessuna.** Non c'è un contatore di quante volte usi una
 funzione, né un identificativo della tua installazione. Il codice che lo faceva
-nelle versioni di prova è stato tolto il 12 ottobre 2026, e lo si può
-verificare:
+nelle versioni di prova è stato tolto il 12 ottobre 2026.
 
-```bash
-node scripts/check-dati-in-uscita.mjs
-```
+## Verificalo da solo
+
+Non serve fidarsi di quello che scriviamo. Il tuo browser riceve da Turni una
+regola che dice **a quali indirizzi la pagina può mandare dati**, e la fa
+rispettare lui: un invio verso un indirizzo che non è in lista viene bloccato,
+qualunque cosa faccia il codice.
+
+### Il controllo rapido, da qui
+
+Apri il [controllo indipendente su securityheaders.com](https://securityheaders.com/?q=turni-9vr.pages.dev&followRedirects=on):
+non è un sito nostro, legge le regole da fuori. Nella pagina che si apre cerca
+la riga `connect-src` dentro `Content-Security-Policy`. Gli indirizzi elencati
+lì sono tutti e soli quelli possibili:
+
+| Indirizzo | A cosa serve |
+|---|---|
+| `'self'` | il sito stesso: gli aggiornamenti dell'app |
+| `cloudflareinsights.com` | il conteggio delle visite, senza cookie: nessun turno, nessuna cifra |
+
+Cosa prova e cosa no: dice dove i dati **possono** andare. Che al contatore
+visite non arrivino i tuoi turni lo dice il codice dell'app.
+
+### La prova completa, su Android
+
+Per vedere coi tuoi occhi ogni collegamento c'è **PCAPdroid**, un'app gratuita
+e open source (F-Droid, Play Store); non serve il root.
+
+- Installala e premi **Avvia**, scegliendo il browser che usi per Turni.
+- Apri Turni e usalo: segna un turno, guarda il netto, esporta il mese.
+- Torna su PCAPdroid, scheda **Connessioni**: trovi solo gli indirizzi della
+  tabella qui sopra.
+
+Il browser mostra anche le connessioni delle altre schede aperte: chiudile
+prima di provare.
+
+Per chi sviluppa: lo stesso elenco è tenuto fermo da
+`scripts/check-dati-in-uscita.mjs`, che fa fallire la pubblicazione se
+qualcuno lo allarga.
 
 ## Dati che non vengono raccolti
 

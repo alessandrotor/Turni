@@ -61,8 +61,18 @@
 <h2>Cookie e memoria del browser</h2>
 <p>Turni <strong>non usa cookie</strong>, né di profilazione né pubblicitari. Usa soltanto la memoria locale del browser (dove stanno i tuoi dati) e la cache dell'app (che la fa funzionare anche senza rete). Sono strumenti tecnici strettamente necessari, per i quali la legge non chiede consenso (art. 122 del Codice privacy): per questo non c'è nessun banner.</p>
 <h2>Statistiche d'uso</h2>
-<p><strong>Non ne viene raccolta nessuna.</strong> Non c'è un contatore di quante volte usi una funzione, né un identificativo della tua installazione. Il codice che lo faceva nelle versioni di prova è stato tolto il 12 ottobre 2026, e lo si può verificare:</p>
-<pre><code>node scripts/check-dati-in-uscita.mjs</code></pre>
+<p><strong>Non ne viene raccolta nessuna.</strong> Non c'è un contatore di quante volte usi una funzione, né un identificativo della tua installazione. Il codice che lo faceva nelle versioni di prova è stato tolto il 12 ottobre 2026.</p>
+<h2>Verificalo da solo</h2>
+<p>Non serve fidarsi di quello che scriviamo. Il tuo browser riceve da Turni una regola che dice <strong>a quali indirizzi la pagina può mandare dati</strong>, e la fa rispettare lui: un invio verso un indirizzo che non è in lista viene bloccato, qualunque cosa faccia il codice.</p>
+<h3>Il controllo rapido, da qui</h3>
+<p>Apri il <a href="https://securityheaders.com/?q=turni-9vr.pages.dev&amp;followRedirects=on" rel="noopener">controllo indipendente su securityheaders.com</a>: non è un sito nostro, legge le regole da fuori. Nella pagina che si apre cerca la riga <code>connect-src</code> dentro <code>Content-Security-Policy</code>. Gli indirizzi elencati lì sono tutti e soli quelli possibili:</p>
+<div class="tabella"><table><thead><tr><th>Indirizzo</th><th>A cosa serve</th></tr></thead><tbody><tr><td><code>'self'</code></td><td>il sito stesso: gli aggiornamenti dell'app</td></tr><tr><td><code>cloudflareinsights.com</code></td><td>il conteggio delle visite, senza cookie: nessun turno, nessuna cifra</td></tr></tbody></table></div>
+<p>Cosa prova e cosa no: dice dove i dati <strong>possono</strong> andare. Che al contatore visite non arrivino i tuoi turni lo dice il codice dell'app.</p>
+<h3>La prova completa, su Android</h3>
+<p>Per vedere coi tuoi occhi ogni collegamento c'è <strong>PCAPdroid</strong>, un'app gratuita e open source (F-Droid, Play Store); non serve il root.</p>
+<ul><li>Installala e premi <strong>Avvia</strong>, scegliendo il browser che usi per Turni.</li><li>Apri Turni e usalo: segna un turno, guarda il netto, esporta il mese.</li><li>Torna su PCAPdroid, scheda <strong>Connessioni</strong>: trovi solo gli indirizzi della tabella qui sopra.</li></ul>
+<p>Il browser mostra anche le connessioni delle altre schede aperte: chiudile prima di provare.</p>
+<p>Per chi sviluppa: lo stesso elenco è tenuto fermo da <code>scripts/check-dati-in-uscita.mjs</code>, che fa fallire la pubblicazione se qualcuno lo allarga.</p>
 <h2>Dati che non vengono raccolti</h2>
 <p>Nessun dato di contatto (email, telefono, rubrica), nessuna posizione, nessun identificatore pubblicitario, nessuna cronologia. Non ci sono inserzioni e non c'è profilazione.</p>
 <h2>Permessi</h2>
