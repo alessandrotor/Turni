@@ -92,8 +92,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
     ...formPrevidenza(settings),
   });
   const [saved, setSaved] = useState(false);
-  // Backup: stato locale alla sezione, non passa da onSave (agisce direttamente
-  // su localStorage). `turniSalvati` è letto una volta all'apertura della pagina.
+  // Backup: stato locale alla sezione, non passa da onSave. I turni contati sono quelli in memoria.
   const [backupBusy, setBackupBusy] = useState(false);
   const [backupMsg, setBackupMsg] = useState(null);
   // Il backup in chiaro, mostrato SOLO quando la consegna non è verificabile:
