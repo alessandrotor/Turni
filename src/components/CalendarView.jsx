@@ -4,7 +4,7 @@ import {
   formatDate, formatMonthYear, isToday, isWeekend,
   addMonths, getMonthStart, getDaysInMonth, isCurrentMonth, formatPayrollRange,
 } from '../utils/dates';
-import { calcShiftMinutes, calcTotalPay, formatCurrency, lordoTurno } from '../motore/pay';
+import { calcShiftMinutes, calcTotalPay, formatCurrency, lordoTurno, parseNum } from '../motore/pay';
 import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../motore/assenze';
 import { isMensilizzato } from '../motore/ccnl';
 import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../motore/bonus';
@@ -521,9 +521,9 @@ export default function CalendarView({
   const salvaBuste = (chiave) => {
     const bozza = busteBozza[chiave];
     if (bozza == null || !conguaglio) return;
-    const v = Number(String(bozza).replace(',', '.'));
+    const v = /^\s*[\d.,\s]*\d[\d.,\s]*$/.test(bozza) ? parseNum(bozza) : null; // «1.234,56» come in busta
     const fino = String(settings.priorIncomeDate || '').slice(0, 7);
-    onUpdateSettings?.({ [chiave]: String(bozza).trim() === '' || !(v >= 0) ? null : { importo: v, fino } });
+    onUpdateSettings?.({ [chiave]: v == null ? null : { importo: v, fino } });
     setBusteBozza((b) => ({ ...b, [chiave]: null }));
   };
   // IL PERCHÉ di IRPEF e bonus, coi mesi che lo causano. Nei mesi in cui la
