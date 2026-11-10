@@ -3,6 +3,7 @@ import { minutesDiff, parseDate, getWeekStart, formatDate, payrollMonthKey } fro
 import { isHoliday } from './holidays.js';
 import { isMensilizzato, monthlyContractHours } from './ccnl.js';
 import { isAssenza, tipoTurno, percentualeAssenza, giorniEventoMalattia, TIPO } from './assenze.js';
+import { giorniDiRiposo } from './periodo-assenza.js';
 import { minutiNotturniPagati, pctNotturnoAggiuntiva, straordinarioNotturno } from './notturno.js';
 
 // UNA SOLA STRADA PER LA PAGA: `computePayByShift` → `calcTotalPay`. Un secondo
@@ -207,7 +208,10 @@ export function computePayByShift(allShifts, settings, { oggi = null } = {}) {
     : null;
 
   // La carenza si conta per EVENTO di malattia: va ricavata da tutti i turni.
-  const eventoMalattia = giorniEventoMalattia(allShifts);
+  // Prosegue attraverso riposi e festività senza lavoro.
+  const riposi = new Set(giorniDiRiposo(allShifts, settings));
+  const eventoMalattia = giorniEventoMalattia(allShifts,
+    (iso) => riposi.has(parseDate(iso).getDay()) || isHoliday(iso, settings));
 
   // Raggruppa per giorno (a chiamata), mese (mensilizzato) o settimana (contratto).
   // Sul mensilizzato segue `periodoConteggio`, come i turni visibili a schermo:

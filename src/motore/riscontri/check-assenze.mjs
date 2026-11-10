@@ -161,6 +161,30 @@ console.log('\nMalattia: carenza contata per evento\n');
     .map(d => assenza(d, TIPO.MALATTIA, 240));
   check('3 giorni al 50% + 1 al 100%', paga(sh, SET).malattiaBase, (3 * 4 * 0.5 + 4) * R);
 }
+{
+  // UNA MALATTIA NON SI SPEZZA SUL RIPOSO, difetto trovato il 10/11/2026. Il
+  // periodo toglie il giorno di riposo (qui la domenica), e ogni buco faceva
+  // ripartire la carenza: 2–14 novembre senza le domeniche erano due eventi,
+  // 6 giorni a zero invece di 3. Deciso da chi mantiene il progetto: è una
+  // malattia sola. Il riposo la attraversa; un turno di lavoro o un giorno
+  // feriale vuoto no.
+  const SET = { ...BASE, malattiaCarenzaGiorni: 3, malattiaCarenzaPct: 0, malattiaPct: 100 };
+  const date = ['02', '03', '04', '05', '06', '07', '09', '10', '11', '12', '13', '14'].map(g => `2026-11-${g}`);
+  const sh = date.map(d => assenza(d, TIPO.MALATTIA, 240));
+  check('domenica in mezzo: 9 lunedì è il giorno 7', paga(sh, SET).malattiaBase, 9 * 4 * R);
+
+  const conLavoro = [...sh, lavoro('2026-11-08', 240)];
+  check('  un turno di lavoro la domenica la spezza',
+    paga(conLavoro, SET).malattiaBase, 6 * 4 * R);
+
+  const bucoFeriale = sh.filter(s => s.date !== '2026-11-11');
+  check('  un mercoledì vuoto la spezza', paga(bucoFeriale, SET).malattiaBase, (11 - 6) * 4 * R);
+
+  // La festività: 1° novembre 2026 è domenica; martedì 8 dicembre no.
+  const dicembre = ['2026-12-07', '2026-12-09', '2026-12-10', '2026-12-11']
+    .map(d => assenza(d, TIPO.MALATTIA, 240));
+  check('  l\'8 dicembre in mezzo non la spezza', paga(dicembre, SET).malattiaBase, 4 * R);
+}
 
 console.log('\nCompatibilità con i turni già salvati\n');
 {

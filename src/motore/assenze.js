@@ -3,7 +3,7 @@
 // assenze del periodo (serve la differenza fra due mesi). Vedi RILASCIO.md.
 //
 // Estensioni esplicite sugli import: il file resta importabile da Node puro.
-import { dayNumber } from './date.js';
+import { dayNumber, parseDate, formatDate } from './date.js';
 
 /** @typedef {import('./impostazioni.js').Impostazioni} Impostazioni */
 
@@ -66,21 +66,35 @@ export function minutiGiornoAssenza(settings = {}) {
  * carenza si conta per evento, non per anno, quindi due influenze separate
  * hanno ciascuna i propri giorni iniziali.
  *
+ * L'evento prosegue oltre i giorni che mancano fra due giornate di malattia se
+ * per ognuno `continua(iso)` è vero e non c'è un turno di lavoro.
+ * → check-assenze.mjs
+ *
+ * @param {{ date: string }[]} allShifts
+ * @param {(iso: string) => boolean} [continua]
  * @returns {Map<string, number>} data ISO → giorno dell'evento
  */
-export function giorniEventoMalattia(allShifts) {
+export function giorniEventoMalattia(allShifts, continua = () => false) {
   const date = [...new Set(
     (allShifts || []).filter(s => tipoTurno(s) === TIPO.MALATTIA).map(s => s.date),
   )].sort();
+  const lavorati = new Set((allShifts || []).filter(s => !isAssenza(s)).map(s => s.date));
+  const prosegue = (da, a) => {
+    const cursore = parseDate(da);
+    for (cursore.setDate(cursore.getDate() + 1); formatDate(cursore) < a; cursore.setDate(cursore.getDate() + 1)) {
+      const iso = formatDate(cursore);
+      if (lavorati.has(iso) || !continua(iso)) return false;
+    }
+    return true;
+  };
 
   const out = new Map();
   let pos = 0;
-  let prevNum = null;
+  let prev = null;
   for (const iso of date) {
-    const n = dayNumber(iso);
-    pos = (prevNum !== null && n - prevNum === 1) ? pos + 1 : 1;
+    pos = prev !== null && (dayNumber(iso) - dayNumber(prev) === 1 || prosegue(prev, iso)) ? pos + 1 : 1;
     out.set(iso, pos);
-    prevNum = n;
+    prev = iso;
   }
   return out;
 }
