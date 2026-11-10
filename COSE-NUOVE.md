@@ -414,7 +414,7 @@ trova nessuna opzione.
 | F1 | `0.6.0` contro «Turni 1.0» | `package.json:4` → `build.gradle:36-37` | Passando a `1.0.0` il versionCode salta da 600 a **10000**: da lì nulla di inferiore è più caricabile. Da decidere prima del primo upload |
 | F2 | Nessun changelog | non esiste `CHANGELOG.md` | Play chiede le note a ogni upload; un tester non sa dire su quale versione ha visto il bug |
 | F3 | PWA installata può restare indietro | `vite.config.js:12-17`, `main.jsx:29-31` | Il SW cerca aggiornamenti al caricamento: una PWA mai chiusa davvero può restare vecchia a lungo. E con `autoUpdate` la ricarica, se arriva mentre si compila un turno, se lo porta via |
-| F4 | Due schede si sovrascrivono | nessun listener `storage` in `useLocalStorage` | Ogni scheda riscrive l'intero oggetto turni dalla propria copia in memoria: lavorare in due schede cancella il lavoro dell'altra. Alto su desktop, nullo nell'APK |
+| F4 | ~~Due schede si sovrascrivono~~ **chiusa, L4** | nessun listener `storage` in `useLocalStorage` | Ogni scheda riscrive l'intero oggetto turni dalla propria copia in memoria: lavorare in due schede cancella il lavoro dell'altra. Alto su desktop, nullo nell'APK |
 | F5 | Il limitatore «per installazione» non limita | `gemini.js:13` genera un id nuovo a ogni caricamento | Basta un F5. `worker/README.md:106-107` descrive una difesa che non esiste più |
 | F6 | Turnstile è un punto singolo di guasto | `turnstile.js:13` → `index.js:208` | Un suo disservizio spegne l'import anche con Gemini e worker sani; la via di fuga (togliere `TURNSTILE_SECRET`) non è scritta da nessuna parte |
 | F7 | `xlsx@0.18.5` abbandonato su npm | `package.json:24` | Attenuante verificata: usata solo in scrittura (`export.js:69,93-97`), mai per leggere file dell'utente. Ma non c'è una versione npm a cui aggiornare |
@@ -518,6 +518,24 @@ Chiusi dopo la revisione, con lo stesso criterio: ognuno ha il suo riscontro.
 L'app Android (Capacitor) è uscita dal repository: cartella `android`, configurazione, dipendenze, `deploy.bat` e la guida alla pubblicazione su Play. Turni è solo la PWA; un'app nativa, se servirà, si rifà da zero. Chiuse per questo, senza riscontro perché non c'è più niente da riscontrare: **B2** (l'AAB con la telemetria accesa), **F1** (il versionCode), **F9** (la firma), **F14** (la guida di Play), **G1** (R8), **G3** (il FileProvider). Il worker accetta ancora l'origine `https://localhost` che serviva all'APK: va tolta al prossimo deploy del worker.
 
 Tolta anche la telemetria, che funzionava solo nell'APK: chiuse **F11** (il messaggio non filtrato) e **G10** (opt-out invece di opt-in). I browser che l'avevano usata conservano le chiavi `turni_install_id` e `turni_telemetry_off`, che nessuno legge più.
+
+---
+
+# L. Revisione del 10/11/2026 — chiuse
+
+Trovate in una revisione completa del codice; il testo resta perché spiega il danno.
+
+| # | Problema | Riscontro |
+|---|---|---|
+| L1 | **Malattia spezzata dai riposi**: il periodo toglie le domeniche e ogni buco faceva ripartire la carenza, 6 giorni a zero invece di 3 su due settimane | `check-assenze.mjs` |
+| L2 | **Proiezione a chiamata a gradino**: 10.000 € maturati davano 12.000 il 31 ottobre e 10.909 il 1° novembre | `check-proiezione.mjs` |
+| L3 | **Lavoro e ferie nello stesso giorno** si pagavano due volte; il periodo toglieva solo il primo turno. Ora si sostituiscono, con «Annulla» | `check-sostituzioni.mjs` |
+| L4 | **F4, due schede si sovrascrivono**: ora ognuna prende quello che scrive l'altra (evento `storage`) | `check-due-schede.mjs` |
+| L5 | **Il testo condiviso viaggiava nell'indirizzo** (`/?testo_condiviso=…`), che legge anche il contatore visite. Ora sta in una cache, come l'immagine; il service worker non lascia più una pagina d'errore se qualcosa fallisce | `check-configurazione.mjs` |
+| L6 | **Le copie `__illeggibile` restavano fuori dal backup**: cambiando telefono erano l'unica cosa persa | `check-backup.mjs` |
+| L7 | **Zoom bloccato** (`maximum-scale=1.0`): libero, coi campi a 16px sui touch perché iPhone non ingrandisca al tocco | — |
+
+Piccoli, chiusi insieme: cifra delle buste coi punti delle migliaia nel conguaglio, backup partito dal salvato invece che da quello a schermo, conti fermi a ieri dopo mezzanotte, «Salva» muto con una maggiorazione oltre il 200%, chiavi dell'IA sospesa ancora passate alla build della CI.
 
 ---
 
