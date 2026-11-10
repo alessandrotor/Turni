@@ -14,23 +14,17 @@ import Icona from './Icona';
 // sotto compare cosa è stato capito; l'unica cosa da toccare è «Parti da», solo quando le date sono
 // dedotte dal nome del giorno.
 //
-// Il testo può arrivare da «Condividi → Turni» (share_target nel manifest, vite.config.js): il
-// modulo si apre pieno, letto una volta e tolto dall'indirizzo come la scorciatoia in App.jsx. Un'
-// IMMAGINE condivisa la lascia il service worker in una cache (public/condividi-sw.js) e qui arriva
-// solo `?immagine_condivisa`.
+// Testo e immagine possono arrivare da «Condividi → Turni» (share_target nel manifest,
+// vite.config.js): il service worker li lascia in una cache (public/condividi-sw.js) e qui arriva
+// solo `?testo_condiviso` o `?immagine_condivisa`, tolto subito dall'indirizzo. Il modulo si apre.
+let testoCondiviso = false;
 let immagineCondivisa = false;
-let condiviso = (() => {
-  try {
-    const q = new URLSearchParams(window.location.search);
-    immagineCondivisa = q.has('immagine_condivisa');
-    const parti = ['titolo_condiviso', 'testo_condiviso', 'link_condiviso'].map((k) => q.get(k)).filter(Boolean);
-    if (!parti.length && !immagineCondivisa) return null;
-    window.history.replaceState({}, '', window.location.pathname);
-    return parti.join('\n');
-  } catch {
-    return null;
-  }
-})();
+try {
+  const q = new URLSearchParams(window.location.search);
+  testoCondiviso = q.has('testo_condiviso');
+  immagineCondivisa = q.has('immagine_condivisa');
+  if (testoCondiviso || immagineCondivisa) window.history.replaceState({}, '', window.location.pathname);
+} catch { /* senza un indirizzo leggibile non c'è niente di condiviso */ }
 
 const FASI = {
   scarico: 'Preparo il lettore: ~4,5 MB, solo la prima volta',
@@ -40,8 +34,8 @@ const FASI = {
 };
 
 export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome }) {
-  const [aperto, setAperto] = useState(() => !!condiviso || immagineCondivisa);
-  const [testo, setTesto] = useState(() => condiviso || '');
+  const [aperto, setAperto] = useState(() => testoCondiviso || immagineCondivisa);
+  const [testo, setTesto] = useState('');
   // Il tabellone da un'immagine (prova): fase di lettura, oppure i nomi da
   // scegliere la prima volta. Il risultato diventa testo qui sopra.
   // Dopo la lettura: di chi sono i turni (tabellone), o il righello (foto).
@@ -88,15 +82,17 @@ export default function ImportTesto({ esistenti = [], onConfirm, nome, onNome })
 
   // Usato: se il calendario si rimonta (cambio scheda) non si riapre.
   useEffect(() => {
-    condiviso = null;
-    if (!immagineCondivisa) return;
+    if (!testoCondiviso && !immagineCondivisa) return;
+    const voce = testoCondiviso ? '/condiviso/testo' : '/condiviso/immagine';
+    const usa = testoCondiviso ? async (r) => setTesto(await r.text()) : async (r) => leggiImmagine(await r.blob());
+    testoCondiviso = false;
     immagineCondivisa = false;
     (async () => {
       try {
         const cache = await caches.open('turni-condivisi');
-        const r = await cache.match('/condiviso/immagine');
-        await cache.delete('/condiviso/immagine');
-        if (r) leggiImmagine(await r.blob());
+        const r = await cache.match(voce);
+        await cache.delete(voce);
+        if (r) await usa(r);
       } catch { /* senza cache non c'è niente da leggere */ }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps

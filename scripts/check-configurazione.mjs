@@ -196,6 +196,8 @@ check(scorciatoie.length > 0 && orfane.length === 0,
 // rimanda alla pagina con dei parametri, «Incolla turni» legge quei parametri.
 // Rinominato uno da una parte sola, la condivisione aprirebbe il calendario
 // vuoto senza un errore. E Workbox deve caricare il gestore, o la POST va a vuoto.
+// Il testo NON viaggia nell'indirizzo (lo legge anche il contatore visite): sta in una
+// cache, e il parametro dice solo che c'è.
 const importTesto = readFileSync('src/components/ImportTesto.jsx', 'utf8');
 const swCondividi = readFileSync('public/condividi-sw.js', 'utf8');
 const blocco = vite.match(/share_target:\s*\{([\s\S]*?)\n\s*\},/);
@@ -205,7 +207,8 @@ const parametri = [...swCondividi.matchAll(/'([a-z]+_condivis[oa])'/g)].map((m) 
 const nonRicevuti = campi.filter((c) => !swCondividi.includes(`'${c}'`));
 const nonLetti = parametri.filter((p) => !importTesto.includes(`'${p}'`));
 check(campi.length >= 4 && nonRicevuti.length === 0 && azione && swCondividi.includes(`'${azione}'`)
-  && /importScripts:\s*\['condividi-sw\.js'\]/.test(vite) && parametri.length >= 4 && nonLetti.length === 0,
+  && /importScripts:\s*\['condividi-sw\.js'\]/.test(vite) && parametri.length >= 2 && nonLetti.length === 0
+  && !/URLSearchParams|\.set\(/.test(swCondividi),
   'la condivisione arriva fino a «Incolla turni»',
   [...nonRicevuti.map((c) => `${c} non ricevuto dal service worker`), ...nonLetti.map((p) => `${p} non letto da ImportTesto`)].join(' · ')
     || `${azione}: ${campi.join(', ')} → ${parametri.join(', ')}`);
