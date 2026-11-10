@@ -117,9 +117,26 @@ const ytd = { ...S, tiProjectionMode: 'ytd' };
 verifica('modalita ytd: annualizza ancora', prev(8000, 0, ytd) !== prev(8000), true,
   'e una scelta esplicita, si rispetta');
 
+// Annualizzando, il mese in corso vale per i giorni passati, oggi compreso:
+// il 15 settembre sono 8 + 15/30 mesi.
+const TRASCORSI = (MESE - 1) + 15 / 30;
 const chiamata = { ...S, onCall: true };
-verifica('a chiamata: annualizza ancora', arr(prev(8000, 0, chiamata)), arr((8000 * 12) / MESE),
+verifica('a chiamata: annualizza ancora', arr(prev(8000, 0, chiamata)), arr((8000 * 12) / TRASCORSI),
   'non c e un contratto da cui prevedere');
+
+// IL GRADINO DI INIZIO MESE, difetto trovato il 10/11/2026. Il mese in corso
+// contava intero: 10.000 € maturati davano 12.000 il 31 ottobre e 10.909 il
+// 1° novembre, e risalivano solo coi turni del mese. Ora fra l'ultimo giorno
+// di un mese e il primo del successivo la stima cambia di un giorno.
+for (const [nome, s] of [['a chiamata', chiamata], ['modalita ytd', { ...S, tiProjectionMode: 'ytd' }]]) {
+  const fineOttobre = prev(10000, 0, s, ANNO, new Date(2026, 9, 31));
+  const primoNovembre = prev(10000, 0, s, ANNO, new Date(2026, 10, 1));
+  verifica(`${nome}: dal 31 ottobre al 1° novembre`, Math.abs(fineOttobre - primoNovembre) <= fineOttobre / 300, true,
+    `${arr(fineOttobre)} → ${arr(primoNovembre)}`);
+}
+// Gennaio non si moltiplica per centinaia: il divisore non scende sotto un mese.
+verifica('il 3 gennaio conta almeno un mese', arr(prev(60, 0, chiamata, ANNO, new Date(2026, 0, 3))), 720,
+  'prima di un mese non c e niente da annualizzare');
 
 // ── 4. Mensilita' aggiuntive contate una volta sola ────────────────────────
 console.log('\n13ª e 14ª\n');
@@ -178,7 +195,7 @@ for (const modo of ['stimato', 'ytd']) {
 const pesoStimato = stima(conBonus('stimato', [1, 2, 3])) - stima({ ...S, tiProjectionMode: 'stimato' });
 const pesoYtd = stima(conBonus('ytd', [1, 2, 3])) - stima({ ...S, tiProjectionMode: 'ytd' });
 verifica('le due modalita lo pesano uguale', arr(pesoStimato), arr(pesoYtd),
-  `prima ytd lo moltiplicava per 12/${MESE}`);
+  `prima ytd lo moltiplicava per 12/${TRASCORSI}`);
 
 // ── La spiegazione deve sommare alla cifra che spiega ──────────────────────
 //
@@ -227,10 +244,10 @@ for (const modo of ['stimato', 'ytd']) {
   const base = projectAnnualIncome(9000, 0, conMontante({ tiProjectionMode: modo, fixedMonthlyItems: [] }), ANNO, { oggi: OGGI }).value;
   const conFisse = projectAnnualIncome(9000, 0, conMontante({ tiProjectionMode: modo }), ANNO, { oggi: OGGI }).value;
   // stimato: le si aggiunge per i 4 mesi che restano. ytd: le si annualizza
-  // col maturato, e quelle del montante ci sono già — resta il solo settembre,
-  // × 12/9. In entrambi i casi l'anno ne conta dodici, non venti.
+  // col maturato, e quelle del montante ci sono già — resta mezzo settembre,
+  // × 12/8,5. In entrambi i casi l'anno ne conta dodici, non venti.
   verifica(`${modo}: voci fisse solo nei mesi dopo il montante`, arr(conFisse - base),
-    modo === 'ytd' ? arr(10 * 12 / MESE) : 4 * 10, 'non × 12 sopra il montante');
+    modo === 'ytd' ? arr(10 * (TRASCORSI - 8) * 12 / TRASCORSI) : 4 * 10, 'non × 12 sopra il montante');
   const spunte = { [`${ANNO}-02`]: true, [`${ANNO}-07`]: true, [`${ANNO}-09`]: true };
   const conPremi = projectAnnualIncome(9000, 0, conMontante({ tiProjectionMode: modo, monthlyBonus: spunte }), ANNO, { oggi: OGGI }).value;
   verifica('  e i premi spuntati solo dopo il montante', arr(conPremi - conFisse), 120,

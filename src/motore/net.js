@@ -414,9 +414,9 @@ export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, pay
   return { total: fromShifts + (applyMontante ? montante : 0) + daSommare, extras };
 }
 
-
-// «1 mese» / «5 mesi».
-const fmtMesi = (n) => `${n} mes${n === 1 ? 'e' : 'i'}`;
+// «1 mese» / «5 mesi»; `fmtNum` scrive «8,5».
+const fmtNum = (n) => n.toLocaleString('it-IT', { maximumFractionDigits: 1 });
+const fmtMesi = (n) => `${fmtNum(n)} mes${n === 1 ? 'e' : 'i'}`;
 
 /**
  * Reddito annuo di RIFERIMENTO per aliquota IRPEF e soglie del trattamento
@@ -459,6 +459,11 @@ export function projectAnnualIncome(
 
   const now = oggi;
   const monthsElapsed = year === now.getFullYear() ? now.getMonth() + 1 : 12;
+  // Il mese in corso vale per i giorni passati, oggi compreso; minimo un mese.
+  const giorniMese = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const mesiPerAnnualizzare = year === now.getFullYear()
+    ? Math.max(1, now.getMonth() + now.getDate() / giorniMese) : 12;
+  const notaAnnualizzato = `${fmtMesi(mesiPerAnnualizzare)} × 12 ⁄ ${fmtNum(mesiPerAnnualizzare)}`;
   const bonusYearAll = Object.entries(bonusMap)
     .filter(([k]) => k.slice(0, 4) === String(year) && Number(k.slice(5, 7)) > mesiNelMontante)
     .reduce((s, [, v]) => s + resolveBonusEntry(v), 0);
@@ -469,7 +474,7 @@ export function projectAnnualIncome(
   const extrasFullYear = enableNetCalc
     ? monthlyBaseGross(settings) * extraMonthsAccrued(settings, year)
     : 0;
-  const annualize = (v) => (monthsElapsed > 0 ? (v * 12) / monthsElapsed : v);
+  const annualize = (v) => (v * 12) / mesiPerAnnualizzare;
   const extras = (v) => v + fixedAnnual + bonusYearAll;
 
   // Le voci stanno qui e non nella UI: una spiegazione che ricalcola per conto
@@ -486,14 +491,13 @@ export function projectAnnualIncome(
   if ((settings.tiProjectionMode || 'stimato') === 'ytd') {
     // Il bonus non si annualizza (è già avvenuto, e un premio non torna ogni
     // mese); le voci fisse sì, ma non quelle dei mesi del montante, già in `recurring`.
-    const cumulativo = recurring + fixedMonthlyTotal * Math.max(0, monthsElapsed - mesiNelMontante);
-    aggiungi('Maturato finora, annualizzato', annualize(cumulativo),
-      `${fmtMesi(monthsElapsed)} × 12 ⁄ ${monthsElapsed}`);
+    const cumulativo = recurring + fixedMonthlyTotal * Math.max(0, mesiPerAnnualizzare - mesiNelMontante);
+    aggiungi('Maturato finora, annualizzato', annualize(cumulativo), notaAnnualizzato);
     aggiungi('13ª/14ª previste nell\'anno', extrasFullYear);
     aggiungi('Bonus segnati nell\'anno', bonusYearAll, 'quelli spuntati, non annualizzati');
     return {
       value: annualize(cumulativo) + extrasFullYear + bonusYearAll,
-      source: 'maturato', voci, mesiTrascorsi: monthsElapsed,
+      source: 'maturato', voci, mesiTrascorsi: mesiPerAnnualizzare,
     };
   }
 
@@ -505,17 +509,15 @@ export function projectAnnualIncome(
   }
 
   if (settings.onCall) {
-    aggiungi('Maturato finora, annualizzato', annualize(recurring),
-      `${fmtMesi(monthsElapsed)} × 12 ⁄ ${monthsElapsed}`);
+    aggiungi('Maturato finora, annualizzato', annualize(recurring), notaAnnualizzato);
     conVociFisse();
-    return { value: extras(annualize(recurring)), source: 'maturato', voci, mesiTrascorsi: monthsElapsed };
+    return { value: extras(annualize(recurring)), source: 'maturato', voci, mesiTrascorsi: mesiPerAnnualizzare };
   }
 
   // Previsione IN AVANTI: maturato reale + resto dell'anno da contratto, senza
   // annualizzare il passato. Il mese in corso vale per i giorni che restano.
   // → docs/note-motore-net.md, check-proiezione.mjs
   const annoOggi = now.getFullYear();
-  const giorniMese = new Date(annoOggi, now.getMonth() + 1, 0).getDate();
   const mesiRestanti = year < annoOggi ? 0
     : year > annoOggi ? 12
       : (11 - now.getMonth()) + (giorniMese - now.getDate() + 1) / giorniMese;
@@ -541,12 +543,9 @@ export function projectAnnualIncome(
 
   aggiungi('Maturato finora', annualGross,
     'turni segnati, più il montante e le 13ª/14ª già incassate');
-  const mesiScritti = Number.isInteger(mesiRestanti)
-    ? String(mesiRestanti)
-    : mesiRestanti.toLocaleString('it-IT', { maximumFractionDigits: 1 });
   aggiungi(Number.isInteger(mesiRestanti) ? `I ${fmtMesi(mesiRestanti)} che restano` : 'Il resto dell’anno',
     mesiRestanti * mensile,
-    mesiRestanti > 0 ? `${mesiScritti} × la mensilità da contratto` : null);
+    mesiRestanti > 0 ? `${fmtNum(mesiRestanti)} × la mensilità da contratto` : null);
 
   for (const kind of ['quattordicesima', 'tredicesima']) {
     const frazione = rateo(kind);

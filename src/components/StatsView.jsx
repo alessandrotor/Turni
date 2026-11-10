@@ -364,7 +364,7 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
                   {projection.source === 'maturato' && (
                     <>
                       Non c'è un orario da contratto da cui proiettare, quindi si prende
-                      quello che hai guadagnato nei {projection.mesiTrascorsi} mesi trascorsi
+                      quello che hai guadagnato nei {projection.mesiTrascorsi.toLocaleString('it-IT', { maximumFractionDigits: 1 })} mesi trascorsi
                       e lo si riporta a dodici. Se i mesi che restano saranno diversi da
                       quelli passati, la stima si sposterà di conseguenza.
                     </>
