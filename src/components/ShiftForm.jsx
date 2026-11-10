@@ -581,12 +581,11 @@ export default function ShiftForm({ modal, settings = {}, turni = [], onSave, on
                     <input
                       type="number"
                       className="form-input"
-                      min="0"
-                      max="200"
-                      step="any"
+                      min="0" max="200" step="any"
                       placeholder="% maggiorazione"
                       value={form.surchargePct}
                       onChange={(e) => setForm(f => ({ ...f, surchargePct: e.target.value }))}
+                      onInvalid={(e) => { const c = e.currentTarget, d = c.closest('details'); if (d && !d.open) { d.open = true; setTimeout(() => c.reportValidity()); } }}
                     />
                   </div>
                 )}
