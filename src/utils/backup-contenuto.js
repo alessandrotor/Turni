@@ -17,6 +17,16 @@ export const KEY_CAL_LAYOUT = 'turni_cal_layout';
 
 export const LAYOUT_AMMESSI = new Set(['grid', 'timeline']);
 
+// Le copie dei dati che non si leggevano (`leggiSalvato` in hooks/useLocalStorage.js): vanno
+// nel backup così come sono, perché cambiando telefono sarebbero l'unica cosa persa.
+export const CHIAVI_ILLEGGIBILI = [`${KEY_SHIFTS}__illeggibile`, `${KEY_SETTINGS}__illeggibile`];
+
+/** Le copie illeggibili presenti, `{ chiave: testo }`, o `null` se non ce n'è nessuna. */
+export function illeggibiliPresenti(leggiGrezzo) {
+  const trovate = CHIAVI_ILLEGGIBILI.map(k => [k, leggiGrezzo(k)]).filter(([, v]) => typeof v === 'string');
+  return trovate.length ? Object.fromEntries(trovate) : null;
+}
+
 const RE_DATA = /^\d{4}-\d{2}-\d{2}$/;
 const RE_ORA = /^\d{2}:\d{2}$/;
 
@@ -150,8 +160,10 @@ export function datiDelBackup(inMemoria, salvato) {
  *
  * @param {Object} dati backup già passato da `controllaBusta`
  * @param {object} turniBuoni i turni sopravvissuti a `vagliaTurni`
+ * @param {(chiave: string) => boolean} [ceGia] vero se lo storage ha già quella chiave: una
+ *   copia illeggibile del backup non prende il posto di quella del telefono
  */
-export function pianoRipristino(dati, turniBuoni) {
+export function pianoRipristino(dati, turniBuoni, ceGia = () => false) {
   const piano = [
     { chiave: KEY_SHIFTS, valore: JSON.stringify(turniBuoni) },
   ];
@@ -164,6 +176,11 @@ export function pianoRipristino(dati, turniBuoni) {
   // si lascia la preferenza corrente com'è, invece di riportarla alla griglia.
   if (LAYOUT_AMMESSI.has(dati.vistaCalendario)) {
     piano.push({ chiave: KEY_CAL_LAYOUT, valore: dati.vistaCalendario });
+  }
+
+  for (const chiave of CHIAVI_ILLEGGIBILI) {
+    const valore = dati.illeggibili?.[chiave];
+    if (typeof valore === 'string' && !ceGia(chiave)) piano.push({ chiave, valore });
   }
 
   return piano;

@@ -20,7 +20,7 @@
 
 import {
   controllaBusta, vagliaTurni, pianoRipristino, scriviConRitorno, perche, datiDelBackup,
-  KEY_SHIFTS, KEY_SETTINGS, KEY_CAL_LAYOUT, FORMATO,
+  KEY_SHIFTS, KEY_SETTINGS, KEY_CAL_LAYOUT, FORMATO, illeggibiliPresenti,
 } from '../src/utils/backup-contenuto.js';
 
 let falliti = 0;
@@ -229,6 +229,24 @@ verifica('e le impostazioni di adesso, non quelle vecchie',
   datiDelBackup(aSchermo, sulDisco).impostazioni.hourlyRate, 10);
 verifica('senza memoria (il salvagente dell\'errore) resta il disco',
   datiDelBackup(null, sulDisco), sulDisco);
+
+// ── 6. Le copie illeggibili viaggiano col backup ──────────────────────────
+// Un dato che non si legge non si butta: `leggiSalvato` lo copia in una chiave
+// `__illeggibile`. Il backup non la portava, e cambiando telefono era l'unica
+// cosa che andava persa davvero (10/11/2026).
+const CHIAVE_ROTTA = `${KEY_SHIFTS}__illeggibile`;
+const grezzi = { [CHIAVE_ROTTA]: '{"a":{"id":"a",' };
+verifica('nel backup c\'è la copia illeggibile, così com\'è',
+  illeggibiliPresenti((k) => grezzi[k] ?? null), { [CHIAVE_ROTTA]: '{"a":{"id":"a",' });
+verifica('  e niente se non ce ne sono', illeggibiliPresenti(() => null), null);
+const conRotta = { ...BACKUP, illeggibili: { [CHIAVE_ROTTA]: 'xyz', altra_chiave: 'no' } };
+const pianoRotta = pianoRipristino(conRotta, vagliaTurni(BACKUP.turni).buoni);
+verifica('al ripristino torna al suo posto',
+  pianoRotta.some(p => p.chiave === CHIAVE_ROTTA && p.valore === 'xyz'), true);
+verifica('  e solo nelle chiavi previste', pianoRotta.some(p => p.chiave === 'altra_chiave'), false);
+verifica('  senza sovrascrivere quella già sul telefono',
+  pianoRipristino(conRotta, vagliaTurni(BACKUP.turni).buoni, (k) => k === CHIAVE_ROTTA)
+    .some(p => p.chiave === CHIAVE_ROTTA), false);
 
 console.log(falliti === 0
   ? `\n${totale} controlli: o tutto, o niente — e comunque lo si dice.\n`

@@ -6,7 +6,7 @@ import { deliver } from './export';
 import {
   APP_TAG, FORMATO,
   KEY_SHIFTS, KEY_SETTINGS, KEY_CAL_LAYOUT,
-  controllaBusta, vagliaTurni, pianoRipristino, scriviConRitorno, datiDelBackup,
+  controllaBusta, vagliaTurni, pianoRipristino, scriviConRitorno, datiDelBackup, illeggibiliPresenti,
 } from '../utils/backup-contenuto';
 
 // Chiavi, marcatori di formato e regole su cosa è un turno valido stanno in
@@ -65,6 +65,7 @@ export function costruisciBackup(inMemoria = null) {
     turni,
     impostazioni,
     vistaCalendario: leggiGrezzo(KEY_CAL_LAYOUT) || null,
+    illeggibili: illeggibiliPresenti(leggiGrezzo),
   };
 }
 
@@ -123,7 +124,7 @@ export async function leggiBackup(file) {
  * @throws {Error} in italiano, e dicendo se i dati di prima sono ancora lì
  */
 export function applicaBackup({ dati, turniBuoni, scartati = [] }) {
-  const esito = scriviConRitorno(pianoRipristino(dati, turniBuoni), localStorage);
+  const esito = scriviConRitorno(pianoRipristino(dati, turniBuoni, (k) => leggiGrezzo(k) != null), localStorage);
 
   if (!esito.ok) {
     const quota = esito.errore?.name === 'QuotaExceededError'
