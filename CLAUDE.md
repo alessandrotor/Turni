@@ -633,5 +633,10 @@ Discendono tutte dalla parola d'ordine qui sopra.
   pieno, disegno bianco) solo per le giornate senza turno, che nel calendario
   devono saltare all'occhio. Ogni cosa ha il suo colore, uguale ovunque. Gli
   emoji restano solo nel testo condiviso su WhatsApp. Niente «✓» nei bottoni.
+- **Sotto il netto, il «Totale competenze» della busta** (`NetPillole.jsx`):
+  il lordo non è la cifra in fondo al cedolino, che comprende anche tratt.
+  integrativo e Indennità L. 207/24. La somma si disegna: le caselle che ne
+  fanno parte hanno il bordo azzurro e un filo ciascuna scende al totale.
+  `totaleCompetenze()`, → `check-busta-luglio-2026.mjs`
 - I calcoli fiscali sono marcati BETA e invitano a farsi controllare da un
   professionista. Non togliere quell'avviso.

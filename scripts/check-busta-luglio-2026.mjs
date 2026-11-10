@@ -23,6 +23,7 @@
 
 import { calcNetMonthly, round2, trunc2 } from '../src/motore/net.js';
 import { calcTotalPay } from '../src/motore/pay.js';
+import { totaleCompetenze } from '../src/motore/competenze.js';
 
 const BASE_SETTINGS = {
   hourlyRate: 9.21802,
@@ -211,7 +212,8 @@ check('Trattamento integrativo', r.trattamentoIntegrativo, 101.91, CENT);
 check('Indennità L.207/2024 (5,3%)', r.bonusCuneo, 56.22, CENT);
 
 console.log('\nTotali\n');
-check('Totale competenze', round2(LORDO_LUGLIO + r.trattamentoIntegrativo + r.bonusCuneo), 1331.61, CENT);
+// La stessa funzione che scrive «In busta: Totale competenze» sotto il netto.
+check('Totale competenze', totaleCompetenze(r).totale, 1331.61, CENT);
 check('Totale trattenute', r.trattenute, 194.32, CENT);
 check('NETTO DEL MESE', r.net, 1137.29, CENT);
 
