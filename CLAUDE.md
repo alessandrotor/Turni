@@ -227,7 +227,11 @@ quanto costa scoprire a dicembre che non spettava.
   integrativo» contro «ma paghi meno tasse», e il pezzo scoperto è la perdita
   vera (`costoSoglia()`). «Ti ridanno 90 €» accanto a «700 € da restituire»
   sembrava una contraddizione; i 700 € (già presi, ridati a dicembre) stanno
-  in «Dettagli».
+  in «Dettagli». Oltre la soglia, al posto di «Niente da restituire», le due
+  righe della busta di dicembre come due tasselli: tratt. integrativo ripreso
+  (freccia che esce) e tasse rese (freccia che entra), lunghi quanto valgono, e
+  il saldo accanto. Il saldo da solo taceva la trattenuta che poi in busta c'è.
+  Le cifre sono le voci di `stimaConguaglio`.
 
 - **Il conguaglio di dicembre è una forchetta, mai una cifra** (`motore/conguaglio.js`).
   È la differenza fra quanto il datore trattiene mese per mese (lordo × 12) e
