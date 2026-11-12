@@ -308,3 +308,20 @@ export function stimaConguaglio({ anno, allShifts, settings, payMap, oggi, proie
       : null,
   };
 }
+
+/**
+ * Le due righe che, oltre la soglia, la busta di dicembre stampa: il bonus
+ * ripreso e le tasse rese (IRPEF e Indennità L. 207/24 ricalcolate sull'anno).
+ * Dalla parte di chi legge: entrambe positive, e reso − ripreso = −saldo.
+ * null se non c'è niente da riprendere o se le tasse non tornano indietro:
+ * allora le due righe non raccontano il conguaglio. → check-conguaglio.mjs
+ * @param {{ voci: { irpef: number, trattamentoIntegrativo: number, indennita: number } } | null | undefined} saldo
+ */
+export function righeDiDicembre(saldo) {
+  const v = saldo?.voci;
+  if (!v) return null;
+  const ripreso = r2(v.trattamentoIntegrativo);
+  const reso = r2(-(v.irpef + v.indennita));
+  return ripreso >= 1 && reso > 0 ? { ripreso, reso } : null;
+}
+

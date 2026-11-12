@@ -144,6 +144,27 @@ for (const v of Object.keys(CONNETTE).filter((k) => !connect.includes(k))) {
   console.log(`FAIL  ${v.padEnd(42)} dichiarato e non nella CSP: l elenco qui non dice il vero`);
 }
 
+// Ma «tutti e soli» vale per ogni via, non per la sola connect-src: un pixel in
+// img-src o un form verso fuori porterebbero dati lo stesso. Ogni indirizzo
+// esterno, in qualunque direttiva, è dichiarato qui; un jolly (`*`, `https:`)
+// non lo è mai.
+console.log('\nOgni altra via verso fuori, direttiva per direttiva\n');
+const ESTERNI = {
+  'script-src https://static.cloudflareinsights.com': 'il file del contatore visite',
+};
+for (const direttiva of cspRiga.split(';').map((d) => d.trim()).filter(Boolean)) {
+  const [nome, ...fonti] = direttiva.split(/\s+/);
+  if (nome === 'connect-src') continue;
+  for (const f of fonti) {
+    const esterna = /^(https?:|wss?:)?\/\//.test(f) || /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(f);
+    const jolly = f === '*' || /^(https?|wss?|data|blob):$/.test(f) && !['img-src', 'worker-src'].includes(nome);
+    if (!esterna && !jolly) continue;
+    const ok = !jolly && `${nome} ${f}` in ESTERNI;
+    if (!ok) falliti++;
+    console.log(`${ok ? '  ok' : 'FAIL'}  ${`${nome} ${f}`.padEnd(42)} ${ok ? ESTERNI[`${nome} ${f}`] : 'una via verso fuori non dichiarata'}`);
+  }
+}
+
 console.log();
 if (falliti) {
   console.error(`${falliti} problema/i.\n`);

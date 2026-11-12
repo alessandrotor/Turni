@@ -132,7 +132,8 @@ export default function NetPillole({
     {/* Il totale della busta: lo stesso nome del cedolino, da cercarci. */}
     <div ref={totale} style={{ position: 'relative', zIndex: 1, margin: '1.6rem auto .2rem', width: 'fit-content', padding: '.3rem .9rem',
       borderRadius: 'var(--radius-sm)', background: BUSTA, color: '#fff', textAlign: 'center' }}>
-      <span style={{ display: 'block', fontSize: '.72rem', opacity: .9 }}>In busta: Totale competenze</span>
+      {/* Con il tratt. integrativo simulato il totale è simulato anche lui: «In busta» non sarebbe vero. */}
+      <span style={{ display: 'block', fontSize: '.72rem', opacity: .9 }}>{tiSimulato ? 'Simulato: Totale competenze' : 'In busta: Totale competenze'}</span>
       <strong style={{ fontSize: '1rem' }}>{formatCurrency(busta.totale)}</strong>
     </div>
     </div>

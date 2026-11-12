@@ -8,7 +8,7 @@
 // che la cifra è giusta, dicono che il modello si comporta come il meccanismo
 // che descrive. Il riscontro sulle buste vere arriverà con dicembre 2026.
 
-import { saldoConguaglio, stimaConguaglio, mesiDellAnno, SOGLIA_PARI } from '../src/motore/conguaglio.js';
+import { saldoConguaglio, stimaConguaglio, mesiDellAnno, SOGLIA_PARI, righeDiDicembre } from '../src/motore/conguaglio.js';
 import { nettoDelMese, calcNetAnnual } from '../src/motore/net.js';
 import { rischioRestituzione } from '../src/motore/restituzione.js';
 import { calcBonusMargin } from '../src/motore/bonus.js';
@@ -33,6 +33,14 @@ esito(Math.abs(stabile.saldo) < 1, 'reddito uguale tutti i mesi → nessun congu
 const sale = saldoConguaglio(anno([1100, 1100, 1100, 1100, 1100, 1100, 1900, 1900, 1900, 1900, 1900, 1900]), S, { anno: 2026 });
 esito(sale.voci.trattamentoIntegrativo > 0, 'mesi bassi poi alti, anno oltre soglia → il bonus torna indietro',
   `${sale.voci.trattamentoIntegrativo} €`);
+
+// Le due righe della busta di dicembre (i tasselli del riquadro): ripreso e reso
+// sono le voci del conguaglio dalla parte di chi legge, e la loro differenza è
+// il saldo, al centesimo. Senza bonus da riprendere non si disegnano.
+const righe = righeDiDicembre(sale);
+esito(righe && Math.abs(righe.reso - righe.ripreso + sale.saldo) < 0.011,
+  'dicembre oltre soglia: tasse rese − bonus ripreso = −saldo', JSON.stringify(righe));
+esito(righeDiDicembre(stabile) === null, 'niente da riprendere → niente righe di dicembre');
 
 // Il caso opposto, verificato in busta a giugno 2026: un mese sopra 1.250 perde
 // il bonus, ma se l'anno resta sotto 15.000 a dicembre lo si riceve.

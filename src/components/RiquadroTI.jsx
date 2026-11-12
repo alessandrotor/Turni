@@ -10,9 +10,10 @@
 // Qui non si calcola niente: ogni cifra arriva dal calendario, che la prende dal motore.
 
 import { formatCurrency } from '../motore/pay';
-import { euroCella, scriviForchetta, numeroIt } from '../utils/formato';
+import { euroCella, scriviForchetta, saldoConSegno } from '../utils/formato';
 import { BONUS_STATUS, margineInOre } from '../motore/bonus';
 import { CAUSA, POSIZIONE } from '../motore/restituzione';
+import { righeDiDicembre } from '../motore/conguaglio';
 import { tiSospeso, patchTiSospeso } from '../motore/net';
 import Icona from './Icona';
 
@@ -90,26 +91,12 @@ function Bilancia({ costo, titolo, ore }) {
   );
 }
 
-// Il saldo del conguaglio dalla parte di chi legge: + ti danno, − ti tolgono
-// (nel motore è il contrario: positivo = a debito). Arrotondato alla decina,
-// come la forchetta scritta.
-function saldoConSegno({ min, max }) {
-  const dieci = (n) => Math.round(n / 10) * 10;
-  const [a, b] = [dieci(-max), dieci(-min)]; // a ≤ b
-  const s = (n) => (n > 0 ? `+${numeroIt(n)}` : n < 0 ? `−${numeroIt(-n)}` : '0');
-  if (a === b) return `${s(a)} €`;
-  if (a === 0 || b === 0) return `fino a ${s(a || b)} €`;
-  if (a > 0) return `+${numeroIt(a)}–${numeroIt(b)} €`;
-  if (b < 0) return `−${numeroIt(-b)}–${numeroIt(-a)} €`;
-  return `${s(a)} / ${s(b)} €`;
-}
-
 // Oltre la soglia, la busta di dicembre ha DUE righe: il tratt. integrativo
 // ripreso e le tasse rese (la detrazione sale). «Niente da restituire» diceva
 // il saldo e taceva la trattenuta, che poi in busta c'è (novembre 2026). Due
 // tasselli lunghi quanto valgono, una freccia che esce e una che entra, e il
 // saldo accanto: le cifre sono le voci del conguaglio (`stimaConguaglio`).
-function Dicembre({ ripreso, reso, saldo, colore, onApri, stima, onCopia }) {
+function Dicembre({ ripreso, reso, saldo, colore, onApri, stima, onCopia, perche, rate }) {
   const tassello = (v, sfondo, raggio, allinea) => ({ flex: Math.max(1, v), minWidth: 0, background: sfondo, borderRadius: raggio,
     padding: '.35rem .5rem', color: '#fff', textAlign: allinea, lineHeight: 1.15 });
   const nome = { display: 'flex', alignItems: 'center', gap: '.25rem', fontSize: '.7rem', opacity: .92, whiteSpace: 'nowrap' };
@@ -124,7 +111,7 @@ function Dicembre({ ripreso, reso, saldo, colore, onApri, stima, onCopia }) {
           </div>
           <div style={tassello(reso, `linear-gradient(180deg, #10b981, ${VERDE})`, '4px 12px 12px 4px', 'right')}>
             <span style={{ ...nome, justifyContent: 'flex-end' }}>tasse <Icona nome="dicembre" colore="#fff" /></span>
-            <strong style={{ fontSize: '1rem' }}>{reso >= 0 ? '+' : '−'}{euroCella(Math.abs(reso))}</strong>
+            <strong style={{ fontSize: '1rem' }}>+{euroCella(reso)}</strong>
           </div>
         </div>
         <span style={{ color: GRIGIO, fontWeight: 800 }}>=</span>
@@ -133,12 +120,11 @@ function Dicembre({ ripreso, reso, saldo, colore, onApri, stima, onCopia }) {
           {saldo} ›
         </button>
       </div>
-      {stima && (
-        <p className="bonus-strip-note" style={{ margin: '.4rem 0 0' }}>
-          Il tratt. integrativo preso è una stima.{' '}
-          <button type="button" className="linklike" onClick={onCopia}>Copia dalle buste quello che hai preso</button>
-        </p>
-      )}
+      <p className="bonus-strip-note" style={{ margin: '.4rem 0 0' }}>
+        {rate ? 'Il tratt. integrativo si può rendere a rate. ' : ''}
+        {stima && <>È una stima: <button type="button" className="linklike" onClick={onCopia}>copia dalle buste quello che hai preso</button>. </>}
+        {perche}
+      </p>
     </div>
   );
 }
@@ -151,11 +137,9 @@ export default function RiquadroTI({
   proiezioneBonusOgniMese, differenzaBonus, esitoSimulazione, conguaglioSimulato,
 }) {
   const perche = <button type="button" className="linklike" onClick={onPerche}>perché?</button>;
-  // Le voci del conguaglio: positivo = te lo riprendono, negativo = te lo rendono.
-  const voci = conguaglio?.centrale?.voci;
-  const ripreso = voci ? Math.max(0, voci.trattamentoIntegrativo) : 0;
-  const reso = voci ? -(voci.irpef + voci.indennita) : 0;
-  const dicembre = posizione === POSIZIONE.OLTRE && rischio.causa !== CAUSA.RINUNCIATO && ripreso >= 1;
+  // Le due righe della busta di dicembre, dal motore (`righeDiDicembre`).
+  const righe = righeDiDicembre(conguaglio?.centrale);
+  const dicembre = posizione === POSIZIONE.OLTRE && rischio.causa !== CAUSA.RINUNCIATO && righe != null;
   // Il bonus preso si può copiare dalle buste solo per i mesi del montante.
   const daCopiare = conguaglio && conguaglio.tiMontanteNoto == null && conguaglio.meseMontante >= 0;
   const tetto = bonus.thresholdFullGross;
@@ -266,8 +250,9 @@ export default function RiquadroTI({
 
       {/* Prima «di questo passo», poi «se la superi»: due situazioni, due titoli. */}
       {dicembre && cong && (
-        <Dicembre ripreso={ripreso} reso={reso} saldo={saldoConSegno(conguaglio)}
-          colore={cong.colore} onApri={onApriConguaglio} stima={daCopiare} onCopia={onApriConguaglio} />
+        <Dicembre ripreso={righe.ripreso} reso={righe.reso} saldo={saldoConSegno(conguaglio)}
+          colore={cong.colore} onApri={onApriConguaglio} stima={daCopiare} onCopia={onApriConguaglio}
+          perche={perche} rate={rischio.rateizzabile} />
       )}
       {cong && !dicembre && (
         <Riga icona="dicembre" colore={cong.colore} titolo={cong.titolo} sotto="a dicembre, di questo passo"

@@ -31,3 +31,18 @@ export function scriviForchetta(c) {
   if (c.direzione === 'credito') return `ti ridanno ${euroCella(giù10(-c.max))}–${euroCella(su10(-c.min))}`;
   return `da ${euroCella(su10(-c.min))} a credito a ${euroCella(su10(c.max))} a debito`;
 }
+
+/**
+ * La stessa forchetta, col segno di chi legge (+ ti danno, − ti tolgono) e gli
+ * stessi arrotondamenti: il saldo accanto ai tasselli e il popup che apre non
+ * possono dire cifre diverse.
+ */
+export function saldoConSegno(c) {
+  if (!c) return '';
+  if (c.direzione === 'pari') return 'circa 0 €';
+  // Con un estremo a zero, «−0–90» si legge male: «fino a −90 €», stesse cifre.
+  const forchetta = (segno, da, a) => (da === 0 ? `fino a ${segno}${euroCella(a)}` : `${segno}${numeroIt(da)}–${euroCella(a)}`);
+  if (c.direzione === 'debito') return forchetta('−', giù10(c.min), su10(c.max));
+  if (c.direzione === 'credito') return forchetta('+', giù10(-c.max), su10(-c.min));
+  return `+${numeroIt(su10(-c.min))} / −${euroCella(su10(c.max))}`;
+}
