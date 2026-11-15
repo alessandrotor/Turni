@@ -17,15 +17,15 @@ import { ETICHETTA, TIPO, tipoTurno } from '../motore/assenze';
 //
 // SOSTITUZIONE: ferie salvate dove c'era lavoro, o viceversa, lo tolgono
 // (`utils/sostituzioni.js`). Stessa striscia; «Annulla» rimette com'era.
-export default function AvvisoAnnulla({ descritti = [], sostituiti = false, onAnnulla, onChiudi }) {
+export default function AvvisoAnnulla({ descritti = [], sostituiti = false, testo: aggiunto = null, onAnnulla, onChiudi }) {
   const turno = descritti[0];
   const tipo = tipoTurno(turno);
   const giorno = Number(String(turno?.date ?? '').slice(8, 10)) || '';
   const che = tipo === TIPO.LAVORO
     ? `Turno del ${giorno}, ${turno?.startTime}–${turno?.endTime}`
     : `${ETICHETTA[tipo]} del ${giorno}`;
-  const testo = !sostituiti ? `${che} — eliminato.`
-    : descritti.length > 1 ? `Sostituite ${descritti.length} giornate.` : `Sostituito: ${che}.`;
+  const testo = aggiunto ?? (!sostituiti ? `${che} — eliminato.`
+    : descritti.length > 1 ? `Sostituite ${descritti.length} giornate.` : `Sostituito: ${che}.`);
 
   return (
     <div className="avviso-agg avviso-annulla" role="status" aria-live="polite">

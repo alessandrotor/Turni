@@ -46,8 +46,10 @@ export default function useAnnulla(shifts, setShifts) {
     setAnnullabile(null);
   }, [annullabile, setShifts]);
 
-  const offri = useCallback(({ rimossi, aggiunti = [], descritti = rimossi, sostituiti = false }) => {
-    if (rimossi.length) setAnnullabile({ rimossi, aggiunti, descritti, sostituiti });
+  // `testo`: quando non c'è niente di tolto da nominare (la settimana copiata), la
+  // striscia dice cosa si è aggiunto.
+  const offri = useCallback(({ rimossi, aggiunti = [], descritti = rimossi, sostituiti = false, testo = null }) => {
+    if (rimossi.length || aggiunti.length) setAnnullabile({ rimossi, aggiunti, descritti, sostituiti, testo });
   }, []);
 
   return { annullabile, offri, annulla, chiudi: useCallback(() => setAnnullabile(null), []) };

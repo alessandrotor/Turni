@@ -11,7 +11,7 @@ import { isMensilizzato } from '../motore/ccnl';
 import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../motore/bonus';
 import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../motore/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
-import AvvisoContratto from './AvvisoContratto';
+import AvvisoContratto from './AvvisoContratto'; import CopiaSettimana from './CopiaSettimana';
 import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../motore/assenze';
@@ -93,7 +93,7 @@ export default function CalendarView({
   onEditShift,
   onImportShifts,
   // Più giornate in una scrittura sola, per la proposta delle festività non lavorate.
-  onAddShifts,
+  onAddShifts, onCopiaSettimana,
   settings,
   onUpdateSettings,
   allShifts,
@@ -101,8 +101,7 @@ export default function CalendarView({
   annualGross,
   // Reddito dell'anno PROIETTATO a dicembre: la grandezza su cui valgono le soglie del bonus.
   annualProjection = 0,
-  annualExtras = 0,
-  onNavigate,
+  annualExtras = 0, onNavigate,
   // Giorno da evidenziare arrivando da un'altra pagina: la cella si illumina e ci si scorre sopra.
   focusDate = null,
 }) {
@@ -727,6 +726,7 @@ export default function CalendarView({
         </p>
       )}
 
+      {allShifts.length > 0 && <CopiaSettimana turni={allShifts} mese={currentMonth} settings={settings} onCopia={onCopiaSettimana} />}
       {/* Import bar */}
       {hasImportAI && (
         <div className="import-bar">
