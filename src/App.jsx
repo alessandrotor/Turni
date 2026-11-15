@@ -470,10 +470,10 @@ export default function App() {
             onEditShift={(shift) => setModal({ type: 'edit', shift })}
             onImportShifts={importShifts}
             onAddShifts={addShifts}
-            onCopiaSettimana={(lista) => {
+            onAggiungiAnnullabili={(lista, testo) => {
               const nuovi = lista.map((d) => ({ ...d, id: genId() }));
               addShifts(nuovi);
-              offriAnnulla({ rimossi: [], aggiunti: nuovi.map((n) => n.id), testo: `Copiati ${nuovi.length} turni dalla settimana scorsa.` });
+              offriAnnulla({ rimossi: [], aggiunti: nuovi.map((n) => n.id), testo });
             }}
             settings={settings}
             onUpdateSettings={updateSettings}

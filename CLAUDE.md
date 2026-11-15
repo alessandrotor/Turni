@@ -71,6 +71,10 @@ In pratica, e sono regole, non aspirazioni:
   La regola generale: **quello che l'app può dedurre dai dati già inseriti non
   si fa digitare.** Ma non si inventa nemmeno — la proposta è una coppia che
   nello storico esiste davvero, mai una media, e il riscontro lo verifica.
+  Più giorni con lo stesso orario: pressione lunga su un giorno vuoto, tocchi
+  sugli altri, un tocco sull'orario (`BarraSelezione.jsx`, gli stessi orari
+  dello storico) e poi «Annulla». «Copia la settimana scorsa»
+  (`CopiaSettimana.jsx`) è sospesa: commentata in `CalendarView.jsx`, non tolta.
 - **Per ciò che si recupera, l'annulla dopo; la conferma prima mai.** Una
   domanda «sei sicuro?» costa un tocco a tutti per un errore che fa uno, e
   insegna a chiudere gli avvisi a riflesso. Cancellare un turno agisce subito e

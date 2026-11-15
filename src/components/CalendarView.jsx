@@ -11,7 +11,7 @@ import { isMensilizzato } from '../motore/ccnl';
 import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../motore/bonus';
 import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../motore/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
-import AvvisoContratto from './AvvisoContratto'; import CopiaSettimana from './CopiaSettimana';
+import AvvisoContratto from './AvvisoContratto'; import BarraSelezione from './BarraSelezione'; import useSelezioneGiorni from '../hooks/useSelezioneGiorni'; // import CopiaSettimana from './CopiaSettimana'; — sospesa, vedi il file
 import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../motore/assenze';
@@ -93,7 +93,7 @@ export default function CalendarView({
   onEditShift,
   onImportShifts,
   // Più giornate in una scrittura sola, per la proposta delle festività non lavorate.
-  onAddShifts, onCopiaSettimana,
+  onAddShifts, onAggiungiAnnullabili,
   settings,
   onUpdateSettings,
   allShifts,
@@ -105,7 +105,7 @@ export default function CalendarView({
   // Giorno da evidenziare arrivando da un'altra pagina: la cella si illumina e ci si scorre sopra.
   focusDate = null,
 }) {
-  const [importParsed, setImportParsed] = useState(null);
+  const [importParsed, setImportParsed] = useState(null); const sel = useSelezioneGiorni();
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState(null);
   const [showNetDetail, setShowNetDetail] = useState(false);
@@ -726,7 +726,7 @@ export default function CalendarView({
         </p>
       )}
 
-      {allShifts.length > 0 && <CopiaSettimana turni={allShifts} mese={currentMonth} settings={settings} onCopia={onCopiaSettimana} />}
+      {/* {allShifts.length > 0 && <CopiaSettimana turni={allShifts} mese={currentMonth} settings={settings} onCopia={onAggiungiAnnullabili} />} */}<BarraSelezione scelti={sel.scelti} turni={allShifts} onSalva={onAggiungiAnnullabili} onChiudi={sel.chiudi} />
       {/* Import bar */}
       {hasImportAI && (
         <div className="import-bar">
@@ -824,7 +824,7 @@ export default function CalendarView({
                   dateStr === focusDate ? 'cal-cell--focus' : '',
                   dayShifts.some(s => s.note) ? 'cal-cell--nota' : '', // una nota si vede a colpo d'occhio
                 ].join(' ')}
-                onClick={e => { if (e.target === e.currentTarget) onAddShift(dateStr); }}
+                onClick={e => { if (e.target === e.currentTarget) onAddShift(dateStr); }} {...sel.props(dateStr, dayShifts.length === 0)}
               >
                 <button
                   type="button"
