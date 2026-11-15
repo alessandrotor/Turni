@@ -270,7 +270,9 @@ export default function RiquadroTI({ anno = null,
   const cong = conguaglio && {
     titolo: conguaglio.direzione === 'credito' ? 'Ti ridanno' : conguaglio.direzione === 'debito' ? 'Ti riprendono' : 'Conguaglio',
     colore: conguaglio.direzione === 'credito' ? VERDE : conguaglio.direzione === 'debito' ? ROSSO : GRIGIO,
-    valore: forchettaScritta.replace(/^ti (ridanno|riprendono) /, ''),
+    // «da 40 € a credito a 50 € a debito» non sta in una riga: quando può andare in
+    // tutti e due i sensi, la stessa forchetta coi segni (+40 / −50 €).
+    valore: conguaglio.direzione === 'incerta' ? saldoConSegno(conguaglio) : forchettaScritta.replace(/^ti (ridanno|riprendono) /, ''),
   };
 
   return (
@@ -320,7 +322,7 @@ export default function RiquadroTI({ anno = null,
           perche={perche} rate={rischio.rateizzabile} />
       )}
       {cong && !dicembre && (
-        <Riga icona="dicembre" colore={cong.colore} titolo={cong.titolo} sotto="a dicembre, di questo passo"
+        <Riga icona="dicembre" colore={cong.colore} titolo={cong.titolo} sotto={conguaglio.direzione === 'incerta' ? 'a dicembre, a credito o a debito' : 'a dicembre, di questo passo'}
           valore={cong.valore} onClick={onApriConguaglio} />
       )}
       {bilancia && (
