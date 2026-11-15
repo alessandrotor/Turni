@@ -11,7 +11,7 @@ import { isMensilizzato } from '../motore/ccnl';
 import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../motore/bonus';
 import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../motore/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
-import { contrattoMancante } from '../utils/configurazione';
+import AvvisoContratto from './AvvisoContratto';
 import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../motore/assenze';
@@ -1027,16 +1027,7 @@ export default function CalendarView({
             l'ALTO — senza, il motore perde la mensilizzazione, il divisore
             orario e i contributi minori — quindi la cifra sta nel messaggio:
             «45 € in più del vero» si capisce, «configura il CCNL» no. */}
-        {pay !== null && contrattoMancante(settings) && (
-          <div className="contratto-avviso">
-            <div className="contratto-avviso-testo">
-              <strong>Senza contratto conto ~45 € in più del vero</strong>
-            </div>
-            <button type="button" className="btn btn-primary" onClick={() => onNavigate?.('settings')}>
-              Scegli il contratto
-            </button>
-          </div>
-        )}
+        {pay !== null && <AvvisoContratto settings={settings} onNavigate={onNavigate} />}
 
 
         {/* Netto stimato del mese — beta (gated dal feature flag) */}

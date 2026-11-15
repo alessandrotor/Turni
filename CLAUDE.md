@@ -118,6 +118,11 @@ si può correggere. Le due colonne devono sommare ai due lordi al centesimo, e
 nel testo condiviso escono solo scarti — nemmeno i NOMI delle voci della busta
 («TOP STORE» dice chi è il datore). → `check-verifica-busta.mjs`
 
+Ci si arriva anche da sotto il totale del mese: con un contratto che nessuna
+busta ha ancora confermato (oggi tutti tranne Turismo e Vigilanza) una riga lo
+dice e porta qui (`AvvisoContratto.jsx`). È così che un contratto diventa
+verificato: dagli scarti di chi lo usa.
+
 Il lettore dei PDF è uno solo, `src/utils/cedolino.js`, per Node e per il browser.
 Attenzione a `DecompressionStream`: rifiuta il ritorno a capo che il PDF lascia
 dopo il deflate, mentre `zlib` lo ignora (vedi `inflateBrowser`). Legge solo i
