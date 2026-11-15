@@ -14,6 +14,10 @@ girano anche su `Beta` (`riscontri-beta.yml`), senza deploy. La produzione è un
 deploy manuale e può essere molto indietro rispetto al repository — prima di
 dire «è online» va guardato il sito, non il codice.
 
+**Cosa va fatto e in che ordine** sta in `docs/piano-per-agenti.md`: obiettivo,
+scelte già prese, elenco dei lavori per stadio, cosa si decide da soli e cosa
+si chiede. Chi prende in mano il progetto lo legge dopo questo file.
+
 ## La parola d'ordine: frictionless
 
 **Ogni cosa che l'app chiede all'utente deve guadagnarsi il diritto di
