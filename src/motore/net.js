@@ -562,16 +562,15 @@ export function projectAnnualIncome(
   return { value: extras(value), source: 'previsione', voci, mesiTrascorsi: monthsElapsed, mesiRestanti };
 }
 
-/**
- * Calcola la stima del netto annuo.
+/** Stima del netto annuo.
  * @param {number} grossAnnual reddito lordo annuo da lavoro dipendente
  * @param {Impostazioni} settings può contenere addRegionalePct / addComunalePct
- * @param {object} [opts]
+ * @param {object} [opts] @param {number} [opts.deduzioni=0] oneri deducibili (art. 10 TUIR, fondo-pensione.js)
  * @param {number} [opts.giorni=365] giorni del rapporto nell'anno: detrazioni e
  *   TI pieno spettano in proporzione (art. 13 TUIR). L'indennità L. 207/24 no.
  *   → check-conguaglio.mjs
  */
-export function calcNetAnnual(grossAnnual, settings = {}, { giorni = 365 } = {}) {
+export function calcNetAnnual(grossAnnual, settings = {}, { giorni = 365, deduzioni = 0 } = {}) {
   const T = fiscoDi(settings);
   const gross = Math.max(0, Number(grossAnnual) || 0);
 
@@ -588,7 +587,7 @@ export function calcNetAnnual(grossAnnual, settings = {}, { giorni = 365 } = {})
   const contributi = cont.totale;
   const imponibile = redditoComplessivo(gross, settings, cont);
 
-  const lorda = irpefLorda(imponibile, T);
+  const baseIrpef = Math.max(0, imponibile - Math.max(0, Number(deduzioni) || 0)), lorda = irpefLorda(baseIrpef, T); // deduzioni art. 10: solo l'imposta
   const quota = Math.min(1, Math.max(0, Number(giorni) || 0) / 365);
   const detLav = detrazioneLavoro(imponibile, T) * quota;
   const detCuneo = detrazioneCuneo(imponibile, T) * quota;
@@ -601,8 +600,8 @@ export function calcNetAnnual(grossAnnual, settings = {}, { giorni = 365 } = {})
   const aliqCom = pctOr(settings.addComunalePct, T.ADD_COMUNALE_DEFAULT) / 100;
   // Addizionali dovute solo con imposta netta, e non se trattenute altrove o sospese.
   const addDovute = !settings.addizionaliAltrove && !settings.noAddizionali && irpefNetta > 0;
-  const addRegionale = addDovute ? imponibile * aliqReg : 0;
-  const addComunale = addDovute ? imponibile * aliqCom : 0;
+  const addRegionale = addDovute ? baseIrpef * aliqReg : 0;
+  const addComunale = addDovute ? baseIrpef * aliqCom : 0;
 
   // Capienza con la detrazione dei giorni lavorati; sotto i 15.000 il TI è
   // rapportato al periodo.
