@@ -17,6 +17,7 @@ import { righeDiDicembre } from '../motore/conguaglio';
 import { tiSospeso, patchTiSospeso } from '../motore/net';
 import { useEffect, useState } from 'react';
 import Icona from './Icona';
+import FondoPensione from './FondoPensione';
 import useOggi from '../hooks/useOggi';
 import { confrontaStima, KEY_STIMA } from '../utils/salto-stima';
 
@@ -334,6 +335,7 @@ export default function RiquadroTI({ anno = null,
           sotto="da restituire a dicembre" valore={euroCella(daRestituire)} />
       )}
 
+      {!sospeso && anno && <FondoPensione lordoAnno={bonus.income} settings={settings} anno={anno} />}
       {sospendi && <Sospendi settings={settings} onUpdateSettings={onUpdateSettings} />}
       {avvisoMontante}
 

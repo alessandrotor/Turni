@@ -247,6 +247,13 @@ quanto costa scoprire a dicembre che non spettava.
   settimana. Novembre 2026: un aggiornamento la spostò di 910 € e il riquadro
   passò da «ancora ~55 ore» a «oltre la soglia» senza una parola.
   `confrontaStima()`, → `check-salto-stima.mjs`
+  **Il fondo pensione ne riprende una parte** (`FondoPensione.jsx`): una riga
+  nel riquadro, solo quando versare al fondo fa tornare anche tratt.
+  integrativo, e un cursore «quanto versi, quanto torna col 730». La deduzione
+  abbassa l'imposta, non il reddito: la soglia non si sposta, ma sotto i 15.000
+  troppa deduzione toglie la capienza e il tratt. integrativo sparisce; fra
+  15.000 e 28.000 lo fa crescere. Dalla norma, non da una busta.
+  `versamentoMigliore()`, → `check-fondo-pensione.mjs`
 
 - **Il conguaglio di dicembre è una forchetta, mai una cifra** (`motore/conguaglio.js`).
   È la differenza fra quanto il datore trattiene mese per mese (lordo × 12) e
