@@ -24,7 +24,7 @@ import { avvisoDaMostrare } from './utils/avvisi';
 import useAnnulla from './hooks/useAnnulla';
 import { turniSostituiti } from './utils/sostituzioni';
 import { iscrivitiAggiornamenti, applicaAggiornamento, primaDiRicaricare } from './services/aggiornamento';
-import useOccupato from './hooks/useOccupato';
+import useOccupato from './hooks/useOccupato'; import useArchivioPersistente from './hooks/useArchivioPersistente';
 import useOggi from './hooks/useOggi';
 import { iscrivitiOccupato } from './utils/occupato';
 import { turniDaImportare } from './utils/import-turni';
@@ -351,7 +351,7 @@ export default function App() {
 
   // Niente ricaricamenti con del lavoro in sospeso; il caso grave è `inAttesa`, un turno
   // GIÀ COMPILATO e non ancora salvato.
-  useOccupato('modale', !!modal || !!inAttesa || sistemaAperto);
+  useOccupato('modale', !!modal || !!inAttesa || sistemaAperto); useArchivioPersistente(Object.keys(shifts).length > 0);
 
   // Un istante prima dell'aggiornamento si mette da parte cosa si stava guardando (vedi RIPRESA).
   useEffect(() => primaDiRicaricare(() => {

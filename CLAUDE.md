@@ -557,9 +557,15 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
 ## L'archivio è il localStorage
 
 Non c'è server né account: quello che il browser tiene **è** l'archivio. Da qui
-due regole sul ripristino di un backup (`utils/backup-contenuto.js`,
+le regole sul ripristino di un backup (`utils/backup-contenuto.js`,
 `check-backup.mjs`).
 
+- **Il browser può svuotare l'archivio da solo**: Safari cancella i dati di un
+  sito non usato per sette giorni se non è in Home, e chiunque lo fa a corto di
+  spazio. Dopo il primo turno salvato si chiede l'archiviazione persistente
+  (`utils/archivio-persistente.js`): mai all'apertura, una volta per sessione.
+  Non è una garanzia, il backup resta la sola copia fuori dal telefono.
+  → `check-archivio-persistente.mjs`
 - **O tutto o niente, e comunque si dice cosa è successo.** Quattro `setItem` in
   fila non sono una sostituzione: se il secondo fallisce per quota — un backup
   grosso su uno storage quasi pieno è il caso tipico — restano i turni nuovi con
