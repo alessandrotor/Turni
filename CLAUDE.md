@@ -254,6 +254,14 @@ quanto costa scoprire a dicembre che non spettava.
   troppa deduzione toglie la capienza e il tratt. integrativo sparisce; fra
   15.000 e 28.000 lo fa crescere. Dalla norma, non da una busta.
   `versamentoMigliore()`, → `check-fondo-pensione.mjs`
+  **Lavori in corso, in ottica lead**: chi mantiene il progetto la sta
+  costruendo anche come porta verso fondi pensione che pagano un referral.
+  Vincoli già decisi per i lead: la cifra viene dal motore e mai dal partner
+  (nessuna strada per gonfiarla), la strada gratis accanto a quella del
+  partner, il compenso dichiarato accanto al pulsante, nessun dato che esce
+  dall'app senza consenso (la `connect-src` e `check-dati-in-uscita.mjs` non
+  si allargano senza riscrivere l'informativa e i termini, che oggi dicono
+  «senza scopo di lucro»).
 
 - **Il conguaglio di dicembre è una forchetta, mai una cifra** (`motore/conguaglio.js`).
   È la differenza fra quanto il datore trattiene mese per mese (lordo × 12) e
