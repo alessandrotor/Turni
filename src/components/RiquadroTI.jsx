@@ -15,7 +15,10 @@ import { BONUS_STATUS, margineInOre } from '../motore/bonus';
 import { CAUSA, POSIZIONE } from '../motore/restituzione';
 import { righeDiDicembre } from '../motore/conguaglio';
 import { tiSospeso, patchTiSospeso } from '../motore/net';
+import { useEffect, useState } from 'react';
 import Icona from './Icona';
+import useOggi from '../hooks/useOggi';
+import { confrontaStima, KEY_STIMA } from '../utils/salto-stima';
 
 function Sospendi({ settings, onUpdateSettings }) {
   return (
@@ -129,7 +132,60 @@ function Dicembre({ ripreso, reso, saldo, colore, onApri, stima, onCopia, perche
   );
 }
 
-export default function RiquadroTI({
+// Un'impronta corta di un oggetto: basta a dire «è cambiato», non a ricostruirlo.
+const impronta = (v) => {
+  const t = JSON.stringify(v ?? null);
+  let h = 0;
+  for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) | 0;
+  return `${t.length}:${h}`;
+};
+
+// La stima di dicembre che salta senza turni nuovi (utils/salto-stima.js): si
+// ricorda l'ultima, per l'anno in corso, e si confronta. Lo storage può mancare:
+// allora l'avviso semplicemente non c'è.
+function useSaltoStima(anno, valore, maturato, settings) {
+  const oggi = useOggi();
+  const [salto, setSalto] = useState(null);
+  const turni = String(Math.round((Number(maturato) || 0) * 100));
+  const imp = impronta(settings);
+  useEffect(() => {
+    if (anno !== oggi.getFullYear() || !(valore > 0)) { setSalto(null); return; }
+    let tutto = {};
+    try { tutto = JSON.parse(localStorage.getItem(KEY_STIMA) || '{}') || {}; } catch { /* niente memoria */ }
+    const prima = tutto[anno] || {};
+    const r = confrontaStima({ precedente: prima.fotografia, salto: prima.salto, valore: Math.round(valore), turni, impostazioni: imp, oggi });
+    try { localStorage.setItem(KEY_STIMA, JSON.stringify({ [anno]: r })); } catch { /* vale per questa volta */ }
+    setSalto(r.salto);
+  }, [anno, valore, turni, imp, oggi]);
+  return salto;
+}
+
+// L'avviso: di quanto, da quando, e perché a un tocco.
+function AvvisoSalto({ salto }) {
+  const [aperto, setAperto] = useState(false);
+  const su = salto.a > salto.da;
+  return (
+    <div style={{ display: 'flex', gap: '.55rem', alignItems: 'flex-start', background: '#eff6ff', border: '1px solid #bfdbfe',
+      borderRadius: 10, padding: '.55rem .65rem', margin: '.5rem 0 .2rem', fontSize: '.85rem', lineHeight: 1.4 }}>
+      <Icona nome="crescita" colore="#2563eb" style={{ transform: su ? 'none' : 'scaleY(-1)', marginTop: '.1em' }} />
+      <span>
+        La stima di dicembre è <strong style={{ color: '#1d4ed8' }}>{su ? 'salita' : 'scesa'} di ~{euroCella(Math.abs(salto.a - salto.da))}</strong>
+        {' '}senza turni nuovi{salto.causa === 'impostazioni' ? ': hai cambiato le impostazioni.' : '.'}{' '}
+        {!aperto && <button type="button" className="linklike" onClick={() => setAperto(true)}>Cosa è cambiato?</button>}
+        {aperto && (
+          <span style={{ display: 'block', marginTop: '.3rem', color: 'var(--c-text-2)' }}>
+            Era ~{euroCella(salto.da)}, ora ~{euroCella(salto.a)}.{' '}
+            {salto.causa === 'impostazioni'
+              ? 'Un dato delle impostazioni (paga, ore, montante, modo di stimare…) sposta la previsione dell\'anno.'
+              : 'Turni e impostazioni sono gli stessi: è cambiato il modo in cui l\'app conta, con un aggiornamento o col passare dei giorni (la stima «dal maturato» si muove da sola).'}
+          </span>
+        )}
+      </span>
+    </div>
+  );
+}
+
+export default function RiquadroTI({ anno = null,
   bonus, rischio, posizione, costo, mancaPareggio, mancaOre, tiFinora, annualGross,
   settings, onUpdateSettings, onPerche, avvisoMontante,
   conguaglio, forchettaScritta, onApriConguaglio,
@@ -137,6 +193,7 @@ export default function RiquadroTI({
   proiezioneBonusOgniMese, differenzaBonus, esitoSimulazione, conguaglioSimulato,
 }) {
   const perche = <button type="button" className="linklike" onClick={onPerche}>perché?</button>;
+  const salto = useSaltoStima(anno, bonus.income, annualGross, settings);
   // Le due righe della busta di dicembre, dal motore (`righeDiDicembre`).
   const righe = righeDiDicembre(conguaglio?.centrale);
   const dicembre = posizione === POSIZIONE.OLTRE && rischio.causa !== CAUSA.RINUNCIATO && righe != null;
@@ -234,6 +291,12 @@ export default function RiquadroTI({
             <span className="ti-barra-previsto" style={{ width: pct(Math.max(bonus.income, annualGross)) }} />
             <span className="ti-barra-maturato" style={{ width: pct(annualGross) }} />
             <span className="ti-barra-soglia" style={{ left: pct(tetto) }} />
+            {/* Da dove a dove è saltata la stima (vedi AvvisoSalto). */}
+            {salto && (
+              <span style={{ position: 'absolute', top: 0, bottom: 0, left: pct(Math.min(salto.da, salto.a)),
+                width: `calc(${pct(Math.max(salto.da, salto.a))} - ${pct(Math.min(salto.da, salto.a))})`,
+                background: 'repeating-linear-gradient(90deg, #1d4ed8 0 3px, transparent 3px 6px)', opacity: .55 }} />
+            )}
           </div>
           <div style={{ position: 'relative', height: '1.1rem', fontSize: '.75rem', color: 'var(--c-text-2)' }}>
             {/* Le parole si scrivono solo dove c'è posto: vicine alla soglia si sovrapponevano. */}
@@ -247,6 +310,8 @@ export default function RiquadroTI({
           </div>
         </div>
       )}
+
+      {salto && !sospeso && <AvvisoSalto salto={salto} />}
 
       {/* Prima «di questo passo», poi «se la superi»: due situazioni, due titoli. */}
       {dicembre && cong && (

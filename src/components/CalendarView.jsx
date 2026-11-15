@@ -1316,7 +1316,7 @@ export default function CalendarView({
         {/* Il riquadro del trattamento integrativo vive in RiquadroTI.jsx:
             le cifre gliele passa questo file, che le prende dal motore. */}
         {bonus.status !== BONUS_STATUS.ATTESA && (
-          <RiquadroTI
+          <RiquadroTI anno={year}
             bonus={bonus} rischio={rischio} posizione={posizione} costo={costo}
             mancaPareggio={mancaPareggio} mancaOre={mancaOre} tiFinora={tiFinora} annualGross={annualGross}
             settings={settings} onUpdateSettings={onUpdateSettings} onPerche={() => setContiBonusAperti(true)}

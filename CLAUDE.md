@@ -232,6 +232,12 @@ quanto costa scoprire a dicembre che non spettava.
   (freccia che esce) e tasse rese (freccia che entra), lunghi quanto valgono, e
   il saldo accanto. Il saldo da solo taceva la trattenuta che poi in busta c'è.
   Le cifre sono le voci di `stimaConguaglio`.
+  **Quando la stima di dicembre salta da sola, lo si dice**: si ricorda
+  l'ultima stima con l'impronta di turni e impostazioni, e se si sposta di
+  almeno 250 € senza turni nuovi una riga dice di quanto e perché, per una
+  settimana. Novembre 2026: un aggiornamento la spostò di 910 € e il riquadro
+  passò da «ancora ~55 ore» a «oltre la soglia» senza una parola.
+  `confrontaStima()`, → `check-salto-stima.mjs`
 
 - **Il conguaglio di dicembre è una forchetta, mai una cifra** (`motore/conguaglio.js`).
   È la differenza fra quanto il datore trattiene mese per mese (lordo × 12) e
