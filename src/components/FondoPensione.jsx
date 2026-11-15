@@ -1,8 +1,9 @@
 // Il fondo pensione dentro il riquadro del tratt. integrativo (novembre 2026):
-// una riga che compare solo quando versare al fondo fa tornare anche una parte
-// del tratt. integrativo, e al tocco una finestra col cursore «quanto versi,
-// quanto torna». Oltre i 15.000 è la sola cosa che recupera qualcosa, e prima
-// nessuna schermata lo diceva.
+// una riga «ogni 100 € versati, ~23 € tornano col 730» e al tocco una finestra
+// col cursore «quanto versi, quanto torna». La riga parla per 100 € e il
+// cursore parte da 500: chi guadagna 15.000 l'anno non ne versa 5.300, e
+// «5.300 € → 1.219 €» era una promessa per pochi. Il massimo resta in fondo al
+// cursore, coi tasselli che dicono quanto di quel che torna è tratt. integrativo.
 //
 // Cifre tutte dal motore (`motore/fondo-pensione.js`): la deduzione abbassa
 // l'imposta, non il reddito, quindi la soglia non si sposta. Dalla norma, non
@@ -17,6 +18,7 @@ import Icona from './Icona';
 
 const VERDE = '#16a34a', BLU = '#2563eb', ROSSO = '#dc2626';
 const PASSO = 50;
+const PARTENZA = 500; // € da cui parte il cursore: una cifra che si può versare
 
 /** @type {import('react').CSSProperties} */
 const TASSELLO = { borderRadius: 7, color: '#fff', fontSize: '.78rem', fontWeight: 700, display: 'flex', alignItems: 'center',
@@ -74,23 +76,24 @@ function Finestra({ lordoAnno, settings, anno, iniziale, massimo, onChiudi }) {
 export default function FondoPensione({ lordoAnno, settings, anno }) {
   const [aperta, setAperta] = useState(false);
   const meglio = useMemo(() => versamentoMigliore(lordoAnno, settings), [lordoAnno, settings]);
-  const effetto = useMemo(() => effettoVersamento(lordoAnno, settings, meglio.migliore), [lordoAnno, settings, meglio.migliore]);
-  // Solo quando fa tornare anche tratt. integrativo: è lì che il riquadro ha qualcosa da dire.
-  if (!(meglio.migliore > 0 && effetto.voci.trattamentoIntegrativo > 0)) return null;
+  // Quanto torna ogni 100 €, misurato su 1.000 (la deduzione si arrotonda all'euro).
+  const ogni100 = useMemo(() => Math.round(effettoVersamento(lordoAnno, settings, 1000).risparmio / 10), [lordoAnno, settings]);
+  // Senza imposta da ridurre (o se 1.000 € tolgono già il tratt. integrativo) non c'è niente da consigliare.
+  if (!(meglio.migliore > 0 && ogni100 > 0)) return null;
   return (
     <>
       <button type="button" onClick={() => setAperta(true)}
         style={{ display: 'flex', gap: '.6rem', alignItems: 'center', width: '100%', padding: '.55rem 0', background: 'none', border: 'none',
           borderTop: '1px solid var(--c-border)', font: 'inherit', color: 'inherit', cursor: 'pointer', textAlign: 'left' }}>
         <span style={{ fontSize: '1.3rem', lineHeight: 1 }}><Icona nome="soldi" piastrella colore={VERDE} /></span>
-        <span style={{ flex: 1 }}>Col fondo pensione ne riprendi una parte
+        <span style={{ flex: 1 }}>Fondo pensione: ogni 100 € versati, ~{ogni100} € tornano
           <small style={{ display: 'block', color: 'var(--c-text-2)', fontSize: '.78rem' }}>
-            {euroCella(meglio.migliore)} entro il 31/12 → ~{euroCella(effetto.risparmio)} col 730
+            col 730, se li versi entro il 31/12
           </small>
         </span>
         <strong style={{ color: BLU, whiteSpace: 'nowrap' }}>Come ›</strong>
       </button>
-      {aperta && <Finestra lordoAnno={lordoAnno} settings={settings} anno={anno} iniziale={meglio.migliore}
+      {aperta && <Finestra lordoAnno={lordoAnno} settings={settings} anno={anno} iniziale={Math.min(PARTENZA, meglio.migliore)}
         massimo={meglio.massimo} onChiudi={() => setAperta(false)} />}
     </>
   );
