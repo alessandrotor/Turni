@@ -174,6 +174,7 @@ conguaglio di dicembre 2026 torna con la busta vera entro la forchetta.
   dati (un riscontro lo verifica); la pagina non chiede niente all'apertura;
   rispetta la regola sul messaggio della sezione 1.
 - *Mockup:* sì. *Scadenza utile:* prima delle buste di dicembre.
+- *Stato:* è il lavoro in corso (novembre 2026), scelto come primo.
 
 **A2. Giro di controllo sui testi che parlano di restituzione**
 - *Perché:* la regola sul messaggio. Il riquadro la rispetta; avvisi, popup,
@@ -218,8 +219,10 @@ conguaglio di dicembre 2026 torna con la busta vera entro la forchetta.
   backup che nasce dai dati (turni aggiunti dopo l'ultimo backup), non da un
   timer né da un contrassegno «già visto».
 - *Finita quando:* rispetta «un avviso alla volta» e ha il suo posto in
-  `check-avvisi.mjs`. Va provata su un iPhone vero: chiedere a chi mantiene il
-  progetto.
+  `check-avvisi.mjs`.
+- *Limite noto:* chi mantiene il progetto non ha un iPhone su cui provare
+  (novembre 2026). Si fanno le protezioni possibili e nel riferire si dice che
+  su iPhone non è verificato; non lo si dà per funzionante.
 - *Mockup:* no per il promemoria, sì se cambia l'invito a installare.
 
 **A6. Farsi riconoscere da fuori**
@@ -255,13 +258,18 @@ store e dal contatore visite, non da telemetria.
   più grosso della funzione che dà credibilità a tutto il resto.
 - *Cosa:* dividere il lettore per programma paghe (uno per file, come il motore
   fa coi programmi paghe) e aggiungere il secondo.
-- *Quale:* lo decidono le buste dei tester. Senza almeno due buste vere di quel
+- *Quale:* lo decidono le buste dei tester. Chi mantiene il progetto conta di
+  procurarsi buste non Zucchetti: senza almeno due buste vere dello stesso
   programma non si comincia.
 - *Finita quando:* il lettore nuovo ha il suo riscontro, e la pagina resta senza
   rete (`check-verifica-busta.mjs` verde).
 
 **B3. Commercio e Pubblici esercizi verificati**
 - *Cosa:* portare due contratti da «non verificato» a «verificato».
+- *Stato:* per ora non ci sono buste di altri contratti in arrivo, quindi
+  questa voce aspetta. Arriveranno invece buste di colleghi del Turismo, con
+  livelli e orari diversi: servono a rafforzare il contratto che c'è, ognuna
+  come riscontro.
 - *Attenzione:* un contratto si dichiara verificato solo quando una busta vera
   torna. Mai tarando i valori per far tornare una busta sola: `CLAUDE.md`
   racconta il caso della malattia integrata da un datore.
@@ -299,9 +307,10 @@ store e dal contatore visite, non da telemetria.
 
 **B7. Primo turno senza storico**
 - *Perché:* chi arriva dallo store non ha uno storico da cui proporre gli orari.
-- *Da decidere:* se accanto alla durata si offrono orari di inizio come
-  scorciatoie. La regola dice che l'app non inventa un orario; chi mantiene il
-  progetto non ha ancora scelto.
+- *Deciso:* solo la durata. Bottoni con le durate ricavate dalle ore
+  settimanali; l'ora di inizio la scrive l'utente. Niente orari di inizio
+  proposti: l'app non inventa un orario. Dal secondo turno propone lo storico.
+- *Mockup:* sì.
 
 **B8. Cose piccole**
 - Invito a provare l'app nell'immagine di «Condividi la settimana»
