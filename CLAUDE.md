@@ -18,6 +18,22 @@ dire «è online» va guardato il sito, non il codice.
 scelte già prese, elenco dei lavori per stadio, cosa si decide da soli e cosa
 si chiede. Chi prende in mano il progetto lo legge dopo questo file.
 
+## Quale modello per cosa (per risparmiare token)
+
+La sessione principale fa il lavoro che chiede ragionamento: motore, regole,
+interfaccia, testi, decisioni. Il lavoro meccanico con tanto output si passa
+agli agenti in `.claude/agents/`, che girano su modelli più economici e
+riferiscono solo l'esito: `esecutore` (Haiku: build, riscontri, git),
+`verificatore` (Sonnet: prove nel browser), `ricercatore` (Sonnet: ricerche web).
+
+- **Si delega solo se conviene.** Un comando o due si fanno direttamente:
+  avviare un agente costa più di un `git status`. Conviene quando l'output è
+  lungo (riscontri, build, log del browser, pagine web) o i passi sono tanti.
+- **Il tempo conta più dei token.** Qualche secondo in più va bene; un compito
+  da due minuti non deve diventare da dieci. Nel dubbio, si fa direttamente.
+- **Fable non si usa mai**, né come modello di un agente né altrove, se chi
+  mantiene il progetto non lo chiede espressamente.
+
 ## La parola d'ordine: frictionless
 
 **Ogni cosa che l'app chiede all'utente deve guadagnarsi il diritto di
