@@ -1579,8 +1579,8 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
               fine dell'anno il conto torna uguale: quello che non hai preso mese per mese
               arriva col conguaglio di dicembre.
               <br /><br />
-              <strong>Non contarlo mai</strong>: vedi ~100 € in meno al mese, ma non rischi di
-              doverli restituire. Conviene a chi ha <strong>più datori nello stesso anno</strong>,
+              <strong>Non contarlo mai</strong>: vedi ~100 € in meno al mese, ma a dicembre
+              nessuna trattenuta. Conviene a chi ha <strong>più datori nello stesso anno</strong>,
               contratti a termine o un reddito che cambia molto: sono i casi in cui il datore lo
               accredita credendo di essere l'unico, e poi si torna indietro. Va chiesto
               <strong> anche al datore</strong>, per iscritto: questa scelta dice all'app di non

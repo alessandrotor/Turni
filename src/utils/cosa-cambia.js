@@ -12,6 +12,7 @@ import { progressiviDellAnno } from '../motore/conguaglio.js';
 import { capienzaProgressiva } from '../motore/capienza.js';
 import { nettoDelMeseConPremio } from '../motore/premio-risultato.js';
 import { calcBonusMargin, BONUS_STATUS } from '../motore/bonus.js';
+import { costoSoglia } from '../motore/restituzione.js';
 import { getDaysInMonth } from './dates.js';
 
 // IL MESE IN CORSO SALE COI TURNI, come la barra del calendario: stesso motore, stessa data
@@ -125,6 +126,7 @@ export function calcolaCosaCambia({
   let superaSoglia = false;
   let rientraSottoSoglia = false;
   let sogliaLorda = null;
+  let costoMax = null;
 
   if (rateAvailable) {
     const payMapBefore = mapPrima;
@@ -146,6 +148,7 @@ export function calcolaCosaCambia({
 
     superaSoglia = sotto(prima) && !sotto(dopo);
     sogliaLorda = dopo.thresholdFullGross ?? null;
+    if (superaSoglia) costoMax = costoSoglia(settings).perditaMax;
     rientraSottoSoglia = !sotto(prima) && sotto(dopo);
   }
 
@@ -176,5 +179,6 @@ export function calcolaCosaCambia({
       ? `${new Date(year, month, 1).toLocaleDateString('it-IT', { month: 'long' }).replace(/^./, (c) => c.toUpperCase())} ha già le ${(Math.round(monthlyContractHours(settings) * 10) / 10).toLocaleString('it-IT')} h ordinarie che la busta paga: fino a ${settings.expectedWeeklyHours} h a settimana questo turno non aggiunge euro.`
       : null,
     sogliaLorda,
+    costoMax,
   };
 }

@@ -49,7 +49,7 @@ function Risposta({ lordo, impostazioni }) {
   if (r.posizione === POSIZIONE.DENTRO) {
     return (
       <Bilancia titolo={titolo} perso={r.perso} compensa={r.compensa} colore={ROSSO}
-        conclusione={`Alla fine ci perdi ~${euroCella(tondo(r.totale))}`}
+        conclusione={`Superarla ti costa ~${euroCella(tondo(r.totale))} l'anno`}
         sotto={r.mancaPareggio > 0 ? `e bastano ~${euroCella(tondo(r.mancaPareggio))} lordi in più per tornare in pari` : null} />
     );
   }
@@ -92,7 +92,7 @@ function Finestra({ settings, onChiudi }) {
             </div>
           </div>
           <Risposta lordo={lordo} impostazioni={impostazioni} />
-          <p className="form-hint">Segna i turni e la stima si fa da sola, coi tuoi numeri. Stima BETA, su un solo datore di lavoro.</p>
+          <p className="form-hint">Segna i turni e la stima si fa da sola, coi tuoi numeri. È una stima BETA su un solo datore di lavoro: non conosce altri redditi, figli e spese.</p>
         </div>
       </div>
     </div>

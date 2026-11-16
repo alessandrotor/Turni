@@ -132,7 +132,7 @@ export function PopupConguaglio({
       </table>
       {perchéConguaglio && <p className="form-hint">{perchéConguaglio}</p>}
       {conguaglio.centrale.voci.trattamentoIntegrativo > SOGLIA_RATEIZZAZIONE && (
-        <p className="form-hint">Il trattamento integrativo da restituire, oltre i 60 €, si paga a rate.</p>
+        <p className="form-hint">La trattenuta del tratt. integrativo, oltre i 60 €, si paga a rate.</p>
       )}
       {/* LE CIFRE VERE, dove il modello non può saperle: i mesi del
           montante li conosce solo come totale. Facoltative, dentro il
@@ -242,7 +242,7 @@ export function PopupSoglia({
         </p>
       )}
       <p className="form-hint form-hint--warn">
-        Con due datori ti riprendono di più.
+        L'app vede un solo datore: con due, la trattenuta è più alta di così.
       </p>
     </Finestra>
   );

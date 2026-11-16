@@ -183,19 +183,19 @@ export default function RiquadroTI({ anno = null,
     titolo = 'sospeso'; tono = GRIGIO;
     grande = (
       <p className="ti-stato">
-        Segnato come sospeso: niente da restituire.{' '}
+        Segnato come sospeso: a dicembre nessuna trattenuta.{' '}
         <button type="button" className="linklike" onClick={() => onUpdateSettings(patchTiSospeso(false))}>Annulla</button>
       </p>
     );
   } else if (posizione === POSIZIONE.OLTRE) {
-    titolo = rischio.daRestituire > 0 ? 'supererai la soglia' : 'oltre la soglia'; tono = rischio.daRestituire > 0 ? ROSSO : VERDE;
+    titolo = rischio.daRestituire > 0 ? 'oltre la soglia, di questo passo' : 'oltre la soglia'; tono = rischio.daRestituire > 0 ? ARANCIO : VERDE;
     sospendi = rischio.daRestituire > 0;
     if (dicembre) grande = null;
     else if (rischio.daRestituire > 0) {
       grande = (
-        <Grande icona="restituisci" colore={ROSSO}
-          sotto={<>presi in più in busta, non persi: paghi meno IRPEF{rischio.rateizzabile ? '. A rate' : ''}. {perche}</>}>
-          {euroCella(rischio.daRestituire)} a dicembre
+        <Grande icona="restituisci" colore={ARANCIO}
+          sotto={<>te ne tornano quasi altrettanti in tasse{rischio.rateizzabile ? '. A rate' : ''}. È una stima: {perche}</>}>
+          trattenuta di {euroCella(rischio.daRestituire)} a dicembre
         </Grande>
       );
     } else {
@@ -203,7 +203,7 @@ export default function RiquadroTI({ anno = null,
       // può sbagliare, e la busta di luglio 2026 lo aveva.
       grande = (
         <p className="ti-stato">
-          Niente da restituire{daCopiare ? <>, se nelle buste non l'hai mai avuto.{' '}
+          Nessuna trattenuta a dicembre{daCopiare ? <>, se nelle buste non l'hai mai avuto.{' '}
             <button type="button" className="linklike" onClick={onApriConguaglio}>L'hai avuto?</button></> : '.'}
         </p>
       );
@@ -300,12 +300,12 @@ export default function RiquadroTI({ anno = null,
       {bilancia && (
         <Bilancia titolo={posizione === POSIZIONE.DENTRO ? 'Perché ci perdi poco' : 'Se la superi'}
           perso={-costo.voci.bonus} compensa={-costo.voci.bonus - costo.perditaMax} colore={ROSSO}
-          conclusione={`Alla fine ci perdi al massimo ${euroCella(costo.perditaMax)}`}
+          conclusione={`Superarla ti costa al massimo ~${euroCella(costo.perditaMax)} l'anno`}
           sotto={margineInOre(costo.larghezzaBuca, settings) > 0 ? `e bastano ~${margineInOre(costo.larghezzaBuca, settings)} ore in più per recuperarli` : null} />
       )}
       {!sospeso && daRestituire > 0 && !bilancia && (
-        <Riga icona="restituisci" colore={ROSSO} titolo={posizione === POSIZIONE.DENTRO ? 'Torna indietro' : 'Se la superi'}
-          sotto="a dicembre, ma le tasse calano quasi altrettanto" valore={euroCella(daRestituire)} />
+        <Riga icona="restituisci" colore={ROSSO} titolo={posizione === POSIZIONE.DENTRO ? 'Trattenuta a dicembre' : 'Se la superi, trattenuta a dicembre'}
+          sotto="ma te ne tornano quasi altrettanti in tasse" valore={euroCella(daRestituire)} />
       )}
 
       {!sospeso && anno && <FondoPensione lordoAnno={bonus.income} settings={settings} anno={anno} />}

@@ -19,11 +19,9 @@ import { fileURLToPath } from 'node:url';
 
 const RADICE = join(dirname(fileURLToPath(import.meta.url)), '..');
 const VISTI = {
-  'src/components/CalendarView.jsx': 1,
   'src/components/CiPerdo.jsx': 3,
-  'src/components/PopupFiscali.jsx': 6,
-  'src/components/RiquadroTI.jsx': 4,
-  'src/components/Settings.jsx': 1,
+  'src/components/PopupFiscali.jsx': 4,
+  'src/components/RiquadroTI.jsx': 2,
 };
 
 // Le parole minuscole: `daRestituire` e `rischioRestituzione` sono nomi nel codice.

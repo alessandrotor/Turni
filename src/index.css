@@ -1307,13 +1307,6 @@ input, select, textarea { font: inherit; }
   color: var(--c-text-2);
   font-size: .82rem;
 }
-.cosa-cambia-avviso {
-  width: 100%;
-  font-size: .78rem;
-  color: #b91c1c;
-  font-weight: 600;
-  margin-top: .15rem;
-}
 
 /* Modal semplice per il nome sul foglio turni */
 .name-modal {

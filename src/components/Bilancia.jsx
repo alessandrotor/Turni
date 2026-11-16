@@ -26,7 +26,7 @@ export default function Bilancia({ titolo, perso, compensa, etichettaCompensa = 
   return (
     <div style={{ borderTop: '1px solid var(--c-border)', paddingTop: '.55rem', marginTop: '.2rem' }}>
       <div style={{ fontSize: '.75rem', fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: GRIGIO, marginBottom: '.3rem' }}>{titolo}</div>
-      <div style={riga}><span>Perdi il tratt. integrativo</span><strong style={{ color: ROSSO }}>−{euroCella(perso)}</strong></div>
+      <div style={riga}><span>Trattenuta del tratt. integrativo</span><strong style={{ color: ROSSO }}>−{euroCella(perso)}</strong></div>
       <div style={{ ...barra, width: pct(perso), background: ROSSO }} />
       <div style={riga}><span>{etichettaCompensa}</span><strong style={{ color: VERDE }}>+{euroCella(compensa)}</strong></div>
       <div style={{ ...barra, display: 'flex', overflow: 'hidden', width: pct(Math.max(perso, compensa)) }}>

@@ -1271,7 +1271,7 @@ export default function CalendarView({
                     riga nel riquadro del netto e il suo popup, «perché?». */}
                 <div className="net-subnote">
                   Sull'anno, la stima è {fmt0(netBasis)} € lordi ({PROJECTION_LABEL[netProjection.source]}):
-                  serve per il bonus e per il rischio di restituzione qui sotto, non per questo netto.
+                  serve per il bonus e per la stima di dicembre qui sotto, non per questo netto.
                   Puoi correggerla in Impostazioni.
                 </div>
                 {/* Proiezione costruita su pochi mesi di turni: i mesi dell'anno

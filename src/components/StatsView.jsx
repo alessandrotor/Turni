@@ -7,6 +7,7 @@ import {
   daysInLongStreaks, STREAK_LUNGA,
 } from '../utils/stats';
 import { calcBonusMargin, BONUS_STATUS } from '../motore/bonus';
+import { costoSoglia } from '../motore/restituzione';
 import { TIPO, ETICHETTA } from '../motore/assenze';
 import { ENABLE_NET_CALC } from '../config/features';
 import Icona from './Icona';
@@ -127,6 +128,7 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
   );
   const netSoFar = useMemo(() => months.reduce((s, m) => s + m.net, 0), [months]);
   const bonus = useMemo(() => calcBonusMargin(projection.value, settings), [projection, settings]);
+  const costoMax = useMemo(() => (bonus.nearThreshold ? costoSoglia(settings).perditaMax : 0), [bonus.nearThreshold, settings]);
 
   // Stessa etichetta della fascia 1 del riepilogo di Calendario (a chiamata: una sola fascia).
   const tier1Label = settings.onCall ? 'Straordinarie' : 'Supplementari';
@@ -462,14 +464,14 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
               </div>
               <span className={`bonus-strip-note ${bonus.status === BONUS_STATUS.OLTRE ? 'bonus-strip-note--warn' : ''}`}>
                 {bonus.status === BONUS_STATUS.PIENO && !bonus.nearThreshold && 'Tratt. integrativo pieno: reddito entro le soglie.'}
-                {bonus.status === BONUS_STATUS.PIENO && bonus.nearThreshold && <><Icona nome="avviso" /> Vicino ai 15.000 € di reddito.</>}
+                {bonus.status === BONUS_STATUS.PIENO && bonus.nearThreshold && (costoMax > 0 ? `Vicino alla soglia: superarla costa al massimo ~${fmt0(costoMax)} l'anno.` : 'Vicino alla soglia.')}
                 {bonus.status === BONUS_STATUS.PARZIALE && 'Tratt. integrativo ridotto: reddito oltre i 15.000 €.'}
                 {bonus.status === BONUS_STATUS.OLTRE && <><Icona nome="allarme" /> Reddito oltre i 28.000 €: il tratt. integrativo non spetta.</>}
               </span>
               {bonus.status === BONUS_STATUS.PIENO && (
                 <div className={`bonus-strip-body ${bonus.nearThreshold ? 'bonus-strip-body--warn' : ''}`}>
                   <span className="bonus-strip-label">
-                    {bonus.nearThreshold ? <><Icona nome="avviso" /> Sei vicino alla soglia</> : 'Puoi ancora guadagnare'}
+                    {bonus.nearThreshold ? 'Sei vicino alla soglia' : 'Puoi ancora guadagnare'}
                   </span>
                   <span className="bonus-strip-value">{fmt0(bonus.marginToFull)}</span>
                   <span className="bonus-strip-note">
