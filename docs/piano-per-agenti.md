@@ -362,8 +362,7 @@ lettura con l'IA. Se un compito porta lì, ci si ferma.
 ## 7. Da dove viene questo piano
 
 Dalla ricerca di mercato e dal business plan di novembre 2026 (seconda
-versione), che stanno nel Google Drive di chi mantiene il progetto e non nel
-repository. In breve, quello che serve sapere per lavorare:
+versione), copiati in `docs/strategia/` così come erano scritti. In breve, quello che serve sapere per lavorare:
 
 - **I concorrenti stanno su isole separate.** Le app di turni contano ore e
   hanno gli store, i widget e le sveglie. I calcolatori del netto partono da uno
