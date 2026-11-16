@@ -181,7 +181,12 @@ ancora decisa. Il testo qui sotto è il progetto originale.
 - *Mockup:* sì. *Scadenza utile:* prima delle buste di dicembre.
 - *Stato:* fatto, vedi sopra.
 
-**A2. Giro di controllo sui testi che parlano di restituzione**
+**A2. Giro di controllo sui testi che parlano di restituzione** — FATTO
+(novembre 2026). Corretti due testi (il popup «Come funziona» e la riga «Se la
+superi» del riquadro); gli altri avevano già il pareggio accanto o non ne
+parlano come perdita. `check-testi-restituzione.mjs` conta per file le frasi
+a schermo con «restituire» o «riprendere»: un testo nuovo lo fa diventare
+rosso finché qualcuno non lo rilegge e aggiorna il conto.
 - *Perché:* la regola sul messaggio. Il riquadro la rispetta; avvisi, popup,
   pagina dei termini e testo di presentazione non sono stati ricontrollati.
 - *Cosa:* cercare ogni «restitu», «riprend», «conguaglio» a schermo e nei testi

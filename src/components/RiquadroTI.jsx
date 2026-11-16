@@ -305,7 +305,7 @@ export default function RiquadroTI({ anno = null,
       )}
       {!sospeso && daRestituire > 0 && !bilancia && (
         <Riga icona="restituisci" colore={ROSSO} titolo={posizione === POSIZIONE.DENTRO ? 'Torna indietro' : 'Se la superi'}
-          sotto="da restituire a dicembre" valore={euroCella(daRestituire)} />
+          sotto="a dicembre, ma le tasse calano quasi altrettanto" valore={euroCella(daRestituire)} />
       )}
 
       {!sospeso && anno && <FondoPensione lordoAnno={bonus.income} settings={settings} anno={anno} />}

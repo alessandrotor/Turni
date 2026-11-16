@@ -179,7 +179,7 @@ export function PopupSoglia({
     <Finestra titolo="Come funziona il tratt. integrativo" onChiudi={onChiudi}>
       <p className="form-hint">
         Spetta fino a ~{euroCella(costo.tetto)} lordi l'anno (15.000 € di reddito): se li superi, a dicembre il datore si riprende
-        tutto: {euroCella(erogato)} finora.
+        tutto, {euroCella(erogato)} finora, ma la detrazione sale e le tasse calano quasi altrettanto.
       </p>
       {/* La tabella è un'ALTRA grandezza rispetto alla cifra qui sopra:
           quella è cassa, questa è il saldo di un anno intero. Senza
