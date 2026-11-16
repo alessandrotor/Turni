@@ -270,3 +270,30 @@ export function confrontoConSoglia(lordo, settings = {}, costo = null) {
     },
   };
 }
+
+/**
+ * «Mi riprendono il tratt. integrativo: ci perdo?» per un lordo dell'anno
+ * qualunque, anche senza un turno segnato (la finestra `CiPerdo.jsx`, novembre
+ * 2026). Non è un conto nuovo: è `confrontoConSoglia` letto dalla parte di chi
+ * fa la domanda. `perso` è il tratt. integrativo che sparisce, `compensa`
+ * tutto il resto (tasse, Indennità L. 207/24, il lavoro in più oltre il
+ * tetto): le due cifre fanno sempre `totale`, il saldo rispetto a fermarsi
+ * sotto la soglia. Sotto la soglia non c'è niente da riprendere; e se il
+ * trattamento non spetta comunque (poca IRPEF da compensare) lo si dice,
+ * perché «non te lo riprendono» suonerebbe come «ce l'hai». → check-ci-perdo.mjs
+ *
+ * @returns {{ posizione: string, spetta: boolean, margine: number,
+ *   perso: number, compensa: number, totale: number, mancaPareggio: number }}
+ */
+export function ciPerdo(lordo, settings = {}, costo = null) {
+  const c = costo || costoSoglia(settings);
+  const g = Math.max(0, Number(lordo) || 0);
+  const posizione = posizioneRispettoSoglia(g, settings, c);
+  if (posizione === POSIZIONE.SOTTO) {
+    const spetta = calcNetAnnual(g, settings).trattamentoIntegrativo > 0;
+    return { posizione, spetta, margine: Math.max(0, Math.round(c.tetto - g)), perso: 0, compensa: 0, totale: 0, mancaPareggio: 0 };
+  }
+  const v = confrontoConSoglia(g, settings, c);
+  const perso = -v.voci.bonus;
+  return { posizione, spetta: perso > 0, margine: 0, perso, compensa: v.totale + perso, totale: v.totale, mancaPareggio: mancaAlPareggio(g, settings, c) };
+}

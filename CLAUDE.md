@@ -258,6 +258,13 @@ quanto costa scoprire a dicembre che non spettava.
   troppa deduzione toglie la capienza e il tratt. integrativo sparisce; fra
   15.000 e 28.000 lo fa crescere. Dalla norma, non da una busta.
   `versamentoMigliore()`, → `check-fondo-pensione.mjs`
+  **«Ci perdo?» per chi non ha ancora turni** (`CiPerdo.jsx`): una riga accanto
+  a «Turni da un messaggio», niente cifre finché non la si tocca; la finestra
+  chiede il solo lordo dell'anno e risponde con la stessa bilancia del riquadro
+  (`Bilancia.jsx`, condivisa). Coi turni la riga sparisce e risponde il
+  riquadro. Il link `?ciperdo` apre la finestra a chiunque: è quello da mandare
+  a un collega. Dentro l'app e non una pagina a parte, per scelta di chi
+  mantiene il progetto. `ciPerdo()`, → `check-ci-perdo.mjs`
   **Lavori in corso, in ottica lead**: chi mantiene il progetto la sta
   costruendo anche come porta verso fondi pensione che pagano un referral.
   Vincoli già decisi per i lead: la cifra viene dal motore e mai dal partner

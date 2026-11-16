@@ -161,7 +161,12 @@ un'immagine e si aspetta la scelta prima di scrivere codice.
 Condizione per passare a B: l'app è in produzione, trovabile, e la stima del
 conguaglio di dicembre 2026 torna con la busta vera entro la forchetta.
 
-**A1. Pagina pubblica «Mi riprendono il trattamento integrativo: ci perdo?»**
+**A1. «Mi riprendono il trattamento integrativo: ci perdo?»** — FATTO
+(novembre 2026), come riga e finestra DENTRO l'app (`CiPerdo.jsx`, link
+`?ciperdo`): chi mantiene il progetto non vuole una pagina separata. Resta
+aperto: titolo e anteprima del link `?ciperdo` per WhatsApp e Google (A6), e
+la riga «Spiegalo a un collega» nel riquadro, mostrata in un mockup e non
+ancora decisa. Il testo qui sotto è il progetto originale.
 - *Perché:* nessuno trova l'app. La domanda viene cercata ogni anno fra
   novembre e luglio, e le risposte in rete parlano solo della restituzione.
 - *Cosa:* una pagina raggiungibile senza aver segnato turni. Pochi dati (lordo
@@ -174,7 +179,7 @@ conguaglio di dicembre 2026 torna con la busta vera entro la forchetta.
   dati (un riscontro lo verifica); la pagina non chiede niente all'apertura;
   rispetta la regola sul messaggio della sezione 1.
 - *Mockup:* sì. *Scadenza utile:* prima delle buste di dicembre.
-- *Stato:* è il lavoro in corso (novembre 2026), scelto come primo.
+- *Stato:* fatto, vedi sopra.
 
 **A2. Giro di controllo sui testi che parlano di restituzione**
 - *Perché:* la regola sul messaggio. Il riquadro la rispetta; avvisi, popup,

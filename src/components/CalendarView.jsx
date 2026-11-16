@@ -11,7 +11,7 @@ import { isMensilizzato } from '../motore/ccnl';
 import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../motore/bonus';
 import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../motore/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
-import AvvisoContratto from './AvvisoContratto'; import BarraSelezione from './BarraSelezione'; import useSelezioneGiorni from '../hooks/useSelezioneGiorni'; // import CopiaSettimana from './CopiaSettimana'; — sospesa, vedi il file
+import AvvisoContratto from './AvvisoContratto'; import CiPerdo from './CiPerdo'; import BarraSelezione from './BarraSelezione'; import useSelezioneGiorni from '../hooks/useSelezioneGiorni'; // import CopiaSettimana from './CopiaSettimana'; — sospesa, vedi il file
 import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../motore/assenze';
@@ -767,7 +767,7 @@ export default function CalendarView({
 
       {/* Da testo: locale, c'è anche senza il servizio di riconoscimento. */}
       <div className="import-bar">
-        <ImportTesto esistenti={allShifts} onConfirm={onImportShifts} nome={settings.workerName} onNome={(workerName) => onUpdateSettings?.({ workerName })} />
+        <ImportTesto esistenti={allShifts} onConfirm={onImportShifts} nome={settings.workerName} onNome={(workerName) => onUpdateSettings?.({ workerName })} /> <CiPerdo settings={settings} riga={allShifts.length === 0} />
       </div>
 
       {/* Main shifts view: Timeline or Grid. Scorrere di lato sui giorni cambia

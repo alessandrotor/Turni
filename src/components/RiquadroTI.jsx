@@ -18,6 +18,7 @@ import { tiSospeso, patchTiSospeso } from '../motore/net';
 import { useEffect, useState } from 'react';
 import Icona from './Icona';
 import FondoPensione from './FondoPensione';
+import Bilancia from './Bilancia';
 import useOggi from '../hooks/useOggi';
 import { confrontaStima, KEY_STIMA } from '../utils/salto-stima';
 
@@ -63,36 +64,6 @@ function Riga({ icona, colore, titolo, sotto, valore, onClick = null }) {
   return onClick
     ? <button type="button" onClick={onClick} style={{ ...stile, cursor: 'pointer' }}>{contenuto}</button>
     : <div style={stile}>{contenuto}</div>;
-}
-
-// «Se la superi», come bilancia (mockup A, novembre 2026). Accanto a «ti ridanno 90 €»,
-// «700 € da restituire» sembrava una contraddizione, e una perdita. Non lo è: superata la
-// soglia il tratt. integrativo sparisce ma la detrazione sale, e le tasse calano quasi
-// altrettanto. Due barre che si pesano: il pezzo a righe che resta scoperto è la perdita
-// vera (`costoSoglia`). Cifre sull'anno intero, tutte dal motore.
-function Bilancia({ costo, titolo, ore }) {
-  const perso = -costo.voci.bonus;
-  const compensa = perso - costo.perditaMax;
-  const quota = `${Math.max(0, Math.min(100, (compensa / perso) * 100))}%`;
-  const barra = { height: '.8rem', borderRadius: 4, margin: '.15rem 0 .45rem' };
-  const riga = { display: 'flex', justifyContent: 'space-between', gap: '.5rem', fontSize: '.85rem' };
-  const righe = `repeating-linear-gradient(45deg, #fee2e2 0 4px, #fca5a5 4px 7px)`;
-  return (
-    <div style={{ borderTop: '1px solid var(--c-border)', paddingTop: '.55rem', marginTop: '.2rem' }}>
-      <div style={{ fontSize: '.75rem', fontWeight: 800, letterSpacing: '.04em', textTransform: 'uppercase', color: GRIGIO, marginBottom: '.3rem' }}>{titolo}</div>
-      <div style={riga}><span>Perdi il tratt. integrativo</span><strong style={{ color: ROSSO }}>−{euroCella(perso)}</strong></div>
-      <div style={{ ...barra, background: ROSSO }} />
-      <div style={riga}><span>Ma paghi meno tasse</span><strong style={{ color: VERDE }}>+{euroCella(compensa)}</strong></div>
-      <div style={{ ...barra, display: 'flex', overflow: 'hidden' }}>
-        <span style={{ width: quota, background: VERDE }} />
-        <span style={{ flex: 1, background: righe, boxShadow: `inset 0 0 0 1.5px ${ROSSO}` }} />
-      </div>
-      <div style={{ textAlign: 'right' }}>
-        <strong style={{ color: ROSSO, fontSize: '1.05rem' }}>Alla fine ci perdi al massimo {euroCella(costo.perditaMax)}</strong>
-        {ore > 0 && <small style={{ display: 'block', color: 'var(--c-text-2)', fontSize: '.78rem' }}>e bastano ~{ore} ore in più per recuperarli</small>}
-      </div>
-    </div>
-  );
 }
 
 // Oltre la soglia, la busta di dicembre ha DUE righe: il tratt. integrativo
@@ -327,8 +298,10 @@ export default function RiquadroTI({ anno = null,
           valore={cong.valore} onClick={onApriConguaglio} />
       )}
       {bilancia && (
-        <Bilancia costo={costo} titolo={posizione === POSIZIONE.DENTRO ? 'Perché ci perdi poco' : 'Se la superi'}
-          ore={margineInOre(costo.larghezzaBuca, settings)} />
+        <Bilancia titolo={posizione === POSIZIONE.DENTRO ? 'Perché ci perdi poco' : 'Se la superi'}
+          perso={-costo.voci.bonus} compensa={-costo.voci.bonus - costo.perditaMax} colore={ROSSO}
+          conclusione={`Alla fine ci perdi al massimo ${euroCella(costo.perditaMax)}`}
+          sotto={margineInOre(costo.larghezzaBuca, settings) > 0 ? `e bastano ~${margineInOre(costo.larghezzaBuca, settings)} ore in più per recuperarli` : null} />
       )}
       {!sospeso && daRestituire > 0 && !bilancia && (
         <Riga icona="restituisci" colore={ROSSO} titolo={posizione === POSIZIONE.DENTRO ? 'Torna indietro' : 'Se la superi'}
