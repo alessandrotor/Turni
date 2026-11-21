@@ -307,12 +307,50 @@ store e dal contatore visite, non da telemetria.
   busta possono rivelare il datore: non escono dal telefono.
 - *Mockup:* sì.
 
-**B6. Ferie e permessi residui**
-- *Perché:* è una cosa che le app di turni contano e che la busta stampa, quindi
-  si può verificare.
-- *Cosa:* maturato, goduto, residuo.
-- *Attenzione:* la maturazione è una regola di contratto: entra nel motore solo
-  con una busta che la conferma.
+**B6. Permessi ROL: quanti ne restano, quando scadono, cosa conviene** (solo i
+ROL ed ex festività; le ferie dopo, per scelta di chi mantiene il progetto)
+- *Perché:* nel Turismo i permessi non goduti si fruiscono «di norma» entro il
+  30 giugno dell'anno dopo e, se non goduti entro settembre, si pagano. Chi
+  non lo sa li lascia scadere senza saperlo, o non sa che diventano soldi.
+- *I fatti, da verificare sul testo prima del codice* (ricerca di novembre
+  2026, da una guida e dal testo 2018, NON dal consolidato 2024):
+  - pubblici esercizi, tempo pieno: 104 ore l'anno, cioè 72 di ROL e 32 di ex
+    festività (art. 114, numero dato da un rinvio dell'art. 14 del
+    consolidato);
+  - assunti dal 1° gennaio 2018: 32 ore nei primi 24 mesi, 68 dal 25° al
+    36°, 104 dal 37° (contratti a termine compresi, stagionali esclusi);
+  - si maturano a ratei: un dodicesimo ogni 30 giorni, la frazione sotto i 15
+    giorni non conta; niente maturazione nelle assenze non retribuite;
+  - non goduti entro settembre dell'anno dopo: «pagati con la retribuzione in
+    atto». La busta esatta in cui arrivano non è scritta;
+  - part-time: probabilmente in proporzione all'orario, ma NON trovato nel
+    testo. Senza questo, per chi è part-time la cifra non si scrive;
+  - nessuna norma dà al lavoratore il diritto di scegliere il pagamento: il
+    pagamento è la conseguenza del non averli goduti.
+- *I dati:* il residuo lo dice la busta (Zucchetti stampa maturato, goduto e
+  residuo dei permessi), non l'app. Il lettore dei cedolini va esteso a quel
+  riquadro; chi non ha il PDF lo copia una volta. Da lì l'app aggiunge i ratei
+  dei mesi dopo e toglie i permessi segnati nel calendario.
+- *Il motore:* una funzione che divide il residuo in lotti per anno di
+  maturazione, ognuno con la sua scadenza (si consumano prima i più vecchi);
+  e una che dice quanto vale un lotto se viene pagato: ore × paga oraria in
+  lordo, e l'effetto sull'anno in cui arriva (può spostare rispetto alla
+  soglia dei 15.000: si usa `confrontoConSoglia()`, non un conto nuovo).
+  Con la tabella di anzianità serve la data di assunzione (`hireDate`, già
+  in Impostazioni).
+- *L'interfaccia:* una riga nel riepilogo SOLO quando un lotto scade entro tre
+  mesi («16 h di permessi: goderle entro il 30 giugno»). Al tocco, le due
+  strade affiancate: goderli (quante giornate sono, e il periodo di assenza
+  già pronto) o lasciarli pagare (quanto, quando, e l'effetto sulla soglia).
+  L'app dice i fatti e il rischio, non sceglie: in soldi le due strade quasi
+  si equivalgono.
+- *Riscontro:* una busta col riquadro dei permessi (e una con la
+  liquidazione, quando capita). Ogni regola qui sopra entra nel motore solo
+  col suo riscontro; finché non c'è, l'interfaccia dice «non verificato su una
+  busta».
+- *Fonti della ricerca:* lexplain.it (guida ai ROL nei pubblici esercizi),
+  testo CCNL 8 febbraio 2018 su studiocerbone.com, consolidato 2024 su
+  ilccnl.it.
 - *Mockup:* sì.
 
 **B7. Primo turno senza storico**
