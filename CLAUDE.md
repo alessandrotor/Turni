@@ -572,6 +572,13 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   il CCNL Turismo le esclude dal computo delle ferie (art. 134
   Fipe/Federalberghi), e in busta sono una festività. `giorniDiRiposo()`,
   → `check-periodo-assenza.mjs`
+- **Permessi ROL ed ex festività** (art. 114): un dodicesimo delle ore annue per
+  ogni mese con almeno 15 giorni in forza, e le ore annue riproporzionate al
+  part-time sulle ore settimanali. Il testo del contratto il part-time non lo
+  diceva: lo dicono le buste di settembre e ottobre 2026, che a un assunto nei
+  primi 24 mesi danno 32 × 60%. Gli scaglioni per anzianità oltre il 24° mese
+  vengono dalla norma, non ancora da una busta. `maturatoPermessi()`,
+  → `check-busta-permessi-2026.mjs`
 - **Malattia**: la carenza si conta per EVENTO, non per anno. Percentuali e
   giorni NON sono verificati su nessun cedolino, e **le buste che la contengono
   non fanno testo**: due mesi mostrano una scomposizione completa e invitante,

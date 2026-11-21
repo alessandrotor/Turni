@@ -323,8 +323,10 @@ ROL ed ex festività; le ferie dopo, per scelta di chi mantiene il progetto)
     giorni non conta; niente maturazione nelle assenze non retribuite;
   - non goduti entro settembre dell'anno dopo: «pagati con la retribuzione in
     atto». La busta esatta in cui arrivano non è scritta;
-  - part-time: probabilmente in proporzione all'orario, ma NON trovato nel
-    testo. Senza questo, per chi è part-time la cifra non si scrive;
+  - part-time: in proporzione alle ore settimanali. Non sta nel testo, ma lo
+    dicono le buste di settembre e ottobre 2026 (32 × 60% = 19,2 l'anno,
+    1,60 al mese): FATTO nel motore, `maturatoPermessi()`,
+    → `check-busta-permessi-2026.mjs`;
   - nessuna norma dà al lavoratore il diritto di scegliere il pagamento: il
     pagamento è la conseguenza del non averli goduti.
 - *I dati:* il residuo lo dice la busta (Zucchetti stampa maturato, goduto e
