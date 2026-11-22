@@ -17,7 +17,9 @@ const SOGLIA_ASSE = 8;      // px prima di decidere se il gesto è orizzontale
 const FRENO = 0.45;         // la griglia fa meno strada del dito
 const RITORNO = 'transform .22s cubic-bezier(.2, .7, .3, 1), opacity .22s ease-out';
 
-export default function useSfoglio(meseChiave, onSfoglia) {
+// `fermo()` vero = un altro gesto ha preso il dito (trascinare un turno per
+// copiarlo, useSelezioneGiorni.js): la griglia non deve scivolare di lato.
+export default function useSfoglio(meseChiave, onSfoglia, fermo = () => false) {
   // Da che parte è arrivato il mese che si sta guardando. Aggiornato solo
   // quando il mese cambia: un render qualsiasi a metà animazione non deve
   // interromperla. Vale anche per le frecce e «Oggi».
@@ -63,6 +65,7 @@ export default function useSfoglio(meseChiave, onSfoglia) {
     const g = gesto.current;
     const t = e.touches[0];
     if (!g || !t || e.touches.length !== 1) return;
+    if (fermo()) { gesto.current = null; torna(); return; }
     const dx = t.clientX - g.x;
     const dy = t.clientY - g.y;
     // L'asse si decide una volta: chi sta scorrendo la pagina in verticale

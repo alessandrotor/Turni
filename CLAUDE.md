@@ -93,7 +93,12 @@ In pratica, e sono regole, non aspirazioni:
   nello storico esiste davvero, mai una media, e il riscontro lo verifica.
   Più giorni con lo stesso orario: pressione lunga su un giorno vuoto, tocchi
   sugli altri, un tocco sull'orario (`BarraSelezione.jsx`, gli stessi orari
-  dello storico) e poi «Annulla». «Copia la settimana scorsa»
+  dello storico) e poi «Annulla». Un turno già segnato si STENDE: pressione
+  lunga sulla sua pillola, il dito trascinato sui giorni, e al rilascio è
+  copiato su quelli vuoti (gli occupati si saltano e lo si dice), con
+  «Annulla»; durante il trascinamento la griglia non sfoglia i mesi
+  (`useSelezioneGiorni.js`). Caso tipico: un giorno di ferie da stendere sulla
+  settimana. «Copia la settimana scorsa»
   (`CopiaSettimana.jsx`) è sospesa: commentata in `CalendarView.jsx`, non tolta.
 - **Per ciò che si recupera, l'annulla dopo; la conferma prima mai.** Una
   domanda «sei sicuro?» costa un tocco a tutti per un errore che fa uno, e

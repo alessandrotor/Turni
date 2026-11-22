@@ -105,7 +105,7 @@ export default function CalendarView({
   // Giorno da evidenziare arrivando da un'altra pagina: la cella si illumina e ci si scorre sopra.
   focusDate = null,
 }) {
-  const [importParsed, setImportParsed] = useState(null); const sel = useSelezioneGiorni();
+  const [importParsed, setImportParsed] = useState(null); const sel = useSelezioneGiorni(onAggiungiAnnullabili);
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState(null);
   const [showNetDetail, setShowNetDetail] = useState(false);
@@ -621,7 +621,7 @@ export default function CalendarView({
   // Lo sfoglio col pollice e il mese che entra di lato (`hooks/useSfoglio.js`).
   const meseChiave = year * 12 + month;
   const { classeEntrata, contenuto, gestori } = useSfoglio(
-    meseChiave, (verso) => onMonthChange(addMonths(currentMonth, verso)),
+    meseChiave, (verso) => onMonthChange(addMonths(currentMonth, verso)), () => sel.trascinando,
   );
 
   return (
@@ -824,7 +824,7 @@ export default function CalendarView({
                   dateStr === focusDate ? 'cal-cell--focus' : '',
                   dayShifts.some(s => s.note) ? 'cal-cell--nota' : '', // una nota si vede a colpo d'occhio
                 ].join(' ')}
-                onClick={e => { if (e.target === e.currentTarget) onAddShift(dateStr); }} {...sel.props(dateStr, dayShifts.length === 0)}
+                onClick={e => { if (e.target === e.currentTarget) onAddShift(dateStr); }} {...sel.props(dateStr, dayShifts.length === 0, dayShifts)}
               >
                 <button
                   type="button"
@@ -845,7 +845,7 @@ export default function CalendarView({
                     const ore = calcShiftMinutes(s) / 60;
                     return (
                       <button
-                        key={s.id}
+                        key={s.id} data-turno={s.id}
                         type="button"
                         className={`cal-shift-pill${assente ? ` cal-shift-pill--${t}` : ''}`}
                         onClick={e => { e.stopPropagation(); onEditShift(s); }}
