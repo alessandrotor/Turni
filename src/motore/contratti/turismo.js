@@ -25,8 +25,10 @@ export default {
     fine: "06:00"
   },
   // Permessi (ROL + ex festività), art. 114. Ore l'anno a tempo pieno; per gli
-  // assunti dal 2018 crescono con l'anzianità (mesi compiuti → ore). Non goduti
-  // entro il 30 giugno dell'anno dopo, si pagano entro settembre. Riproporzionati
+  // assunti dal 2018 crescono con l'anzianità (mesi compiuti → ore). Si godono
+  // «di norma» entro il 30 giugno dell'anno dopo; quelli ancora non goduti a fine
+  // settembre si pagano «con la retribuzione in atto» (c. 7 nel testo 2018): il
+  // 30 giugno non obbliga a pagarli, settembre sì. Riproporzionati
   // al part-time: riscontrato sulle buste di settembre e ottobre 2026
   // (→ check-busta-permessi-2026.mjs).
   permessiRol: {
