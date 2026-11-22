@@ -579,6 +579,12 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   primi 24 mesi danno 32 × 60%. Gli scaglioni per anzianità oltre il 24° mese
   vengono dalla norma, non ancora da una busta. `maturatoPermessi()`,
   → `check-busta-permessi-2026.mjs`
+  **Conta la scadenza, non il saldo**: nel Turismo si godono «di norma» entro il
+  30 giugno dell'anno dopo, e quelli rimasti a fine settembre si pagano. Le ore
+  si dividono per anno di maturazione (`lottiPermessi()`), le godute consumano
+  prima le più vecchie, e la riga nel riepilogo (`PermessiRol.jsx`) dice quante
+  ore usare entro quale 30 settembre. Il punto di partenza è la riga «Permessi»
+  di una busta, letta dal PDF o copiata a mano come il montante.
 - **Malattia**: la carenza si conta per EVENTO, non per anno. Percentuali e
   giorni NON sono verificati su nessun cedolino, e **le buste che la contengono
   non fanno testo**: due mesi mostrano una scomposizione completa e invitante,

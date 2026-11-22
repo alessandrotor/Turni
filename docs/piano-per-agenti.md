@@ -307,7 +307,7 @@ store e dal contatore visite, non da telemetria.
   busta possono rivelare il datore: non escono dal telefono.
 - *Mockup:* sì.
 
-**B6. Permessi ROL: quanti ne restano, quando scadono, cosa conviene** (solo i
+**B6. Permessi ROL: quanti ne restano, quando scadono, cosa conviene** — FATTA la prima parte (novembre 2026): riga nel riepilogo e finestra coi lotti e la loro scadenza, busta dal PDF o a mano. Resta: «Segnali» che apre il periodo di assenza già pronto, e la riga che compare da sola nei mesi prima della scadenza. (solo i
 ROL ed ex festività; le ferie dopo, per scelta di chi mantiene il progetto)
 - *Perché:* nel Turismo i permessi non goduti si fruiscono «di norma» entro il
   30 giugno dell'anno dopo e, se non goduti entro settembre, si pagano. Chi

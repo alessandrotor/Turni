@@ -17,7 +17,7 @@
 // settembre sono 9 mesi, 9 × 1,60 = 14,40. Quando si passerà al 25° mese
 // (gennaio 2028) ci si aspetta 68 × 0,6 = 40,8 l'anno: da verificare allora.
 
-import { maturatoPermessi, scadenzePermessi } from '../src/motore/permessi.js';
+import { maturatoPermessi, scadenzePermessi, lottiPermessi } from '../src/motore/permessi.js';
 import { leggiCedolinoDaRighe } from '../src/utils/leggi-cedolino.js';
 
 let falliti = 0;
@@ -50,6 +50,25 @@ esito(JSON.stringify(fx.ratei?.permessi) === JSON.stringify({ residuo: 0, matura
   'il lettore prende Permessi: maturato, goduto, saldo', JSON.stringify(fx.ratei));
 const storto = leggiCedolinoDaRighe([riga('Residuo AP Maturato Goduto Saldo'), riga('Permessi 16,00000 4,50000 12,00000 ORE')]);
 esito(!storto.ratei && storto.avvisi.some((a) => /permessi scartati/.test(a)), 'se il saldo non torna, non lo prende e lo dice');
+
+// I lotti: quali ore usare, ed entro quando, per non farsele liquidare.
+const busta = { anno: 2026, mese: 10, residuo: 0, maturato: 16, goduto: 4.5, saldo: 11.5 };
+const g = (iso) => new Date(`${iso}T12:00:00`);
+const nov = lottiPermessi({ busta, settings: S, oggi: g('2026-11-22') });
+esito(nov.lotti.length === 1 && nov.lotti[0].anno === 2026 && nov.totale === 13.1 && nov.lotti[0].pagatiEntro === '2027-09-30',
+  'a novembre: 11,50 della busta + il rateo di novembre, da usare entro settembre 2027', JSON.stringify(nov));
+const perm = (date, s, e) => ({ date, type: 'permesso', startTime: s, endTime: e });
+const conUsati = lottiPermessi({ busta, settings: S, oggi: g('2026-11-22'), turni: [perm('2026-11-10', '09:00', '13:00'), perm('2026-10-05', '09:00', '13:00')] });
+esito(conUsati.totale === 9.1, 'un permesso di 4 ore dopo la busta si toglie; quello di ottobre è già nel Goduto', String(conUsati.totale));
+const mag = lottiPermessi({ busta, settings: S, oggi: g('2027-05-15') });
+esito(mag.lotti.map((l) => l.anno).join() === '2026,2027' && mag.lotti[0].ore === 14.7 && mag.lotti[1].ore === 8,
+  'a maggio 2027: 14,7 h del 2026 (entro settembre 2027) e 8 h del 2027 (entro settembre 2028)', JSON.stringify(mag.lotti));
+const usaVecchi = lottiPermessi({ busta, settings: S, oggi: g('2027-05-15'), turni: [perm('2027-03-02', '08:00', '18:00')] });
+esito(usaVecchi.lotti[0].ore === 4.7 && usaVecchi.lotti[1].ore === 8, 'un permesso si prende dalle ore più vecchie');
+const ott = lottiPermessi({ busta, settings: S, oggi: g('2027-10-10') });
+esito(ott.pagati.length === 1 && ott.pagati[0].anno === 2026 && ott.lotti[0].anno === 2027, 'a ottobre 2027 quelle del 2026 non godute risultano pagate');
+const conAP = lottiPermessi({ busta: { anno: 2027, mese: 3, residuo: 10, maturato: 4.8, goduto: 4, saldo: 10.8 }, settings: S, oggi: g('2027-03-20') });
+esito(conAP.lotti[0].anno === 2026 && conAP.lotti[0].ore === 6 && conAP.lotti[1].ore === 4.8, 'col residuo dell\'anno prima il goduto consuma prima quello');
 
 console.log(falliti ? `\n${falliti} problema/i.\n` : '\nI permessi maturati tornano con le buste.\n');
 process.exit(falliti ? 1 : 0);
