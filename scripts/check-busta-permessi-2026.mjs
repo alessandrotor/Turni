@@ -18,6 +18,7 @@
 // (gennaio 2028) ci si aspetta 68 × 0,6 = 40,8 l'anno: da verificare allora.
 
 import { maturatoPermessi, scadenzePermessi } from '../src/motore/permessi.js';
+import { leggiCedolinoDaRighe } from '../src/utils/leggi-cedolino.js';
 
 let falliti = 0;
 const esito = (ok, etichetta, dettaglio = '') => {
@@ -36,6 +37,19 @@ esito(maturatoPermessi(2026, 12, { ...S, hireDate: '2015-03-01' }) === 62.4, 'as
 esito(maturatoPermessi(2026, 12, { ...S, ccnl: '' }) === null, 'senza contratto: nessun permesso da contare');
 const sc = scadenzePermessi(2026, S);
 esito(sc.godereEntro === '2027-06-30' && sc.pagatiEntro === '2027-09-30', 'quelli del 2026: goderli entro il 30/6/2027, pagati entro settembre 2027');
+
+// Il lettore del cedolino prende il riquadro RATEI com'è stampato (le righe
+// come le restituisce il PDF di ottobre; senza residuo dell'anno prima).
+const riga = (testo) => ({ testo, pezzi: [] });
+const fx = leggiCedolinoDaRighe([
+  riga('Ottobre 2026'),
+  riga('Residuo AP Maturato Goduto Saldo'),
+  riga('Permessi 16,00000 4,50000 11,50000 ORE ARROTONDAMENTO'),
+]);
+esito(JSON.stringify(fx.ratei?.permessi) === JSON.stringify({ residuo: 0, maturato: 16, goduto: 4.5, saldo: 11.5 }),
+  'il lettore prende Permessi: maturato, goduto, saldo', JSON.stringify(fx.ratei));
+const storto = leggiCedolinoDaRighe([riga('Residuo AP Maturato Goduto Saldo'), riga('Permessi 16,00000 4,50000 12,00000 ORE')]);
+esito(!storto.ratei && storto.avvisi.some((a) => /permessi scartati/.test(a)), 'se il saldo non torna, non lo prende e lo dice');
 
 console.log(falliti ? `\n${falliti} problema/i.\n` : '\nI permessi maturati tornano con le buste.\n');
 process.exit(falliti ? 1 : 0);

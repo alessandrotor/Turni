@@ -209,6 +209,27 @@ export function leggiCedolinoDaRighe(righe) {
     }
   }
 
+  // I RATEI di ferie e permessi: sotto l'intestazione «Residuo AP  Maturato  Goduto
+  // Saldo», una riga «Ferie» e una «Permessi», in ore. Il residuo dell'anno prima
+  // può mancare (nuovo assunto): allora i numeri sono tre. Si prende solo se il
+  // saldo torna: residuo + maturato − goduto. (Buste di settembre e ottobre 2026.)
+  const iRatei = righe.findIndex((r) => /Residuo\s*AP.*Maturato.*Goduto.*Saldo/i.test(r.testo));
+  if (iRatei >= 0) {
+    for (const r of righe.slice(iRatei + 1, iRatei + 6)) {
+      const m = /^\s*(Ferie|Permessi)\b/i.exec(r.testo);
+      if (!m) continue;
+      const n = numeriDi(r.testo.slice(m[0].length));
+      const [residuo, maturato, goduto, saldo] = n.length >= 4 ? n : [0, ...n];
+      if (n.length < 3) continue;
+      const nome = m[1].toLowerCase();
+      if (Math.abs(residuo + maturato - goduto - saldo) > 0.011) {
+        fx.avvisi.push(`ratei ${nome} scartati: il saldo non torna`);
+        continue;
+      }
+      (fx.ratei ||= {})[nome] = { residuo, maturato, goduto, saldo };
+    }
+  }
+
   // Il netto non ha etichetta: è la riga isolata più in basso con un solo numero.
   const soli = righe.filter((r) => /^-?\d{1,3}(\.\d{3})*,\d{2}$/.test(r.testo.trim()));
   if (soli.length) fx.netto = numeriDi(soli[soli.length - 1].testo)[0];
