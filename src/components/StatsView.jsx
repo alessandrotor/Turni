@@ -96,7 +96,7 @@ export default function StatsView({ allShifts, settings, payByShift, onNavigate,
   );
   const projection = useMemo(
     () => projectAnnualIncome(annualGross.total, annualGross.extras, settings, year, {
-      enableNetCalc: ENABLE_NET_CALC, oggi: new Date(),
+      enableNetCalc: ENABLE_NET_CALC, oggi: new Date(), coperto: annualGross.coperto,
     }),
     [annualGross, settings, year],
   );

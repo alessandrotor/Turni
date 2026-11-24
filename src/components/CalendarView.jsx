@@ -101,7 +101,7 @@ export default function CalendarView({
   annualGross,
   // Reddito dell'anno PROIETTATO a dicembre: la grandezza su cui valgono le soglie del bonus.
   annualProjection = 0,
-  annualExtras = 0, onNavigate,
+  annualExtras = 0, coperto = null, onNavigate,
   // Giorno da evidenziare arrivando da un'altra pagina: la cella si illumina e ci si scorre sopra.
   focusDate = null,
 }) {
@@ -377,7 +377,7 @@ export default function CalendarView({
     tiInfo, effectiveRatePct, addizionaliPct, showNetPanel: showNetPanelRaw,
     riferimento,
   } = useMonthlyNet({
-    year, month, settings, pay, annualGross, annualExtras, daysInMonth, allShifts, payMap: payByShift,
+    year, month, settings, pay, annualGross, annualExtras, coperto, daysInMonth, allShifts, payMap: payByShift,
     tiSimulato: tiSimulati[chiaveMese] ?? null,
   });
   const netVisto = netMonthSimulato || netMonth; // il riquadro del netto mostra la simulazione
@@ -480,9 +480,9 @@ export default function CalendarView({
   }, [settings, year, oggiAnno, oggi]);
   const proiezioneBonusOgniMese = useMemo(
     () => projectAnnualIncome(annualGross, annualExtras, settingsBonusOgniMese, year, {
-      enableNetCalc: ENABLE_NET_CALC, oggi,
+      enableNetCalc: ENABLE_NET_CALC, oggi, coperto,
     }),
-    [annualGross, annualExtras, settingsBonusOgniMese, year, oggi],
+    [annualGross, annualExtras, coperto, settingsBonusOgniMese, year, oggi],
   );
   // Confronto sulla stessa base della striscia del trattamento integrativo (`proiezione`).
   const differenzaBonus = proiezioneBonusOgniMese.value - proiezione;

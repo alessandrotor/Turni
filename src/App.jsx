@@ -289,7 +289,7 @@ export default function App() {
   // integrativo valgono sull'anno intero. Stessa grandezza della pagina Statistiche.
   const annualProjection = useMemo(
     () => projectAnnualIncome(annualGross.total, annualGross.extras, settings, year, {
-      enableNetCalc: ENABLE_NET_CALC, oggi,
+      enableNetCalc: ENABLE_NET_CALC, oggi, coperto: annualGross.coperto,
     }),
     [annualGross, settings, year, oggi],
   );
@@ -481,7 +481,7 @@ export default function App() {
             payByShift={payByShift}
             annualGross={annualGross.total}
             annualProjection={annualProjection.value}
-            annualExtras={annualGross.extras}
+            annualExtras={annualGross.extras} coperto={annualGross.coperto}
             onNavigate={setView}
           />
         )}

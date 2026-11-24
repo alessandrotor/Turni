@@ -131,11 +131,11 @@ export function calcolaCosaCambia({
   if (rateAvailable) {
     const payMapBefore = mapPrima;
     const annualBefore = computeAnnualGrossFromShifts(year, shiftsBefore, settings, payMapBefore, oggi);
-    const projBefore = projectAnnualIncome(annualBefore.total, annualBefore.extras, settings, year, { oggi });
+    const projBefore = projectAnnualIncome(annualBefore.total, annualBefore.extras, settings, year, { oggi, coperto: annualBefore.coperto });
 
     const payMapAfter = mapDopo;
     const annualAfter = computeAnnualGrossFromShifts(year, shiftsAfter, settings, payMapAfter, oggi);
-    const projAfter = projectAnnualIncome(annualAfter.total, annualAfter.extras, settings, year, { oggi });
+    const projAfter = projectAnnualIncome(annualAfter.total, annualAfter.extras, settings, year, { oggi, coperto: annualAfter.coperto });
 
     // La soglia dei 15.000 vale sul REDDITO COMPLESSIVO e la proiezione è un LORDO: si chiede
     // alla stessa funzione della striscia del bonus. → check-cosa-cambia.mjs

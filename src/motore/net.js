@@ -9,6 +9,7 @@ import { parseDate, richiediOggi } from './date.js';
 // Le regole fiscali dell'anno stanno in `fisco/`, un file per anno.
 import { TAX_2026, FISCO_ULTIMO, fiscoDi } from './fisco/index.js';
 import { EXTRA_MONTHS } from './mensilita.js';
+import { giaCoperto, restoDaContratto } from './copertura.js';
 import { programmaPaghe } from './programmi-paghe/index.js';
 
 /** @typedef {import('./impostazioni.js').Impostazioni} Impostazioni */
@@ -372,8 +373,7 @@ export function extraMonthsAccrued(settings, year) {
  * @param {object|null} payByShift mappa già calcolata da `computePayByShift`,
  *   `null` — evita di ricalcolarla se il chiamante la possiede già.
  * @param {Date} oggi
- * @returns {{ total: number, extras: number }} extras = quota di mensilità
- *   aggiuntive già incassate, inclusa in total.
+ * @returns {{ total: number, extras: number, coperto: number|null }} extras = 13ª/14ª incassate (dentro total)
  */
 export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, payByShift = null, oggi) {
   richiediOggi(oggi, 'computeAnnualGrossFromShifts');
@@ -411,7 +411,8 @@ export function computeAnnualGrossFromShifts(year, allShifts, settings = {}, pay
     daSommare = mensile * Math.max(0, incassate - nelMontante);
   }
   const applyMontante = montante > 0 && (!cutoff || sameYear);
-  return { total: fromShifts + (applyMontante ? montante : 0) + daSommare, extras };
+  const coperto = giaCoperto(counted, payByShift, y, now, monthlyBaseGross(settings));
+  return { total: fromShifts + (applyMontante ? montante : 0) + daSommare, extras, coperto };
 }
 
 // «1 mese» / «5 mesi»; `fmtNum` scrive «8,5».
@@ -438,11 +439,12 @@ const fmtMesi = (n) => `${fmtNum(n)} mes${n === 1 ? 'e' : 'i'}`;
  *   false i termini che dipendono dal contratto restano a zero — stesso
  *   comportamento di un chiamante che tiene il motore spento.
  * @param {Date} [opts.oggi] richiesto: il motore non legge l'orologio
+ * @param {number|null} [opts.coperto] ore ordinarie già segnate da oggi in poi, `giaCoperto()`
  * @returns {{ value: number, source: 'contratto'|'maturato'|'manuale'|'previsione', voci: any, mesiTrascorsi: number, mesiRestanti?: number }}
  */
 export function projectAnnualIncome(
   annualGross, annualExtras, settings = {}, year,
-  { enableNetCalc = true, oggi } = {},
+  { enableNetCalc = true, oggi, coperto = null } = {},
 ) {
   richiediOggi(oggi, 'projectAnnualIncome');
   const fixedMonthlyTotal = (Array.isArray(settings.fixedMonthlyItems) ? settings.fixedMonthlyItems : [])
@@ -529,7 +531,8 @@ export function projectAnnualIncome(
   const extraResidue = enableNetCalc
     ? mensile * Math.max(0, extraMonthsAccrued(settings, year) - receivedExtraMonthsCount(settings, meseIncassate, year))
     : 0;
-  const value = annualGross + mesiRestanti * mensile + extraResidue;
+  const resto = coperto == null ? mesiRestanti * mensile : restoDaContratto(year, now, mensile, coperto);
+  const value = annualGross + resto + extraResidue;
 
   // 13ª e 14ª come due righe, ciascuna col proprio rateo.
   const rateo = (kind) => (settings[kind === 'tredicesima' ? 'hasTredicesima' : 'hasQuattordicesima']
@@ -543,9 +546,8 @@ export function projectAnnualIncome(
 
   aggiungi('Maturato finora', annualGross,
     'turni segnati, più il montante e le 13ª/14ª già incassate');
-  aggiungi(Number.isInteger(mesiRestanti) ? `I ${fmtMesi(mesiRestanti)} che restano` : 'Il resto dell’anno',
-    mesiRestanti * mensile,
-    mesiRestanti > 0 ? `${fmtNum(mesiRestanti)} × la mensilità da contratto` : null);
+  aggiungi(Number.isInteger(mesiRestanti) ? `I ${fmtMesi(mesiRestanti)} che restano` : 'Il resto dell’anno', resto,
+    coperto != null ? 'da contratto, meno le ore già segnate' : mesiRestanti > 0 ? `${fmtNum(mesiRestanti)} × la mensilità da contratto` : null);
 
   for (const kind of ['quattordicesima', 'tredicesima']) {
     const frazione = rateo(kind);

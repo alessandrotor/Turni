@@ -16,7 +16,7 @@ import { nettoDelMeseConPremio } from '../motore/premio-risultato';
 // Riceve gli aggregati già pronti (pay del mese, reddito annuo) e restituisce i valori derivati
 // usati dal riepilogo.
 export default function useMonthlyNet({
-  year, month, settings, pay, annualGross, annualExtras = 0, daysInMonth, allShifts = [], payMap,
+  year, month, settings, pay, annualGross, annualExtras = 0, coperto = null, daysInMonth, allShifts = [], payMap,
   tiSimulato = null,
 }) {
   const oggi = useOggi();
@@ -34,9 +34,9 @@ export default function useMonthlyNet({
   // Stessa funzione di Statistiche (`projectAnnualIncome`); NON dipende dal mese sfogliato.
   const netProjection = useMemo(
     () => projectAnnualIncome(annualGross, annualExtras, settings, year, {
-      enableNetCalc: ENABLE_NET_CALC, oggi,
+      enableNetCalc: ENABLE_NET_CALC, oggi, coperto,
     }),
-    [annualGross, annualExtras, settings, year, oggi],
+    [annualGross, annualExtras, coperto, settings, year, oggi],
   );
   const netBasis = netProjection.value;
 
