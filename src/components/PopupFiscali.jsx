@@ -5,12 +5,10 @@
 
 import { useRef } from 'react';
 import useModalDismiss from '../hooks/useModalDismiss';
-import { formatCurrency } from '../motore/pay';
-import { formatMonthYear } from '../utils/dates';
 import { numeroIt, euroCella } from '../utils/formato';
 import { tiMontanteNoto, irpefMontanteNota } from '../motore/conguaglio';
 import { SOGLIA_RATEIZZAZIONE, POSIZIONE } from '../motore/restituzione';
-import DueTasche from './DueTasche';
+import GraficoMesi from './GraficoMesi';
 
 // La cornice comune: velo, Esc, fuoco dentro, «Ho capito». Ognuno dei tre la
 // ripeteva uguale.
@@ -36,60 +34,28 @@ function Finestra({ titolo, onChiudi, children }) {
   );
 }
 
-// PERCHÉ OGNI MESE È DIVERSO. La regola del programma paghe (`tiSpettaQuestoMese`) e il suo
-// effetto su QUESTO mese, con le righe e i nomi della busta. Le cifre sono quelle di `nettoDelMese`.
-// Verificata su buste Zucchetti (check-ti-mensile.mjs): lo si dice, senza promettere che ogni
-// programma paghe faccia uguale.
+// PERCHÉ OGNI MESE È DIVERSO: la detrazione cambia di mese in mese perché ogni
+// mese il datore rifà la stima dell'anno (`lordoPresuntoAnno()`). Disegnata in
+// `GraficoMesi.jsx`, dal mockup approvato a novembre 2026. Verificata su buste
+// Zucchetti (check-ti-mensile.mjs, check-mese-per-mese.mjs): lo si dice, senza
+// promettere che ogni programma paghe faccia uguale.
 export function PopupMese({
-  netMonth, currentMonth, conguaglio, meseSiInverte, forchettaScritta, tiNelMese, minimoTi, onChiudi, onApriConguaglio, settings,
+  anno, mese, allShifts, settings, payMap, oggi, conguaglio, forchettaScritta, onChiudi, onApriConguaglio,
 }) {
   return (
     <Finestra titolo="Perché ogni mese è diverso" onChiudi={onChiudi}>
       <p className="form-hint">
-        <strong>Stesso aiuto, due tasche:</strong> sopra i 15.000 il tratt. integrativo sparisce
-        e la detrazione sale. Ogni mese il datore stima l&apos;anno e sceglie; a dicembre rifà la
-        scelta sull&apos;anno vero (buste Zucchetti).
-        {netMonth.esitoTi.senzaCapienza && <> Però serve IRPEF da compensare, e conta la media
-          dell&apos;anno: sotto i ~{numeroIt(minimoTi ?? 0)} € al mese le detrazioni la azzerano già.</>}
+        Ogni mese il datore <strong>stima il tuo anno</strong>: sopra i 15.000 ti dà{' '}
+        <strong>più detrazione</strong> e niente tratt. integrativo, sotto il contrario.
       </p>
-      {/* Il gradino ai 15.000 va IN SU: disegnato, perché a parole non si crede. */}
-      <DueTasche
-        redditoMese={netMonth.esitoTi.proiezione} redditoAnno={conguaglio?.centrale.redditoAnno ?? null}
-        nomeMese={currentMonth.toLocaleString('it-IT', { month: 'long' }).replace(/^./, (c) => c.toUpperCase())}
-        settings={settings}
-      />
-      <div className="net-group-label">
-        {formatMonthYear(currentMonth)}: ~{numeroIt(netMonth.esitoTi.lordoPresunto ?? 0)} € lordi
-        ({numeroIt(netMonth.esitoTi.proiezione)} € di reddito)
-      </div>
-      <div className="conti-bonus-righe">
-        <div className="bonus-cifre"><span>IRPEF lorda</span><strong>{formatCurrency(netMonth.irpefLorda)}</strong></div>
-        <div className="bonus-cifre"><span>Detrazioni lav. dip.</span><strong>−{formatCurrency(netMonth.detrazioniApplicate)}</strong></div>
-        <div className="bonus-cifre bonus-cifre--totale"><span>Ritenute IRPEF</span><strong>{formatCurrency(netMonth.irpefNetta)}</strong></div>
-        <div className="bonus-cifre"><span>Tratt. integrativo</span><strong>+{formatCurrency(netMonth.trattamentoIntegrativo)}</strong></div>
-      </div>
-      {/* DICEMBRE, di questo passo: quello che la tabella sopra mostra
-          non è cosa fatta. Proiezione e saldo sono quelli del
-          conguaglio (`stimaConguaglio`), non un conto rifatto qui. */}
-      {conguaglio ? (
-        <p className="form-hint">
-          <strong>A dicembre, di questo passo</strong> il reddito dell&apos;anno
-          fa {euroCella(conguaglio.centrale.redditoAnno)}, {conguaglio.centrale.annoSottoSoglia ? 'sotto' : 'sopra'} i
-          15.000:{' '}
-          {!meseSiInverte ? 'per questo mese niente da sistemare.'
-            : tiNelMese
-              ? 'il tratt. integrativo di questo mese te lo riprendono, l\'IRPEF in più te la ridanno.'
-              : netMonth.esitoTi.senzaCapienza ? 'il tratt. integrativo di questo mese te lo ridanno.'
-                : 'il tratt. integrativo di questo mese te lo ridanno, l\'IRPEF in meno se la riprendono.'}
-          {' '}Sull&apos;anno {forchettaScritta}:{' '}
-          <button type="button" className="linklike" onClick={() => { onApriConguaglio(); }}>vedi il conguaglio</button>.
-        </p>
-      ) : (
-        <p className="form-hint">
-          A dicembre il datore rifà i conti sull&apos;anno vero e sistema la
-          differenza: è il conguaglio.
-        </p>
-      )}
+      <GraficoMesi anno={anno} meseIniziale={mese} allShifts={allShifts} settings={settings} payMap={payMap} oggi={oggi} />
+      {/* DICEMBRE: le stime dei mesi non sono cosa fatta. Il saldo è quello
+          del conguaglio (`stimaConguaglio`), non un conto rifatto qui. */}
+      <p className="form-hint" style={{ marginTop: 6 }}>
+        Regola delle buste Zucchetti. A dicembre il datore rifà il conto sull&apos;anno vero
+        {conguaglio && <>: {forchettaScritta}</>}.{' '}
+        {conguaglio && <button type="button" className="linklike" onClick={() => { onApriConguaglio(); }}>vedi il conguaglio</button>}
+      </p>
     </Finestra>
   );
 }

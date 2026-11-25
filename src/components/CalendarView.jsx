@@ -1390,9 +1390,9 @@ export default function CalendarView({
       {/* I popup fiscali (PopupFiscali.jsx) ricevono i numeri, non li rifanno. */}
       {meseSpiegato && netMonth?.esitoTi?.proiezione != null && (
         <PopupMese
-          netMonth={netMonth} currentMonth={currentMonth} conguaglio={conguaglio}
-          meseSiInverte={meseSiInverte} forchettaScritta={forchettaScritta} tiNelMese={tiNelMese} minimoTi={minimoTi}
-          onChiudi={() => setMeseSpiegato(false)} settings={settings}
+          anno={year} mese={currentMonth.getMonth()} conguaglio={conguaglio} forchettaScritta={forchettaScritta}
+          allShifts={allShifts} settings={settings} payMap={payByShift} oggi={oggi}
+          onChiudi={() => setMeseSpiegato(false)}
           onApriConguaglio={() => { setMeseSpiegato(false); setConguaglioAperto(true); }}
         />
       )}
