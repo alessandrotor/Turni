@@ -10,6 +10,7 @@ import { formatMonthYear } from '../utils/dates';
 import { numeroIt, euroCella } from '../utils/formato';
 import { tiMontanteNoto, irpefMontanteNota } from '../motore/conguaglio';
 import { SOGLIA_RATEIZZAZIONE, POSIZIONE } from '../motore/restituzione';
+import DueTasche from './DueTasche';
 
 // La cornice comune: velo, Esc, fuoco dentro, «Ho capito». Ognuno dei tre la
 // ripeteva uguale.
@@ -40,17 +41,23 @@ function Finestra({ titolo, onChiudi, children }) {
 // Verificata su buste Zucchetti (check-ti-mensile.mjs): lo si dice, senza promettere che ogni
 // programma paghe faccia uguale.
 export function PopupMese({
-  netMonth, currentMonth, conguaglio, meseSiInverte, forchettaScritta, tiNelMese, minimoTi, onChiudi, onApriConguaglio,
+  netMonth, currentMonth, conguaglio, meseSiInverte, forchettaScritta, tiNelMese, minimoTi, onChiudi, onApriConguaglio, settings,
 }) {
   return (
     <Finestra titolo="Perché ogni mese è diverso" onChiudi={onChiudi}>
       <p className="form-hint">
-        Il datore non sa quanto guadagnerai: ogni mese stima l&apos;anno con quanto hai preso
-        finora più questo mese fino a dicembre e per la 13ª (verificato sulle buste Zucchetti).
-        Sotto i 15.000 di reddito ti dà il tratt. integrativo; sopra lo toglie, ma alza la detrazione.
+        <strong>Stesso aiuto, due tasche:</strong> sopra i 15.000 il tratt. integrativo sparisce
+        e la detrazione sale. Ogni mese il datore stima l&apos;anno e sceglie; a dicembre rifà la
+        scelta sull&apos;anno vero (buste Zucchetti).
         {netMonth.esitoTi.senzaCapienza && <> Però serve IRPEF da compensare, e conta la media
           dell&apos;anno: sotto i ~{numeroIt(minimoTi ?? 0)} € al mese le detrazioni la azzerano già.</>}
       </p>
+      {/* Il gradino ai 15.000 va IN SU: disegnato, perché a parole non si crede. */}
+      <DueTasche
+        redditoMese={netMonth.esitoTi.proiezione} redditoAnno={conguaglio?.centrale.redditoAnno ?? null}
+        nomeMese={currentMonth.toLocaleString('it-IT', { month: 'long' }).replace(/^./, (c) => c.toUpperCase())}
+        settings={settings}
+      />
       <div className="net-group-label">
         {formatMonthYear(currentMonth)}: ~{numeroIt(netMonth.esitoTi.lordoPresunto ?? 0)} € lordi
         ({numeroIt(netMonth.esitoTi.proiezione)} € di reddito)

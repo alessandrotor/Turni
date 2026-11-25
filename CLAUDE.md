@@ -473,6 +473,13 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   della busta. Ad agosto 2026 la busta tratteneva 8,38 € di IRPEF e non si
   capiva perché: la spiegazione stava in «Come è calcolato?», chiusa. Si dice
   «verificato sulle buste Zucchetti», non «lo fanno tutti i datori».
+  **Il gradino ai 15.000 va IN SU, e si disegna** (`DueTasche.jsx`, novembre
+  2026): chi aveva 251,79 € di detrazione e niente tratt. integrativo era
+  convinto che sopra i 15.000 la detrazione fosse più bassa, perché nella fascia
+  scende col reddito. Due barre lunghe quanto valgono — sotto detrazione +
+  tratt. integrativo, sopra una detrazione sola — con un segno per il mese
+  (la stima del datore) e uno per l'anno: stesso aiuto, due tasche.
+  `dueTasche()`, → `check-due-tasche.mjs`
   **E si dice che il mese non è cosa fatta.** Quando l'anno, di questo passo,
   finisce dall'altra parte dei 15.000, la riga aggiunge «A dicembre si
   inverte» e il popup dice cosa succede a QUESTO mese al conguaglio, col saldo

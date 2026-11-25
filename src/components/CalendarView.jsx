@@ -1392,7 +1392,7 @@ export default function CalendarView({
         <PopupMese
           netMonth={netMonth} currentMonth={currentMonth} conguaglio={conguaglio}
           meseSiInverte={meseSiInverte} forchettaScritta={forchettaScritta} tiNelMese={tiNelMese} minimoTi={minimoTi}
-          onChiudi={() => setMeseSpiegato(false)}
+          onChiudi={() => setMeseSpiegato(false)} settings={settings}
           onApriConguaglio={() => { setMeseSpiegato(false); setConguaglioAperto(true); }}
         />
       )}
