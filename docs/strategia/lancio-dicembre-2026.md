@@ -98,6 +98,13 @@ ripetizione finché non sono passate tutte, ferma a scheda nascosta, senza
 movimento con «meno animazioni». Due righe di altezza tenute, così la pagina
 non salta. Lo script è `frasi.js`, servito dal sito stesso come vuole la CSP.
 
+**Lo stesso stile nell'app** (prova su `experimental`, 27 novembre 2026): la
+«prima versione» del mockup, scelta da chi mantiene il progetto fra tre —
+le altre due avevano più contrasto (fascia blu piena) e poi la stessa fascia
+piatta, «il coso bombato no». Colori nelle variabili di `src/index.css`, marchio
+in `NavBar.jsx`, il totale del mese grande come un titolo che scorrendo si
+riduce a una riga (`useScorrimento.js`). Font di sistema come la vetrina.
+
 **Niente promesse:** «Stiamo preparando la spiegazione della busta di
 dicembre e le novità per il 2027» è stato tolto: non è detto che arrivi.
 

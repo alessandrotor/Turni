@@ -15,11 +15,11 @@
 
 /* ── Design system ─────────────────────────────────────────────── */
 :root {
-  --font-sans: 'Rubik', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; /* come la vetrina /benvenuto */
 
-  --c-primary:        #2563eb;
-  --c-primary-dark:   #1d4ed8;
-  --c-primary-light:  #dbeafe;
+  --c-primary:        #2c5fe8;
+  --c-primary-dark:   #1c3f9e;
+  --c-primary-light:  #dce9ff;
   --c-success:        #059669;
   --c-success-light:  #d1fae5;
   --c-danger:         #dc2626;
@@ -34,17 +34,17 @@
   --c-success-text:   #047857;
   --c-warning-text:   #b45309;
   --c-muted-text:     #5b6b80;
-  --c-bg:             #f1f5f9;
+  --c-bg:             #eef4ff;
   --c-card:           #ffffff;
-  --c-text:           #0f172a;
-  --c-text-2:         #475569;
-  --c-border:         #e2e8f0;
+  --c-text:           #14213d;
+  --c-text-2:         #53607a;
+  --c-border:         #dbe5f5;
 
-  --radius-sm:  6px;
-  --radius:     12px;
-  --radius-lg:  16px;
-  --shadow:     0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
-  --shadow-lg:  0 10px 25px rgba(0,0,0,.12);
+  --radius-sm:  8px;
+  --radius:     16px;
+  --radius-lg:  20px;
+  --shadow:     0 1px 2px rgba(20,33,61,.05), 0 8px 20px rgba(28,63,158,.06);
+  --shadow-lg:  0 24px 48px rgba(28,63,158,.20);
 
   --nav-h:      58px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -55,7 +55,7 @@
 html { font-size: 16px; -webkit-text-size-adjust: 100%; }
 body {
   font-family: var(--font-sans);
-  background: var(--c-bg);
+  background: linear-gradient(180deg, #dce9ff 0, #eaf2ff 320px, #f4f8ff 100%) fixed var(--c-bg);
   color: var(--c-text);
   line-height: 1.5;
   min-height: 100dvh;
@@ -87,23 +87,24 @@ input, select, textarea { font: inherit; }
   position: fixed;
   top: 0; left: 0; right: 0;
   height: var(--nav-h);
-  background: var(--c-card);
-  border-bottom: 1px solid var(--c-border);
+  background: #dce9ff; /* la fascia azzurra della vetrina */
+  border-bottom: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 1rem;
   z-index: 100;
-  box-shadow: var(--shadow);
+  box-shadow: none;
 }
 
 .navbar-brand {
   display: flex;
   align-items: center;
-  gap: .4rem;
+  gap: .5rem;
 }
-.navbar-icon { font-size: 1.4rem; }
-.navbar-title { font-size: 1.2rem; font-weight: 700; color: var(--c-primary); }
+.navbar-icon { width: 30px; height: 30px; border-radius: 9px; background: var(--c-primary); display: flex; align-items: center; justify-content: center; }
+.navbar-title { font-size: 1.25rem; font-weight: 800; color: var(--c-text); letter-spacing: -.3px; }
+.navbar-title b { color: var(--c-primary); font-weight: 800; }
 
 .navbar-links {
   display: flex;
@@ -128,7 +129,7 @@ input, select, textarea { font: inherit; }
 }
 .nav-link { min-width: 0; flex-shrink: 1; }
 .nav-link:hover { background: var(--c-bg); color: var(--c-text); }
-.nav-link.active { background: var(--c-primary-light); color: var(--c-primary); }
+.nav-link.active { background: #fff; color: var(--c-primary); }
 .nav-icon { font-size: 1rem; }
 
 /* ── Calendar view ──────────────────────────────────────────────── */
@@ -154,10 +155,10 @@ input, select, textarea { font: inherit; }
   display: flex;
   align-items: center;
   gap: .35rem;
-  background: var(--c-card);
-  border-radius: var(--radius);
-  padding: .6rem .75rem;
-  box-shadow: var(--shadow);
+  background: #e3edff; /* senza scheda bianca: il totale fa da titolo */
+  border-radius: 0 0 18px 18px;
+  padding: .4rem .25rem .6rem;
+  box-shadow: none;
   /* Il totale del mese va a capo su una riga sua: mese e frecce restano dove
      sono sempre stati, e il numero non li stringe su schermi piccoli. */
   flex-wrap: wrap;
@@ -169,35 +170,36 @@ input, select, textarea { font: inherit; }
 .cal-header-soldi {
   flex: 1 0 100%;
   display: flex;
-  align-items: baseline;
-  gap: .5rem;
-  margin-top: .35rem;
-  padding-top: .35rem;
-  border-top: 1px solid var(--c-border);
+  flex-direction: column;
+  align-items: flex-start;
+  margin-top: .6rem;
+  padding: 0 .5rem;
 }
 
 .cal-header-soldi-val {
-  font-size: 1.35rem;
+  font-size: 2.6rem;
   font-weight: 800;
-  color: var(--c-success);
-  letter-spacing: -.02em;
+  color: var(--c-text);
+  letter-spacing: -.04em;
   line-height: 1.1;
 }
 
 .cal-header-soldi-ore {
-  font-size: .8rem;
+  font-size: .9rem;
   color: var(--c-text-2);
 }
 
 /* «lordo stimato» a destra: è la parola che impedisce di scambiare questo
    numero per il netto che arriva sul conto. Piccola ma sempre presente. */
 .cal-header-soldi-eti {
-  margin-left: auto;
-  font-size: .72rem;
-  color: var(--c-text-2);
-  text-align: right;
+  order: -1; font-weight: 600;
+  font-size: .85rem;
+  color: var(--c-primary-dark);
+  text-align: left;
 }
 .cal-header-soldi-extra { display: block; }
+/* Scorrendo, il totale grande si riduce a una riga: resta in vista, ma non copre mezzo schermo. */
+.cal-header--compatto .cal-header-soldi { flex-direction: row; align-items: baseline; gap: .5rem; margin-top: .2rem; } .cal-header--compatto .cal-header-soldi-val { font-size: 1.35rem; } .cal-header--compatto .cal-header-soldi-eti { order: 0; margin-left: auto; }
 
 .cal-header-mese {
   flex: 1;
@@ -223,7 +225,7 @@ input, select, textarea { font: inherit; }
   position: relative;
   width: 28px;
   height: 28px;
-  font-size: 1.2rem;
+  font-size: 1.2rem; background: #fff;
 }
 .cal-header .cal-mode-btn,
 .cal-header .cal-header-share-btn {
@@ -265,8 +267,8 @@ input, select, textarea { font: inherit; }
 }
 
 .cal-month-name {
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1.35rem;
+  font-weight: 800; letter-spacing: -.4px;
   color: var(--c-text);
   white-space: nowrap;
 }
@@ -707,10 +709,10 @@ input, select, textarea { font: inherit; }
 .cal-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 1px;
-  background: var(--c-border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  gap: 0; border: 1px solid var(--c-border);
+  background: #fff;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 30px rgba(28,63,158,.08);
   overflow: hidden;
 }
 
@@ -721,13 +723,13 @@ input, select, textarea { font: inherit; }
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .05em;
-  color: var(--c-text-2);
-  background: var(--c-bg);
+  color: var(--c-primary-dark);
+  background: #fff; border-bottom: 1px solid #edf2fb;
 }
 
 .cal-cell {
   min-height: 72px;
-  padding: .4rem .4rem .35rem;
+  padding: .4rem .4rem .35rem; border-right: 1px solid #f0f4fb; border-bottom: 1px solid #f0f4fb;
   background: var(--c-card);
   cursor: pointer;
   transition: background .12s;
@@ -738,11 +740,11 @@ input, select, textarea { font: inherit; }
 }
 .cal-cell:hover { background: #f8fafd; }
 .cal-cell--empty {
-  background: #fafafa;
+  background: #f7f9fd;
   cursor: default;
   min-height: 72px;
 }
-.cal-cell--today { background: #eef2ff; }
+.cal-cell--today { background: #eef4ff; }
 .cal-cell--today:hover { background: #e0e7ff; }
 
 /* Giorno raggiunto dal calendarietto di Statistiche. L'anello è `inset`: la
@@ -757,7 +759,7 @@ input, select, textarea { font: inherit; }
   0%   { background: var(--c-primary-light); }
   100% { background: var(--c-card); }
 }
-.cal-cell--weekend { background: #fafafa; }
+.cal-cell--weekend { background: #fbfcff; }
 .cal-cell--weekend:hover { background: #f3f4f6; }
 /* Giorno con nota: un angolo piegato in alto a destra (la striscia a sinistra pesava sulla griglia). Solo l'immagine: il fondo resta quello della cella (oggi, weekend). `--c-nota` per un colore scelto. */
 .cal-cell--nota, .cal-cell--nota:hover { background-image: linear-gradient(225deg, var(--c-nota, var(--c-warning)) 12px, transparent 12px); }
@@ -803,7 +805,7 @@ input, select, textarea { font: inherit; }
   font-weight: 600;
   color: var(--c-primary-dark);
   background: var(--c-primary-light);
-  border-radius: 3px;
+  border-radius: 7px;
   padding: 1px 3px;
   line-height: 1.3;
   /* A capo DOPO il trattino, e solo se serve. Su un telefono una colonna è
@@ -816,7 +818,7 @@ input, select, textarea { font: inherit; }
   cursor: pointer;
   transition: background .1s;
 }
-.cal-shift-pill:hover { background: #bfdbfe; }
+.cal-shift-pill:hover { background: #cddfff; }
 /* I minuti in apice, come sui cartelli degli orari: «23³⁰». `line-height: 0`
    perché un <sup> normale alza la riga, e ogni pill con dei minuti sarebbe
    più alta delle altre. */
@@ -846,10 +848,10 @@ input, select, textarea { font: inherit; }
 
 /* Calendar summary */
 .cal-summary {
-  background: var(--c-card);
-  border-radius: var(--radius);
+  background: var(--c-card); border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
   padding: 1rem 1.1rem;
-  box-shadow: var(--shadow);
+  box-shadow: 0 10px 30px rgba(28,63,158,.08);
   display: flex;
   flex-direction: column;
   gap: .85rem;
@@ -894,12 +896,12 @@ input, select, textarea { font: inherit; }
   align-items: center;
   gap: .4rem;
   padding: .45rem 1rem;
-  border-radius: var(--radius-sm);
+  border-radius: 12px;
   font-size: .85rem;
-  font-weight: 600;
-  background: var(--c-bg);
-  color: var(--c-text-2);
-  border: 1.5px solid var(--c-border);
+  font-weight: 700;
+  background: #fff;
+  color: var(--c-primary-dark);
+  border: 1px solid var(--c-border);
   cursor: pointer;
   transition: background .15s, border-color .15s, color .15s;
 }
@@ -1059,7 +1061,7 @@ input, select, textarea { font: inherit; }
   max-width: 480px;
   max-height: 92dvh;
   background: var(--c-card);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-radius: 24px 24px 0 0;
   overflow-y: auto;
   animation: slideUp .2s ease;
   padding-bottom: calc(1.5rem + var(--safe-bottom));
@@ -1129,7 +1131,7 @@ input, select, textarea { font: inherit; }
 
 .modal-title {
   font-size: 1.1rem;
-  font-weight: 700;
+  font-weight: 800; letter-spacing: -.3px;
 }
 
 .modal-close {
@@ -1636,7 +1638,7 @@ input, select, textarea { font: inherit; }
 .btn-primary {
   flex: 1;
   background: var(--c-primary);
-  color: #fff;
+  color: #fff; border-radius: 12px; box-shadow: 0 6px 16px rgba(44,95,232,.25);
 }
 .btn-primary:hover { background: var(--c-primary-dark); }
 
@@ -1931,10 +1933,10 @@ input, select, textarea { font: inherit; }
 }
 
 .bonus-strip-body {
-  background: var(--c-primary-light);
-  border: 1px solid var(--c-primary);
-  border-radius: var(--radius);
-  padding: .85rem 1rem;
+  background: #e9f2ff;
+  border: 0 solid var(--c-primary);
+  border-radius: 18px;
+  padding: 1rem 1.1rem;
   display: flex;
   flex-direction: column;
   gap: .15rem;
@@ -2114,9 +2116,9 @@ input, select, textarea { font: inherit; }
 }
 
 .net-strip-body {
-  background: var(--c-success-light);
-  border: 1px solid var(--c-success);
-  border-radius: var(--radius);
+  background: #e9f2ff;
+  border: 0 solid var(--c-success);
+  border-radius: var(--radius-lg);
   padding: .85rem 1rem;
   display: flex;
   flex-direction: column;
@@ -3492,14 +3494,14 @@ input, select, textarea { font: inherit; }
    il breakpoint che l'app usa già per i modali, così le soglie restano due e
    non quattro.
 
-   Si cede in due tempi, togliendo prima ciò che serve meno: il nome dell'app,
-   che sta scritto anche nella scheda del browser e sull'icona. Le etichette dei
-   comandi vanno via per ultime, e solo VISIVAMENTE: restano nel documento, così
-   chi usa uno screen reader continua a sentire «Impostazioni» e non «pulsante». */
+   Da novembre 2026, come nella vetrina, sotto i 520px restano il marchio e le
+   icone: vanno via le etichette dei comandi, e solo VISIVAMENTE: restano nel
+   documento, così chi usa uno screen reader continua a sentire «Impostazioni»
+   e non «pulsante». Marchio (~165px) e due icone stanno anche in 360px. */
 @media (max-width: 520px) {
   .navbar { padding: 0 .6rem; }
-  .navbar-title { display: none; }
-  .nav-link { padding: .4rem .5rem; font-size: .8rem; gap: .25rem; }
+  .nav-label { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  .nav-link { padding: .55rem; gap: 0; } .nav-icon { font-size: 1.25rem; }
   /* Sulla griglia del mese ogni pixel di margine è un pixel tolto all'orario:
      «18–23³⁰» deve starci intero, senza puntini. */
   .cal-cell { padding: .35rem .1rem .3rem; }

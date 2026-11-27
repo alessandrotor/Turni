@@ -5,8 +5,11 @@ export default function NavBar({ view, onNavigate }) {
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <span className="navbar-icon"><Icona nome="orologio" /></span>
-        <span className="navbar-title">Segnaturni</span>
+        {/* Il marchio della vetrina /benvenuto: quadratino blu, «Segna» scuro e «turni» blu. */}
+        <span className="navbar-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="4" fill="none" stroke="#fff" strokeWidth="2" /><path d="M8 3v4M16 3v4" stroke="#fff" strokeWidth="2" strokeLinecap="round" /><path d="M8 13.5l2.7 2.7L16 11" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </span>
+        <span className="navbar-title">Segna<b>turni</b></span>
       </div>
       <div className="navbar-links">
         <button

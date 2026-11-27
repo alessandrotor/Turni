@@ -11,7 +11,7 @@ import { isMensilizzato } from '../motore/ccnl';
 import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../motore/bonus';
 import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../motore/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
-import AvvisoContratto from './AvvisoContratto'; import AvvisoFisco from './AvvisoFisco'; import CiPerdo from './CiPerdo'; import PermessiRol from './PermessiRol'; import BarraSelezione from './BarraSelezione'; import useSelezioneGiorni from '../hooks/useSelezioneGiorni'; // import CopiaSettimana from './CopiaSettimana'; — sospesa, vedi il file
+import AvvisoContratto from './AvvisoContratto'; import AvvisoFisco from './AvvisoFisco'; import CiPerdo from './CiPerdo'; import PermessiRol from './PermessiRol'; import BarraSelezione from './BarraSelezione'; import useSelezioneGiorni from '../hooks/useSelezioneGiorni'; import useScorrimento from '../hooks/useScorrimento'; // import CopiaSettimana from './CopiaSettimana'; — sospesa, vedi il file
 import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../motore/assenze';
@@ -132,7 +132,7 @@ export default function CalendarView({
   const [showShareModal, setShowShareModal] = useState(false);
   const [contiBonusAperti, setContiBonusAperti] = useState(false);
   const [conguaglioAperto, setConguaglioAperto] = useState(false);
-  const [meseSpiegato, setMeseSpiegato] = useState(false);
+  const [meseSpiegato, setMeseSpiegato] = useState(false); const compatto = useScorrimento(140);
   // Il bonus dei mesi del montante copiato dalle buste: campo facoltativo nel
   // popup, scritto in `settings` solo quando si lascia il campo.
   const [busteBozza, setBusteBozza] = useState({});
@@ -627,7 +627,7 @@ export default function CalendarView({
   return (
     <div className="calendar-view">
       {/* Month navigation & Layout toggle */}
-      <div className="cal-header">
+      <div className={`cal-header${compatto ? ' cal-header--compatto' : ''}`}>
         {/* Il mese fra le sue frecce, i comandi della vista a destra, tutto su
             una riga: su 360 px le frecce finivano una sopra l'altra e
             l'intestazione agganciata si mangiava due righe di calendario. */}
