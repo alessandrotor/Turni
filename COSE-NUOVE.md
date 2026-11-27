@@ -218,7 +218,7 @@ data+orari.)*
 > l'avviso beta. Deciso da chi mantiene il progetto: togliere il netto a tutti
 > proprio a gennaio costava più dell'incertezza. `statoFisco()` in
 > `motore/fisco/index.js`, `AvvisoFisco.jsx`, → `check-fisco-anno.mjs`.
-> Resta da fare: il file `2027.js` quando la legge di bilancio è approvata.
+> Resta da fare: il file del 2027 in `motore/fisco/` quando la legge di bilancio è approvata.
 > La pagina Statistiche (spenta in produzione) mostra ancora il netto degli
 > anni passati.
 
