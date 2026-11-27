@@ -1,202 +1,191 @@
 <!doctype html>
-<html lang="it"><head><meta charset="utf-8">
-<!-- Vetrina di prova (novembre 2026): nessun modulo, nessuno script nostro. «Mi
-     interessa» porta a /benvenuto/grazie/, che il contatore visite conta come
-     pagina: è tutta la misura dell'interesse, senza un dato in più. --><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Turni — i tuoi turni, i tuoi soldi</title>
-<meta name="description" content="Segni il turno e vedi quanto hai guadagnato, lordo e netto. Nessun account, nessun server: i dati restano sul tuo telefono.">
+<html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Vetrina di prova (novembre 2026, seconda versione). Nessun modulo, nessuno
+     script nostro. «Mi interessa» porta a /benvenuto/grazie/, che il contatore
+     visite conta come pagina: è tutta la misura dell'interesse, senza un dato
+     in più. Lo screenshot è l'app vera, con turni inventati. -->
+<title>Turni — quanto hai guadagnato questo mese</title>
+<meta name="description" content="Segni i turni e vedi quanto hai guadagnato, lordo e netto. Nessun account, nessun server: i dati restano sul tuo telefono.">
 <meta name="robots" content="noindex">
 <style>
-:root{--ink:#0b1220;--ink2:#475569;--mute:#94a3b8;--line:#e5e9f0;--bg:#f7f8fb;--blu:#3b6cff;--blu2:#2449d8;--verde:#10b981;--rosso:#ef4444;--card:#fff}
-*{box-sizing:border-box}html,body{margin:0}body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}
-a{color:inherit;text-decoration:none}
-.w{max-width:1120px;margin:0 auto;padding:0 20px}
-/* nav */
-nav{position:absolute;top:0;left:0;right:0;z-index:5}
-nav .w{display:flex;align-items:center;justify-content:space-between;height:68px}
-.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:18px;color:#fff;letter-spacing:-.2px}
-.logo i{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#6d8dff,#3b6cff);box-shadow:0 0 0 1px rgba(255,255,255,.25) inset}
-nav .apri{font-size:14px;font-weight:700;color:#fff;border:1px solid rgba(255,255,255,.25);padding:8px 14px;border-radius:999px}
-/* hero */
-.hero{background:radial-gradient(1200px 500px at 70% -10%,#2a3f8f 0%,rgba(42,63,143,0) 60%),radial-gradient(800px 400px at 0% 110%,#123a3a 0%,rgba(18,58,58,0) 60%),#0b1220;color:#fff;padding:110px 0 70px;overflow:hidden}
-.hero .w{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
-.badge{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#a7f3d0;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.35);padding:6px 12px;border-radius:999px}
-h1{font-size:56px;line-height:1.02;letter-spacing:-1.6px;margin:18px 0 18px;font-weight:800}
-h1 span{color:#8fb0ff}
-.lead{font-size:19px;line-height:1.55;color:#cbd5e1;max-width:520px;margin:0 0 28px}
-.ctas{display:flex;gap:12px;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:16px;padding:15px 22px;border-radius:14px}
-.btn.pri{background:#fff;color:var(--ink)}
-.btn.sec{color:#fff;border:1px solid rgba(255,255,255,.22)}
-.fine{margin-top:18px;font-size:13px;color:#94a3b8}
-/* privacy strip */
-.priv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:34px;max-width:560px}
-.priv div{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 13px;font-size:13.5px;line-height:1.35;color:#e2e8f0}
-.priv b{display:block;font-size:15px;color:#fff;margin-bottom:2px}
-/* phone */
-.phone{justify-self:center;width:300px;height:600px;border-radius:44px;background:#05080f;padding:12px;box-shadow:0 40px 80px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.08)}
-.scr{width:100%;height:100%;border-radius:34px;background:#f1f5f9;overflow:hidden;position:relative;color:var(--ink)}
-.scr .h{display:flex;justify-content:space-between;align-items:center;padding:18px 16px 8px;font-weight:800;font-size:15px}
-.scr .h small{font-weight:600;color:var(--ink2);font-size:11px}
-.dw{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:0 10px;font-size:9px;color:var(--mute);font-weight:700;text-align:center;margin-bottom:4px}
-.g{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:0 10px}
-.g div{height:58px;background:#fff;border-radius:8px;padding:4px 3px;font-size:9px;font-weight:700;color:var(--ink2);position:relative}
-.g .p{position:absolute;left:3px;right:3px;bottom:4px;border-radius:5px;background:#dbe5ff;color:var(--blu2);font-size:7.5px;font-weight:800;padding:2px 2px;text-align:center}
-.g .f{background:#d1fae5;color:#047857}
-.g .o{outline:2px solid var(--blu)}
-.bar{position:absolute;left:12px;right:12px;bottom:16px;background:var(--ink);color:#fff;border-radius:16px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
-.bar small{display:block;font-size:10px;color:#94a3b8;font-weight:600}
-.bar b{font-size:20px;letter-spacing:-.3px}
-.bar .d{font-size:11px;color:#6ee7b7;font-weight:800;background:rgba(16,185,129,.15);padding:3px 7px;border-radius:999px}
-.toast{position:absolute;left:24px;right:24px;bottom:88px;background:#fff;border-radius:12px;padding:9px 11px;font-size:10.5px;font-weight:700;box-shadow:0 8px 20px rgba(15,23,42,.15);display:flex;gap:8px;align-items:center}
-.toast i{width:18px;height:18px;border-radius:6px;background:var(--blu);flex:none}
-/* sections */
-section{padding:84px 0}
-.kick{font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--blu)}
-h2{font-size:40px;line-height:1.08;letter-spacing:-1px;margin:10px 0 14px;font-weight:800}
-.sub{font-size:18px;line-height:1.55;color:var(--ink2);max-width:640px;margin:0}
-.tre{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
-.c{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px}
-.c .n{width:34px;height:34px;border-radius:10px;background:#eef2ff;color:var(--blu2);font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
-.c h3{margin:0 0 6px;font-size:19px;letter-spacing:-.3px}
-.c p{margin:0;color:var(--ink2);line-height:1.5;font-size:15px}
-/* privacy section dark */
-.scuro{background:#0b1220;color:#fff}
-.scuro .sub{color:#cbd5e1}
-.verifica{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;margin-top:36px}
-.term{background:#05080f;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px;font:500 13px ui-monospace,Menlo,monospace;color:#cbd5e1;line-height:1.7}
-.term .ok{color:#6ee7b7}.term .gr{color:#64748b}
-.lista p{display:flex;gap:12px;margin:0 0 16px;font-size:16px;line-height:1.5;color:#e2e8f0}
-.lista p b{color:#fff}
-.lista i{flex:none;width:24px;height:24px;border-radius:8px;background:rgba(16,185,129,.18);display:flex;align-items:center;justify-content:center;color:#6ee7b7;font-style:normal;font-weight:800;font-size:13px}
-/* conguaglio */
-.cong{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
-.tass{background:#fff;border:1px solid var(--line);border-radius:20px;padding:24px}
-.r{display:flex;align-items:center;gap:12px;margin:10px 0}
-.r span{width:150px;font-size:14px;color:var(--ink2);flex:none}
-.r div{height:40px;border-radius:10px;color:#fff;font-weight:800;display:flex;align-items:center;padding:0 12px}
-.saldo{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line);margin-top:12px;padding-top:12px;font-size:14px;color:var(--ink2)}
-.saldo b{font-size:30px;color:var(--ink);letter-spacing:-.5px}
+:root{
+  --carta:#fbf8f3; --carta2:#f4efe6; --inchiostro:#1f2433; --grigio:#5d6472; --linea:#e6dfd3;
+  --blu:#6fa0ff; --blu-tenue:#dce8ff; --blu-testo:#2b58c4; --verde:#2f8f62; --verde-tenue:#e2f3ea;
+  --corallo:#c8553d; --corallo-tenue:#fbe7e1;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--carta);color:var(--inchiostro);font:17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--blu-testo)}
+.w{max-width:1040px;margin:0 auto;padding:0 22px}
+header .w{display:flex;justify-content:space-between;align-items:center;height:64px}
+.marchio{font-weight:700;font-size:19px;color:var(--inchiostro);text-decoration:none;display:flex;align-items:center;gap:8px}
+.marchio svg{display:block}
+header a.app{font-weight:600;font-size:15px;text-decoration:none}
+
+.btn{display:inline-block;background:var(--blu-tenue);color:#16306e;font-weight:700;font-size:17px;text-decoration:none;padding:14px 22px;border-radius:12px;border:1px solid #c2d5fb}
+.btn:hover{background:#cfdfff}
+
+/* apertura */
+.apertura{padding:28px 0 56px}
+.apertura .w{display:grid;grid-template-columns:1.15fr .85fr;gap:56px;align-items:center}
+h1{font-family:ui-serif,"New York","Iowan Old Style",Georgia,"Noto Serif",serif;font-weight:600;font-size:50px;line-height:1.08;letter-spacing:-.5px;margin:10px 0 20px}
+h1 em{font-style:normal;white-space:nowrap;background:linear-gradient(transparent 62%,var(--blu-tenue) 62%)}
+.apertura p{color:var(--grigio);max-width:500px;margin:0 0 14px}
+.apertura p.forte{color:var(--inchiostro);font-weight:600}
+.apertura .azioni{margin-top:26px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.apertura .azioni small{color:var(--grigio);font-size:14px}
+.foto{position:relative;justify-self:center}
+.foto img{display:block;width:300px;border-radius:26px;border:8px solid #fff;box-shadow:0 1px 2px rgba(31,36,51,.08),0 18px 40px rgba(31,36,51,.12);transform:rotate(1.5deg)}
+.foto .nota{position:absolute;left:-120px;top:62px;width:120px;font-size:14px;line-height:1.3;color:var(--blu-testo);font-style:italic;text-align:right}
+.foto .nota svg{position:absolute;right:-14px;top:30px}
+
+h2{font-size:30px;line-height:1.2;letter-spacing:-.3px;margin:0 0 12px}
+section{padding:56px 0;border-top:1px solid var(--linea)}
+
+/* privacy: lo scontrino */
+.priv .w{display:grid;grid-template-columns:.9fr 1.1fr;gap:48px;align-items:center}
+.scontrino{background:#fff;max-width:360px;padding:22px 22px 26px;font:14px/1.9 ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:#33384a;
+  box-shadow:0 1px 2px rgba(31,36,51,.06),0 10px 24px rgba(31,36,51,.07);
+  -webkit-mask:radial-gradient(circle 6px at 50% 100%,transparent 98%,#000) 50% 100%/14px 100% repeat-x;
+          mask:radial-gradient(circle 6px at 50% 100%,transparent 98%,#000) 50% 100%/14px 100% repeat-x}
+.scontrino .t{text-align:center;font-weight:700;letter-spacing:.08em;margin-bottom:8px}
+.scontrino .r{display:flex;gap:6px}
+.scontrino .r span:nth-child(2){flex:1;border-bottom:1px dotted #b9b3a7;transform:translateY(-6px)}
+.scontrino .tot{border-top:1px dashed #b9b3a7;margin-top:10px;padding-top:8px;font-weight:700}
+.priv p{color:var(--grigio);margin:0 0 12px}
+.priv p b{color:var(--inchiostro)}
+
+/* cosa fa */
+.fa ul{list-style:none;margin:18px 0 0;padding:0;max-width:720px}
+.fa li{padding:16px 0;border-bottom:1px solid var(--linea);display:grid;grid-template-columns:210px 1fr;gap:20px}
+.fa li:last-child{border-bottom:0}
+.fa li b{font-weight:700}
+.fa li span{color:var(--grigio)}
+
+/* la nota di chi l'ha fatta */
+.nota-autore{background:var(--carta2)}
+.nota-autore blockquote{margin:0;max-width:680px;font-family:ui-serif,"New York","Iowan Old Style",Georgia,serif;font-size:22px;line-height:1.5}
+.nota-autore cite{display:block;margin-top:14px;font:15px system-ui,sans-serif;color:var(--grigio);font-style:normal}
+
+/* dicembre: il pezzo di cedolino */
+.dic .w{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.dic p{color:var(--grigio);margin:0 0 14px}
+.cedolino{background:#fff;border:1px solid var(--linea);border-radius:6px;font:13.5px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace;overflow:hidden}
+.cedolino .riga{display:grid;grid-template-columns:1fr 88px 88px;padding:9px 12px;border-top:1px solid #f0ebe2}
+.cedolino .riga.int{background:#f7f3ec;font-weight:700;font-size:12px;color:var(--grigio);border-top:0}
+.cedolino .n{text-align:right}
+.cedolino .meno{color:var(--corallo);background:var(--corallo-tenue)}
+.cedolino .piu{color:var(--verde);background:var(--verde-tenue)}
+.cedolino .fine{font-weight:700;background:#f7f3ec}
+.dic small{display:block;color:var(--grigio);font-size:13px;margin-top:8px}
+
 /* interesse */
-.int{background:linear-gradient(135deg,#eef2ff,#ecfdf5);border:1px solid var(--line);border-radius:28px;padding:44px;display:grid;grid-template-columns:1.1fr .9fr;gap:32px;align-items:center}
-.form{background:#fff;border-radius:18px;padding:18px;border:1px solid var(--line)}
-.form .in{display:flex;gap:8px}
-.int>*{min-width:0}.form input{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:14px;font:500 15px inherit}
-.form button{border:0;background:var(--ink);color:#fff;border-radius:12px;padding:0 18px;font:700 15px inherit}
-.form p{font-size:12.5px;color:var(--ink2);margin:10px 0 0;line-height:1.45}
-.alt{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.alt .presto{color:var(--ink2);}.alt a,.alt .presto{font-size:13px;font-weight:700;border:1px solid var(--line);border-radius:999px;padding:7px 12px;background:#fff}
-footer{padding:36px 0 50px;color:var(--ink2);font-size:13px;line-height:1.6}
-footer .w{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
-/* mobile */
+.int{text-align:left}
+.int p{color:var(--grigio);max-width:620px;margin:0 0 18px}
+.int .piccolo{font-size:14px;margin-top:12px}
+
+footer{border-top:1px solid var(--linea);padding:26px 0 90px;color:var(--grigio);font-size:14px}
+footer .w{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+/* sul telefono: una colonna, e il pulsante resta sotto il pollice */
+.fisso{display:none}
 @media (max-width:820px){
- .hero{padding:92px 0 50px}.hero .w{grid-template-columns:1fr;gap:36px}
- h1{font-size:40px;letter-spacing:-1px}.lead{font-size:17px}
- .priv{grid-template-columns:1fr 1fr 1fr;gap:6px}.priv div{font-size:11.5px;padding:10px}.priv b{font-size:13px}
- .phone{width:260px;height:520px}
- section{padding:56px 0}h2{font-size:30px}.sub{font-size:16px}
- .tre,.verifica,.cong,.int{grid-template-columns:1fr}.int{padding:24px}
- .r span{width:118px;font-size:13px}
- nav .apri{display:none}
+  body{font-size:16px}
+  .apertura{padding:8px 0 40px}
+  .apertura .w,.priv .w,.dic .w{grid-template-columns:1fr;gap:32px}
+  h1{font-size:36px}
+  h2{font-size:25px}
+  .foto img{width:250px}
+  .foto .nota{display:none}
+  .fa li{grid-template-columns:1fr;gap:2px}
+  .nota-autore blockquote{font-size:19px}
+  section{padding:44px 0}
+  .apertura .azioni .btn{display:none}
+  .fisso{display:block;position:fixed;left:16px;right:16px;bottom:14px;text-align:center;box-shadow:0 8px 24px rgba(31,36,51,.18)}
 }
 </style></head><body>
 
-<nav><div class="w"><div class="logo"><i></i>Turni</div><a class="apri" href="/">Apri l'app</a></div></nav>
-
-<header class="hero"><div class="w">
-  <div>
-    <span class="badge">🔒 Resta tutto sul tuo telefono</span>
-    <h1>I tuoi turni.<br>I tuoi soldi.<br><span>Solo sul tuo telefono.</span></h1>
-    <p class="lead">Segni il turno in due tocchi e vedi subito quanto hai guadagnato: lordo, netto, e a dicembre il conguaglio, senza sorprese.</p>
-    <div class="ctas"><a class="btn pri" href="/">Inizia, è gratis</a><a class="btn sec" href="#cong">Il conguaglio di dicembre →</a></div>
-    <div class="priv">
-      <div><b>Nessun account</b>né email né password</div>
-      <div><b>Nessun server</b>i dati non lasciano il telefono</div>
-      <div><b>Nessuna IA</b>nessuno legge la tua busta</div>
-    </div>
-  </div>
-  <div class="phone"><div class="scr">
-    <div class="h">Novembre 2026 <small>lordo e netto</small></div>
-    <div class="dw"><span>L</span><span>M</span><span>M</span><span>G</span><span>V</span><span>S</span><span>D</span></div>
-    <div class="g">
-      <div>2<span class="p">10–14</span></div><div>3<span class="p">16–22</span></div><div>4</div><div>5<span class="p">10–14</span></div><div>6<span class="p">16–22</span></div><div>7<span class="p">11–17</span></div><div>8</div>
-      <div>9<span class="p">10–14</span></div><div>10</div><div>11<span class="p">16–22</span></div><div>12<span class="p">10–14</span></div><div>13<span class="p">16–22</span></div><div>14<span class="p">11–17</span></div><div>15<span class="p">11–16</span></div>
-      <div>16<span class="p">10–14</span></div><div>17<span class="p">16–22</span></div><div>18</div><div>19<span class="p">10–14</span></div><div>20<span class="p">16–22</span></div><div>21<span class="p">11–17</span></div><div>22</div>
-      <div>23</div><div class="o">24<span class="p">16–22</span></div><div>25<span class="p f">ferie</span></div><div>26<span class="p f">ferie</span></div><div>27<span class="p f">ferie</span></div><div>28</div><div>29</div>
-    </div>
-    <div class="toast"><i></i>Turno salvato · +73,74 € nel mese</div>
-    <div class="bar"><div><small>Novembre · lordo</small><b>1.047,17 €</b></div><span class="d">+73,74 €</span></div>
-  </div></div>
+<header><div class="w">
+  <a class="marchio" href="/benvenuto/"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="18" rx="5" fill="#dce8ff" stroke="#2b58c4" stroke-width="1.6"/><path d="M7 2.5v4M17 2.5v4" stroke="#2b58c4" stroke-width="1.6" stroke-linecap="round"/><path d="M7.5 14l3 3 6-6" fill="none" stroke="#2b58c4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Turni</a>
+  <a class="app" href="/">Apri l'app →</a>
 </div></header>
 
-<section><div class="w">
-  <div class="kick">Come funziona</div>
-  <h2>Dalla timbratura alla busta,<br>senza fare conti.</h2>
-  <p class="sub">Pensata per chi lavora a turni nel turismo e nel commercio: ogni mese è diverso, ed è lì che la busta sorprende.</p>
-  <div class="tre">
-    <div class="c"><div class="n">1</div><h3>Segni il turno</h3><p>Due tocchi: gli orari li propone dai turni che hai già fatto. Ferie e permessi si stendono col dito su più giorni.</p></div>
-    <div class="c"><div class="n">2</div><h3>Vedi quanto hai preso</h3><p>Supplementari, domeniche, festivi, notturno: il lordo del mese sale mentre segni, e il netto lo stima come la busta.</p></div>
-    <div class="c"><div class="n">3</div><h3>Niente sorprese a dicembre</h3><p>Sai mese per mese dove sei rispetto ai 15.000 del trattamento integrativo, e cosa ti aspetta al conguaglio.</p></div>
-  </div>
-</div></section>
-
-<section class="scuro"><div class="w">
-  <div class="kick" style="color:#6ee7b7">Privacy</div>
-  <h2>Non ti chiediamo di fidarti.<br>Puoi controllarlo.</h2>
-  <p class="sub">I conti si fanno dentro il tuo telefono. Il sito non ha un database dove finiscono i tuoi turni, e nessuna intelligenza artificiale li legge.</p>
-  <div class="verifica">
-    <div class="lista">
-      <p><i>✓</i><span><b>Nessun account.</b> Apri e usi. Non sappiamo chi sei, e non ci serve.</span></p>
-      <p><i>✓</i><span><b>La busta resta sul telefono.</b> Se carichi il PDF, viene letto lì e basta.</span></p>
-      <p><i>✓</i><span><b>Il backup è un file tuo.</b> Lo salvi dove vuoi tu, non da noi.</span></p>
-    </div>
-    <div class="term">
-      <span class="gr">// Strumenti del browser → Rete, mentre segni un turno</span><br>
-      GET&nbsp; /index.html <span class="ok">200</span><br>
-      GET&nbsp; /assets/app.js <span class="ok">200</span><br>
-      <span class="gr">— salvi il turno —</span><br>
-      <span class="gr">nessuna richiesta</span><br>
-      <span class="gr">— carichi la busta —</span><br>
-      <span class="gr">nessuna richiesta</span>
-    </div>
-  </div>
-</div></section>
-
-<section id="cong"><div class="w cong">
+<div class="apertura"><div class="w">
   <div>
-    <div class="kick">Dicembre</div>
-    <h2>Ti hanno ripreso il trattamento integrativo?</h2>
-    <p class="sub">Guarda la riga sotto. Quasi sempre, quello che il conguaglio ti toglie da una parte te lo rende dall'altra: sopra i 15.000 il tratt. integrativo sparisce, ma la detrazione sale.</p>
-    <div class="ctas" style="margin-top:22px"><a class="btn pri" style="background:var(--ink);color:#fff" href="/?ciperdo">Fai la stima col tuo lordo</a></div>
+    <h1>Sei ore di domenica.<br>Quanto ti entra <em>in busta?</em></h1>
+    <p>Segni il turno e Turni fa i conti come il tuo cedolino: ore ordinarie, supplementari, domeniche, festivi, fino al netto.</p>
+    <p class="forte">E resta tutto sul tuo telefono. Niente account, niente server: i tuoi turni non li vede nessuno.</p>
+    <div class="azioni"><a class="btn" href="/">Apri l'app, è gratis</a><small>Funziona nel browser, non serve installare niente.</small></div>
   </div>
-  <div class="tass">
-    <div style="font-weight:800;margin-bottom:6px">Busta di dicembre · esempio</div>
-    <div class="r"><span>Tratt. integrativo ripreso</span><div style="width:58%;background:var(--rosso)">← −700 €</div></div>
-    <div class="r"><span>Tasse che ti rendono</span><div style="width:54%;background:var(--verde)">→ +650 €</div></div>
-    <div class="saldo"><span>In busta a dicembre</span><b>−50 €</b></div>
-    <p style="margin:10px 0 0;font-size:13px;color:var(--ink2)">Non è una multa: le buste te li avevano dati in anticipo.</p>
+  <div class="foto">
+    <img src="/benvenuto/calendario.jpg" width="390" height="800" alt="Il calendario di Turni a novembre: i turni del mese e in alto il lordo stimato, 1.091,41 €">
+    <div class="nota">il totale sale mentre segni<svg width="40" height="30" viewBox="0 0 40 30" aria-hidden="true"><path d="M2 4c12 0 24 4 33 18" fill="none" stroke="#2b58c4" stroke-width="1.6" stroke-linecap="round"/><path d="M28 20l7 3 1-8" fill="none" stroke="#2b58c4" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  </div>
+</div></div>
+
+<section class="priv"><div class="w">
+  <div class="scontrino" aria-label="Cosa sappiamo di te: niente">
+    <div class="t">COSA SAPPIAMO DI TE</div>
+    <div class="r"><span>Nome</span><span></span><span>—</span></div>
+    <div class="r"><span>Email</span><span></span><span>—</span></div>
+    <div class="r"><span>Turni</span><span></span><span>sul tuo telefono</span></div>
+    <div class="r"><span>Busta paga</span><span></span><span>sul tuo telefono</span></div>
+    <div class="r"><span>Account</span><span></span><span>non esiste</span></div>
+    <div class="r tot"><span>TOTALE</span><span></span><span>niente</span></div>
+  </div>
+  <div>
+    <h2>I conti si fanno sul tuo telefono.</h2>
+    <p>Turni non ha un database dove finiscono i tuoi turni o la tua busta. Quando segni un turno, il calcolo avviene lì dove sei, e lì resta.</p>
+    <p><b>Si può controllare</b>: dal computer, apri gli strumenti per sviluppatori del browser alla scheda Rete e segna un turno. Non parte niente.</p>
+    <p>Il backup è un file che salvi tu, dove vuoi tu.</p>
   </div>
 </div></section>
 
-<section style="padding-top:0"><div class="w">
-  <div class="int">
-    <div>
-      <div class="kick">Il 2027</div>
-      <h2 style="font-size:32px">Vuoi sapere quando arriva il resto?</h2>
-      <p class="sub" style="font-size:16px">La spiegazione della busta di dicembre e le novità del 2027. L'app intanto funziona già.</p>
-    </div>
-    <div class="form">
-      <a class="btn pri" style="background:var(--ink);color:#fff;width:100%;justify-content:center" href="/benvenuto/grazie/">Mi interessa</a>
-      <p>Un tocco, e ti contiamo. <b>Non ti chiediamo niente</b>: né email né numero. Sappiamo solo quante persone l'hanno premuto.</p>
-      <div class="alt"><span class="presto">📣 Canale WhatsApp · presto</span><span class="presto">✈️ Canale Telegram · presto</span></div>
-    </div>
-</div>
+<section class="fa"><div class="w">
+  <h2>Pensata per chi lavora a turni.</h2>
+  <ul>
+    <li><b>Due tocchi per un turno</b><span>Gli orari te li propone lei, presi da quelli che fai già.</span></li>
+    <li><b>Il mese, in euro</b><span>Lordo e netto del mese, con supplementari, domeniche e festivi del tuo contratto.</span></li>
+    <li><b>Una settimana di ferie</b><span>Tieni premuto il giorno e trascina il dito sugli altri.</span></li>
+    <li><b>Il conguaglio di dicembre</b><span>Sai mese per mese se stai sopra o sotto i 15.000 del trattamento integrativo.</span></li>
+  </ul>
+</div></section>
+
+<section class="nota-autore"><div class="w">
+  <blockquote>«Lavoro a turni nel turismo. Ogni mese la busta era una sorpresa, e a dicembre più di tutte: mi toglievano il trattamento integrativo e non capivo se ci stavo perdendo. Turni l'ho fatta per saperlo prima.»
+    <cite>— chi l'ha fatta</cite></blockquote>
+</div></section>
+
+<section class="dic" id="dicembre"><div class="w">
+  <div>
+    <h2>A dicembre ti riprendono il trattamento integrativo?</h2>
+    <p>Sembra una perdita. Guarda la riga sotto: sopra i 15.000 di reddito il trattamento integrativo sparisce, ma la detrazione sale, e quasi sempre quello che esce da una parte rientra dall'altra.</p>
+    <p><a href="/?ciperdo">Fai la stima col tuo lordo dell'anno →</a></p>
   </div>
+  <div>
+    <div class="cedolino" role="table" aria-label="Busta di dicembre, esempio">
+      <div class="riga int" role="row"><span>CONGUAGLIO DI FINE ANNO</span><span class="n">trattenute</span><span class="n">competenze</span></div>
+      <div class="riga" role="row"><span>Tratt. integrativo a recupero</span><span class="n meno">700,00</span><span class="n"></span></div>
+      <div class="riga" role="row"><span>IRPEF a conguaglio</span><span class="n"></span><span class="n piu">650,00</span></div>
+      <div class="riga fine" role="row"><span>Differenza</span><span class="n">50,00</span><span class="n"></span></div>
+    </div>
+    <small>Esempio. Le cifre vere dipendono dal tuo anno.</small>
+  </div>
+</div></section>
+
+<section class="int"><div class="w">
+  <h2>Stiamo preparando il resto.</h2>
+  <p>La spiegazione della busta di dicembre, riga per riga, e le novità per il 2027. Se ti interessa, diccelo con un tocco.</p>
+  <a class="btn" href="/benvenuto/grazie/">Mi interessa</a>
+  <p class="piccolo">Non ti chiediamo niente, né email né numero: contiamo solo quante persone l'hanno premuto. Canali WhatsApp e Telegram per gli avvisi: presto.</p>
 </div></section>
 
 <footer><div class="w">
-  <div><b style="color:var(--ink)">Turni</b> · gratuito, senza scopo di lucro<br>Stime beta: fatti controllare da un professionista. Verificato su cedolini generati con Zucchetti.</div>
+  <div>Turni · gratuito, senza scopo di lucro. Stime beta: fatti controllare da un professionista.</div>
   <div><a href="/privacy/">Informativa</a> · <a href="/termini/">Termini</a></div>
 </div></footer>
+
+<a class="btn fisso" href="/">Apri l'app, è gratis</a>
     <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "b4a48a8eaa824365a69a786f0fe5016e"}'></script><!-- End Cloudflare Web Analytics -->
 </body></html>
