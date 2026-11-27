@@ -417,7 +417,7 @@ trova nessuna opzione.
 | F4 | ~~Due schede si sovrascrivono~~ **chiusa, L4** | nessun listener `storage` in `useLocalStorage` | Ogni scheda riscrive l'intero oggetto turni dalla propria copia in memoria: lavorare in due schede cancella il lavoro dell'altra. Alto su desktop, nullo nell'APK |
 | F5 | Il limitatore «per installazione» non limita | `gemini.js:13` genera un id nuovo a ogni caricamento | Basta un F5. `worker/README.md:106-107` descrive una difesa che non esiste più |
 | F6 | Turnstile è un punto singolo di guasto | `turnstile.js:13` → `index.js:208` | Un suo disservizio spegne l'import anche con Gemini e worker sani; la via di fuga (togliere `TURNSTILE_SECRET`) non è scritta da nessuna parte |
-| F7 | `xlsx@0.18.5` abbandonato su npm | `package.json:24` | Attenuante verificata: usata solo in scrittura (`export.js:69,93-97`), mai per leggere file dell'utente. Ma non c'è una versione npm a cui aggiornare |
+| F7 | ~~`xlsx@0.18.5` abbandonato su npm~~ **chiusa 27/11/2026**: sostituito da `write-excel-file`, `check-foglio-excel.mjs` | `package.json:24` | Attenuante verificata: usata solo in scrittura (`export.js:69,93-97`), mai per leggere file dell'utente. Ma non c'è una versione npm a cui aggiornare |
 | F8 | La suite non è riproducibile da terzi | `dati-buste/` gitignorata | `RILASCIO.md:6-7` pretende «verificabile da qualcun altro»: per i riscontri sulle buste non lo è |
 | F9 | Build non firmata se manca il keystore | `build.gradle:23-27, 68-70` | Oggi `android:release` produrrebbe un AAB che Play rifiuta, e lo scopriresti in Console |
 | F10 | Anteprima import non modificabile | `ImportModal.jsx` | O si accetta tutto o si annulla tutto: un orario sbagliato costringe a rifare l'import |
