@@ -191,4 +191,5 @@ una ricerca ha trovato (fonti di settore, testi originali non letti):
 3. Togliere `noindex` dalla vetrina quando il nome è definitivo.
 4. Portare in produzione (deploy manuale, lo fa chi mantiene il progetto).
 5. Verifica legale, poi eventualmente la busta di dicembre spiegata.
-6. Raccogliere i volumi di ricerca veri e decidere le pagine per la SEO.
+6. Raccogliere i volumi di ricerca veri e decidere le pagine per la SEO. Volumi relativi
+   e domini raccolti il 27/11: `docs/strategia/seo-e-domini-2026-11.md`.
