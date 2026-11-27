@@ -211,6 +211,17 @@ data+orari.)*
 
 ### C1. Un anno diverso dal 2026 usa la fiscalità 2026 — *misurato*
 
+> **Chiuso il 27/11/2026, con una scelta diversa per i due versi.** Prima del
+> primo anno noto il netto non si mostra e una riga dice perché; dopo l'ultimo
+> (il 2027, dal 1° gennaio) il netto resta, con «Calcolato con le regole
+> fiscali del 2026: quelle del 2027 arrivano con la legge di bilancio» sotto
+> l'avviso beta. Deciso da chi mantiene il progetto: togliere il netto a tutti
+> proprio a gennaio costava più dell'incertezza. `statoFisco()` in
+> `motore/fisco/index.js`, `AvvisoFisco.jsx`, → `check-fisco-anno.mjs`.
+> Resta da fare: il file del 2027 in `motore/fisco/` quando la legge di bilancio è approvata.
+> La pagina Statistiche (spenta in produzione) mostra ancora il netto degli
+> anni passati.
+
 `src/motore/net.js` ha una sola tabella, `TAX_2026`, usata senza mai guardare
 l'anno. `StatsView.jsx:81-91` lascia sfogliare tutti gli anni con dati.
 
