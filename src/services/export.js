@@ -115,7 +115,7 @@ function scaricaConLink(filename, base64, mime) {
 
 export async function exportShiftsExcel(shifts, monthDate, periodo = '') {
   if (!shifts.length) throw new Error('Nessun turno da esportare in questo mese');
-  const XLSX = await import('xlsx');
+  const { creaFoglioExcel, inBase64 } = await import('./foglio-excel.js');
   const { sorted, totalMins, title, baseName } = prepare(shifts, monthDate, periodo);
 
   const aoa = [
@@ -139,11 +139,8 @@ export async function exportShiftsExcel(shifts, monthDate, periodo = '') {
     ['', '', '', '', '', 'Totale ore', Number((totalMins / 60).toFixed(2)), ''],
   ];
 
-  const ws = XLSX.utils.aoa_to_sheet(aoa);
-  ws['!cols'] = [{ wch: 12 }, { wch: 11 }, { wch: 10 }, { wch: 8 }, { wch: 8 }, { wch: 11 }, { wch: 8 }, { wch: 28 }];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Turni');
-  const base64 = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
+  const byte = await creaFoglioExcel(aoa, { foglio: 'Turni', larghezze: [12, 11, 10, 8, 8, 11, 8, 28] });
+  const base64 = inBase64(byte);
 
   await deliver(`${baseName}.xlsx`, base64,
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
