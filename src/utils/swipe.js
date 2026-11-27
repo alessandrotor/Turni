@@ -1,14 +1,7 @@
-// Quando un gesto sul calendario vuol dire «cambia mese».
-//
-// Le frecce del mese stanno in alto, dove il pollice di chi tiene il telefono
-// con una mano non arriva senza cambiare presa. Lo scorrimento orizzontale è il
-// gesto che ogni calendario del telefono ha già insegnato.
-//
-// Il rischio è il contrario: cambiare mese a chi voleva fare altro. Chi scorre
-// la pagina in verticale non va mai perfettamente dritto, e chi tocca una cella
-// sposta il dito di qualche pixel. Da qui tre soglie, tutte e tre necessarie:
-// abbastanza lungo, nettamente più orizzontale che verticale, e rapido — un
-// dito che resta appoggiato e scivola piano sta leggendo, non sfogliando.
+// Quando un gesto sul calendario vuol dire «cambia mese». Le frecce stanno in alto, dove il pollice
+// non arriva, e lo scorrimento orizzontale è il gesto che ogni calendario ha già insegnato. Il
+// rischio è cambiare mese a chi voleva fare altro, da qui tre soglie, tutte necessarie: abbastanza
+// lungo, nettamente più orizzontale che verticale, e rapido (un dito che scivola piano sta leggendo).
 //
 // Modulo puro: `node scripts/check-swipe.mjs`.
 
@@ -18,9 +11,9 @@ export const SWIPE_MAX_MS = 700;
 
 /**
  * @param {object} gesto
- * @param {number} gesto.dx spostamento orizzontale in px (positivo = verso destra)
- * @param {number} gesto.dy spostamento verticale in px
- * @param {number} gesto.ms durata del gesto
+ * @param {number} [gesto.dx] spostamento orizzontale in px (positivo = verso destra)
+ * @param {number} [gesto.dy] spostamento verticale in px
+ * @param {number} [gesto.ms] durata del gesto
  * @returns {-1|0|1} -1 mese precedente, 1 mese successivo, 0 niente
  */
 export function direzioneSwipe({ dx = 0, dy = 0, ms = 0 } = {}) {

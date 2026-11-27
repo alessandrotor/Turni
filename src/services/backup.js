@@ -1,23 +1,17 @@
-// Backup e ripristino di tutti i dati dell'app in un file JSON.
-//
-// Turni e impostazioni vivono solo in localStorage: niente account, niente
-// sincronizzazione, nessuna copia. Basta disinstallare l'app — cosa che Android
-// impone ogni volta che cambia la firma del pacchetto — per perdere mesi di
-// turni inseriti a mano. Gli export Excel/PDF non coprono il caso: sono report
-// di un mese, pensati per essere letti, e non contengono le impostazioni.
+// Backup e ripristino di tutti i dati dell'app in un file JSON. Turni e impostazioni vivono
+// solo in localStorage (niente account né copie): gli export Excel/PDF sono report di un mese e
+// non contengono le impostazioni.
 
 import { deliver } from './export';
 import {
   APP_TAG, FORMATO,
   KEY_SHIFTS, KEY_SETTINGS, KEY_CAL_LAYOUT,
-  controllaBusta, vagliaTurni, pianoRipristino, scriviConRitorno, datiDelBackup,
+  controllaBusta, vagliaTurni, pianoRipristino, scriviConRitorno, datiDelBackup, illeggibiliPresenti,
 } from '../utils/backup-contenuto';
 
-// Le chiavi, i marcatori di formato e le regole su cosa è un turno valido
-// vivono in `utils/backup-contenuto.js`, che da Node si carica: è quello che
-// permette a `scripts/check-backup.mjs` di rompere lo storage a metà ripristino
-// e guardare se i dati tornano al loro posto. Qui restano i due mestieri che
-// hanno bisogno del browser — leggere un File e consegnare un file.
+// Chiavi, marcatori di formato e regole su cosa è un turno valido stanno in
+// `utils/backup-contenuto.js` (caricabile da Node, per `scripts/check-backup.mjs`). Qui restano
+// i due mestieri che hanno bisogno del browser: leggere un File e consegnare un file.
 
 // Riesportata perché la legge anche CalendarView.
 export { KEY_CAL_LAYOUT };
@@ -42,9 +36,7 @@ function leggi(key, fallback) {
   }
 }
 
-// Turni grezzi da localStorage e ritorno. Esposti perché `correzioni.js` lavora
-// sugli stessi dati: la chiave la possiede questo modulo, e duplicarla altrove
-// vorrebbe dire doverla cambiare in due posti.
+// Turni grezzi da localStorage e ritorno, esposti perché `correzioni.js` lavora sugli stessi dati.
 export function leggiTurni() {
   return leggi(KEY_SHIFTS, {});
 }
@@ -73,6 +65,7 @@ export function costruisciBackup(inMemoria = null) {
     turni,
     impostazioni,
     vistaCalendario: leggiGrezzo(KEY_CAL_LAYOUT) || null,
+    illeggibili: illeggibiliPresenti(leggiGrezzo),
   };
 }
 
@@ -89,23 +82,16 @@ export async function esportaBackup(inMemoria = null) {
   const giorno = backup.esportatoIl.slice(0, 10);
   const { esito } = await deliver(`Turni_backup_${giorno}.json`, base64, 'application/json');
 
-  // `esito` risale a chi chiama perché le parole da usare dipendono da lì: un
-  // backup «salvato» e uno «avviato ma non verificabile» non si annunciano allo
-  // stesso modo, ed è esattamente la distinzione che prima non esisteva.
-  // `testo` viaggia insieme così l'interfaccia può offrire la seconda via
-  // (copiarlo a mano) senza dover ricostruire il backup una seconda volta —
-  // che oltretutto, fra i due momenti, potrebbe non essere più identico.
+  // `esito` risale a chi chiama perché le parole dipendono da lì; `testo` viaggia insieme per
+  // offrire la seconda via (copiarlo a mano) senza ricostruire il backup.
   return { turni: Object.keys(backup.turni).length, esito, testo };
 }
 
 /**
  * Legge il file e lo esamina, SENZA scrivere niente.
  *
- * È la metà che prima non esisteva: `importaBackup` apriva, controllava e
- * sostituiva tutto in un colpo solo, quindi l'unica cosa che si poteva mettere
- * davanti era un «sei sicuro?» che non sapeva dire di cosa. Adesso si può
- * guardare prima — quanti turni arrivano, quanti ce ne sono adesso, cosa non
- * si è potuto leggere — e decidere sapendo.
+ * Si guarda prima (quanti turni arrivano, quanti ce ne sono, cosa non si è potuto leggere) e
+ * si decide sapendo, invece di un «sei sicuro?» che non sa dire di cosa.
  *
  * @param {File} file il .json scelto dall'utente
  * @returns {Promise<{dati: object, turni: number, scartati: Array, turniBuoni: object}>}
@@ -131,26 +117,22 @@ export async function leggiBackup(file) {
 /**
  * Sostituisce i dati presenti con quelli del backup già letto.
  *
- * O passa tutto, o non cambia niente: la regola e il perché stanno in
- * `utils/backup-contenuto.js`, insieme al riscontro che rompe lo storage a
- * metà strada per vedere se i dati tornano davvero al loro posto.
+ * O passa tutto, o non cambia niente: vedi `utils/backup-contenuto.js`.
  *
- * @param {object} arg l'esito di `leggiBackup`
+ * @param {{ dati: Object, turniBuoni: Array, scartati?: Array }} arg l'esito di `leggiBackup`
  * @returns {{turni: number, scartati: Array}}
  * @throws {Error} in italiano, e dicendo se i dati di prima sono ancora lì
  */
 export function applicaBackup({ dati, turniBuoni, scartati = [] }) {
-  const esito = scriviConRitorno(pianoRipristino(dati, turniBuoni), localStorage);
+  const esito = scriviConRitorno(pianoRipristino(dati, turniBuoni, (k) => leggiGrezzo(k) != null), localStorage);
 
   if (!esito.ok) {
     const quota = esito.errore?.name === 'QuotaExceededError'
       || esito.errore?.name === 'NS_ERROR_DOM_QUOTA_REACHED'
-      || esito.errore?.code === 22
-      || esito.errore?.code === 1014;
+      || /** @type {any} */ (esito.errore)?.code === 22
+      || /** @type {any} */ (esito.errore)?.code === 1014;
 
-    // Il messaggio dice due cose, e la seconda conta più della prima: cosa non
-    // è riuscito, e SE i dati di prima sono ancora al loro posto. Finché la
-    // risposta è sì non è successo niente di grave, e va detto subito.
+    // Il messaggio dice cosa non è riuscito e SE i dati di prima sono ancora al loro posto.
     const perche = quota
       ? 'Nella memoria del telefono non c\'è spazio per questo backup.'
       : 'Il browser ha rifiutato la scrittura.';

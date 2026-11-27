@@ -1,32 +1,13 @@
 import { useState } from 'react';
 
-// La domanda sulle maggiorazioni, fatta DOPO e senza fermare nessuno.
+// La domanda sulle maggiorazioni, fatta DOPO e senza fermare nessuno: una striscia in fondo allo
+// schermo che arriva a turno già salvato. Non è un modale (nessuno sfondo scuro, nessun fuoco della
+// tastiera): si può continuare a usare l'app e sparisce alla prossima cosa che si fa.
 //
-// COS'ERA PRIMA
-// Un riquadro dentro il modulo del turno: compariva mentre si compilavano gli
-// orari e chiedeva la percentuale lì, in mezzo. Non bloccava il salvataggio, ma
-// stava fra l'utente e la cosa che stava facendo — ed è attrito anche quando lo
-// si può ignorare, perché va comunque letto per decidere di ignorarlo.
-//
-// COS'È ADESSO
-// Una striscia in fondo allo schermo che arriva a turno già salvato. Non copre
-// l'app, non ha uno sfondo scuro dietro, non prende il fuoco della tastiera e
-// non ha un pulsante «annulla»: si può semplicemente continuare a usare l'app e
-// sparisce alla prossima cosa che si fa. Non è un modale, e non deve diventarlo.
-//
-// DUE PASSI, E IL PRIMO HA SOLO DUE PULSANTI
-// La domanda vera è «ti pagano di più?», e le risposte sono sì e no: nessuna
-// delle due richiede di sapere cos'è una maggiorazione o di andare a cercare una
-// percentuale. Il campo con il numero compare solo dopo un «sì» — cioè solo a
-// chi ha detto di avere qualcosa da scriverci. Chi risponde «no» chiude la
-// domanda per sempre (sta nei settings, come tutto il resto: `maggiorazioniNonDovute`).
-//
-// PERCHÉ IL NUMERO NON È PRECOMPILATO
-// `tipico` finisce nel placeholder, non nel valore. Le percentuali tipiche
-// vengono dai cedolini di UN contratto: scriverle dentro il campo pronte da
-// confermare significherebbe far entrare nel motore un numero che nessuno ha
-// letto sulla propria busta. Il segnaposto suggerisce, il valore lo mette
-// l'utente.
+// Due passi, e il primo ha solo due pulsanti (sì/no): il campo col numero compare solo dopo un «sì».
+// Il «no» chiude la domanda per sempre (`maggiorazioniNonDovute` nei settings). `tipico` finisce nel
+// placeholder, non nel valore: le percentuali tipiche vengono da UN contratto, e il valore lo mette
+// l'utente leggendo la propria busta.
 export default function AvvisoMaggiorazione({ avviso, onImposta, onNonNeHo, onChiudi }) {
   const [passo, setPasso] = useState('domanda'); // domanda | percentuale | fatto
   const [pct, setPct] = useState('');
@@ -37,9 +18,8 @@ export default function AvvisoMaggiorazione({ avviso, onImposta, onNonNeHo, onCh
     const v = Number(String(pct).replace(',', '.'));
     if (!Number.isFinite(v) || v <= 0) return;
     onImposta(avviso.chiave, v);
-    // `dopo` esiste solo quando resta qualcosa di vero da dire — oggi il caso
-    // della fascia notturna che nessun contratto ha dichiarato. Senza, si chiude
-    // e basta: una schermata di conferma per dire «fatto» è un tocco regalato.
+    // `dopo` esiste solo quando resta qualcosa di vero da dire (oggi la fascia notturna non
+    // dichiarata); senza, si chiude e basta.
     if (avviso.dopo) setPasso('fatto');
     else onChiudi();
   };

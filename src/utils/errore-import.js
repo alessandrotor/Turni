@@ -2,16 +2,9 @@
 //
 //   node scripts/check-errore-import.mjs
 //
-// Un messaggio solo per tutto («Il riconoscimento non è riuscito») lasciava chi
-// usa l'app a indovinare se rifare la foto o controllare la connessione — e
-// rifare la foto a una rete che non va è tempo perso, come riprovare la stessa
-// foto storta a una rete che va benissimo.
-//
-//  · CARICAMENTO: l'immagine non è arrivata al riconoscimento, o la risposta
-//    non è tornata indietro. File illeggibile, rete, tempo scaduto, verifica di
-//    sicurezza, limiti, servizio giù. La foto può essere perfetta.
-//  · LETTURA: il riconoscimento l'ha ricevuta e ha risposto, ma non ci ha
-//    trovato turni utilizzabili. Qui è la foto che va rifatta.
+//  · CARICAMENTO: l'immagine non è arrivata al riconoscimento o la risposta non è tornata (file
+//    illeggibile, rete, tempo, verifica, limiti, servizio giù). La foto può essere perfetta.
+//  · LETTURA: il riconoscimento ha risposto ma non ha trovato turni. Qui la foto va rifatta.
 //
 // Modulo puro, senza browser: la classificazione si verifica in Node.
 
@@ -27,7 +20,7 @@ export const TITOLO_ERRORE = {
 
 /** Un errore dell'import con la sua famiglia attaccata. */
 export function erroreImport(tipo, messaggio) {
-  const e = new Error(messaggio);
+  const e = /** @type {Error & { tipo?: string }} */ (new Error(messaggio));
   e.tipo = tipo;
   return e;
 }

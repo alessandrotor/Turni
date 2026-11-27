@@ -1,58 +1,10 @@
-// Quanto rischi di dover RIDARE INDIETRO del trattamento integrativo.
+// Quanto rischi di dover RIDARE INDIETRO del trattamento integrativo (TI): quello
+// pagato ogni mese dal datore che, se il reddito dell'anno supera i 15.000, a
+// dicembre torna indietro. Il conto vero della perdita è in `costoSoglia`.
+// Il rimedio è `noTrattamentoIntegrativo`: non erogato, niente da restituire.
+// → docs/note-motore-restituzione.md
 //
-// PERCHÉ ESISTE
-// L'app sapeva già dire se il TI spetta ADESSO (`tiDecision` in net.js, con la
-// capienza fatta per bene), ma non ha mai detto la cosa che alla gente costa
-// davvero: che quei cento euro al mese già incassati possono essere richiesti
-// indietro tutti insieme. Fino al 2 settembre 2026 la parola «restituzione» non
-// compariva in tutto il repository.
-//
-// COME FUNZIONA IL MECCANISMO, che è il motivo per cui il difetto è insidioso
-// Il datore fa da sostituto d'imposta e paga il TI ogni mese PRESUMENDO che il
-// reddito resti quello che sembra a gennaio. Non è una previsione dell'app: è
-// come lavora un software paghe. Se a fine anno il reddito è più alto — qualche
-// turno in più, una tredicesima, un secondo datore — al conguaglio di dicembre
-// (o nel quadro C del 730) quei soldi tornano indietro.
-//
-// CHI RISCHIA DI PIÙ È ESATTAMENTE CHI USA QUESTA APP: tempo determinato,
-// lavoro intermittente, più datori nello stesso anno. Con due datori il difetto
-// è quasi garantito, perché ognuno proietta il reddito per conto suo e paga
-// credendo di essere l'unico.
-//
-// COSA L'APP NON PUÒ SAPERE, e che va detto accanto al numero
-//  1. **Quanto ti hanno accreditato davvero.** Il cedolino lo scrive, l'app no:
-//     qui si assume la quota piena di legge sui giorni trascorsi, cioè il caso
-//     peggiore. È una stima al rialzo dichiarata, non un conto.
-//  2. **Gli altri datori.** Turni ne vede uno. Chi ne ha avuti due ha un reddito
-//     più alto di quello che l'app conosce, quindi il rischio VERO è maggiore di
-//     quello calcolato — ed è il caso più esposto. Va scritto lì, non in un
-//     disclaimer generico.
-//  3. **Le detrazioni che non sono quelle da lavoro.** Nella fascia
-//     15.000–28.000 la legge dà il TI solo se la somma delle detrazioni supera
-//     l'imposta lorda. L'app conosce la sola detrazione da lavoro dipendente,
-//     non i figli a carico né le spese mediche: con quella sola la capienza non
-//     c'è MAI in tutta la fascia, quindi il modello dice «non spetta» per
-//     chiunque superi i 15.000. Non è un difetto del conto — è la norma letta
-//     con i dati che ci sono — ma è una stima al rialzo del rischio, e chi ha
-//     altre detrazioni può stare meglio di così. Va detto accanto alla cifra.
-//
-// In pratica: **oltre i 15.000 € di reddito complessivo il trattamento
-// integrativo si perde, e quello già preso torna indietro.**
-//
-// Vero alla lettera, e per un anno è stata la conclusione di questo modulo — ma
-// come risposta alla domanda che la gente si fa davvero («ci perdo?») è
-// fuorviante, perché descrive un movimento di cassa e lo lascia scambiare per
-// una perdita. Il conto vero è più sotto, in `costoSoglia`: la detrazione da
-// lavoro sale di 1.145 € nello stesso momento in cui il bonus sparisce, e di
-// 1.200 € «persi» ne restano 129. Chi legge questo file si fermi lì prima di
-// scrivere altri avvisi.
-//
-// IL RIMEDIO, che è la ragione per cui questo modulo serve a qualcosa:
-// si può chiedere al datore di NON erogarlo, e prenderlo semmai a conguaglio se
-// spetta davvero. Nell'app è `settings.noTrattamentoIntegrativo`, e quando è
-// acceso qui non c'è più niente da restituire — per costruzione.
-//
-// Modulo puro, senza React e senza browser: `node src/motore/riscontri/check-restituzione.mjs`.
+// Modulo puro: `node src/motore/riscontri/check-restituzione.mjs`.
 
 import { tiDecision, calcNetAnnual, tiSospeso } from './net.js';
 import { richiediOggi } from './date.js';
@@ -78,12 +30,7 @@ export const CAUSA = {
 const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 const trunc2 = (n) => Math.trunc(n * 100) / 100;
 
-// La differenza fra due importi già in centesimi si fa SUI CENTESIMI, interi.
-// Con `trunc2(a - b)` si perdeva un centesimo per strada: `595.06` è in doppia
-// precisione `595.0599999…`, quindi `Math.trunc(595.06 * 100)` fa 59505 e non
-// 59506. A schermo si leggeva «erogati 595,06 · da restituire 595,05», con un
-// centesimo sparito e nessuna spiegazione — il genere di dettaglio che fa
-// dubitare di tutto il resto del conto.
+// La differenza fra importi in centesimi si fa sui centesimi interi: `trunc2(a - b)` ne perde uno.
 const menoCent = (a, b) => (Math.round(a * 100) - Math.round(b * 100)) / 100;
 
 /**
@@ -100,11 +47,9 @@ export function giorniTrascorsi(data) {
 }
 
 /**
- * Il giorno a cui misurare l'anno GUARDATO, che non è sempre quello di oggi:
- * per un anno chiuso il 31 dicembre, per uno non ancora cominciato nessuno
- * (`null`, zero giorni). Prima si contavano i giorni di oggi qualunque anno si
- * aprisse: gennaio dell'anno dopo mostrava ~870 € «già erogati» su un anno in
- * cui non era ancora arrivato un euro. → check-restituzione.mjs
+ * Il giorno a cui misurare l'anno GUARDATO: oggi, il 31 dicembre per un anno
+ * chiuso, `null` (zero giorni) per uno non ancora cominciato.
+ * → check-restituzione.mjs
  */
 export function dataDiRiferimento(anno, oggi) {
   richiediOggi(oggi, 'dataDiRiferimento');
@@ -114,17 +59,12 @@ export function dataDiRiferimento(anno, oggi) {
 }
 
 /**
- * Quanto avresti già preso SE il datore ti stesse accreditando la quota piena
- * fin qui — l'ipotesi che serve all'anteprima «sei vicino alla soglia, se la
- * superi restituisci circa X». Un «e se», non un fatto: sotto soglia non dice
- * che quei soldi sono già arrivati, dice quanto varrebbero se lo fossero.
- *
- * Volutamente SEPARATA da `rischioRestituzione`: quella funzione azzera erogato
- * ogni volta che il reddito non supera la soglia, anche quando la ragione è
- * l'incapienza a redditi bassissimi (dove il datore non avrebbe accreditato
- * NULLA, non una quota poi da restituire). Chi chiama questa funzione la usa
- * solo quando `bonus.nearThreshold` è vero, cioè a un soffio dai 15.000 — lì la
- * capienza c'è sempre, quindi l'ipotesi è realistica.
+ * Quanto avresti già preso SE il datore ti accreditasse la quota piena fin qui:
+ * l'ipotesi per l'anteprima «sei vicino alla soglia, se la superi restituisci
+ * circa X». Un «e se», non un fatto. Separata da `rischioRestituzione`, che azzera
+ * l'erogato sotto soglia anche per incapienza (dove non è mai stato accreditato
+ * niente). Si usa solo con `bonus.nearThreshold`, a un soffio dai 15.000, dove la
+ * capienza c'è sempre.
  */
 export function quotaPotenziale(oggi) {
   if (oggi !== null) richiediOggi(oggi, 'quotaPotenziale'); // null: anno non cominciato
@@ -154,8 +94,7 @@ export function rischioRestituzione({ settings: impostazioni = {}, proiezioneAnn
     giorni, unSoloDatore: true,
   };
 
-  // Ha già chiesto di non farselo accreditare: non c'è niente da riprendere.
-  // È l'unico caso in cui il rischio è ZERO per costruzione, e non per stima.
+  // Ha chiesto di non farselo accreditare: rischio ZERO per costruzione.
   if (tiSospeso(settings)) {
     return { ...vuoto, causa: CAUSA.RINUNCIATO };
   }
@@ -163,31 +102,16 @@ export function rischioRestituzione({ settings: impostazioni = {}, proiezioneAnn
   const decisione = tiDecision(num(proiezioneAnnua), settings);
   const spettante = num(decisione.importoAnnuo);
 
-  // IL TI PUÒ ESSERE ZERO PER DUE MOTIVI OPPOSTI, e confonderli produce un
-  // avviso falso — il primo giro di questo modulo ci è cascato, e lo diceva a
-  // chi guadagna 2.150 € l'anno.
-  //
-  //  · REDDITO TROPPO ALTO: sopra i 15.000 il TI si perde. Qui il rischio è
-  //    reale, perché il datore lo stava accreditando quando il reddito
-  //    sembrava più basso, e a dicembre se lo riprende.
-  //  · REDDITO TROPPO BASSO: sotto la no tax area non c'è imposta da
-  //    compensare, quindi il TI non spetta per incapienza. Ma allora NON È MAI
-  //    STATO ACCREDITATO: il software paghe del datore fa lo stesso conto e
-  //    arriva alla stessa conclusione. Niente preso, niente da restituire.
-  //
-  // La restituzione nasce dal reddito che SALE oltre la soglia, mai dal reddito
-  // che resta basso. Quindi si guarda quella soglia, non il solo `spettante`.
+  // Il TI è zero per due motivi opposti: reddito troppo ALTO (rischio vero) o troppo
+  // BASSO (incapienza: mai accreditato, niente da restituire). Si guarda la soglia,
+  // non il solo `spettante`.
   const sopraSoglia = decisione.redditoStimato > T.TI_SOGLIA_PIENO;
   if (!sopraSoglia) {
     return { ...vuoto, spettante, causa: CAUSA.NESSUNA };
   }
 
-  // Quanto il datore ha verosimilmente accreditato finora. Senza altro, la
-  // quota piena di legge sui giorni trascorsi: il caso peggiore. Quando c'è,
-  // la stima mese per mese del conguaglio, che sa quali mesi erano sopra i
-  // 1.250 €: con la quota piena il riquadro del bonus diceva «888 € presi» e
-  // il popup del conguaglio, sugli stessi dati, «+999 € te li ridanno».
-  // È comunque un'ipotesi: la cifra vera la sa il cedolino.
+  // Quanto il datore ha accreditato: la stima mese per mese del conguaglio se c'è,
+  // altrimenti la quota piena sui giorni trascorsi (caso peggiore).
   const erogato = Number.isFinite(erogatoStimato) && erogatoStimato >= 0
     ? trunc2(erogatoStimato)
     : trunc2((T.TI_MASSIMO * giorni) / 365);
@@ -213,41 +137,14 @@ export function rischioRestituzione({ settings: impostazioni = {}, proiezioneAnn
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// QUANTO COSTA DAVVERO SUPERARE LA SOGLIA
-//
-// Tutto quello che sta sopra risponde a «quanto ti riprendono», che è un fatto
-// di cassa. Non risponde alla domanda che uno si fa davvero prima di accettare
-// un turno in più: **ci perdo?**
-//
-// La risposta è no, quasi. Sopra i 15.000 il trattamento integrativo sparisce
-// (−1.200), ma la detrazione da lavoro salta da 1.955 a 3.100 (+1.145): è uno
-// scalino scritto nell'art. 13 TUIR apposta per non punire chi supera la soglia,
-// e compensa il 95% della perdita. Quello che resta scoperto non è il bonus:
-// è l'indennità L. 207/2024, che attraversando la fascia scende di ~70 €.
-//
-// Il conto, sul motore (vedi check-costo-soglia.mjs):
-//
-//   lordo    imponibile  detr.lav.     TI   cuneo    netto
-//   16.596       15.000      1.955  1.200     790   15.454   ← ultimo sotto
-//   16.597       15.001      3.100      0     720   15.325   ← il fondo
-//   16.795       15.180      3.085      0     727   15.454   ← di nuovo in pari
-//
-// Centoventinove euro l'anno nel punto peggiore, e una buca larga duecento euro
-// di lordo. Non milleduecento. La differenza conta perché l'avviso di prima
-// gridava «restituisci 805 €» anche a chi la soglia l'aveva superata da un pezzo
-// e non ci stava più perdendo niente.
-//
-// I 129 € sono una COSTANTE STRUTTURALE: dipendono dalle sole aliquote statali,
-// non dai contributi, quindi vengono identici su CCNL e orari diversi. Cambia
-// solo la larghezza della buca. Il riscontro lo verifica su tre profili, perché
-// è l'affermazione forte di tutto questo modulo.
+// QUANTO COSTA DAVVERO SUPERARE LA SOGLIA (la «buca» attorno ai 15.000, non la
+// restituzione). → check-costo-soglia.mjs, docs/note-motore-restituzione.md
 
 /**
  * La forma della buca attorno ai 15.000 €, calcolata sul motore.
  *
  * Niente costanti: `perditaMax` esce da due chiamate a `calcNetAnnual` e il
- * resto da ricerche binarie, una trentina di valutazioni in tutto. La scansione
- * euro per euro serviva per capire, non per girare dentro un componente.
+ * resto da ricerche binarie (una trentina di valutazioni).
  *
  * @returns {{tetto, nettoTetto, perditaMax, pareggio, larghezzaBuca, voci}}
  *   `tetto` è l'ultimo lordo che resta sotto soglia; `pareggio` il primo oltre
@@ -257,12 +154,7 @@ export function rischioRestituzione({ settings: impostazioni = {}, proiezioneAnn
 export function costoSoglia(settings = {}) {
   const netto = (g) => calcNetAnnual(g, settings).net;
 
-  // IL TETTO SI CERCA SULL'IMPONIBILE, mai convertendo la soglia in lordo.
-  // `taxableToGross(15000)` e `redditoComplessivo` arrotondano in punti diversi
-  // — lo dice già bonus.js — e durante l'analisi il primo dava 16.622, che è
-  // GIÀ sopra soglia (imponibile 15.023). Il calcolo della perdita partiva
-  // dall'altro lato dello scalino e restituiva zero: nessun errore a schermo,
-  // solo un avviso che taceva.
+  // Il tetto si cerca sull'IMPONIBILE, non convertendo la soglia in lordo (finiva già sopra).
   const tetto = lordoPerReddito(fiscoDi(settings).TI_SOGLIA_PIENO, settings);
   const nettoTetto = netto(tetto);
 
@@ -285,14 +177,8 @@ export function costoSoglia(settings = {}) {
     }
   }
 
-  // PERCHÉ la perdita è quella e non 1.200: i movimenti che la compongono,
-  // presi dal motore ai due lati dello scalino. Servono a un'interfaccia che
-  // deve spiegare, non solo annunciare — e spiegare con numeri ricalcolati a
-  // mano nel componente è il modo sicuro per farli smettere di combaciare.
-  //
-  // `altro` assorbe il resto (l'euro di lordo in più, meno i suoi contributi)
-  // così le voci sommano SEMPRE a `perditaMax`, anche dopo gli arrotondamenti:
-  // un riquadro che spiega un conto e poi non torna è peggio che tacere.
+  // Le voci che compongono la perdita, dal motore ai due lati dello scalino:
+  // `altro` assorbe il resto, così sommano SEMPRE a `perditaMax`.
   const sotto = calcNetAnnual(tetto, settings);
   const sopra = calcNetAnnual(tetto + 1, settings);
   const tasseDi = (v) => v.irpefNetta + v.addRegionale + v.addComunale;
@@ -327,13 +213,10 @@ export const POSIZIONE = {
 /**
  * Dove si trova il reddito previsto rispetto alla buca.
  *
- * È su questo che l'interfaccia sceglie cosa dire, e i tre casi vogliono tre
- * messaggi diversi — non tre intensità dello stesso allarme:
+ * L'interfaccia sceglie cosa dire da qui, e i tre casi vogliono tre messaggi:
  *  · SOTTO  quanto margine resta, e quanto costerebbe bruciarlo
- *  · DENTRO quanto manca per tornare in pari: l'unico caso in cui l'avviso
- *           suggerisce di guadagnare DI PIÙ, ed è anche l'unico azionabile
- *  · OLTRE  niente da fare e niente da temere, e va detto: allarmare qui è il
- *           difetto che questa funzione esiste per togliere
+ *  · DENTRO quanto manca per tornare in pari: l'unico caso azionabile
+ *  · OLTRE  niente da fare e niente da temere, e va detto
  */
 export function posizioneRispettoSoglia(proiezioneAnnua, settings = {}, costo = null) {
   const c = costo || costoSoglia(settings);
@@ -355,14 +238,10 @@ export function mancaAlPareggio(proiezioneAnnua, settings = {}, costo = null) {
 }
 
 /**
- * Cosa succede AL TUO LORDO, non nel punto peggiore. `costoSoglia` risponde
- * a «quanto costa superare i 15.000 di un euro»: una costante, −129 €. A chi
- * è già oltre interessa un'altra cosa: a questo lordo, rispetto a essermi
- * fermato sotto la soglia, cosa ho perso e cosa ho guadagnato? Il conto è lo
- * stesso (due `calcNetAnnual`), coi due estremi diversi: il tetto e il lordo
- * previsto. Le voci sommano SEMPRE al totale: il lavoro in più (lordo meno
- * contributi) assorbe gli arrotondamenti, come `altro` in `costoSoglia`.
- * → check-costo-soglia.mjs
+ * Cosa succede AL TUO LORDO, non nel punto peggiore: a questo lordo, rispetto a
+ * essermi fermato sotto la soglia, cosa ho perso e guadagnato? Stesso conto di
+ * `costoSoglia` (due `calcNetAnnual`) con altri estremi; le voci sommano SEMPRE
+ * al totale (il lavoro in più assorbe gli arrotondamenti). → check-costo-soglia.mjs
  *
  * @returns {{ lordo, tetto, totale, voci: {bonus, tasse, indennita, lavoro,
  *   detrazioneSotto, detrazioneSopra} }}
@@ -390,4 +269,31 @@ export function confrontoConSoglia(lordo, settings = {}, costo = null) {
       detrazioneSopra: Math.round(sopra.detrazioneLavoro),
     },
   };
+}
+
+/**
+ * «Mi riprendono il tratt. integrativo: ci perdo?» per un lordo dell'anno
+ * qualunque, anche senza un turno segnato (la finestra `CiPerdo.jsx`, novembre
+ * 2026). Non è un conto nuovo: è `confrontoConSoglia` letto dalla parte di chi
+ * fa la domanda. `perso` è il tratt. integrativo che sparisce, `compensa`
+ * tutto il resto (tasse, Indennità L. 207/24, il lavoro in più oltre il
+ * tetto): le due cifre fanno sempre `totale`, il saldo rispetto a fermarsi
+ * sotto la soglia. Sotto la soglia non c'è niente da riprendere; e se il
+ * trattamento non spetta comunque (poca IRPEF da compensare) lo si dice,
+ * perché «non te lo riprendono» suonerebbe come «ce l'hai». → check-ci-perdo.mjs
+ *
+ * @returns {{ posizione: string, spetta: boolean, margine: number,
+ *   perso: number, compensa: number, totale: number, mancaPareggio: number }}
+ */
+export function ciPerdo(lordo, settings = {}, costo = null) {
+  const c = costo || costoSoglia(settings);
+  const g = Math.max(0, Number(lordo) || 0);
+  const posizione = posizioneRispettoSoglia(g, settings, c);
+  if (posizione === POSIZIONE.SOTTO) {
+    const spetta = calcNetAnnual(g, settings).trattamentoIntegrativo > 0;
+    return { posizione, spetta, margine: Math.max(0, Math.round(c.tetto - g)), perso: 0, compensa: 0, totale: 0, mancaPareggio: 0 };
+  }
+  const v = confrontoConSoglia(g, settings, c);
+  const perso = -v.voci.bonus;
+  return { posizione, spetta: perso > 0, margine: 0, perso, compensa: v.totale + perso, totale: v.totale, mancaPareggio: mancaAlPareggio(g, settings, c) };
 }

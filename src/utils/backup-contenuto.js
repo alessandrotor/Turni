@@ -1,41 +1,12 @@
-// Cosa c'è DENTRO un file di backup, e come si sostituiscono i dati senza
-// restare a metà strada.
+// Cosa c'è DENTRO un file di backup, e come si sostituiscono i dati senza restare a
+// metà strada.
 //
-// COS'ERA PRIMA, E PERCHÉ ERANO DUE DIFETTI E NON UNO
-//
-// 1. `validaBackup` controllava la BUSTA, non il contenuto: è un oggetto?
-//    `app === 'turni'`? `turni` è un oggetto? Fine. Dentro non guardava
-//    nessuno, quindi una chiave che non è una data, un orario assurdo, un
-//    `breakMinutes` negativo entravano tutti in localStorage — e da lì nel
-//    render, dove `a.date.localeCompare(b.date)` su una voce senza `date` non
-//    dà un numero sbagliato: fa saltare la pagina. Con gli originali già
-//    cancellati dal punto 2.
-//
-//    C'era anche un buco preciso: `if (dati.formato > FORMATO)` NON ferma un
-//    file senza `formato`, perché `undefined > 1` è `false`. Passava, e veniva
-//    interpretato come formato 1 — esattamente ciò che quel controllo esiste
-//    per impedire.
-//
-// 2. Il ripristino faceva quattro `setItem` in fila, nessuno protetto, e non
-//    copiava da nessuna parte i dati che stava per sovrascrivere. Se il secondo
-//    falliva per quota — ripristinare un backup grosso su uno storage quasi
-//    pieno è proprio il caso tipico — i turni erano già stati sostituiti e le
-//    impostazioni no: STATO MISTO, cioè dati di due backup diversi mescolati.
-//    E quello che risaliva a schermo era un `QuotaExceededError` grezzo, non
-//    uno dei messaggi in italiano scritti lì sopra.
-//
-// LA REGOLA NUOVA: o tutto, o niente, e comunque si dice cosa è successo.
-// Le scritture si preparano prima (`pianoRipristino`), si eseguono sapendo
-// com'era (`scriviConRitorno`), e al primo fallimento si rimette tutto
-// com'era. Se nemmeno quello riesce, lo si dichiara invece di tacere.
-//
-// PERCHÉ QUI E NON IN `services/backup.js`
-// Quel file importa `services/export.js`, che importa Capacitor: da Node non si
-// carica. Il difetto peggiore di questo codice — sostituire i dati e lasciarli
-// a metà — è però proprio quello che nessuno proverà mai a mano, perché
-// richiede uno storage pieno al momento giusto. Qui invece lo storage è un
-// argomento, e `scripts/check-backup.mjs` lo fa fallire al secondo colpo per
-// vedere se i dati tornano davvero al loro posto.
+// Si valida il CONTENUTO, non la busta (una voce senza `date` fa saltare il render), e
+// il ripristino è o tutto o niente: le scritture si preparano prima (`pianoRipristino`),
+// si eseguono sapendo com'era (`scriviConRitorno`) e al primo fallimento si torna
+// indietro. Sta qui e non in `services/backup.js` perché quel file importa Capacitor e
+// da Node non si carica; qui lo storage è un argomento e `scripts/check-backup.mjs`
+// lo fa fallire a metà.
 
 export const APP_TAG = 'turni';
 export const FORMATO = 1;
@@ -46,11 +17,20 @@ export const KEY_CAL_LAYOUT = 'turni_cal_layout';
 
 export const LAYOUT_AMMESSI = new Set(['grid', 'timeline']);
 
+// Le copie dei dati che non si leggevano (`leggiSalvato` in hooks/useLocalStorage.js): vanno
+// nel backup così come sono, perché cambiando telefono sarebbero l'unica cosa persa.
+export const CHIAVI_ILLEGGIBILI = [`${KEY_SHIFTS}__illeggibile`, `${KEY_SETTINGS}__illeggibile`];
+
+/** Le copie illeggibili presenti, `{ chiave: testo }`, o `null` se non ce n'è nessuna. */
+export function illeggibiliPresenti(leggiGrezzo) {
+  const trovate = CHIAVI_ILLEGGIBILI.map(k => [k, leggiGrezzo(k)]).filter(([, v]) => typeof v === 'string');
+  return trovate.length ? Object.fromEntries(trovate) : null;
+}
+
 const RE_DATA = /^\d{4}-\d{2}-\d{2}$/;
 const RE_ORA = /^\d{2}:\d{2}$/;
 
-// `2026-02-31` supera l'espressione regolare ma non esiste. Il giro per Date
-// serve a quello: una data che non c'è finirebbe in una cella che non c'è.
+// `2026-02-31` supera l'espressione regolare ma non esiste: il giro per Date lo scarta.
 function dataVera(iso) {
   if (typeof iso !== 'string' || !RE_DATA.test(iso)) return false;
   const [a, m, g] = iso.split('-').map(Number);
@@ -74,11 +54,8 @@ function numeroStorto(valore) {
 
 /**
  * Perché questa voce non è un turno, o `null` se lo è.
- *
- * Si guarda ciò che ROMPE, non ciò che è insolito: un turno di quattordici ore
- * è strano ma è un dato dell'utente, e non tocca a un controllo di integrità
- * metterlo in dubbio. Una voce senza `date` invece fa saltare l'ordinamento nel
- * render, ed è un'altra cosa.
+ * Si guarda ciò che ROMPE, non ciò che è insolito: un turno di quattordici ore è un
+ * dato dell'utente, una voce senza `date` fa saltare l'ordinamento nel render.
  */
 export function perche(voce) {
   if (!voce || typeof voce !== 'object' || Array.isArray(voce)) return 'non è una voce';
@@ -92,13 +69,9 @@ export function perche(voce) {
 }
 
 /**
- * Due cose che non rompono il ripristino ma rompono dopo, e che si aggiustano
- * senza perdere niente dell'utente:
- *  · `id` diverso dalla chiave (o assente): modificare il turno scrive in
- *    `shifts[shift.id]`, quindi creava un doppione, e cancellarlo non trovava
- *    niente. L'archivio è indicizzato per chiave, e la chiave fa fede.
- *  · una nota che non è testo: `{shift.note}` di un oggetto fa saltare il
- *    render, `note.trim()` di un numero fa saltare il modulo.
+ * Due cose che non rompono il ripristino ma rompono dopo, e si aggiustano senza
+ * perdere niente: `id` diverso dalla chiave (la chiave fa fede, altrimenti modificare
+ * crea un doppione) e una nota che non è testo (fa saltare il render).
  */
 function riallinea(chiave, voce) {
   if (voce.id === chiave && (voce.note === undefined || typeof voce.note === 'string')) return voce;
@@ -112,11 +85,8 @@ function riallinea(chiave, voce) {
 /**
  * Divide i turni del file in quelli che si possono ripristinare e quelli no.
  *
- * NON si rifiuta l'intero backup per tre voci storte su duecento: sarebbe
- * perdere centonovantasette giornate vere per proteggerne tre. Ma nemmeno si
- * scartano in silenzio — è il difetto dell'import da foto, che annuncia
- * «trovati 17 turni» e delle tre mancanti non dice niente: chi chiama riceve
- * l'elenco e lo mostra.
+ * Non si rifiuta l'intero backup per tre voci storte su duecento, ma nemmeno si
+ * scartano in silenzio: chi chiama riceve l'elenco e lo mostra.
  *
  * @returns {{buoni: object, scartati: Array<{chiave: string, perche: string}>}}
  */
@@ -126,10 +96,8 @@ export function vagliaTurni(turni) {
   if (!turni || typeof turni !== 'object' || Array.isArray(turni)) return { buoni, scartati };
 
   for (const [chiave, voce] of Object.entries(turni)) {
-    // `JSON.parse` crea «__proto__» come chiave vera, ma assegnarla a un
-    // oggetto normale ne cambia il prototipo invece di aggiungere una voce: il
-    // turno spariva senza finire fra gli scartati. L'app non genera mai
-    // quell'id, quindi è un file scritto a mano o da altro, e lo si dice.
+    // `JSON.parse` crea «__proto__» come chiave vera, ma assegnarla a un oggetto normale
+    // ne cambia il prototipo: il turno spariva senza finire fra gli scartati.
     if (chiave === '__proto__') {
       scartati.push({ chiave, perche: 'chiave non valida' });
       continue;
@@ -144,16 +112,14 @@ export function vagliaTurni(turni) {
 /**
  * Il file è un backup di quest'app? Messaggio in italiano, oppure `null`.
  *
- * Solo la busta: il contenuto lo vaglia `vagliaTurni`. Sono due domande
- * diverse — «questo file è mio?» si risponde prima di toccare qualsiasi cosa,
- * «cosa ci si salva dentro?» riguarda le singole voci.
+ * Solo la busta: il contenuto lo vaglia `vagliaTurni`.
  */
 export function controllaBusta(dati) {
   if (!dati || typeof dati !== 'object' || Array.isArray(dati)) {
     return 'Il file non contiene un backup valido.';
   }
   if (dati.app !== APP_TAG) {
-    return 'Questo file non è un backup di Turni.';
+    return 'Questo file non è un backup di Segnaturni.';
   }
   // `undefined > 1` è false: senza questa riga un file senza `formato` passava
   // e veniva letto come formato 1.
@@ -161,7 +127,7 @@ export function controllaBusta(dati) {
     return 'Il backup è danneggiato: manca il numero di formato.';
   }
   if (dati.formato > FORMATO) {
-    return `Backup creato da una versione più recente dell'app (formato ${dati.formato}). Aggiorna Turni e riprova.`;
+    return `Backup creato da una versione più recente dell'app (formato ${dati.formato}). Aggiorna Segnaturni e riprova.`;
   }
   if (typeof dati.turni !== 'object' || dati.turni === null || Array.isArray(dati.turni)) {
     return 'Il backup è danneggiato: manca l\'elenco dei turni.';
@@ -190,13 +156,14 @@ export function datiDelBackup(inMemoria, salvato) {
 /**
  * Le scritture da fare, in ordine, prima di farne una sola.
  *
- * `valore: null` significa togliere la chiave. Averle tutte insieme prima di
- * cominciare è ciò che permette di sapere, a metà strada, cosa restava da fare.
+ * `valore: null` significa togliere la chiave.
  *
- * @param {object} dati backup già passato da `controllaBusta`
+ * @param {Object} dati backup già passato da `controllaBusta`
  * @param {object} turniBuoni i turni sopravvissuti a `vagliaTurni`
+ * @param {(chiave: string) => boolean} [ceGia] vero se lo storage ha già quella chiave: una
+ *   copia illeggibile del backup non prende il posto di quella del telefono
  */
-export function pianoRipristino(dati, turniBuoni) {
+export function pianoRipristino(dati, turniBuoni, ceGia = () => false) {
   const piano = [
     { chiave: KEY_SHIFTS, valore: JSON.stringify(turniBuoni) },
   ];
@@ -211,6 +178,11 @@ export function pianoRipristino(dati, turniBuoni) {
     piano.push({ chiave: KEY_CAL_LAYOUT, valore: dati.vistaCalendario });
   }
 
+  for (const chiave of CHIAVI_ILLEGGIBILI) {
+    const valore = dati.illeggibili?.[chiave];
+    if (typeof valore === 'string' && !ceGia(chiave)) piano.push({ chiave, valore });
+  }
+
   return piano;
 }
 
@@ -220,9 +192,7 @@ export function pianoRipristino(dati, turniBuoni) {
  * @param {Array} piano da `pianoRipristino`
  * @param {Storage} storage `localStorage`, o un finto per i riscontri
  * @returns {{ok: boolean, errore?: Error, tornatoIndietro?: boolean}}
- *   `tornatoIndietro: false` è il caso raro e grave: la scrittura è fallita E
- *   il ritorno pure. Chi chiama non può tacerlo, perché a quel punto i dati
- *   sono davvero mescolati.
+ *   `tornatoIndietro: false`: la scrittura è fallita E il ritorno pure, i dati sono mescolati.
  */
 export function scriviConRitorno(piano, storage) {
   // I valori GREZZI di prima, non l'oggetto ricostruito: tornare indietro deve
@@ -240,12 +210,8 @@ export function scriviConRitorno(piano, storage) {
     else storage.setItem(chiave, valore);
   };
 
-  // Si tiene il conto di cosa è stato toccato DAVVERO, e il ritorno rimette
-  // solo quello, dall'ultima alla prima. Il primo tentativo scriveva tutte le
-  // chiavi del piano, comprese quelle a cui non era ancora arrivato: su uno
-  // storage bloccato significava rimettere le mani su dati sani che nessuno
-  // aveva cambiato. Se il piano fallisce al primo colpo non c'è niente da
-  // annullare, ed è giusto che il ritorno non faccia nulla.
+  // Si tiene il conto di cosa è stato toccato DAVVERO e il ritorno rimette solo quello,
+  // dall'ultima alla prima: su uno storage bloccato non si toccano dati sani.
   const fatte = [];
 
   try {
@@ -266,4 +232,37 @@ export function scriviConRitorno(piano, storage) {
     }
     return { ok: false, errore, tornatoIndietro };
   }
+}
+
+/**
+ * L'opzione nucleare: tutto quello che Turni tiene su questo telefono, via (turni,
+ * impostazioni, ripresa, immagine condivisa in attesa, copie del lettore di immagini).
+ * È l'unica azione con una conferma PRIMA (components/EliminaDati.jsx): dopo non c'è
+ * nessun'altra copia. `clear()` non tocca altro: l'origine è solo di Turni, e il
+ * precache del service worker resta. Gli strumenti si passano da fuori per il
+ * riscontro (`check-elimina-dati.mjs`). Non si ferma al primo errore: cancella tutto
+ * quello che può e dice cosa non ha potuto.
+ *
+ * @param {{ localStorage?: any, sessionStorage?: any, caches?: any, indexedDB?: any }} [strumenti]
+ * @returns {Promise<{ ok: boolean, errori: string[] }>}
+ */
+export async function eliminaTuttoIlLocale({ localStorage: ls, sessionStorage: ss, caches: cc, indexedDB: idb } = {}) {
+  const errori = [];
+  const prova = async (nome, fn) => { try { await fn(); } catch { errori.push(nome); } };
+  await prova('memoria del browser', () => ls?.clear());
+  await prova('sessione', () => ss?.clear());
+  await prova('immagini condivise', () => cc?.delete('turni-condivisi'));
+  await prova('copie del lettore di immagini', async () => {
+    if (!idb?.databases) return;
+    for (const { name } of await idb.databases()) {
+      if (name) {
+        await new Promise((ok, ko) => {
+          const r = idb.deleteDatabase(name);
+          r.onsuccess = ok; r.onerror = ko; r.onblocked = ok;
+        });
+      }
+    }
+  });
+  if (ls && ls.length > 0) errori.push('memoria del browser');
+  return { ok: errori.length === 0, errori: [...new Set(errori)] };
 }

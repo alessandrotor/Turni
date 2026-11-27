@@ -3,34 +3,18 @@ import useModalDismiss from '../hooks/useModalDismiss';
 import { parseNum } from '../motore/pay';
 import { datiMinimiMancanti } from '../utils/configurazione';
 
-// I due dati senza cui non ha senso segnare un turno, chiesti quando si prova a
-// segnarne uno.
+// I due dati senza cui non ha senso segnare un turno, chiesti quando si prova a segnarne uno (non
+// all'apertura: al primo salvataggio l'utente ha già visto a cosa serve l'app).
 //
-// PERCHÉ QUI E NON ALL'APERTURA
-// Un questionario davanti a un'app vuota chiede il contratto a chi non ha
-// ancora capito cosa ci farà, e si risponde a caso o si preme «dopo». Al primo
-// salvataggio invece l'utente ha già visto a cosa serve l'app e sta chiedendo
-// un numero: è il momento in cui due campi si accettano senza fatica.
-//
-// PERCHÉ SOLO DUE, E PERCHÉ BLOCCANO
-// Sono gli unici due che non si possono rimandare senza conseguenze:
-//
-//  · la PAGA: senza, `calcTotalPay` non ritorna un importo sbagliato — non
-//    ritorna niente. L'app non avrebbe nessun numero da mostrare.
-//  · le ORE: reggono la soglia degli straordinari e quanto vale una giornata di
-//    ferie. La seconda è l'unica cosa che NON si recupera dopo, perché la durata
-//    di un'assenza viene scritta dentro il giorno quando lo si crea.
-//
-// Il CONTRATTO non sta qui di proposito, benché pesi più di entrambi: si chiede
-// al primo importo in euro, dove c'è un numero da qualificare, e si può
-// rimandare perché è retroattivo — sceglierlo al terzo mese ricalcola anche il
-// primo.
+// Solo due, e bloccano, perché non si possono rimandare: la PAGA (senza, `calcTotalPay` non ritorna
+// niente) e le ORE (reggono la soglia degli straordinari e il valore di una giornata di ferie, che
+// si scrive dentro il giorno alla creazione). Il CONTRATTO non sta qui: si chiede al primo importo
+// in euro e può aspettare, perché è retroattivo.
 
 export default function DatiMinimi({ settings, onSalva, onAnnulla }) {
   const dialogRef = useRef(null);
-  // Esc NON annulla: qui c'è un turno già compilato che aspetta questi due
-  // dati, e annullarlo non ha un «torna indietro». Per buttarlo c'è il
-  // pulsante, che dice cosa fa.
+  // Esc NON annulla: c'è un turno già compilato che aspetta questi due dati, e annullarlo non ha
+  // un «torna indietro». Per buttarlo c'è il pulsante.
   useModalDismiss(dialogRef, null);
 
   const manca = datiMinimiMancanti(settings);
@@ -49,16 +33,14 @@ export default function DatiMinimi({ settings, onSalva, onAnnulla }) {
   const invia = (e) => {
     e.preventDefault();
 
-    // Validazione esplicita, non affidata agli attributi HTML: un `<input>`
-    // invalido può annullare la submit SENZA mostrare niente, e chi guarda
-    // conclude che il pulsante è rotto (COSE-NUOVE.md §D1).
+    // Validazione esplicita, non affidata agli attributi HTML: un `<input>` invalido può annullare
+    // la submit SENZA mostrare niente (COSE-NUOVE.md §D1).
     if (chiedePaga && pagaNum <= 0) {
       setErrore('Scrivi quanto prendi all\'ora: senza non posso contare niente.');
       return;
     }
     if (chiedeOre && !onCall && oreNum <= 0) {
-      // Lo zero va rifiutato a voce alta: salvato in silenzio diventa una
-      // soglia a zero, e da lì ogni ora lavorata risulta supplementare
+      // Lo zero va rifiutato a voce alta: salvato in silenzio ogni ora risulterebbe supplementare
       // (COSE-NUOVE.md §D2).
       setErrore('Scrivi quante ore fai a settimana da contratto, oppure segna che lavori a chiamata.');
       return;

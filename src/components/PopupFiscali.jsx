@@ -1,19 +1,14 @@
-// I tre popup fiscali del calendario: perché ogni mese è diverso, il
-// conguaglio di dicembre, come funziona il trattamento integrativo.
-//
-// Stavano dentro CalendarView, che era arrivato a 2.211 righe; ora quel file
-// non può più crescere (check-dimensioni.mjs). Qui non si calcola NIENTE: ogni
-// cifra arriva già fatta dal calendario, che la prende dal motore. Un popup
-// che rifà un conto per conto suo è il difetto che CLAUDE.md chiama «il motore
-// è il cuore».
+// I tre popup fiscali del calendario: perché ogni mese è diverso, il conguaglio di dicembre, come
+// funziona il trattamento integrativo. Stanno qui perché CalendarView non può più crescere
+// (check-dimensioni.mjs). Qui non si calcola NIENTE: ogni cifra arriva dal calendario, che la
+// prende dal motore.
 
 import { useRef } from 'react';
 import useModalDismiss from '../hooks/useModalDismiss';
-import { formatCurrency } from '../motore/pay';
-import { formatMonthYear } from '../utils/dates';
 import { numeroIt, euroCella } from '../utils/formato';
 import { tiMontanteNoto, irpefMontanteNota } from '../motore/conguaglio';
 import { SOGLIA_RATEIZZAZIONE, POSIZIONE } from '../motore/restituzione';
+import GraficoMesi from './GraficoMesi';
 
 // La cornice comune: velo, Esc, fuoco dentro, «Ho capito». Ognuno dei tre la
 // ripeteva uguale.
@@ -39,56 +34,28 @@ function Finestra({ titolo, onChiudi, children }) {
   );
 }
 
-// PERCHÉ OGNI MESE È DIVERSO. La regola del programma paghe (lordo del
-// stima dell'anno, `tiSpettaQuestoMese`) e il suo effetto su QUESTO mese, con
-// le righe e i nomi della busta. Le cifre sono quelle di `nettoDelMese`:
-// le stesse del riquadro da cui si apre. Verificata su buste Zucchetti
-// (check-ti-mensile.mjs): lo si dice, senza promettere che ogni
-// programma paghe faccia uguale.
+// PERCHÉ OGNI MESE È DIVERSO: la detrazione cambia di mese in mese perché ogni
+// mese il datore rifà la stima dell'anno (`lordoPresuntoAnno()`). Disegnata in
+// `GraficoMesi.jsx`, dal mockup approvato a novembre 2026. Verificata su buste
+// Zucchetti (check-ti-mensile.mjs, check-mese-per-mese.mjs): lo si dice, senza
+// promettere che ogni programma paghe faccia uguale.
 export function PopupMese({
-  netMonth, currentMonth, conguaglio, meseSiInverte, forchettaScritta, tiNelMese, minimoTi, onChiudi, onApriConguaglio,
+  anno, mese, allShifts, settings, payMap, oggi, conguaglio, forchettaScritta, onChiudi, onApriConguaglio,
 }) {
   return (
     <Finestra titolo="Perché ogni mese è diverso" onChiudi={onChiudi}>
       <p className="form-hint">
-        Il datore non sa quanto guadagnerai: ogni mese stima l&apos;anno con quanto hai preso
-        finora più questo mese fino a dicembre e per la 13ª (verificato sulle buste Zucchetti).
-        Sotto i 15.000 di reddito ti dà il tratt. integrativo; sopra lo toglie, ma alza la detrazione.
-        {netMonth.esitoTi.senzaCapienza && <> Però serve IRPEF da compensare, e conta la media
-          dell&apos;anno: sotto i ~{numeroIt(minimoTi ?? 0)} € al mese le detrazioni la azzerano già.</>}
+        Ogni mese il datore <strong>stima il tuo anno</strong>: sopra i 15.000 ti dà{' '}
+        <strong>più detrazione</strong> e niente tratt. integrativo, sotto il contrario.
       </p>
-      <div className="net-group-label">
-        {formatMonthYear(currentMonth)}: ~{numeroIt(netMonth.esitoTi.lordoPresunto ?? 0)} € lordi
-        ({numeroIt(netMonth.esitoTi.proiezione)} € di reddito)
-      </div>
-      <div className="conti-bonus-righe">
-        <div className="bonus-cifre"><span>IRPEF lorda</span><strong>{formatCurrency(netMonth.irpefLorda)}</strong></div>
-        <div className="bonus-cifre"><span>Detrazioni lav. dip.</span><strong>−{formatCurrency(netMonth.detrazioniApplicate)}</strong></div>
-        <div className="bonus-cifre bonus-cifre--totale"><span>Ritenute IRPEF</span><strong>{formatCurrency(netMonth.irpefNetta)}</strong></div>
-        <div className="bonus-cifre"><span>Tratt. integrativo</span><strong>+{formatCurrency(netMonth.trattamentoIntegrativo)}</strong></div>
-      </div>
-      {/* DICEMBRE, di questo passo: quello che la tabella sopra mostra
-          non è cosa fatta. Proiezione e saldo sono quelli del
-          conguaglio (`stimaConguaglio`), non un conto rifatto qui. */}
-      {conguaglio ? (
-        <p className="form-hint">
-          <strong>A dicembre, di questo passo</strong> il reddito dell&apos;anno
-          fa {euroCella(conguaglio.centrale.redditoAnno)}, {conguaglio.centrale.annoSottoSoglia ? 'sotto' : 'sopra'} i
-          15.000:{' '}
-          {!meseSiInverte ? 'per questo mese niente da sistemare.'
-            : tiNelMese
-              ? 'il tratt. integrativo di questo mese te lo riprendono, l\'IRPEF in più te la ridanno.'
-              : netMonth.esitoTi.senzaCapienza ? 'il tratt. integrativo di questo mese te lo ridanno.'
-                : 'il tratt. integrativo di questo mese te lo ridanno, l\'IRPEF in meno se la riprendono.'}
-          {' '}Sull&apos;anno {forchettaScritta}:{' '}
-          <button type="button" className="linklike" onClick={() => { onApriConguaglio(); }}>vedi il conguaglio</button>.
-        </p>
-      ) : (
-        <p className="form-hint">
-          A dicembre il datore rifà i conti sull&apos;anno vero e sistema la
-          differenza: è il conguaglio.
-        </p>
-      )}
+      <GraficoMesi anno={anno} meseIniziale={mese} allShifts={allShifts} settings={settings} payMap={payMap} oggi={oggi} />
+      {/* DICEMBRE: le stime dei mesi non sono cosa fatta. Il saldo è quello
+          del conguaglio (`stimaConguaglio`), non un conto rifatto qui. */}
+      <p className="form-hint" style={{ marginTop: 6 }}>
+        Regola delle buste Zucchetti. A dicembre il datore rifà il conto sull&apos;anno vero
+        {conguaglio && <>: {forchettaScritta}</>}.{' '}
+        {conguaglio && <button type="button" className="linklike" onClick={() => { onApriConguaglio(); }}>vedi il conguaglio</button>}
+      </p>
     </Finestra>
   );
 }
@@ -138,7 +105,7 @@ export function PopupConguaglio({
       </table>
       {perchéConguaglio && <p className="form-hint">{perchéConguaglio}</p>}
       {conguaglio.centrale.voci.trattamentoIntegrativo > SOGLIA_RATEIZZAZIONE && (
-        <p className="form-hint">Il trattamento integrativo da restituire, oltre i 60 €, si paga a rate.</p>
+        <p className="form-hint">La trattenuta del tratt. integrativo, oltre i 60 €, si paga a rate.</p>
       )}
       {/* LE CIFRE VERE, dove il modello non può saperle: i mesi del
           montante li conosce solo come totale. Facoltative, dentro il
@@ -176,11 +143,8 @@ export function PopupConguaglio({
   );
 }
 
-// I CONTI DELLA SOGLIA, per chi tocca «perché?». Il pericolo da
-// togliere è uno solo: considerare i ~100 € al mese già spesi.
-// «Meno tasse e altre voci» non si scompone in detrazione (+1.145) e
-// indennità 207/2024 (−~70): a schermo basta la somma, che esce dal
-// motore (`costoSoglia`) e non da costanti scritte qui.
+// I CONTI DELLA SOGLIA, per chi tocca «perché?». «Meno tasse e altre voci» non si scompone in
+// detrazione e indennità 207/2024: basta la somma, che esce dal motore (`costoSoglia`).
 export function PopupSoglia({
   erogato, alTuoLordo, proiezione, costo, tabellaSoglia, posizione, mancaPareggio, onChiudi,
 }) {
@@ -188,7 +152,7 @@ export function PopupSoglia({
     <Finestra titolo="Come funziona il tratt. integrativo" onChiudi={onChiudi}>
       <p className="form-hint">
         Spetta fino a ~{euroCella(costo.tetto)} lordi l'anno (15.000 € di reddito): se li superi, a dicembre il datore si riprende
-        tutto: {euroCella(erogato)} finora.
+        tutto, {euroCella(erogato)} finora, ma la detrazione sale e le tasse calano quasi altrettanto.
       </p>
       {/* La tabella è un'ALTRA grandezza rispetto alla cifra qui sopra:
           quella è cassa, questa è il saldo di un anno intero. Senza
@@ -251,7 +215,7 @@ export function PopupSoglia({
         </p>
       )}
       <p className="form-hint form-hint--warn">
-        Con due datori ti riprendono di più.
+        L'app vede un solo datore: con due, la trattenuta è più alta di così.
       </p>
     </Finestra>
   );

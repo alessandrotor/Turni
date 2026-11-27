@@ -16,9 +16,12 @@
     "jspdf-autotable": "^5.0.8",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "tesseract.js": "^5.1.1",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@tesseract.js-data/eng": "^1.0.0",
+    "@types/react": "^18.3.31",
     "@vitejs/plugin-react": "^4.3.1",
     "typescript": "^7.0.2",
     "vite": "^5.4.2",

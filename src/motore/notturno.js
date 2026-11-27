@@ -1,75 +1,23 @@
 // Lavoro notturno: quanti minuti di un turno cadono nella fascia notturna.
+// Si contano i MINUTI in fascia, non il turno intero (domenica e festivo valgono sul
+// turno intero): per questo non sta in `getShiftSurchargeParts`.
 //
-// PERCHÉ I MINUTI E NON IL TURNO INTERO
-// I CCNL pagano «le ore prestate dalle 22 alle 6», non i turni che le toccano:
-// un turno 20:00–02:00 ha quattro ore notturne e due diurne, e solo le quattro
-// vanno maggiorate. È la differenza con domenica e festivo, che invece si
-// applicano al turno per intero perché dipendono dal GIORNO, non dall'orario.
-// Per questo il notturno non poteva entrare in `getShiftSurchargeParts`: quella
-// funzione restituisce percentuali sul turno intero.
-//
-// LA FASCIA — e perché è configurabile e non una costante
-//
-// 22:00–06:00 è la definizione del D.Lgs 66/2003, e la usano vigilanza e
-// servizi fiduciari, commercio/terziario e metalmeccanici industria.
-//
-// Il TURISMO fa storia a sé, e non di poco: l'art. 13 del CCNL distingue più
-// casi e NESSUNO comincia alle 22. Il testo consultato ad agosto 2026 riporta
-// 24:00–06:00 per il lavoro notturno ordinario, 23:00–06:00 per i «lavoratori
-// notturni» di pubblici esercizi e ristorazione, 23:30–06:30 per alberghiero e
-// agenzie di viaggio.
-//
-// MA QUEI NUMERI NON VANNO PRESI COME ORO COLATO, e il codice non li impone
-// per questo. Sotto l'etichetta «turismo / pubblici esercizi» esistono contratti
-// firmati da associazioni diverse (Confcommercio, Conflavoro, ANPIT…) con
-// clausole che non coincidono, e i rinnovi hanno spostato anche la percentuale
-// fra il 20% e il 25%. L'utente di riferimento di quest'app ricorda dalle
-// proprie buste una fascia 23:30–06:00 in ristorazione, che non corrisponde a
-// nessuna delle tre: può essere una versione diversa del contratto o un
-// accordo aziendale, e in ogni caso la busta batte la ricerca.
-//
-// Da qui tre conseguenze di disegno:
-//  - la fascia è CONFIGURABILE agli estremi, e `fasciaNotturna` non assume
-//    nulla sulla durata (23:30–06:30 dura sette ore, non otto);
-//  - il suggerimento in Impostazioni non spaccia una tabella per verità: dice
-//    che le fasce variano e che il numero giusto sta sul cedolino;
-//  - la fascia di partenza NON è più una costante uguale per tutti: sta nel
-//    preset del contratto (`fasciaNotturna` in ccnl.json), accanto agli altri
-//    dati che dipendono dal CCNL. Il turismo parte dalle 23:00.
-//
-// Le 22:00–06:00 restano il ripiego per i contratti che non dichiarano nulla,
-// perché sono la definizione di legge. Ma per il turismo erano semplicemente
-// SBAGLIATE, e un default sbagliato è peggio di un campo vuoto: conta come
-// notturne ore che in busta non lo sono, e gonfia la stima verso l'alto — cioè
-// nella direzione che fa male, perché ci si fa un conto che poi non arriva.
-//
-// L'ordine con cui si decide la fascia: quello che ha scritto l'utente, poi il
-// contratto, poi la legge. La busta batte il contratto, il contratto batte la
-// regola generale.
-//
-// LA PERCENTUALE NON STA QUI
-// Va dal 10% al 65% secondo classificazione (turnista o no, notturno abituale
-// o occasionale) e contratto. Non è un dato del contratto utilizzabile in
-// automatico, è un'impostazione dell'utente — la stessa scelta già presa per
-// festivo e domenicale, scritta nella nota del CCNL vigilanza in ccnl.json.
+// La fascia vale: quella dell'utente, poi quella del contratto (`fasciaNotturna` in
+// ccnl.json), poi quella di legge. La percentuale è un'impostazione dell'utente.
+// → docs/note-motore-notturno.md
 //
 // La regola si riscontra con `node src/motore/riscontri/check-notturno.mjs`.
 
-// Estensione esplicita: senza, i riscontri in `scripts/` (che girano fuori da
-// Vite, su Node puro) non riescono a importare questo modulo.
+// Estensione esplicita: senza, Node puro non importa questo modulo.
 import { parseTime, minutesDiff } from './date.js';
 import { getCcnl } from './ccnl.js';
 
-// Ripiego di LEGGE (D.Lgs. 66/2003), per i contratti che non dichiarano una
-// fascia propria. Non è «il default del turismo»: quello sta in ccnl.json.
+// Ripiego di legge (D.Lgs. 66/2003) per i contratti senza fascia propria.
 export const FASCIA_NOTTURNA_DEFAULT = { inizio: '22:00', fine: '06:00' };
 
 /**
- * Fascia che vale per queste impostazioni, come testo: prima quella scritta
- * dall'utente, poi quella del contratto, infine quella di legge.
- *
- * Serve anche alla UI, che deve poter mostrare da dove arriva il valore
- * proposto invece di far comparire due orari senza spiegazione.
+ * Fascia che vale per queste impostazioni, come testo: dell'utente, del contratto o
+ * di legge. Serve anche alla UI per mostrare da dove arriva il valore.
  */
 export function fasciaNotturnaRisolta(settings = {}) {
   const daCcnl = getCcnl(settings.ccnl).fasciaNotturna;
@@ -82,25 +30,9 @@ export function fasciaNotturnaRisolta(settings = {}) {
 }
 
 /**
- * La fascia da usare per CHIEDERE, che non è sempre quella con cui si PAGA.
- *
- * Il motore paga sulla fascia risolta: quella scritta dall'utente, o quella del
- * contratto, o in mancanza di entrambe quella di legge. Ma «di legge» qui vuol
- * dire «non lo sappiamo»: chi non ha ancora scelto il contratto non ci ha detto
- * da che ora conta la notte, e il ripiego 22:00–06:00 è una supposizione, non
- * un'informazione.
- *
- * Per l'AVVISO la supposizione non basta, e i due errori non si equivalgono:
- *  · chiedere per un turno che poi notturno non era costa un tocco;
- *  · non chiedere per un turno che lo era costa soldi, in silenzio, ogni mese.
- * Quindi finché la fascia non è nota si guarda la più LARGA fra quelle che
- * esistono davvero — 22:00 di legge, 23:00 e 23:30 nelle varianti dell'art. 13
- * CCNL Turismo, 06:30 la fine più tarda — e l'avviso dice «potrebbe», perché
- * quella è la verità.
- *
- * Appena il contratto c'è, si torna alla fascia vera: chi ha scelto il Turismo
- * (23:00–06:00) non si sente chiedere niente per un turno 21:00–23:00, che
- * notturno non è.
+ * La fascia da usare per CHIEDERE, che non è sempre quella con cui si PAGA: senza
+ * contratto si guarda la più LARGA possibile (22:00–06:30) e l'avviso dice
+ * «potrebbe», perché non chiedere costa soldi e chiedere un tocco.
  */
 export const FASCIA_NOTTURNA_POSSIBILE = { inizio: '22:00', fine: '06:30' };
 
@@ -114,8 +46,7 @@ export function fasciaNotturnaPossibile(settings = {}) {
 /**
  * Questo turno tocca la fascia in cui la notte POTREBBE cadere.
  *
- * Stessa matematica di `toccaFasciaNotturna` — cambia solo la fascia, e solo
- * quando non la si conosce.
+ * Come `toccaFasciaNotturna`, ma con la fascia larga quando non è nota.
  */
 export function toccaFasciaNotturnaPossibile(shift, settings = {}) {
   const f = fasciaNotturnaPossibile(settings);
@@ -125,10 +56,7 @@ export function toccaFasciaNotturnaPossibile(shift, settings = {}) {
   }) > 0;
 }
 
-// Non cumulabile è la regola, non l'eccezione: Commercio e Vigilanza lo
-// scrivono a chiare lettere («le maggiorazioni non sono cumulabili fra loro, la
-// maggiore assorbe la minore»). Il default segue i contratti; 'somma' resta per
-// chi ha un accordo aziendale che cumula davvero.
+// Non cumulabile è la regola (la maggiore assorbe la minore); 'somma' per gli accordi aziendali.
 export const CUMULO_DEFAULT = 'max';
 
 const GIORNO = 24 * 60;
@@ -153,11 +81,9 @@ export function fasciaNotturna(settings = {}) {
 /**
  * Minuti del turno che cadono nella fascia notturna.
  *
- * Lavora in minuti assoluti dall'inizio del turno, non in ore di orologio: un
- * turno che valica la mezzanotte va confrontato con la finestra notturna del
- * giorno dopo, non solo con quella del giorno in cui comincia. Per lo stesso
- * motivo le finestre si ripetono su tre giorni — quella precedente serve a un
- * turno che comincia prima delle 06:00.
+ * Lavora in minuti assoluti dall'inizio del turno: uno che valica la mezzanotte
+ * va confrontato con la finestra del giorno dopo, e le finestre si ripetono su
+ * tre giorni (la precedente serve a chi comincia prima delle 06:00).
  */
 export function minutiInFasciaNotturna(startTime, endTime, settings = {}) {
   const { inizio, durata } = fasciaNotturna(settings);
@@ -182,28 +108,17 @@ export function minutiNotturni(shift, settings = {}) {
 }
 
 /**
- * Minuti notturni che si possono davvero PAGARE: mai più dei minuti pagati del
- * turno.
- *
- * Serve perché la pausa si sottrae al totale del turno ma non si sa in che
- * punto cada, quindi non la si può sottrarre alla sola fascia. Senza il tetto
- * un 22:00–06:00 con mezz'ora di pausa risulterebbe di 8 ore notturne su 7 e
- * mezza pagate — e il riepilogo del mese direbbe un numero diverso da quello
- * mostrato sul turno.
- *
- * Il tetto sta qui e non nei due chiamanti proprio per questo: la regola deve
- * essere una sola, altrimenti motore e interfaccia divergono in silenzio.
- * Il numero dei minuti pagati arriva da fuori (`calcShiftMinutes`) per non
- * creare una dipendenza circolare con `pay.js`, che importa questo modulo.
+ * Minuti notturni che si possono davvero PAGARE: mai più dei minuti pagati del turno
+ * (la pausa si sottrae al totale ma non si sa dove cada). I minuti pagati arrivano da
+ * fuori per evitare una dipendenza circolare con `pay.js`.
  */
 export function minutiNotturniPagati(shift, settings = {}, minutiPagati = 0) {
   return Math.min(minutiNotturni(shift, settings), Math.max(0, minutiPagati));
 }
 
 /**
- * Il turno tocca la fascia? Serve alla UI per l'etichetta «notturno», e deriva
- * dal conteggio invece di duplicarne la regola: se un giorno la fascia cambia,
- * cambia in un posto solo.
+ * Il turno tocca la fascia? Per l'etichetta «notturno»: deriva dal conteggio,
+ * così la regola resta in un posto solo.
  */
 export function toccaFasciaNotturna(shift, settings = {}) {
   return minutiNotturni(shift, settings) > 0;
@@ -222,13 +137,9 @@ export function modoCumuloNotturno(settings = {}) {
 
 /**
  * Percentuale AGGIUNTIVA che spetta ai minuti notturni, oltre a quella che il
- * turno prende già per domenica/festivo/manuale.
- *
- * Restituire il solo supplemento — invece della percentuale piena — è ciò che
- * tiene intatto il resto del calcolo: le voci esistenti continuano a valere sul
- * turno intero come prima, e il notturno si aggiunge come una riga in più.
- * Con la maggiorazione a zero questa vale zero, quindi il motore si comporta
- * esattamente come prima di questa funzione.
+ * turno prende già per domenica/festivo/manuale. Restituire il solo supplemento
+ * lascia intatte le voci esistenti: il notturno si aggiunge come una riga in più,
+ * e con la maggiorazione a zero vale zero.
  */
 export function pctNotturnoAggiuntiva(settings = {}, pctGiorno = 0) {
   const notte = pctNotturno(settings);
@@ -240,13 +151,9 @@ export function pctNotturnoAggiuntiva(settings = {}, pctGiorno = 0) {
 }
 
 /**
- * Lo STRAORDINARIO NOTTURNO del contratto: ore straordinarie che cadono in una
- * fascia sua, pagate con una percentuale sua che assorbe tutte le altre. Nel
- * CCNL Turismo 60% fra le 24 e le 6, contro il 30% di giorno (art. 13 e
- * lavoro straordinario, schede dei pubblici esercizi e delle aziende
- * alberghiere). Dal contratto, NON riscontrato su una busta: nessuna ha uno
- * straordinario. Un contratto che non lo dichiara non ha la regola.
- * → check-straordinario-notturno.mjs
+ * Lo STRAORDINARIO NOTTURNO del contratto: ore straordinarie in una fascia sua, con
+ * una percentuale sua che assorbe le altre. Un contratto che non lo dichiara non ha
+ * la regola. → check-straordinario-notturno.mjs
  *
  * Le ore straordinarie sono le ULTIME del turno (la settimana si conta in
  * ordine), quindi si guarda la coda: gli ultimi `minutiStraordinari` minuti.

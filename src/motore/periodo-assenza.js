@@ -1,48 +1,15 @@
 // Assenze a periodo: da «dal … al …» alle singole giornate da creare.
 //
-// PERCHÉ NON BASTA CREARE N GIORNI UGUALI
-// Riposo settimanale e ferie sono diritti distinti (art. 2109 c.c., D.Lgs.
-// 66/2003 artt. 9 e 10): il riposo spetta comunque e NON si consuma come ferie.
-// Segnare sette giorni di fila ne «spende» uno di troppo e gonfia le ore del
-// mese — cioè la stima della paga.
-//
-// Ma quale sia il giorno di riposo, per un turnista, qui non si può sapere: la
-// legge dice «di regola la domenica» ragionando sull'ufficio, mentre chi lavora
-// a turni riposa in un giorno qualunque, diverso ogni settimana.
-//
-// Per un po' quindi non si indovinava: tutti i giorni selezionati, e i riposi
-// li toglieva chi guardava. Nessuno lo faceva: settembre 2026 aveva 13 giorni
-// di ferie invece di 11, cioè 8 ore in più a riempire il monte ore, 8 ore di
-// lavoro in più al 130% e il mese spinto sopra i 1.250 € — il netto stimato
-// era 53 € sopra la busta. Il riposo spetta comunque (uno ogni sette giorni con
-// la settimana di sei del Turismo), quindi il NUMERO dei riposi non è un'ipotesi.
-// Lo è solo QUALE giorno: lo si prende dallo storico, il giorno della settimana
-// in cui si lavora meno. NON la domenica per principio: nel Turismo chi lavora
-// a turni riposa spesso in un altro giorno (la domenica lavorata da chi riposa
-// altrove costa al datore una maggiorazione piccola). La domenica resta il
-// ripiego senza storico, perché è la regola di legge (D.Lgs. 66/2003, art. 9).
-// Il giorno tolto resta nell'elenco con scritto «riposo», e si rispunta.
-//
-// LE FESTIVITÀ, uguale e per la stessa ragione: il CCNL Turismo esclude dal
-// computo delle ferie «le giornate di riposo settimanale e le festività
-// nazionali e infrasettimanali», e le ferie si allungano di altrettanti giorni
-// (art. 134 nel testo Fipe/Federalberghi, 116 nella versione Confsal). In busta
-// quel giorno è una festività, un giustificativo a sé (check-festivita.mjs), e
-// l'app la propone da sola dove non c'è un turno (festivita-non-lavorate.js).
-// Le ex festività soppresse NON si toccano: non è chiaro che ogni versione del
-// contratto le escluda, e `isHoliday` non le conosce.
-//
-// QUANTO VALE UNA GIORNATA
-// Le ore da contratto, uguali per ogni giorno — non le ore di un turno che
-// verrebbe convertito: un turnista in ferie non ha turni segnati che diventano
-// ferie, ha giornate che valgono il «tot» del cedolino. È esattamente ciò che
-// calcola `minutiGiornoAssenza` (24 ore su sei giorni del part-time 60% CCNL
-// Turismo → quattro ore al giorno), quindi qui non si ricalcola nulla.
+// Non si creano N giorni uguali: il riposo settimanale e le festività non si consumano
+// come ferie, e segnarli gonfia le ore del mese. Il NUMERO dei riposi lo dice il
+// contratto, QUALE giorno lo storico (la domenica se non c'è storico). Il giorno tolto
+// resta nell'elenco con scritto «riposo» e si rispunta. Le festività nazionali si
+// propongono da sole dove non c'è un turno (festivita-non-lavorate.js). Una giornata
+// vale le ore da contratto (`minutiGiornoAssenza`), non quelle di un turno.
 //
 // Riscontro: `node src/motore/riscontri/check-periodo-assenza.mjs`.
 
-// Estensioni esplicite: senza, Node puro non importa il modulo e i riscontri in
-// `scripts/` non partono.
+// Estensioni esplicite: senza, Node puro non importa il modulo.
 import { isIsoDate, parseDate, formatDate, dayNumber } from './date.js';
 import { isHoliday } from './holidays.js';
 import { minutiGiornoAssenza, isAssenza, GIORNI_LAVORATIVI_DEFAULT } from './assenze.js';
@@ -68,19 +35,15 @@ export function giorniDiRiposo(turni = [], settings = {}) {
   return [...PREFERENZA].sort((a, b) => conta[a] - conta[b] || PREFERENZA.indexOf(a) - PREFERENZA.indexOf(b)).slice(0, quanti);
 }
 
-// Tetto sul numero di giornate generabili in un colpo solo. Non è una regola di
-// contratto: è una rete contro il refuso nell'anno (2026 scritto 2036 farebbe
-// nascere migliaia di record in un colpo). Un anno abbondante copre qualunque
-// uso legittimo, e un elenco di 366 righe è abbastanza assurdo da farsi notare
-// prima che qualcuno prema «salva».
+// Tetto sulle giornate generabili in un colpo: una rete contro il refuso nell'anno
+// (2026 scritto 2036), non una regola di contratto.
 export const MAX_GIORNI_PERIODO = 366;
 
 /**
  * Le date ISO comprese fra due estremi, estremi inclusi.
  *
- * Avanza di un giorno con `setDate`, che ragiona sul CALENDARIO: sommare 24 ore
- * sbaglierebbe due volte l'anno, quando l'ora legale rende un giorno lungo 23 o
- * 25 ore (in Italia il 29 marzo e il 25 ottobre 2026).
+ * Avanza con `setDate`, che ragiona sul CALENDARIO: sommare 24 ore sbaglierebbe
+ * nei giorni di cambio d'ora legale.
  *
  * @returns {string[]} vuoto se le date non sono valide o se `al` precede `dal`
  */
@@ -102,11 +65,8 @@ export function giorniPeriodo(dal, al) {
  * Le giornate proposte per un periodo di assenza, da mostrare e correggere
  * prima di salvare.
  *
- * NON prende il tipo di assenza di proposito: ferie, permesso e malattia
- * producono la stessa proposta, e a cambiare è solo ciò che l'utente toglie.
- * Un parametro `tipo` inutilizzato lascerebbe credere a una differenza che non
- * c'è. L'unica cosa che dipende dal tipo — l'avviso sui giorni consecutivi
- * della malattia, che la carenza pretende — è testo, e vive nell'interfaccia.
+ * NON prende il tipo di assenza: ferie, permesso e malattia producono la stessa
+ * proposta, e un parametro `tipo` inutilizzato lascerebbe credere a una differenza.
  *
  * @param {{dal?: string, al?: string, turni?: Array<any>, settings?: import('./impostazioni.js').Impostazioni}} [p]
  * @returns {Array<{data:string, minuti:number, turnoEsistente:object|null, selezionato:boolean}>}

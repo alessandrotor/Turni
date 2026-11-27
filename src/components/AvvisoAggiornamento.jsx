@@ -14,7 +14,7 @@
 export default function AvvisoAggiornamento({ onAggiorna, onChiudi }) {
   return (
     <div className="avviso-agg" role="status" aria-live="polite">
-      <span className="avviso-agg-testo">C'è una versione nuova di Turni.</span>
+      <span className="avviso-agg-testo">C'è una versione nuova di Segnaturni.</span>
       <div className="avviso-agg-azioni">
         <button type="button" className="btn btn-primary" onClick={onAggiorna}>
           Aggiorna

@@ -5,6 +5,7 @@ import {
   confronta, confrontaAMano, testoDaCondividere, scartoScritto, spiegaScarto,
 } from '../utils/verifica-busta';
 import { formatCurrency } from '../motore/pay';
+import Icona from './Icona';
 
 const MESI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno',
   'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
@@ -89,14 +90,14 @@ export default function VerificaBusta({ allShifts, settings, onChiudi }) {
   return (
     <div className="verifica">
       <div className="verifica-privacy" role="note">
-        <strong>🔒 La tua busta paga NON viene inviata a nessun servizio esterno.</strong>
+        <strong><Icona nome="lucchetto" /> La tua busta paga NON viene inviata a nessun servizio esterno.</strong>
         <span>Viene letta qui, sul tuo telefono, e non viene salvata. Esce solo il testo che copi tu.</span>
       </div>
 
       <h1 className="verifica-titolo">Confronta con la busta</h1>
 
       <label className={`btn btn-primary verifica-scegli ${stato === 'lettura' ? 'is-busy' : ''}`}>
-        {stato === 'lettura' ? '⏳ Leggo la busta…' : '📄 Scegli il PDF della busta'}
+        {stato === 'lettura' ? <><Icona nome="attesa" /> Leggo la busta…</> : <><Icona nome="documento" /> Scegli il PDF della busta</>}
         <input type="file" accept="application/pdf,.pdf" onChange={leggi} hidden disabled={stato === 'lettura'} />
       </label>
 
@@ -123,7 +124,7 @@ export default function VerificaBusta({ allShifts, settings, onChiudi }) {
                 <tr key={`${r.livello}-${r.voce}`} className={r.ok ? 'is-ok' : 'is-scarto'}>
                   <td>{r.voce}</td>
                   <td className="verifica-scarto">{scartoScritto(r)}</td>
-                  <td>{r.ok ? '✓' : '⚠️'}</td>
+                  <td>{r.ok ? <Icona nome="ok" /> : <Icona nome="avviso" />}</td>
                 </tr>
               ))}
             </tbody>
@@ -146,7 +147,7 @@ export default function VerificaBusta({ allShifts, settings, onChiudi }) {
                   <div key={r.id} className={`verifica-voce ${r.ok ? 'is-ok' : 'is-scarto'}`}>
                     <div className="verifica-voce-testa">
                       <span>{r.voce}</span>
-                      <span className="verifica-scarto">{scartoScritto(r)} {r.ok ? '✓' : '⚠️'}</span>
+                      <span className="verifica-scarto">{scartoScritto(r)} {r.ok ? <Icona nome="ok" /> : <Icona nome="avviso" />}</span>
                     </div>
                     <div className="verifica-voce-cifre">
                       app {formatCurrency(r.app)}{r.oreApp ? ` (${oreDi(r.oreApp)})` : ''}
@@ -161,7 +162,7 @@ export default function VerificaBusta({ allShifts, settings, onChiudi }) {
           {esito.avvisi.map((a) => <p key={a} className="form-hint">{a}</p>)}
           <div className="verifica-azioni">
             <button type="button" className="btn btn-primary" onClick={copia}>
-              {copiato ? '✓ Copiato' : '📋 Copia il risultato'}
+              {copiato ? 'Copiato' : <><Icona nome="appunti" /> Copia il risultato</>}
             </button>
             {typeof navigator !== 'undefined' && navigator.share && (
               <button type="button" className="btn btn-secondary" onClick={condividi}>Condividi</button>

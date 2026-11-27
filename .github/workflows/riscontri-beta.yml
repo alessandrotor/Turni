@@ -1,12 +1,19 @@
-# Il cancello dei riscontri sul branch `Beta`, senza deploy.
+# Il cancello dei riscontri sul branch `Beta`, e poi il sito di Beta.
 #
 # `Beta` è experimental «congelato»: lì si fanno solo correzioni prima di
 # portarlo in produzione (che resta un deploy manuale da `main`). Una
 # correzione che rompe un riscontro deve diventare rossa qui, prima di
 # arrivare a chi usa l'app. Stessa build e stessi riscontri del sito di prova
 # (deploy-test.yml), compreso il controllo del pacchetto costruito.
+#
+# Se i riscontri tornano, Beta va su https://beta.turni-9vr.pages.dev: chi
+# mantiene il progetto la prova a mano lì prima del rilascio (novembre 2026).
+# Gli stessi dati del telefono NON passano da un indirizzo all'altro: ogni
+# sito ha il suo archivio, quindi si prova con un backup ripristinato.
+# La build è quella della produzione: niente pagina Statistiche e niente
+# lettura con l'IA (sospesa, vedi deploy-test.yml).
 
-name: Riscontri Beta
+name: Riscontri e sito Beta
 
 on:
   push:
@@ -14,6 +21,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: pages-beta
+  cancel-in-progress: true
 
 jobs:
   riscontri:
@@ -31,8 +42,15 @@ jobs:
       - name: Build (come in produzione)
         run: npm run build
         env:
-          VITE_AI_PROXY_URL: ${{ vars.VITE_AI_PROXY_URL }}
-          VITE_TURNSTILE_SITEKEY: ${{ vars.VITE_TURNSTILE_SITEKEY }}
+          # L'anteprima del link punta a QUESTO sito, come nel sito di prova.
+          VITE_SITE_URL: 'https://beta.turni-9vr.pages.dev'
 
-      - name: Riscontri
+      - name: Riscontri (bloccano il deploy se uno fallisce)
         run: npm run riscontri
+
+      - name: Deploy su Pages (branch beta)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: efda5a39e3e8644a9398645ea4b8cfac
+          command: pages deploy dist --project-name turni --branch beta

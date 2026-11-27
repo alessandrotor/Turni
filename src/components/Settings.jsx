@@ -15,13 +15,14 @@ import useOccupato from '../hooks/useOccupato';
 import { minutiGiornoAssenza } from '../motore/assenze';
 import { fasciaNotturnaRisolta, CUMULO_DEFAULT } from '../motore/notturno';
 import { normalizzaMaggiorazione, messaggioMaggiorazione } from '../utils/maggiorazioni';
+import EliminaDati from './EliminaDati';
+import Icona from './Icona';
 
 // Mostra un numero salvato come stringa con la virgola (vuoto se 0/assente).
 const toInput = (n) => (n === '' || n == null || !Number(n) ? '' : String(Number(n)).replace('.', ','));
 
-// Mese di riferimento del montante, come 'YYYY-MM' per <input type="month">.
-// In ora LOCALE: `toISOString()` è UTC, e il 1° del mese fra mezzanotte e le
-// due restituiva il mese prima — il confine del montante cadeva un mese indietro.
+// Mese di riferimento del montante, 'YYYY-MM' per <input type="month">, in ora LOCALE
+// (`toISOString()` è UTC e il 1° del mese restituiva il mese prima).
 const currentMonthValue = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
@@ -39,24 +40,22 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
     holidaySurchargePct: settings.holidaySurchargePct ?? 0,
     holidaySundayMode: settings.holidaySundayMode || 'max',
     nightSurchargePct: settings.nightSurchargePct ?? 0,
-    // Non più il ripiego di legge: se l'utente non ha scelto, i campi partono
-    // dalla fascia del suo contratto (per il turismo le 23:00, non le 22:00).
+    // Se l'utente non ha scelto, i campi partono dalla fascia del suo contratto.
     nightStart: fasciaNotturnaRisolta(settings).inizio,
     nightEnd: fasciaNotturnaRisolta(settings).fine,
     nightCumuloMode: settings.nightCumuloMode || CUMULO_DEFAULT,
     patronSaintDate: settings.patronSaintDate || '',
     priorTaxableIncome: toInput(settings.priorTaxableIncome),
-    // Mese fino al quale il montante è comprensivo dei turni. Va scelto
-    // dall'utente: dedurlo dalla data di salvataggio sbagliava di un mese chi
-    // inseriva il dato a inizio mese pensando "fino al mese scorso".
+    // Mese fino al quale il montante comprende i turni: lo sceglie l'utente (dedurlo dalla
+    // data di salvataggio sbagliava di un mese).
     priorIncomeMonth: (settings.priorIncomeDate || '').slice(0, 7) || currentMonthValue(),
-    workerName: settings.workerName ?? '',
     onCall: !!settings.onCall,
     annualGrossManual: toInput(settings.annualGrossManual),
     dailyOvertimeThreshold: settings.dailyOvertimeThreshold ?? '',
     hasTredicesima: !!settings.hasTredicesima,
     hasQuattordicesima: !!settings.hasQuattordicesima,
     hireDate: settings.hireDate || '',
+    workerName: settings.workerName || '',
     ccnl: settings.ccnl || '',
     aziendaDipendenti: settings.aziendaDipendenti || FASCIA_DEFAULT,
     tfrInBusta: !!settings.tfrInBusta,
@@ -99,9 +98,8 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
   // Il backup in chiaro, mostrato SOLO quando la consegna non è verificabile:
   // è la via di riserva, non un'opzione da tenere sempre a schermo.
   const [backupTesto, setBackupTesto] = useState(null);
-  // Il backup LETTO ma non ancora applicato: finché sta qui dentro non è stato
-  // scritto niente, ed è quello che permette di mostrare le due cifre a
-  // confronto invece di un «sei sicuro?» che non sa di cosa parla.
+  // Il backup LETTO ma non ancora applicato: finché sta qui non è stato scritto niente, e
+  // permette di mostrare le due cifre a confronto.
   const [daRipristinare, setDaRipristinare] = useState(null);
   const backupInputRef = useRef(null);
   const [turniSulDisco] = useState(contaTurniSalvati);
@@ -124,11 +122,8 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
     setSaved(false);
   };
 
-  // Le percentuali si normalizzano quando si LASCIA il campo, non mentre si
-  // scrive: chi digita «120» passa da «1», «12», «120», e convertire a metà
-  // strada sarebbe un campo che combatte con chi ci scrive dentro.
-  // La regola, e il perché sopra il 100% non è un indovinello, stanno in
-  // utils/maggiorazioni.js.
+  // Le percentuali si normalizzano quando si LASCIA il campo, non mentre si scrive (regola
+  // in utils/maggiorazioni.js).
   const [avvisiMagg, setAvvisiMagg] = useState({});
   const controllaMagg = (field) => () => {
     const esito = normalizzaMaggiorazione(form[field]);
@@ -139,7 +134,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
     setAvvisiMagg(a => ({ ...a, [field]: messaggioMaggiorazione(esito) }));
   };
   const avvisoMagg = (field) => (avvisiMagg[field]
-    ? <p className="form-hint form-hint--attenzione">⚠️ {avvisiMagg[field]}</p>
+    ? <p className="form-hint form-hint--attenzione"><Icona nome="avviso" /> {avvisiMagg[field]}</p>
     : null);
 
   const addPreviousRate = () => {
@@ -199,11 +194,8 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
     setSaved(false);
   };
 
-  // Le parole seguono quello che è successo DAVVERO, non l'assenza di errori.
-  // Prima si scriveva «Backup creato» in ogni caso, anche quando il browser
-  // aveva rifiutato il download in silenzio: chi lo leggeva restava senza copia
-  // e senza saperlo. Ora l'unico caso che promette qualcosa è quello in cui il
-  // file è stato scritto sotto i nostri occhi.
+  // Le parole seguono quello che è successo DAVVERO: «Backup creato» solo se il file è stato
+  // scritto sotto i nostri occhi.
   async function handleEsportaBackup() {
     setBackupBusy(true);
     setBackupMsg(null);
@@ -216,9 +208,8 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
       } else if (esito === ESITO.ANNULLATO) {
         setBackupMsg({ testo: 'Backup annullato: non è stato salvato nessun file.' });
       } else {
-        // NON_VERIFICABILE: il download è partito, ma il browser non dice se è
-        // arrivato. Si chiede all'utente di guardare, e intanto gli si mette in
-        // mano la seconda via — che è l'unica cosa utile da fare qui.
+        // NON_VERIFICABILE: il download è partito ma il browser non dice se è arrivato. Si chiede
+        // di guardare e si offre la seconda via.
         setBackupMsg({
           attenzione: true,
           testo: `Backup di ${turni} turni avviato. Controlla che il file sia davvero fra i download: alcuni browser (Safari in modalità app, quelli dentro Instagram o Facebook) li bloccano senza dirlo. Se non lo trovi, copia il testo qui sotto e incollalo in una nota o in una mail.`,
@@ -237,28 +228,15 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
       await navigator.clipboard.writeText(backupTesto);
       setBackupMsg({ testo: 'Backup copiato: incollalo subito da qualche parte.' });
     } catch {
-      // Gli appunti possono essere negati (permesso rifiutato, contesto non
-      // sicuro). Il riquadro di testo resta visibile e selezionabile a mano:
-      // è il motivo per cui non lo si nasconde dopo aver copiato.
+      // Gli appunti possono essere negati: il riquadro di testo resta visibile e selezionabile.
       setBackupMsg({ attenzione: true, testo: 'Non riesco a copiare da solo: seleziona il testo qui sotto e copialo a mano.' });
     }
   }
 
-  // IL RIPRISTINO IN DUE TEMPI, E PERCHÉ NON COSTA UN TOCCO IN PIÙ
-  //
-  // Prima c'era un `window.confirm` che diceva «sostituisce TUTTI i turni.
-  // Continuare?». Un tocco lo chiedeva già, ma per una domanda che non sapeva
-  // niente: né quanti turni stavi per perdere, né quanti ne arrivavano, né se
-  // il file era davvero quello giusto. E se rispondevi sì per sbaglio non
-  // c'era modo di tornare indietro, perché nessuno aveva messo da parte una
-  // copia di quello che c'era.
-  //
-  // Adesso il file si legge SENZA scrivere niente (`leggiBackup`), e lo stesso
-  // tocco di prima serve a decidere sapendo: le due cifre a confronto, la data
-  // del backup, e le voci che non si sono potute leggere — che prima entravano
-  // in silenzio. Accanto, la copia dei dati attuali da portare via prima di
-  // sostituirli: è l'annullamento che questa strada non può avere, perché dopo
-  // il ripristino l'app si ricarica e la memoria è già quella nuova.
+  // IL RIPRISTINO IN DUE TEMPI: il file si legge SENZA scrivere niente (`leggiBackup`) e lo
+  // stesso tocco di prima serve a decidere sapendo (due cifre a confronto, data del backup,
+  // voci illeggibili). Accanto, la copia dei dati attuali da portare via: dopo il ripristino
+  // l'app si ricarica e non c'è annulla.
   async function handleImportaBackup(e) {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -287,8 +265,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
         ? ` ${scartati.length} vo${scartati.length === 1 ? 'ce non è stata' : 'ci non sono state'} ripristinat${scartati.length === 1 ? 'a' : 'e'}: nel file non erano leggibili.`
         : '';
       setBackupMsg({ attenzione: scartati.length > 0, testo: `Ripristinati ${turni} turni.${coda} Ricarico l'app…` });
-      // Gli hook useLocalStorage leggono solo all'inizializzazione: senza reload
-      // la schermata continuerebbe a mostrare i dati vecchi.
+      // Gli hook useLocalStorage leggono solo all'inizializzazione: serve il reload.
       setTimeout(() => window.location.reload(), scartati.length ? 3000 : 800);
     } catch (err) {
       setBackupMsg({ errore: true, testo: err.message || 'Ripristino non riuscito.' });
@@ -296,9 +273,8 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
     }
   }
 
-  // «Portami via quelli di adesso, prima di sostituirli.» Passa dalla stessa
-  // strada dell'esportazione, quindi eredita ESITO e non promette un file che
-  // nessuno ha visto arrivare.
+  // «Portami via quelli di adesso»: passa dalla stessa strada dell'esportazione, quindi
+  // eredita ESITO e non promette un file che nessuno ha visto arrivare.
   async function salvaPrimaDiSostituire() {
     setBackupBusy(true);
     try {
@@ -336,35 +312,16 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
     }
   }
 
-  // «SALVA» CHE NON SALVAVA E NON DICEVA NIENTE
-  //
-  // Il modulo era un `<form>` senza `noValidate`, quindi la validazione del
-  // browser era accesa; i campi stanno in sedici sezioni `<details>`, quasi
-  // tutte chiuse. Il browser trovava un campo invalido dentro una sezione
-  // chiusa, voleva mostrargli sopra il fumetto «inserisci un valore valido»,
-  // non poteva — quel campo non è a schermo — e allora ANNULLAVA L'INVIO senza
-  // mostrare niente. Solo una riga in console.
-  //
-  // Per chi usa l'app: apri una sezione, scrivi un numero, la richiudi, premi
-  // «Salva impostazioni» e non succede assolutamente nulla. Nemmeno il
-  // «✓ Salvato!». Il pulsante sembra rotto, e non c'è modo di capire perché.
-  //
-  // E scattava su valori LEGITTIMI: `step="0.5"` rendeva invalide 37,25 ore
-  // settimanali, `step="1"` il 66,66% di malattia, e su «ore di una giornata di
-  // assenza» rendeva invalido 6,67 — cioè proprio il numero che il segnaposto
-  // di quel campo suggerisce (40 ÷ 6). Da lì gli `step="any"`: il passo di un
-  // campo non è il posto dove dire quali valori esistono.
-  //
-  // Ora la validazione è nostra: si trova il primo campo che non va, SI APRE LA
-  // SEZIONE che lo contiene, ci si porta il fuoco sopra e solo allora si chiede
-  // al browser di dirlo — che a quel punto ha un campo visibile a cui
-  // attaccarsi. O si salva, o si dice dov'è il problema. Mai il silenzio.
+  // VALIDAZIONE NOSTRA: il form ha sedici `<details>` quasi tutti chiusi, e un campo invalido
+  // in una sezione chiusa farebbe annullare l'invio dal browser SENZA messaggio. Si trova il
+  // primo campo che non va, SI APRE la sezione, ci si porta il fuoco e solo allora si chiede
+  // al browser di dirlo. Gli `step="any"` evitano di rifiutare valori legittimi (37,25 ore,
+  // 66,66%, 6,67).
   function mostraIlProblema(modulo) {
     const storto = [...modulo.elements].find((el) => el.willValidate && !el.checkValidity());
     if (!storto) return false;
 
-    // `<details>` non è controllato da React qui: aprirlo dal DOM regge fino al
-    // prossimo render, che è molto più di quanto serva.
+    // `<details>` non è controllato da React: aprirlo dal DOM regge fino al prossimo render.
     for (let n = storto.parentElement; n; n = n.parentElement) {
       if (n.tagName === 'DETAILS') n.open = true;
     }
@@ -392,10 +349,8 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
       .filter(v => parseNum(v.amount) > 0)
       .map(v => ({ id: v.id, label: (v.label || '').trim() || 'Trattenuta fissa', amount: parseNum(v.amount) }));
 
-    // Montante: il mese di riferimento (confine turni) è quello scelto
-    // dall'utente. Si conserva come data ISO al primo giorno del mese, perché
-    // il resto dell'app lavora su 'YYYY-MM' via slice. Azzerato se il montante
-    // va a 0.
+    // Montante: il mese di riferimento lo sceglie l'utente. Si conserva come data ISO al primo
+    // del mese (il resto dell'app usa 'YYYY-MM' via slice); azzerato se il montante va a 0.
     const newMontante = parseNum(form.priorTaxableIncome);
     const month = /^\d{4}-\d{2}$/.test(form.priorIncomeMonth)
       ? form.priorIncomeMonth
@@ -418,13 +373,13 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
       patronSaintDate: form.patronSaintDate,
       priorTaxableIncome: newMontante,
       priorIncomeDate,
-      workerName: form.workerName.trim(),
       onCall: form.onCall,
       annualGrossManual: parseNum(form.annualGrossManual),
       dailyOvertimeThreshold: parseNum(form.dailyOvertimeThreshold),
       hasTredicesima: form.hasTredicesima,
       hasQuattordicesima: form.hasQuattordicesima,
       hireDate: form.hireDate,
+      workerName: form.workerName.trim(),
       ccnl: form.ccnl,
       aziendaDipendenti: form.aziendaDipendenti,
       tfrInBusta: form.tfrInBusta,
@@ -456,12 +411,9 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
     savedTimer.current = setTimeout(() => setSaved(false), 2000);
   };
 
-  // Modifiche non salvate: l'app non deve ricaricarsi da sola per un
-  // aggiornamento mentre qui dentro c'è roba scritta e non ancora confermata
-  // (vedi utils/occupato.js). Si confronta lo stato con l'ultimo salvato invece
-  // di alzare una bandierina in ognuno dei sedici punti che toccano il form:
-  // una bandierina dimenticata non si vede, e il prezzo sarebbe perdere quello
-  // che l'utente aveva scritto.
+  // Modifiche non salvate: l'app non deve ricaricarsi per un aggiornamento (utils/occupato.js).
+  // Si confronta lo stato con l'ultimo salvato invece di alzare una bandierina in ognuno dei
+  // punti che toccano il form.
   const ultimoSalvato = useRef(null);
   const istantanea = JSON.stringify(form);
   if (ultimoSalvato.current === null) ultimoSalvato.current = istantanea;
@@ -477,8 +429,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
   // 0,2666… non va mostrato per intero: due decimali bastano, e gli interi
   // restano interi (0,30 e non 0,3000).
   const fmtPct = (pct) => String(Number(Number(pct).toFixed(2))).replace('.', ',');
-  // Dai settings salvati, non dal form: un elenco che cambia mentre si digita
-  // è rumore, e per di più direbbe «sistemato» prima che lo sia davvero.
+  // Dai settings salvati, non dal form: un elenco che cambia mentre si digita è rumore.
   const statoConfig = statoConfigurazione(settings);
 
   const hourlyRate = parseNum(form.hourlyRate);
@@ -498,10 +449,8 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
       workingDaysPerWeek: parseNum(form.workingDaysPerWeek),
     }) / 60
   ).toFixed(2).replace('.', ',');
-  // Fascia notturna del contratto scelto, e se quella impostata se ne discosta.
-  // Non si allinea da sola: chi ha copiato gli orari dal proprio cedolino ha
-  // ragione anche quando il contratto dice altro, e sovrascriverglieli in
-  // silenzio sarebbe il modo peggiore di «aiutarlo».
+  // Fascia notturna del contratto scelto, e se quella impostata se ne discosta. Non si allinea
+  // da sola: chi ha copiato gli orari dal cedolino ha ragione anche se il contratto dice altro.
   const fasciaCcnl = ccnlPreset.fasciaNotturna;
   const fasciaDiversaDalCcnl = !!fasciaCcnl
     && (form.nightStart !== fasciaCcnl.inizio || form.nightEnd !== fasciaCcnl.fine);
@@ -555,7 +504,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
 
         {/* Paga oraria attuale */}
         <details className="settings-section" open>
-          <summary className="settings-section-title">💰 Paga oraria</summary>
+          <summary className="settings-section-title"><Icona nome="soldi" /> Paga oraria</summary>
           <p className="settings-section-desc">
             Inserisci la tua paga oraria lorda <strong>attuale</strong>. È quella usata per i
             turni di oggi e futuri. Se durante l'anno hai avuto un aumento, registra le paghe
@@ -631,7 +580,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
 
         {/* Ore previste / lavoro a chiamata */}
         <details className="settings-section">
-          <summary className="settings-section-title">📋 Orario di lavoro</summary>
+          <summary className="settings-section-title"><Icona nome="appunti" /> Orario di lavoro</summary>
 
           <label className="check-row">
             <input
@@ -666,18 +615,14 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
                   id="expected-hours"
                   type="number"
                   className="form-input"
-                  // `required` e `min="1"` invece di `min="0"`: lo zero qui non
-                  // è un valore basso, è un dato mancante travestito. Manda a
-                  // zero la soglia dei supplementari — ogni ora lavorata
-                  // diventa supplementare — e le ore di una giornata di ferie.
+                  // `required` e `min="1"`: lo zero è un dato mancante travestito (ogni ora
+                  // diventerebbe supplementare).
                   required
                   min="1"
                   max="84"
                   step="any"
-                  // `?? ''` e non `|| ''`: con `||` uno zero salvato si
-                  // ripresentava come CAMPO VUOTO, identico a «non l'ho ancora
-                  // messo», e chi lo guardava credeva valesse il default 40.
-                  // Lo zero era invisibile e sopravviveva ai riavvii.
+                  // `?? ''` e non `|| ''`: con `||` uno zero salvato si ripresentava come campo
+                  // VUOTO, identico a «non l'ho ancora messo».
                   value={form.expectedWeeklyHours ?? ''}
                   onChange={set('expectedWeeklyHours')}
                 />
@@ -764,7 +709,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
 
         {/* Maggiorazioni */}
         <details className="settings-section">
-          <summary className="settings-section-title">📈 Maggiorazioni</summary>
+          <summary className="settings-section-title"><Icona nome="crescita" /> Maggiorazioni</summary>
           <p className="settings-section-desc">
             Domenicale e festivo vengono applicate <strong>automaticamente</strong> ai turni di
             domenica e nelle festività nazionali (incluse Pasqua e Pasquetta). Gli straordinari
@@ -875,7 +820,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
                 </div>
                 {fasciaCcnl && fasciaDiversaDalCcnl && (
                   <p className="form-hint form-hint--warn">
-                    ⚠️ Il contratto <strong>{ccnlPreset.label}</strong> usa la fascia{' '}
+                    <Icona nome="avviso" /> Il contratto <strong>{ccnlPreset.label}</strong> usa la fascia{' '}
                     <strong>{fasciaCcnl.inizio}–{fasciaCcnl.fine}</strong>, diversa da quella
                     qui sopra. Se l'hai copiata dal tuo cedolino tienila com'è — la busta
                     batte il contratto. Altrimenti{' '}
@@ -1000,7 +945,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
 
         {/* Ferie, permessi e malattia */}
         <details className="settings-section">
-          <summary className="settings-section-title">🏖 Ferie, permessi e malattia</summary>
+          <summary className="settings-section-title"><Icona nome="ferie" /> Ferie, permessi e malattia</summary>
           <p className="settings-section-desc">
             In busta una giornata di ferie, permesso, malattia o festività vale un
             <strong> numero fisso di ore</strong>, non l'orario che avresti fatto. Senza
@@ -1094,7 +1039,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
             </div>
           </div>
           <p className="form-hint form-hint--warn">
-            ⚠️ Questi valori <strong>non sono verificati</strong>, a differenza di contributi e
+            <Icona nome="avviso" /> Questi valori <strong>non sono verificati</strong>, a differenza di contributi e
             aliquote fiscali. La struttura è quella dello schema INPS (primi giorni a parte), ma
             quanto prendi davvero dipende dal contratto <em>e dall'azienda</em>.
           </p>
@@ -1109,7 +1054,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
 
         {/* Reddito e bonus Renzi */}
         <details className="settings-section">
-          <summary className="settings-section-title">💶 Reddito e trattamento integrativo (ex bonus Renzi)</summary>
+          <summary className="settings-section-title"><Icona nome="euro" /> Reddito e trattamento integrativo (ex bonus Renzi)</summary>
           <p className="settings-section-desc">
             Nel calendario vedi il tuo <strong>reddito totale</strong> dell'anno e quanto puoi
             ancora guadagnare prima di superare le soglie del trattamento integrativo (ex bonus
@@ -1156,7 +1101,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
 
         {/* CCNL: contributi minori e divisore orario */}
         <details className="settings-section settings-section--beta">
-          <summary className="settings-section-title">📜 CCNL (beta)</summary>
+          <summary className="settings-section-title"><Icona nome="contratto" /> CCNL (beta)</summary>
           <p className="settings-section-desc">
             Oltre all'IVS (9,19%) quasi tutti i contratti prevedono trattenute minori — FIS, CIGS,
             Ente Bilaterale — che pesano qualche euro al mese e che senza il contratto non si possono
@@ -1173,7 +1118,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
             />
             <p className="form-hint">
               {form.ccnl
-                ? (ccnlPreset.verificato ? '✓ Contratto verificato su busta reale.' : 'Contratto selezionato.')
+                ? (ccnlPreset.verificato ? 'Contratto verificato su busta reale.' : 'Contratto selezionato.')
                 : 'Digita e scegli dall\'elenco. Sono elencati i CCNL vigenti dall\'archivio CNEL.'}
             </p>
             {form.ccnl && ccnlPreset.note && (
@@ -1229,30 +1174,27 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
 
           {form.ccnl && !ccnlPreset.verificato && (
             <p className="form-hint">
-              ⚠️ Aliquote indicative, <strong>non riscontrate su una busta reale</strong>. Se hai il
+              <Icona nome="avviso" /> Aliquote indicative, <strong>non riscontrate su una busta reale</strong>. Se hai il
               cedolino sotto mano, confronta le voci: dove non tornano, il dato giusto è quello.
             </p>
           )}
         </details>
 
-        {/* Import turni da foto (AI) */}
+        {/* Turni da un'immagine: letti sul telefono (services/lettore-immagine.js) */}
         <details className="settings-section">
-          <summary className="settings-section-title">🤖 Import turni da foto</summary>
+          <summary className="settings-section-title"><Icona nome="fotocamera" /> Turni da un'immagine</summary>
           <p className="settings-section-desc">
-            L'immagine viene inviata a Google Gemini per la lettura e non viene conservata.
-            I turni restano sul tuo telefono. Il <strong>nome</strong> da cercare sul foglio
-            te lo chiede l'app al primo import da immagine (e potrai cambiarlo da lì).
+            L'immagine del tabellone si legge sul telefono e non viene inviata a nessuno.
+            Della tabella si leggono solo le righe col tuo nome.
           </p>
-
-          <p className="form-hint">
-            Di questa app non viene raccolta nessuna statistica d'uso: né quante volte
-            importi, né quanto costa. Non c'è niente da spegnere.
-          </p>
+          <label className="form-label" htmlFor="worker-name">Il tuo nome nel tabellone</label>
+          <input id="worker-name" className="form-input" value={form.workerName} onChange={set('workerName')} placeholder="come è scritto sul foglio" />
+          <p className="form-hint">Nessuna statistica d'uso viene raccolta: non c'è niente da spegnere.</p>
         </details>
 
         {/* Backup e ripristino: i dati vivono solo in localStorage */}
         <details className="settings-section">
-          <summary className="settings-section-title">💾 Backup e ripristino</summary>
+          <summary className="settings-section-title"><Icona nome="salva" /> Backup e ripristino</summary>
           <p className="settings-section-desc">
             Turni e impostazioni esistono <strong>solo su questo telefono</strong>: non c'è nessun
             account e nessuna copia altrove. Esporta un backup prima di cambiare telefono,
@@ -1287,6 +1229,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
             </button>
             <span className="form-hint">Sostituisce tutti i dati attuali</span>
           </div>
+          <EliminaDati onEsporta={handleEsportaBackup} turniSalvati={turniSalvati} />
 
           <input
             ref={backupInputRef}
@@ -1366,7 +1309,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
           {backupTesto && (
             <div className="backup-riserva">
               <button type="button" className="btn-secondary" onClick={copiaBackup}>
-                📋 Copia il backup
+                <Icona nome="appunti" /> Copia il backup
               </button>
               <textarea
                 className="backup-riserva-testo"
@@ -1383,7 +1326,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
             compare solo se c'è qualcosa da correggere e sparisce da sola dopo. */}
         {daCorreggere.length > 0 && (
           <details className="settings-section">
-            <summary className="settings-section-title">🛠 Correggi orari a :50</summary>
+            <summary className="settings-section-title"><Icona nome="attrezzi" /> Correggi orari a :50</summary>
             <p className="settings-section-desc">
               Sul foglio turni «16,50» vuol dire <strong>16:30</strong>. Gli import da foto
               più vecchi sono entrati con i minuti sbagliati: <strong>{daCorreggere.length} turni</strong>
@@ -1418,7 +1361,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
                 onClick={handleCorreggiOrari}
                 disabled={backupBusy}
               >
-                🛠 Correggi {daCorreggere.length} turni
+                <Icona nome="attrezzi" /> Correggi {daCorreggere.length} turni
               </button>
               <span className="form-hint">Modifica i turni salvati</span>
             </div>
@@ -1427,7 +1370,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
 
         {/* Tredicesima e quattordicesima */}
         <details className="settings-section">
-          <summary className="settings-section-title">🎁 Tredicesima e quattordicesima</summary>
+          <summary className="settings-section-title"><Icona nome="regalo" /> Tredicesima e quattordicesima</summary>
           <p className="settings-section-desc">
             {/* Lo spazio esplicito serve: JSX mangia il ritorno a capo fra un
                 tag e il testo della riga dopo, e si leggeva «tredicesimaarriva». */}
@@ -1487,12 +1430,11 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
 
         {/* ══ AVANZATE — fisco e dettagli ═════════════════════════ */}
         <details className="settings-advanced">
-          <summary className="settings-advanced-title">⚙️ Avanzate — fisco e dettagli</summary>
-
+          <summary className="settings-advanced-title"><Icona nome="impostazioni" /> Avanzate: fisco e dettagli</summary>
 
         {/* TFR in busta */}
         <details className="settings-section">
-          <summary className="settings-section-title">💼 TFR in busta (anticipo)</summary>
+          <summary className="settings-section-title"><Icona nome="valigetta" /> TFR in busta (anticipo)</summary>
           <p className="settings-section-desc">
             Se hai scelto di ricevere il TFR mensilmente in busta invece di accantonarlo,
             attiva questa opzione. Viene aggiunta al netto una quota di circa il
@@ -1535,7 +1477,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
         {/* Addizionali IRPEF — stima netto (gated dal feature flag) */}
         {ENABLE_NET_CALC && (
           <details className="settings-section">
-            <summary className="settings-section-title">🧾 Addizionali IRPEF</summary>
+            <summary className="settings-section-title"><Icona nome="ricevuta" /> Addizionali IRPEF</summary>
             <p className="settings-section-desc">
               Usate per la stima del netto. Variano in base alla tua residenza:
               l'addizionale regionale va da ~1,23% a ~3,33%, la comunale da 0% a ~0,9%.
@@ -1637,8 +1579,8 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
               fine dell'anno il conto torna uguale: quello che non hai preso mese per mese
               arriva col conguaglio di dicembre.
               <br /><br />
-              <strong>Non contarlo mai</strong>: vedi ~100 € in meno al mese, ma non rischi di
-              doverli restituire. Conviene a chi ha <strong>più datori nello stesso anno</strong>,
+              <strong>Non contarlo mai</strong>: vedi ~100 € in meno al mese, ma a dicembre
+              nessuna trattenuta. Conviene a chi ha <strong>più datori nello stesso anno</strong>,
               contratti a termine o un reddito che cambia molto: sono i casi in cui il datore lo
               accredita credendo di essere l'unico, e poi si torna indietro. Va chiesto
               <strong> anche al datore</strong>, per iscritto: questa scelta dice all'app di non
@@ -1649,7 +1591,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
 
         {/* Paghe precedenti (aumenti) */}
         <details className="settings-section">
-          <summary className="settings-section-title">🔄 Paghe precedenti (aumenti)</summary>
+          <summary className="settings-section-title"><Icona nome="aggiorna" /> Paghe precedenti (aumenti)</summary>
           <p className="settings-section-desc">
             Hai avuto un aumento durante l'anno? Elenca qui le paghe che avevi <strong>prima</strong>,
             indicando fino a quale giorno erano in vigore. I turni <strong>fino a</strong> quella data
@@ -1705,7 +1647,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
 
         {/* Voci fisse mensili */}
         <details className="settings-section">
-          <summary className="settings-section-title">➕ Voci fisse mensili</summary>
+          <summary className="settings-section-title"><Icona nome="piu" /> Voci fisse mensili</summary>
           <p className="settings-section-desc">
             Importi che ricevi <strong>ogni mese</strong> oltre ai turni (indennità di
             flessibilità, superminimo, elemento fisso…). Vengono <strong>sommati al lordo del
@@ -1788,7 +1730,7 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
         <SezionePrevidenza form={form} set={set} />
         {/* Trattenute fisse mensili */}
         <details className="settings-section">
-          <summary className="settings-section-title">➖ Trattenute fisse mensili</summary>
+          <summary className="settings-section-title"><Icona nome="meno" /> Trattenute fisse mensili</summary>
           <p className="settings-section-desc">
             Importi che ti vengono trattenuti <strong>ogni mese</strong> oltre alle tasse (quota
             associativa, rata di un prestito, altro). Vengono <strong>sottratti dal netto</strong>
@@ -1848,16 +1790,16 @@ export default function Settings({ settings, onSave, datiInMemoria = null }) { /
 
         <div className="settings-footer">
           <button type="submit" className="btn btn-primary btn--full">
-            {saved ? '✓ Salvato!' : 'Salva impostazioni'}
+            {saved ? 'Salvato' : 'Salva impostazioni'}
           </button>
           {/* Un'informativa che nessuno incontra non informa nessuno. Sta qui in
               fondo alle impostazioni, che è dove la si cerca, e punta a una
               pagina statica: resta leggibile anche se l'app è rotta.
               `target="_blank"` per non far perdere le modifiche non salvate. */}
           <p className="settings-privacy">
-            <a href="/privacy/" target="_blank" rel="noopener">
-              Come vengono trattati i tuoi dati
-            </a>
+            <a href="/privacy/" target="_blank" rel="noopener">Come vengono trattati i tuoi dati</a>
+            {' · '}
+            <a href="/termini/" target="_blank" rel="noopener">Termini d&apos;uso</a>
           </p>
         </div>
       </form>

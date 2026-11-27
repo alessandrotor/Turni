@@ -4,14 +4,12 @@ import {
 } from '../utils/dates';
 import { calcShiftMinutes, getShiftSurchargePct, formatCurrency, lordoTurno } from '../motore/pay';
 import { minutiNotturniPagati, pctNotturno, fasciaNotturna } from '../motore/notturno';
-import { TIPO, ETICHETTA, ICONA, tipoTurno } from '../motore/assenze';
+import { TIPO, ETICHETTA, tipoTurno } from '../motore/assenze';
+import Icona, { ICONA_TIPO } from './Icona';
 import { isHoliday } from '../motore/holidays';
 
-// Il badge dice quante ore cadono in fascia; il suggerimento dice se quelle ore
-// valgono davvero di più. Sono due cose diverse e vanno tenute distinte: la
-// fascia è un fatto dell'orario, la maggiorazione è un'impostazione che l'utente
-// può non aver messo — e in quel caso il badge non deve lasciar credere a un
-// aumento che in busta non c'è.
+// Il badge dice quante ore cadono in fascia; il suggerimento dice se valgono davvero di più (la
+// maggiorazione è un'impostazione che l'utente può non aver messo).
 function spiegaNotturno(minuti, settings) {
   const { inizio, durata } = fasciaNotturna(settings);
   const hhmm = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
@@ -22,12 +20,8 @@ function spiegaNotturno(minuti, settings) {
     : `${formatMinutes(minuti)} nella fascia ${fascia}. Non hai impostato una maggiorazione notturna, quindi non cambia la stima: puoi aggiungerla in Impostazioni.`;
 }
 
-// Da cosa è fatto l'importo di un turno, scritto per esteso.
-//
-// Nell'agenda c'è lo spazio che la cella della griglia non ha, ed è l'unico
-// posto dell'app in cui si può rispondere alla domanda vera: non «quanto ho
-// preso» ma «perché questa domenica vale più di ieri». I numeri sono gli stessi
-// che finiscono in busta come righe separate.
+// Da cosa è fatto l'importo di un turno, scritto per esteso: l'agenda ha lo spazio che la cella
+// non ha, e risponde a «perché questa domenica vale più di ieri». Sono le righe separate della busta.
 function scomponi(voce) {
   if (!voce) return '';
   const eur = (n) => n.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -57,32 +51,17 @@ export default function TimelineView({
   const todayRef = useRef(null);
   const focusRef = useRef(null);
 
-  // Porta sotto gli occhi il giorno focus, o oggi nel mese corrente.
-  //
-  // SALTO ISTANTANEO, non animato, e non e' una scelta di stile: misurato sul
-  // sito pubblicato il 19 agosto, dallo stesso punto di partenza e con il
-  // layout fermo, `behavior:'smooth'` lasciava la pagina a zero e «oggi» a
-  // 1304 pixel sotto il bordo, mentre `'auto'` centrava il giorno al pixel
-  // giusto. Era la causa dello schermo mezzo bianco al passaggio dalla
-  // griglia: sembrava un problema di layout non ancora assestato, ed era
-  // l'animazione che finiva dove capitava.
-  //
-  // Niente attese su `requestAnimationFrame`: `getBoundingClientRect`, che
-  // `scrollIntoView` usa internamente, forza gia' il ricalcolo del layout,
-  // quindi la posizione e' quella vera anche subito dopo il commit di React.
-  // Un rinvio in piu' aggiunge solo un modo di non scorrere affatto.
-  //
-  // Essendo istantaneo, non c'e' animazione da ridurre: chi ha chiesto meno
-  // movimento e' servito per costruzione.
+  // Porta sotto gli occhi il giorno focus, o oggi nel mese corrente. SALTO ISTANTANEO, non
+  // animato: con `behavior:'smooth'` «oggi» restava a 1304 px sotto il bordo (schermo mezzo
+  // bianco al passaggio dalla griglia). Niente attese su `requestAnimationFrame`:
+  // `scrollIntoView` forza già il ricalcolo del layout.
   useEffect(() => {
     const bersaglio = focusRef.current || todayRef.current;
     if (!bersaglio) return;
     bersaglio.scrollIntoView({ block: 'center', behavior: 'auto' });
   }, [focusDate, month, year]);
 
-  // I giorni si ricostruiscono solo quando cambia il mese o cambiano i turni:
-  // senza questo, ogni stato del calendario (menù export, modali, barra import)
-  // rifaceva da capo trentun giorni di celle.
+  // I giorni si ricostruiscono solo quando cambiano mese o turni.
   const days = useMemo(() => Array.from({ length: daysInMonth }, (_, i) => {
     const dayNum = i + 1;
     const date = new Date(year, month, dayNum);
@@ -146,9 +125,7 @@ export default function TimelineView({
                     const isAssenza = tipo !== TIPO.LAVORO;
                     const voce = payByShift?.[shift.id] ?? null;
                     const mins = calcShiftMinutes(shift);
-                    // Gli stessi minuti che il motore paga, non quelli di
-                    // orologio: con una pausa i due numeri differiscono, e il
-                    // riepilogo del mese direbbe una cosa diversa dal turno.
+                    // Gli stessi minuti che il motore paga, non quelli di orologio (con una pausa differiscono).
                     const notteMin = isAssenza ? 0 : minutiNotturniPagati(shift, settings, mins);
                     const night = notteMin > 0;
                     const surchargePct = getShiftSurchargePct(shift, settings);
@@ -156,11 +133,8 @@ export default function TimelineView({
                       ? `${ETICHETTA[tipo].toLowerCase()} del ${d.dayNum}/${month + 1}`
                       : `turno ${shift.startTime}–${shift.endTime} del ${d.dayNum}/${month + 1}`;
 
-                    // Il riquadro resta cliccabile col mouse, ma NON è un
-                    // comando per la tastiera: il comando vero è il pulsante
-                    // qui sotto. Un role="button" che ne contiene un altro è
-                    // invalido e regala due tabulazioni per la stessa azione —
-                    // è la stessa regola che vale per le celle della griglia.
+                    // Il riquadro resta cliccabile col mouse ma NON è un comando per la tastiera: il
+                    // comando vero è il pulsante qui sotto (un role="button" dentro un altro è invalido).
                     return (
                       <div
                         key={shift.id}
@@ -182,7 +156,7 @@ export default function TimelineView({
                                   commento risulta «usato» a chi fa il conto
                                   delle classi morte, ed è così che questa era
                                   sopravvissuta.) */}
-                              <span>{ICONA[tipo]}</span>
+                              <span><Icona nome={ICONA_TIPO[tipo]} piastrella /></span>
                               <strong>{ETICHETTA[tipo]}</strong>
                             </div>
                           ) : (
@@ -223,13 +197,13 @@ export default function TimelineView({
                               className="timeline-badge timeline-badge--night"
                               title={spiegaNotturno(notteMin, settings)}
                             >
-                              🌙 {formatMinutes(notteMin)} in fascia
+                              <Icona nome="luna" /> {formatMinutes(notteMin)} in fascia
                             </span>
                           )}
 
                           {!isAssenza && shift.breakMinutes > 0 && (
                             <span className="timeline-badge timeline-badge--break">
-                              ☕ Pausa {shift.breakMinutes}m
+                              <Icona nome="pausa" /> Pausa {shift.breakMinutes}m
                             </span>
                           )}
 
@@ -241,7 +215,7 @@ export default function TimelineView({
 
                           {shift.note && (
                             <span className="timeline-badge timeline-badge--note" title={shift.note}>
-                              💬 {shift.note}
+                              <Icona nome="chat" /> {shift.note}
                             </span>
                           )}
 
@@ -288,7 +262,7 @@ export default function TimelineView({
                   aria-label={`Giorno di riposo: aggiungi un turno il ${d.dayNum}/${month + 1}`}
                 >
                   <span className="timeline-rest-content">
-                    <span className="timeline-rest-label">🌿 Riposo</span>
+                    <span className="timeline-rest-label"><Icona nome="riposo" /> Riposo</span>
                     <span className="timeline-rest-action">+ Aggiungi turno</span>
                   </span>
                 </button>
