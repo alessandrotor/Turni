@@ -6,7 +6,7 @@ import {
 import { ENABLE_NET_CALC } from '../config/features';
 import { progressiviDellAnno } from '../motore/conguaglio';
 import { capienzaProgressiva, simulaTi } from '../motore/capienza';
-import { conFisco } from '../motore/fisco/index.js';
+import { conFisco, statoFisco } from '../motore/fisco/index.js';
 import { nettoDelMeseConPremio } from '../motore/premio-risultato';
 
 // Netto stimato del mese (beta), calcolato PARTENDO DAL MESE come una busta. Estratto da
@@ -90,12 +90,16 @@ export default function useMonthlyNet({
   const addRegPct = Number.isFinite(Number(settings.addRegionalePct)) ? Number(settings.addRegionalePct) : TAX_2026.ADD_REGIONALE_DEFAULT;
   const addComPct = Number.isFinite(Number(settings.addComunalePct)) ? Number(settings.addComunalePct) : TAX_2026.ADD_COMUNALE_DEFAULT;
   const addizionaliPct = (addRegPct + addComPct).toFixed(2).replace('.', ',');
-  const showNetPanel = ENABLE_NET_CALC && pay !== null && netBasis > 0 && monthGross > 0;
+  // Un anno prima della prima tabella nota: niente netto, e lo si dice (C1).
+  const statoAnno = statoFisco(year);
+  const nettoPossibile = ENABLE_NET_CALC && pay !== null && netBasis > 0 && monthGross > 0;
+  const showNetPanel = nettoPossibile && statoAnno !== 'ignoto';
+  const nettoSenzaFisco = nettoPossibile && statoAnno === 'ignoto';
 
   return {
     monthKey, perMonthBonus, fixedMonthlyTotal,
     netProjection, netBasis, riferimento, extraThisMonth, monthGross,
     netMonth, netMonthSimulato, tiSePresente, monthNet, monthTrattenute, monthBonus, monthTfr,
-    tiInfo, effectiveRatePct, addizionaliPct, showNetPanel,
+    tiInfo, effectiveRatePct, addizionaliPct, showNetPanel, statoAnno, nettoSenzaFisco,
   };
 }

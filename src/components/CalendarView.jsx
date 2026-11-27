@@ -11,7 +11,7 @@ import { isMensilizzato } from '../motore/ccnl';
 import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../motore/bonus';
 import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../motore/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
-import AvvisoContratto from './AvvisoContratto'; import CiPerdo from './CiPerdo'; import PermessiRol from './PermessiRol'; import BarraSelezione from './BarraSelezione'; import useSelezioneGiorni from '../hooks/useSelezioneGiorni'; // import CopiaSettimana from './CopiaSettimana'; — sospesa, vedi il file
+import AvvisoContratto from './AvvisoContratto'; import AvvisoFisco from './AvvisoFisco'; import CiPerdo from './CiPerdo'; import PermessiRol from './PermessiRol'; import BarraSelezione from './BarraSelezione'; import useSelezioneGiorni from '../hooks/useSelezioneGiorni'; // import CopiaSettimana from './CopiaSettimana'; — sospesa, vedi il file
 import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../motore/assenze';
@@ -374,7 +374,7 @@ export default function CalendarView({
     monthKey, perMonthBonus, fixedMonthlyTotal,
     netProjection, netBasis, extraThisMonth, monthGross,
     netMonth, netMonthSimulato, tiSePresente, monthNet, monthTfr,
-    tiInfo, effectiveRatePct, addizionaliPct, showNetPanel: showNetPanelRaw,
+    tiInfo, effectiveRatePct, addizionaliPct, showNetPanel: showNetPanelRaw, statoAnno, nettoSenzaFisco,
     riferimento,
   } = useMonthlyNet({
     year, month, settings, pay, annualGross, annualExtras, coperto, daysInMonth, allShifts, payMap: payByShift,
@@ -1031,7 +1031,7 @@ export default function CalendarView({
 
 
         {/* Netto stimato del mese — beta (gated dal feature flag) */}
-        {showNetPanel && (
+        {nettoSenzaFisco && counted.length > 0 && <p className="net-disclaimer--discreto"><AvvisoFisco anno={year} /></p>}{showNetPanel && (
           <div className="net-strip">
             {/* Niente «Lordo del mese» in testa: è già nella barra in alto. */}
 
@@ -1083,7 +1083,7 @@ export default function CalendarView({
             {/* L'avviso BETA resta (CLAUDE.md), ma a voce bassa: il riquadro
                 giallo gridava più forte del netto che accompagnava. */}
             <p className="net-disclaimer--discreto">
-              Stima beta: può contenere errori, fatti controllare da un professionista.
+              Stima beta: può contenere errori, fatti controllare da un professionista.{statoAnno === 'provvisorio' && <AvvisoFisco anno={year} />}
             </p>
 
             <button
