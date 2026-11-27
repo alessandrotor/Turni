@@ -68,12 +68,12 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         navigateFallback: '/index.html',
-        // Informativa e termini sono pagine statiche vere, non rotte dell'app.
+        // Informativa, termini e vetrina (/benvenuto) sono pagine statiche vere, non rotte dell'app.
         // Senza questa esclusione il ripiego la ingoia: dentro la PWA
         // installata il link «Come vengono trattati i tuoi dati» aprirebbe il
         // calendario, e l'informativa risulterebbe pubblicata pur non essendo
         // raggiungibile. È il caso in cui un 200 mente.
-        navigateFallbackDenylist: [/^\/privacy/, /^\/termini/],
+        navigateFallbackDenylist: [/^\/privacy/, /^\/termini/, /^\/benvenuto/],
         // Il lettore delle immagini (~4,5 MB) NON va nel precache: lo scarica
         // solo chi lo usa, la prima volta. E il gestore della condivisione
         // deve rispondere prima delle regole di Workbox.

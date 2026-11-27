@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<!-- Vetrina di prova (novembre 2026): nessuno script, nessun modulo. «Mi
+     interessa» porta a /benvenuto/grazie/, che il contatore visite conta come
+     pagina: è tutta la misura dell'interesse, senza un dato in più. --><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Turni — i tuoi turni, i tuoi soldi</title>
+<meta name="description" content="Segni il turno e vedi quanto hai guadagnato, lordo e netto. Nessun account, nessun server: i dati restano sul tuo telefono.">
+<meta name="robots" content="noindex">
+<style>
+:root{--ink:#0b1220;--ink2:#475569;--mute:#94a3b8;--line:#e5e9f0;--bg:#f7f8fb;--blu:#3b6cff;--blu2:#2449d8;--verde:#10b981;--rosso:#ef4444;--card:#fff}
+*{box-sizing:border-box}html,body{margin:0}body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+.w{max-width:1120px;margin:0 auto;padding:0 20px}
+/* nav */
+nav{position:absolute;top:0;left:0;right:0;z-index:5}
+nav .w{display:flex;align-items:center;justify-content:space-between;height:68px}
+.logo{display:flex;align-items:center;gap:9px;font-weight:800;font-size:18px;color:#fff;letter-spacing:-.2px}
+.logo i{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#6d8dff,#3b6cff);box-shadow:0 0 0 1px rgba(255,255,255,.25) inset}
+nav .apri{font-size:14px;font-weight:700;color:#fff;border:1px solid rgba(255,255,255,.25);padding:8px 14px;border-radius:999px}
+/* hero */
+.hero{background:radial-gradient(1200px 500px at 70% -10%,#2a3f8f 0%,rgba(42,63,143,0) 60%),radial-gradient(800px 400px at 0% 110%,#123a3a 0%,rgba(18,58,58,0) 60%),#0b1220;color:#fff;padding:110px 0 70px;overflow:hidden}
+.hero .w{display:grid;grid-template-columns:1.1fr .9fr;gap:48px;align-items:center}
+.badge{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#a7f3d0;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.35);padding:6px 12px;border-radius:999px}
+h1{font-size:56px;line-height:1.02;letter-spacing:-1.6px;margin:18px 0 18px;font-weight:800}
+h1 span{color:#8fb0ff}
+.lead{font-size:19px;line-height:1.55;color:#cbd5e1;max-width:520px;margin:0 0 28px}
+.ctas{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:16px;padding:15px 22px;border-radius:14px}
+.btn.pri{background:#fff;color:var(--ink)}
+.btn.sec{color:#fff;border:1px solid rgba(255,255,255,.22)}
+.fine{margin-top:18px;font-size:13px;color:#94a3b8}
+/* privacy strip */
+.priv{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:34px;max-width:560px}
+.priv div{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px 13px;font-size:13.5px;line-height:1.35;color:#e2e8f0}
+.priv b{display:block;font-size:15px;color:#fff;margin-bottom:2px}
+/* phone */
+.phone{justify-self:center;width:300px;height:600px;border-radius:44px;background:#05080f;padding:12px;box-shadow:0 40px 80px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.08)}
+.scr{width:100%;height:100%;border-radius:34px;background:#f1f5f9;overflow:hidden;position:relative;color:var(--ink)}
+.scr .h{display:flex;justify-content:space-between;align-items:center;padding:18px 16px 8px;font-weight:800;font-size:15px}
+.scr .h small{font-weight:600;color:var(--ink2);font-size:11px}
+.dw{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:0 10px;font-size:9px;color:var(--mute);font-weight:700;text-align:center;margin-bottom:4px}
+.g{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:0 10px}
+.g div{height:58px;background:#fff;border-radius:8px;padding:4px 3px;font-size:9px;font-weight:700;color:var(--ink2);position:relative}
+.g .p{position:absolute;left:3px;right:3px;bottom:4px;border-radius:5px;background:#dbe5ff;color:var(--blu2);font-size:7.5px;font-weight:800;padding:2px 2px;text-align:center}
+.g .f{background:#d1fae5;color:#047857}
+.g .o{outline:2px solid var(--blu)}
+.bar{position:absolute;left:12px;right:12px;bottom:16px;background:var(--ink);color:#fff;border-radius:16px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+.bar small{display:block;font-size:10px;color:#94a3b8;font-weight:600}
+.bar b{font-size:20px;letter-spacing:-.3px}
+.bar .d{font-size:11px;color:#6ee7b7;font-weight:800;background:rgba(16,185,129,.15);padding:3px 7px;border-radius:999px}
+.toast{position:absolute;left:24px;right:24px;bottom:88px;background:#fff;border-radius:12px;padding:9px 11px;font-size:10.5px;font-weight:700;box-shadow:0 8px 20px rgba(15,23,42,.15);display:flex;gap:8px;align-items:center}
+.toast i{width:18px;height:18px;border-radius:6px;background:var(--blu);flex:none}
+/* sections */
+section{padding:84px 0}
+.kick{font-size:13px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--blu)}
+h2{font-size:40px;line-height:1.08;letter-spacing:-1px;margin:10px 0 14px;font-weight:800}
+.sub{font-size:18px;line-height:1.55;color:var(--ink2);max-width:640px;margin:0}
+.tre{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
+.c{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px}
+.c .n{width:34px;height:34px;border-radius:10px;background:#eef2ff;color:var(--blu2);font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.c h3{margin:0 0 6px;font-size:19px;letter-spacing:-.3px}
+.c p{margin:0;color:var(--ink2);line-height:1.5;font-size:15px}
+/* privacy section dark */
+.scuro{background:#0b1220;color:#fff}
+.scuro .sub{color:#cbd5e1}
+.verifica{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;margin-top:36px}
+.term{background:#05080f;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:18px;font:500 13px ui-monospace,Menlo,monospace;color:#cbd5e1;line-height:1.7}
+.term .ok{color:#6ee7b7}.term .gr{color:#64748b}
+.lista p{display:flex;gap:12px;margin:0 0 16px;font-size:16px;line-height:1.5;color:#e2e8f0}
+.lista p b{color:#fff}
+.lista i{flex:none;width:24px;height:24px;border-radius:8px;background:rgba(16,185,129,.18);display:flex;align-items:center;justify-content:center;color:#6ee7b7;font-style:normal;font-weight:800;font-size:13px}
+/* conguaglio */
+.cong{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.tass{background:#fff;border:1px solid var(--line);border-radius:20px;padding:24px}
+.r{display:flex;align-items:center;gap:12px;margin:10px 0}
+.r span{width:150px;font-size:14px;color:var(--ink2);flex:none}
+.r div{height:40px;border-radius:10px;color:#fff;font-weight:800;display:flex;align-items:center;padding:0 12px}
+.saldo{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid var(--line);margin-top:12px;padding-top:12px;font-size:14px;color:var(--ink2)}
+.saldo b{font-size:30px;color:var(--ink);letter-spacing:-.5px}
+/* interesse */
+.int{background:linear-gradient(135deg,#eef2ff,#ecfdf5);border:1px solid var(--line);border-radius:28px;padding:44px;display:grid;grid-template-columns:1.1fr .9fr;gap:32px;align-items:center}
+.form{background:#fff;border-radius:18px;padding:18px;border:1px solid var(--line)}
+.form .in{display:flex;gap:8px}
+.int>*{min-width:0}.form input{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:14px;font:500 15px inherit}
+.form button{border:0;background:var(--ink);color:#fff;border-radius:12px;padding:0 18px;font:700 15px inherit}
+.form p{font-size:12.5px;color:var(--ink2);margin:10px 0 0;line-height:1.45}
+.alt{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.alt .presto{color:var(--ink2);}.alt a,.alt .presto{font-size:13px;font-weight:700;border:1px solid var(--line);border-radius:999px;padding:7px 12px;background:#fff}
+footer{padding:36px 0 50px;color:var(--ink2);font-size:13px;line-height:1.6}
+footer .w{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+/* mobile */
+@media (max-width:820px){
+ .hero{padding:92px 0 50px}.hero .w{grid-template-columns:1fr;gap:36px}
+ h1{font-size:40px;letter-spacing:-1px}.lead{font-size:17px}
+ .priv{grid-template-columns:1fr 1fr 1fr;gap:6px}.priv div{font-size:11.5px;padding:10px}.priv b{font-size:13px}
+ .phone{width:260px;height:520px}
+ section{padding:56px 0}h2{font-size:30px}.sub{font-size:16px}
+ .tre,.verifica,.cong,.int{grid-template-columns:1fr}.int{padding:24px}
+ .r span{width:118px;font-size:13px}
+ nav .apri{display:none}
+}
+</style></head><body>
+
+<nav><div class="w"><div class="logo"><i></i>Turni</div><a class="apri" href="/">Apri l'app</a></div></nav>
+
+<header class="hero"><div class="w">
+  <div>
+    <span class="badge">🔒 Resta tutto sul tuo telefono</span>
+    <h1>I tuoi turni.<br>I tuoi soldi.<br><span>Solo sul tuo telefono.</span></h1>
+    <p class="lead">Segni il turno in due tocchi e vedi subito quanto hai guadagnato: lordo, netto, e a dicembre il conguaglio, senza sorprese.</p>
+    <div class="ctas"><a class="btn pri" href="/">Inizia, è gratis</a><a class="btn sec" href="#cong">Il conguaglio di dicembre →</a></div>
+    <div class="priv">
+      <div><b>Nessun account</b>né email né password</div>
+      <div><b>Nessun server</b>i dati non lasciano il telefono</div>
+      <div><b>Nessuna IA</b>nessuno legge la tua busta</div>
+    </div>
+  </div>
+  <div class="phone"><div class="scr">
+    <div class="h">Novembre 2026 <small>lordo e netto</small></div>
+    <div class="dw"><span>L</span><span>M</span><span>M</span><span>G</span><span>V</span><span>S</span><span>D</span></div>
+    <div class="g">
+      <div>2<span class="p">10–14</span></div><div>3<span class="p">16–22</span></div><div>4</div><div>5<span class="p">10–14</span></div><div>6<span class="p">16–22</span></div><div>7<span class="p">11–17</span></div><div>8</div>
+      <div>9<span class="p">10–14</span></div><div>10</div><div>11<span class="p">16–22</span></div><div>12<span class="p">10–14</span></div><div>13<span class="p">16–22</span></div><div>14<span class="p">11–17</span></div><div>15<span class="p">11–16</span></div>
+      <div>16<span class="p">10–14</span></div><div>17<span class="p">16–22</span></div><div>18</div><div>19<span class="p">10–14</span></div><div>20<span class="p">16–22</span></div><div>21<span class="p">11–17</span></div><div>22</div>
+      <div>23</div><div class="o">24<span class="p">16–22</span></div><div>25<span class="p f">ferie</span></div><div>26<span class="p f">ferie</span></div><div>27<span class="p f">ferie</span></div><div>28</div><div>29</div>
+    </div>
+    <div class="toast"><i></i>Turno salvato · +73,74 € nel mese</div>
+    <div class="bar"><div><small>Novembre · lordo</small><b>1.047,17 €</b></div><span class="d">+73,74 €</span></div>
+  </div></div>
+</div></header>
+
+<section><div class="w">
+  <div class="kick">Come funziona</div>
+  <h2>Dalla timbratura alla busta,<br>senza fare conti.</h2>
+  <p class="sub">Pensata per chi lavora a turni nel turismo e nel commercio: ogni mese è diverso, ed è lì che la busta sorprende.</p>
+  <div class="tre">
+    <div class="c"><div class="n">1</div><h3>Segni il turno</h3><p>Due tocchi: gli orari li propone dai turni che hai già fatto. Ferie e permessi si stendono col dito su più giorni.</p></div>
+    <div class="c"><div class="n">2</div><h3>Vedi quanto hai preso</h3><p>Supplementari, domeniche, festivi, notturno: il lordo del mese sale mentre segni, e il netto lo stima come la busta.</p></div>
+    <div class="c"><div class="n">3</div><h3>Niente sorprese a dicembre</h3><p>Sai mese per mese dove sei rispetto ai 15.000 del trattamento integrativo, e cosa ti aspetta al conguaglio.</p></div>
+  </div>
+</div></section>
+
+<section class="scuro"><div class="w">
+  <div class="kick" style="color:#6ee7b7">Privacy</div>
+  <h2>Non ti chiediamo di fidarti.<br>Puoi controllarlo.</h2>
+  <p class="sub">I conti si fanno dentro il tuo telefono. Il sito non ha un database dove finiscono i tuoi turni, e nessuna intelligenza artificiale li legge.</p>
+  <div class="verifica">
+    <div class="lista">
+      <p><i>✓</i><span><b>Nessun account.</b> Apri e usi. Non sappiamo chi sei, e non ci serve.</span></p>
+      <p><i>✓</i><span><b>La busta resta sul telefono.</b> Se carichi il PDF, viene letto lì e basta.</span></p>
+      <p><i>✓</i><span><b>Il backup è un file tuo.</b> Lo salvi dove vuoi tu, non da noi.</span></p>
+    </div>
+    <div class="term">
+      <span class="gr">// Strumenti del browser → Rete, mentre segni un turno</span><br>
+      GET&nbsp; /index.html <span class="ok">200</span><br>
+      GET&nbsp; /assets/app.js <span class="ok">200</span><br>
+      <span class="gr">— salvi il turno —</span><br>
+      <span class="gr">nessuna richiesta</span><br>
+      <span class="gr">— carichi la busta —</span><br>
+      <span class="gr">nessuna richiesta</span>
+    </div>
+  </div>
+</div></section>
+
+<section id="cong"><div class="w cong">
+  <div>
+    <div class="kick">Dicembre</div>
+    <h2>Ti hanno ripreso il trattamento integrativo?</h2>
+    <p class="sub">Guarda la riga sotto. Quasi sempre, quello che il conguaglio ti toglie da una parte te lo rende dall'altra: sopra i 15.000 il tratt. integrativo sparisce, ma la detrazione sale.</p>
+    <div class="ctas" style="margin-top:22px"><a class="btn pri" style="background:var(--ink);color:#fff" href="/?ciperdo">Fai la stima col tuo lordo</a></div>
+  </div>
+  <div class="tass">
+    <div style="font-weight:800;margin-bottom:6px">Busta di dicembre · esempio</div>
+    <div class="r"><span>Tratt. integrativo ripreso</span><div style="width:58%;background:var(--rosso)">← −700 €</div></div>
+    <div class="r"><span>Tasse che ti rendono</span><div style="width:54%;background:var(--verde)">→ +650 €</div></div>
+    <div class="saldo"><span>In busta a dicembre</span><b>−50 €</b></div>
+    <p style="margin:10px 0 0;font-size:13px;color:var(--ink2)">Non è una multa: le buste te li avevano dati in anticipo.</p>
+  </div>
+</div></section>
+
+<section style="padding-top:0"><div class="w">
+  <div class="int">
+    <div>
+      <div class="kick">Il 2027</div>
+      <h2 style="font-size:32px">Vuoi sapere quando arriva il resto?</h2>
+      <p class="sub" style="font-size:16px">La spiegazione della busta di dicembre e le novità del 2027. L'app intanto funziona già.</p>
+    </div>
+    <div class="form">
+      <a class="btn pri" style="background:var(--ink);color:#fff;width:100%;justify-content:center" href="/benvenuto/grazie/">Mi interessa</a>
+      <p>Un tocco, e ti contiamo. <b>Non ti chiediamo niente</b>: né email né numero. Sappiamo solo quante persone l'hanno premuto.</p>
+      <div class="alt"><span class="presto">📣 Canale WhatsApp · presto</span><span class="presto">✈️ Canale Telegram · presto</span></div>
+    </div>
+</div>
+  </div>
+</div></section>
+
+<footer><div class="w">
+  <div><b style="color:var(--ink)">Turni</b> · gratuito, senza scopo di lucro<br>Stime beta: fatti controllare da un professionista. Verificato su cedolini generati con Zucchetti.</div>
+  <div><a href="/privacy/">Informativa</a> · <a href="/termini/">Termini</a></div>
+</div></footer>
+</body></html>
