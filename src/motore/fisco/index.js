@@ -19,6 +19,24 @@ export function fiscoDellAnno(anno) {
 
 export const TAX_2026 = fiscoDellAnno(2026);
 
+/** Gli anni che hanno il loro file, in ordine. */
+export const ANNI_FISCALI = ANNI.map((f) => f.anno);
+
+/**
+ * Se la tabella dell'anno `anno` esiste davvero. `'noto'`: c'è il suo file.
+ * `'provvisorio'`: l'anno è dopo l'ultimo noto e si calcola con quello, finché
+ * la legge di bilancio non dice altro: va scritto accanto al netto.
+ * `'ignoto'`: l'anno è prima del primo noto, e lì le regole erano altre (nel
+ * 2025 il netto veniva ~59 € al mese sopra la busta): il netto non si mostra.
+ * → COSE-NUOVE.md, C1; check-fisco-anno.mjs
+ * @param {number} anno
+ * @returns {'noto'|'provvisorio'|'ignoto'}
+ */
+export function statoFisco(anno) {
+  if (ANNI_FISCALI.includes(anno)) return 'noto';
+  return anno > ANNI_FISCALI[ANNI_FISCALI.length - 1] ? 'provvisorio' : 'ignoto';
+}
+
 /** L'ultimo anno noto: per chi non dice l'anno. */
 export const FISCO_ULTIMO = ANNI[ANNI.length - 1];
 

@@ -10,7 +10,7 @@
 // tabella fissa.
 
 import { nettoDelMese, calcNetAnnual, irpefLorda } from '../net.js';
-import { fiscoDellAnno, fiscoDi, conFisco, FISCO_ULTIMO, TAX_2026 } from '../fisco/index.js';
+import { fiscoDellAnno, fiscoDi, conFisco, FISCO_ULTIMO, TAX_2026, statoFisco, ANNI_FISCALI } from '../fisco/index.js';
 import { capienzaProgressiva } from '../capienza.js';
 import { lordoMeseMinimoTi } from '../soglia-lorda.js';
 
@@ -34,6 +34,15 @@ esito(fiscoDellAnno(2030) === FISCO_ULTIMO, 'un anno dopo l\'ultimo noto usa l\'
 esito(fiscoDellAnno(2020) === TAX_2026, 'un anno prima del primo noto usa il primo');
 esito(fiscoDi({}) === FISCO_ULTIMO, 'chi non dice l\'anno ha l\'ultimo noto');
 esito(conFisco(S, 2026).fisco === TAX_2026 && conFisco(S, undefined) === S, 'conFisco mette la tabella solo con un anno');
+
+console.log('\nDire quando la tabella non è dell\'anno (COSE-NUOVE.md, C1)\n');
+// Il 1° gennaio 2027 il netto si calcola con le regole del 2026: va detto
+// accanto alla cifra. Prima del 2026 le regole erano altre (2025: ~59 € al
+// mese sopra la busta), e lì il netto non si mostra.
+esito(statoFisco(2026) === 'noto', 'il 2026 è noto');
+esito(statoFisco(FISCO_ULTIMO.anno + 1) === 'provvisorio', 'l\'anno dopo l\'ultimo noto è provvisorio', `${FISCO_ULTIMO.anno + 1}`);
+esito(statoFisco(ANNI_FISCALI[0] - 1) === 'ignoto', 'l\'anno prima del primo noto è ignoto', `${ANNI_FISCALI[0] - 1}`);
+esito(ANNI_FISCALI.every((a) => statoFisco(a) === 'noto'), 'ogni anno con il suo file è noto', ANNI_FISCALI.join(', '));
 
 console.log('\nLa tabella arriva ai calcoli\n');
 const vero = nettoDelMese(1100, S, 30, 0);
