@@ -75,7 +75,7 @@ check(xmlRotti.length === 0, 'ogni XML Android è bilanciato',
 // ── 3. HTML bilanciato e senza id ripetuti ─────────────────────────────────
 // Due elementi con lo stesso id non danno errore: `getElementById` ne trova uno
 // solo, e `htmlFor`/`aria-*` puntano al primo che capita.
-const htmlFile = ['index.html', 'public/privacy/index.html'].filter(existsSync);
+const htmlFile = ['index.html', 'public/privacy/index.html', 'public/termini/index.html'].filter(existsSync);
 const htmlRotti = [];
 for (const f of htmlFile) {
   const testo = readFileSync(f, 'utf8');
@@ -189,6 +189,42 @@ check(scorciatoie.length > 0 && orfane.length === 0,
   orfane.length
     ? orfane.map((s) => `?${s.chiave}=${s.valore} non letto`).join(' · ')
     : scorciatoie.map((s) => `?${s.chiave}=${s.valore}`).join(', '));
+
+// ── 10. La condivisione verso l'app: manifest ↔ service worker ↔ ImportTesto ─
+// «Condividi → Turni» passa per tre file che non si parlano. Il manifest
+// sceglie i nomi dei campi, `public/condividi-sw.js` li riceve (è una POST) e
+// rimanda alla pagina con dei parametri, «Incolla turni» legge quei parametri.
+// Rinominato uno da una parte sola, la condivisione aprirebbe il calendario
+// vuoto senza un errore. E Workbox deve caricare il gestore, o la POST va a vuoto.
+// Il testo NON viaggia nell'indirizzo (lo legge anche il contatore visite): sta in una
+// cache, e il parametro dice solo che c'è.
+const importTesto = readFileSync('src/components/ImportTesto.jsx', 'utf8');
+const swCondividi = readFileSync('public/condividi-sw.js', 'utf8');
+const blocco = vite.match(/share_target:\s*\{([\s\S]*?)\n\s*\},/);
+const campi = blocco ? [...blocco[1].matchAll(/(?:name|title|text|url):\s*'([a-z_]+)'/g)].map((m) => m[1]) : [];
+const azione = blocco?.[1].match(/action:\s*'([^']+)'/)?.[1];
+const parametri = [...swCondividi.matchAll(/'([a-z]+_condivis[oa])'/g)].map((m) => m[1]);
+const nonRicevuti = campi.filter((c) => !swCondividi.includes(`'${c}'`));
+const nonLetti = parametri.filter((p) => !importTesto.includes(`'${p}'`));
+check(campi.length >= 4 && nonRicevuti.length === 0 && azione && swCondividi.includes(`'${azione}'`)
+  && /importScripts:\s*\['condividi-sw\.js'\]/.test(vite) && parametri.length >= 2 && nonLetti.length === 0
+  && !/URLSearchParams|\.set\(/.test(swCondividi),
+  'la condivisione arriva fino a «Incolla turni»',
+  [...nonRicevuti.map((c) => `${c} non ricevuto dal service worker`), ...nonLetti.map((p) => `${p} non letto da ImportTesto`)].join(' · ')
+    || `${azione}: ${campi.join(', ')} → ${parametri.join(', ')}`);
+
+// ── 11. Le pagine statiche non le ingoia il ripiego della PWA ────────────────
+// Dentro l'app installata ogni indirizzo che il service worker non conosce
+// finisce sul calendario (`navigateFallback`). Informativa e termini sono
+// pagine vere in `public/`: senza la loro voce in `navigateFallbackDenylist`
+// il link si apre sul calendario, e la pagina risulta pubblicata ma non si
+// legge. La prossima pagina aggiunta deve avere la sua voce.
+const statiche = readdirSync('public', { withFileTypes: true })
+  .filter((d) => d.isDirectory() && existsSync(`public/${d.name}/index.html`)).map((d) => d.name);
+const escluse = vite.match(/navigateFallbackDenylist:\s*\[([^\]]*)\]/)?.[1] || '';
+const ingoiate = statiche.filter((n) => !escluse.includes(`\\/${n}`));
+check(statiche.length > 0 && ingoiate.length === 0, 'ogni pagina statica è esclusa dal ripiego della PWA',
+  ingoiate.map((n) => `/${n}/ aprirebbe il calendario`).join(' · ') || statiche.map((n) => `/${n}/`).join(', '));
 
 console.log(falliti === 0
   ? '\nI file che nessuno guarda mai sono a posto.\n'

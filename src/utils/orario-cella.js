@@ -1,28 +1,11 @@
 // Come si scrive un turno dentro una cella della griglia del mese.
 //
-// IL DIFETTO
-// La pill mostrava la sola ora di INIZIO. Con un turno per giorno era poco,
-// col doppio turno diventava sbagliato da leggere: un giorno 10–15 + 18–23:30
-// compariva come «10:00 / 18:00», identico a due turni lunghi o a due turni
-// attaccati. Del turno spezzato — la pausa in mezzo, che è l'informazione —
-// non si vedeva niente, e bisognava aprirli uno per uno.
+// La pill mostra inizio E fine (non la sola ora d'inizio, che col doppio turno 10–15 + 18–23:30
+// si leggeva «10:00 / 18:00»). Il formato è corto perché la colonna è larga una quarantina di
+// pixel: ore sempre, minuti solo quando ci sono, in apice («10–15», «18–23³⁰»).
 //
-// PERCHÉ NON BASTA SCRIVERE «18:00–23:30»
-// Su un telefono una colonna della griglia è larga una quarantina di pixel:
-// undici caratteri non ci stanno, e la pill li tagliava coi puntini. E peggio,
-// il `nowrap` delle pill allargava la colonna del giorno pieno a spese delle
-// altre — le colonne vuote scendevano a 35 px.
-//
-// IL FORMATO
-// Ore sempre, minuti solo quando ci sono, in apice: «10–15», «18–23³⁰». È la
-// forma dei cartelli degli orari nei negozi italiani, quindi si legge senza
-// spiegazioni, e dimezza la larghezza.
-//
-// LA REGOLA CHE NON SI PIEGA
-// Accorciare non vuol dire arrotondare: «23³⁰» deve tornare «23:30», mai
-// «23:00». La cella è il posto dove un orario si controlla di sfuggita, e un
-// minuto sparito lì non lo nota nessuno. Il riscontro verifica che dal formato
-// corto si ricostruisca sempre l'orario di partenza.
+// Accorciare non vuol dire arrotondare: «23³⁰» deve tornare «23:30», mai «23:00». Il riscontro
+// verifica che dal formato corto si ricostruisca sempre l'orario di partenza.
 //
 // Modulo puro: `node scripts/check-orario-cella.mjs`.
 

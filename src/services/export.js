@@ -8,9 +8,8 @@ import { parseDate, formatMonthYear } from '../utils/dates';
 const GIORNI = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'];
 const HEADERS = ['Data', 'Giorno', 'Tipo', 'Inizio', 'Fine', 'Pausa (min)', 'Ore', 'Note'];
 
-// Ferie, permessi e malattia non hanno orari: al loro posto il tipo, altrimenti
-// nel foglio esportato comparirebbero righe con due colonne vuote e nessuna
-// spiegazione di dove vengano quelle ore.
+// Ferie, permessi e malattia non hanno orari: al loro posto il tipo, altrimenti il foglio
+// avrebbe righe con due colonne vuote.
 const tipoLabel = (s) => (tipoTurno(s) === TIPO.LAVORO ? 'Lavoro' : ETICHETTA[tipoTurno(s)]);
 
 const itDate = (iso) => { const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
@@ -20,10 +19,8 @@ const fmtHM = (mins) => {
   return m ? `${h}h ${m}m` : `${h}h`;
 };
 
-// `periodo` (opzionale) descrive l'intervallo quando NON è il mese di calendario:
-// per i CCNL mensilizzati il mese di paga è fatto di settimane intere e può
-// contenere giorni del mese prima o dopo. Scriverlo nel titolo evita che il
-// documento sembri sbagliato a chi conta i giorni.
+// `periodo` (opzionale) descrive l'intervallo quando NON è il mese di calendario (mese di paga
+// dei CCNL mensilizzati): scriverlo nel titolo evita che il documento sembri sbagliato.
 function prepare(shifts, monthDate, periodo = '') {
   const sorted = shifts.slice().sort(
     (a, b) => a.date.localeCompare(b.date) || (a.startTime || '').localeCompare(b.startTime || '')
@@ -38,24 +35,12 @@ function prepare(shifts, monthDate, periodo = '') {
   };
 }
 
-// ── Consegna di un file all'utente ─────────────────────────────────────────
+// ── Consegna di un file all'utente ──
 //
-// COSA C'ERA PRIMA, E PERCHÉ ERA IL DIFETTO PIÙ CARO DELL'APP
-// Questa funzione finiva con `a.click()` e non restituiva niente. `a.click()`
-// non lancia e non riferisce: se il download è bloccato — Safari su iOS in
-// modalità PWA, i browser interni di Instagram e Facebook, impostazioni
-// restrittive — la promessa si risolveva ugualmente, e l'app annunciava
-// «Backup scaricato: N turni al sicuro».
-//
-// Cioè: proprio nel momento in cui l'utente mette in salvo il suo lavoro, gli si
-// diceva una cosa che nessuno aveva verificato. E lo si scopre il giorno in cui
-// il backup serve, che è il giorno peggiore.
-//
-// LA REGOLA NUOVA: non si dichiara mai un successo che non si è visto.
-// Ogni strada dice cosa è successo davvero, e chi chiama sceglie le parole di
-// conseguenza. Dove il browser non permette di saperlo, l'esito si chiama
-// NON_VERIFICABILE — che è la verità — e l'interfaccia offre una seconda via
-// invece di rassicurare.
+// Non si dichiara mai un successo che non si è visto: `a.click()` non riferisce se il download è
+// bloccato (Safari PWA, browser interni di Instagram/Facebook). Ogni strada dice cosa è
+// successo davvero, e dove il browser non permette di saperlo l'esito è NON_VERIFICABILE e
+// l'interfaccia offre una seconda via.
 export const ESITO = {
   /** L'utente ha scelto dove salvare e la scrittura è andata a buon fine. */
   SALVATO: 'salvato',
@@ -65,14 +50,9 @@ export const ESITO = {
   ANNULLATO: 'annullato',
 };
 
-// Il browser sa dire se il file è stato scritto davvero solo con la File System
-// Access API: `showSaveFilePicker` apre la finestra «salva con nome», e la
-// scrittura che segue o riesce o lancia. È l'unica strada che permette di
-// promettere qualcosa. Dove non c'è (Firefox, Safari, iOS) si ripiega sul
-// vecchio download, dichiarandolo per quello che è.
-//
-// Funzione a parte, e pura, perché la decisione si possa riscontrare senza un
-// browser: vedi `scripts/check-consegna-file.mjs`.
+// Solo con la File System Access API (`showSaveFilePicker`) si sa se il file è stato scritto.
+// Dove non c'è (Firefox, Safari, iOS) si ripiega sul download, dichiarandolo. Funzione a parte e
+// pura, per riscontrarla senza browser: `scripts/check-consegna-file.mjs`.
 export function stradaDiConsegna({ salvaConNome }) {
   if (salvaConNome) return 'salvaConNome';
   return 'download';
@@ -88,9 +68,7 @@ function base64ToBlob(base64, mime) {
 /**
  * Consegna un file all'utente.
  *
- * Esportata perché la usa anche il backup JSON (`services/backup.js`): è
- * l'unico punto in cui l'app sa come consegnare un file su entrambe le
- * piattaforme.
+ * Esportata perché la usa anche il backup JSON (`services/backup.js`).
  *
  * @returns {Promise<{esito: string}>} MAI un successo generico: vedi `ESITO`.
  */

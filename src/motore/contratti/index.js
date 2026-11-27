@@ -38,4 +38,6 @@ export const LEGGE = {
   fasciaNotturna: null,
   // `null` = lo straordinario di notte vale come di giorno.
   straordinarioNotturno: null,
+  // `null` = nessun permesso retribuito oltre la legge (i ROL sono di contratto).
+  permessiRol: null,
 };

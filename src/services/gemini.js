@@ -4,26 +4,15 @@ import { avvicinaAnno } from '../utils/import-turni';
 import { ottieniToken, turnstileAttivo } from './turnstile';
 import { ENABLE_DEBUG } from '../config/features';
 
-// Identificativo di SESSIONE: nasce al caricamento della pagina e non viene
-// salvato da nessuna parte. Serve al proxy per una cosa sola — fare da chiave
-// alla guardia contro la raffica di richieste — e per quella basta e avanza,
-// perché un ciclo di richieste avviene in pochi secondi.
-//
-// Prima qui viaggiava `installId()`, che è generato al PRIMO avvio e resta in
-// localStorage per sempre: un filo che collegava tutti gli import di una stessa
-// persona nel tempo, per un bisogno che dura un minuto.
+// Identificativo di SESSIONE: nasce al caricamento e non si salva da nessuna parte. Serve al
+// proxy solo come chiave della guardia anti-raffica; `installId()` (permanente) avrebbe
+// legato tutti gli import di una persona nel tempo.
 const sessionId = 'ses_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 
-// ── Avvertenza sull'invio della foto ──────────────────────────────────────
-// La foto di un foglio turni contiene i nomi dei COLLEGHI, che non hanno
-// scelto nulla e non leggeranno mai un'informativa. Prima di mandarla a un
-// servizio esterno bisogna almeno dire a chi la manda cosa comporta — e dirlo
-// PRIMA che scelga il file, che è l'unico momento in cui l'avvertenza può
-// ancora cambiare la decisione.
-//
-// Vive qui e non nel componente perché è una proprietà dell'INVIO, non della
-// schermata: se domani l'import partisse da un altro punto dell'app, il
-// controllo verrebbe con lui.
+// ── Avvertenza sull'invio della foto ──
+// La foto di un foglio turni contiene i nomi dei COLLEGHI: prima di mandarla a un servizio
+// esterno si dice cosa comporta, PRIMA di scegliere il file (l'unico momento in cui può
+// cambiare la decisione). Vive qui, non nel componente: è una proprietà dell'INVIO.
 const KEY_INVIO_FOTO = 'turni_invio_foto_ok';
 
 export function accettatoInvioFoto() {
@@ -42,22 +31,17 @@ export function accettaInvioFoto() {
   } catch { /* senza storage ricomparirà: non è un errore da mostrare */ }
 }
 
-// La chiamata a Gemini NON avviene più da qui: la fa il proxy in `worker/`.
-// Motivo: Vite sostituisce le `import.meta.env.*` a build time, quindi una
-// chiave lasciata nel client finirebbe in chiaro nel bundle, leggibile da
-// chiunque apra il sito.
-//
-// Restano qui il ridimensionamento dell'immagine (va fatto sul telefono, prima
-// di spedire) e la normalizzazione di date e orari, che è pura e già collaudata.
+// La chiamata a Gemini la fa il proxy in `worker/`: una chiave nel client finirebbe in chiaro
+// nel bundle (Vite sostituisce `import.meta.env.*` a build time). Qui restano il
+// ridimensionamento dell'immagine (sul telefono) e la normalizzazione di date e orari.
 const PROXY_URL = import.meta.env.VITE_AI_PROXY_URL || '';
 
 // Oltre questo tempo la richiesta viene annullata: senza timeout una chiamata
 // che non risponde lascia il pulsante bloccato su "Analisi in corso" per sempre.
 const REQUEST_TIMEOUT_MS = 120000;
 
-// L'immagine viene ridimensionata prima dell'invio: `mediaResolution: LOW` fa
-// comunque scalare il modello lato server, quindi una foto da 12 MP servirebbe
-// solo a occupare memoria e banda (≈7 MB di base64).
+// L'immagine si ridimensiona prima dell'invio: il modello la scala comunque lato server, e
+// una foto da 12 MP servirebbe solo a occupare memoria e banda.
 const MAX_IMAGE_SIDE = 1600;
 const RESIZE_MIME = 'image/jpeg';
 const RESIZE_QUALITY = 0.85;
@@ -108,17 +92,15 @@ export async function parseShiftsFromImage(imageFile, workerName = '') {
   }
   const image = await prepareImage(imageFile);
 
-  // Token di verifica: si chiede QUI, dopo che il file è stato scelto, non prima.
-  // Anticiparlo al click del pulsante romperebbe il gesto utente su iOS, dove il
-  // selettore file deve aprirsi nello stesso turno dell'evento.
+  // Token di verifica: si chiede QUI, dopo la scelta del file. Anticiparlo al click romperebbe
+  // il gesto utente su iOS, dove il selettore deve aprirsi nello stesso turno dell'evento.
   let turnstileToken = '';
   if (turnstileAttivo()) {
     try {
       turnstileToken = await ottieniToken();
     } catch (e) {
-      // `ottieniToken` ha già riprovato per conto suo: se si arriva qui il
-      // guasto è persistito, quindi il consiglio non può più essere «riprova».
-      // Il motivo tecnico resta in console, dove serve a chi ripara.
+      // `ottieniToken` ha già riprovato: il guasto è persistito, quindi il consiglio non può
+      // essere «riprova». Il motivo tecnico resta in console.
       console.warn('turnstile: nessun token dopo i tentativi —', e?.message);
       throw erroreImport(TIPO_ERRORE.CARICAMENTO, 'Verifica di sicurezza non riuscita. Ricarica la pagina e riprova; se continua, potrebbe essere un blocco del browser.');
     }
@@ -158,10 +140,8 @@ export async function parseShiftsFromImage(imageFile, workerName = '') {
 
   const raw = payload?.items;
   const usage = payload?.usage || {};
-  // Stessi numeri del pannello «🐛 DEBUG token» in CalendarView, e stessa
-  // guardia: senza, ogni import da foto lasciava una riga in console anche in
-  // produzione. Il `console.warn` di Turnstile qui sopra resta invece sempre
-  // acceso di proposito — quello è un guasto, e serve a chi ripara.
+  // Stessi numeri del pannello «🐛 DEBUG token» in CalendarView, e stessa guardia (il
+  // `console.warn` di Turnstile resta acceso: è un guasto).
   if (ENABLE_DEBUG) console.log('[gemini-usage]', JSON.stringify(usage));
   if (payload == null) {
     // Risposta «riuscita» ma illeggibile: si è rotto il ritorno, non la foto.
@@ -171,10 +151,8 @@ export async function parseShiftsFromImage(imageFile, workerName = '') {
     throw erroreImport(TIPO_ERRORE.LETTURA, 'Nessun turno trovato nell\'immagine.');
   }
 
-  // Mappa allo schema turni dell'app; conserva i campi di provenienza.
-  // Data e orari vengono NORMALIZZATI e validati: un valore fuori formato
-  // entrerebbe nei totali ma non combacerebbe con la chiave della cella del
-  // calendario, rendendo il turno invisibile e non modificabile.
+  // Mappa allo schema turni dell'app, conservando i campi di provenienza. Data e orari sono
+  // NORMALIZZATI e validati: un valore fuori formato renderebbe il turno invisibile.
   const shifts = raw
     .map(t => ({
       // L'anno lo mette il modello quando il foglio non lo scrive: a cavallo
@@ -225,9 +203,7 @@ function toHHMM(v) {
   const h = Number(m[1]);
   let min = Number(m[2]);
   if (h > 23 || min > 59) return '';
-  // Un orario che finisce in :50 è quasi sempre una lettura errata di :30
-  // (mezz'ora): sui fogli turni un turno che inizia o finisce davvero alle :50 è
-  // rarissimo, mentre la mezz'ora è la norma. Correggiamo verso il caso comune.
+  // Un orario in :50 è quasi sempre una lettura errata di :30: si corregge verso il caso comune.
   if (min === 50) min = 30;
   return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }

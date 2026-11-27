@@ -195,7 +195,9 @@ input, select, textarea { font: inherit; }
   margin-left: auto;
   font-size: .72rem;
   color: var(--c-text-2);
+  text-align: right;
 }
+.cal-header-soldi-extra { display: block; }
 
 .cal-header-mese {
   flex: 1;
@@ -757,6 +759,8 @@ input, select, textarea { font: inherit; }
 }
 .cal-cell--weekend { background: #fafafa; }
 .cal-cell--weekend:hover { background: #f3f4f6; }
+/* Giorno con nota: un angolo piegato in alto a destra (la striscia a sinistra pesava sulla griglia). Solo l'immagine: il fondo resta quello della cella (oggi, weekend). `--c-nota` per un colore scelto. */
+.cal-cell--nota, .cal-cell--nota:hover { background-image: linear-gradient(225deg, var(--c-nota, var(--c-warning)) 12px, transparent 12px); }
 
 /* Il numero del giorno è il pulsante "aggiungi turno" della cella */
 .cal-cell-add {
@@ -1303,14 +1307,6 @@ input, select, textarea { font: inherit; }
   color: var(--c-text-2);
   font-size: .82rem;
 }
-.cosa-cambia-nota { width: 100%; font-size: .78rem; color: var(--c-text-2); }
-.cosa-cambia-avviso {
-  width: 100%;
-  font-size: .78rem;
-  color: #b91c1c;
-  font-weight: 600;
-  margin-top: .15rem;
-}
 
 /* Modal semplice per il nome sul foglio turni */
 .name-modal {
@@ -1701,12 +1697,12 @@ input, select, textarea { font: inherit; }
   list-style: none;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start; /* icona e titolo a sinistra, la freccia in fondo */
   gap: .5rem;
 }
 .settings-section-title::-webkit-details-marker { display: none; }
 .settings-section-title::after {
-  content: '▾';
+  content: '▾'; margin-left: auto;
   color: var(--c-muted-text);
   font-weight: 400;
   transition: transform .15s ease;
@@ -1990,22 +1986,9 @@ input, select, textarea { font: inherit; }
 }
 
 /* ── Il rischio di restituzione ──────────────────────────────────
-   Il riquadro che dice la cifra invece dello stato. Fondo rosso chiaro come
-   `--danger`, perché qui non si sta descrivendo una condizione: si sta dicendo
-   che dei soldi già incassati tornano indietro. È l'unico posto dell'app in cui
-   un numero è una brutta notizia, e va distinto dal giallo del «sei vicino alla
-   soglia», che invece è ancora rimediabile senza costi. */
-.bonus-rischio {
-  display: flex;
-  flex-direction: column;
-  gap: .55rem;
-  margin-top: .5rem;
-  padding: .85rem;
-  background: var(--c-danger-light);
-  border: 1px solid var(--c-danger);
-  border-radius: var(--radius);
-}
-
+   Il riquadro del trattamento integrativo (RiquadroTI.jsx) dice le cifre con
+   piastrelle colorate: rosso per i soldi che tornano indietro, verde per il
+   conguaglio a credito. Gli stili delle sue righe stanno nel componente. */
 /* Le due cifre affiancate: etichetta a sinistra, importo a destra.
    `tabular-nums` perché incolonnate vanno lette confrontandole, ed è l'unico
    modo perché le cifre stiano davvero una sopra l'altra. */
@@ -2021,25 +2004,6 @@ input, select, textarea { font: inherit; }
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
   font-size: 1.05rem;
-}
-
-.bonus-rischio-titolo {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: var(--c-danger);
-  line-height: 1.25;
-}
-
-/* L'anteprima («sei vicino, se la superi restituisci X») parla PRIMA che ci
-   sia qualcosa da restituire davvero: ambra come un avviso da tenere
-   d'occhio, non rosso come un conto già aperto. Stesso riquadro, colore
-   diverso — la differenza deve leggersi a colpo d'occhio quanto il testo. */
-.bonus-rischio--anteprima {
-  background: var(--c-warning-light);
-  border-color: var(--c-warning);
-}
-.bonus-rischio--anteprima .bonus-rischio-titolo {
-  color: var(--c-warning-text);
 }
 
 /* La casella della rinuncia sta DENTRO il riquadro rosso, non in fondo alla
@@ -2075,14 +2039,6 @@ input, select, textarea { font: inherit; }
   border-top: 1px solid var(--c-border);
   padding-top: .45rem;
   margin-top: .1rem;
-}
-
-/* Lo stesso tono dentro il riquadro: frasi, non etichette con cifra. */
-.bonus-spiega {
-  margin: 0;
-  font-size: .9rem;
-  line-height: 1.45;
-  color: var(--c-text);
 }
 
 .bonus-rischio-scelta {
@@ -2459,10 +2415,6 @@ input, select, textarea { font: inherit; }
   margin: .3rem 0;
   font-size: .9rem;
 }
-.ti-stato--ok {
-  font-weight: 600;
-  color: var(--c-success-text);
-}
 .ti-soglia {
   margin: .3rem 0 0;
   font-size: .8rem;
@@ -2664,8 +2616,6 @@ input, select, textarea { font: inherit; }
 
 /* Il conguaglio di dicembre: una riga, la spiegazione nel popup di «perché?». */
 .conguaglio { padding-top: .5rem; border-top: 1px solid var(--c-border); }
-.conguaglio-testa { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; flex-wrap: wrap; font-size: .9rem; }
-.conguaglio-testa strong { font-variant-numeric: tabular-nums; }
 
 /* Simulazione del bonus mensile: chiude il riquadro del trattamento
    integrativo, perché è a quello che la domanda si riferisce. Da spenta costa
@@ -3710,8 +3660,6 @@ input, select, textarea { font: inherit; }
 
 /* La soglia in lordo accanto ai 15.000 di legge: dice la stessa cosa, più
    piccola, perché la cifra che si conosce è l'altra. */
-.soglia-lorda {
-  font-size: .85em;
-  color: var(--c-text-2);
-  white-space: nowrap;
-}
+.soglia-lorda { font-size: .85em; color: var(--c-text-2); white-space: nowrap; }
+/* Zoom libero (index.html): su iPhone un campo sotto i 16px ingrandisce la pagina al tocco. */
+@media (pointer: coarse) { .form-input, input, select, textarea { font-size: max(16px, 1em); } }

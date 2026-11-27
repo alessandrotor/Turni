@@ -1,7 +1,11 @@
 # Turni — note per Claude
 
 PWA (React 18 + Vite) che segna i turni e stima lordo e
-netto secondo le regole della busta paga italiana. Codice, commenti e interfaccia
+netto secondo le regole della busta paga italiana. **Il nome pubblico è
+Segnaturni** (novembre 2026, «per cambiare c'è tempo»): si usa in tutto ciò che
+si legge — app, manifest, vetrina `/benvenuto`, informativa e termini. Il
+repository, il codice e le chiavi del localStorage (`turni_…`) restano «turni»:
+cambiarle farebbe perdere i dati a chi usa già l'app. Codice, commenti e interfaccia
 sono in italiano: scrivere nella stessa lingua.
 
 Branch di lavoro: `experimental`. **`Beta`** è experimental congelato, da
@@ -13,6 +17,28 @@ su `experimental`. I riscontri
 girano anche su `Beta` (`riscontri-beta.yml`), senza deploy. La produzione è un
 deploy manuale e può essere molto indietro rispetto al repository — prima di
 dire «è online» va guardato il sito, non il codice.
+
+**Cosa va fatto e in che ordine** sta in `docs/piano-per-agenti.md`: obiettivo,
+scelte già prese, elenco dei lavori per stadio, cosa si decide da soli e cosa
+si chiede. Chi prende in mano il progetto lo legge dopo questo file. Il lancio
+di dicembre 2026 (nome, vetrina, concorrente, misura dell'interesse, piano)
+sta in `docs/strategia/lancio-dicembre-2026.md`.
+
+## Quale modello per cosa (per risparmiare token)
+
+La sessione principale fa il lavoro che chiede ragionamento: motore, regole,
+interfaccia, testi, decisioni. Il lavoro meccanico con tanto output si passa
+agli agenti in `.claude/agents/`, che girano su modelli più economici e
+riferiscono solo l'esito: `esecutore` (Haiku: build, riscontri, git),
+`verificatore` (Sonnet: prove nel browser), `ricercatore` (Sonnet: ricerche web).
+
+- **Si delega solo se conviene.** Un comando o due si fanno direttamente:
+  avviare un agente costa più di un `git status`. Conviene quando l'output è
+  lungo (riscontri, build, log del browser, pagine web) o i passi sono tanti.
+- **Il tempo conta più dei token.** Qualche secondo in più va bene; un compito
+  da due minuti non deve diventare da dieci. Nel dubbio, si fa direttamente.
+- **Fable non si usa mai**, né come modello di un agente né altrove, se chi
+  mantiene il progetto non lo chiede espressamente.
 
 ## La parola d'ordine: frictionless
 
@@ -71,11 +97,25 @@ In pratica, e sono regole, non aspirazioni:
   La regola generale: **quello che l'app può dedurre dai dati già inseriti non
   si fa digitare.** Ma non si inventa nemmeno — la proposta è una coppia che
   nello storico esiste davvero, mai una media, e il riscontro lo verifica.
+  Più giorni con lo stesso orario: pressione lunga su un giorno vuoto, tocchi
+  sugli altri, un tocco sull'orario (`BarraSelezione.jsx`, gli stessi orari
+  dello storico) e poi «Annulla». Un turno già segnato si STENDE: pressione
+  lunga sulla sua pillola, il dito trascinato sui giorni, e al rilascio è
+  copiato su quelli vuoti (gli occupati si saltano e lo si dice), con
+  «Annulla»; durante il trascinamento la griglia non sfoglia i mesi
+  (`useSelezioneGiorni.js`). Caso tipico: un giorno di ferie da stendere sulla
+  settimana. «Copia la settimana scorsa»
+  (`CopiaSettimana.jsx`) è sospesa: commentata in `CalendarView.jsx`, non tolta.
 - **Per ciò che si recupera, l'annulla dopo; la conferma prima mai.** Una
   domanda «sei sicuro?» costa un tocco a tutti per un errore che fa uno, e
   insegna a chiudere gli avvisi a riflesso. Cancellare un turno agisce subito e
   apre una finestra per tornare indietro (`utils/avvisi.js`, `DURATA_ANNULLA`).
   Quella finestra è lavoro in sospeso: tiene la sua chiave in `occupato`.
+  **L'unica eccezione, decisa da chi mantiene il progetto:** «Elimina tutti i
+  dati» in Impostazioni (`EliminaDati.jsx`) chiede conferma PRIMA, perché
+  dopo non esiste nessuna copia da cui tornare. È l'opzione nucleare per chi
+  vuole il pieno controllo dei suoi dati: la conferma dice cosa sparisce e
+  mette accanto il backup. → `check-elimina-dati.mjs`
 - **Dove l'annulla dopo non può esistere, si protegge il gesto.** Un turno
   cancellato esiste ancora per otto secondi; una bozza chiusa no, non è mai
   stata scritta da nessuna parte. Quindi il tocco sull'area scura attorno al
@@ -113,6 +153,11 @@ si può correggere. Le due colonne devono sommare ai due lordi al centesimo, e
 nel testo condiviso escono solo scarti — nemmeno i NOMI delle voci della busta
 («TOP STORE» dice chi è il datore). → `check-verifica-busta.mjs`
 
+Ci si arriva anche da sotto il totale del mese: con un contratto che nessuna
+busta ha ancora confermato (oggi tutti tranne Turismo e Vigilanza) una riga lo
+dice e porta qui (`AvvisoContratto.jsx`). È così che un contratto diventa
+verificato: dagli scarti di chi lo usa.
+
 Il lettore dei PDF è uno solo, `src/utils/cedolino.js`, per Node e per il browser.
 Attenzione a `DecompressionStream`: rifiuta il ritorno a capo che il PDF lascia
 dopo il deflate, mentre `zlib` lo ignora (vedi `inflateBrowser`). Legge solo i
@@ -148,10 +193,11 @@ Tre riscontri non parlano di buste ma di come il codice resta leggibile:
   La documentazione invecchia in silenzio; così invecchia a voce alta.
 - **`check-codice-morto.mjs`**: classi CSS ed export senza nessuno che li usi.
 
-`check-dati-in-uscita.mjs` ispeziona `dist/` e vuole il proxy AI nel bundle:
-su una build locale senza `VITE_AI_PROXY_URL` fallisce senza che ci sia niente
-di rotto. È l'unico falso allarme noto. La telemetria non c'è più (12/10/2026):
-nessun dato d'uso esce dall'app.
+`check-dati-in-uscita.mjs` tiene ferma la `connect-src` della CSP
+(`public/_headers`): gli unici indirizzi a cui il browser lascia mandare dati,
+oggi il sito e il contatore visite. È la garanzia che l'informativa invita a
+verificare con uno strumento terzo, quindi non si allarga senza riscriverla.
+La telemetria non c'è più (12/10/2026): nessun dato d'uso esce dall'app.
 
 `COSE-NUOVE.md` è l'inventario dei difetti noti, e invecchia in silenzio se
 nessuno lo tocca: quando una voce si chiude va marcata lì, col riscontro che la
@@ -208,6 +254,52 @@ quanto costa scoprire a dicembre che non spettava.
   proiezione simulate), accanto a quello vero: la casella cambiava il previsto
   di fine anno e lasciava fermo dicembre. Simula solo da questo mese a
   dicembre: i mesi passati sono andati come sono andati.
+
+- **Il riquadro del trattamento integrativo dice poco e lo disegna**
+  (`RiquadroTI.jsx`, novembre 2026): aveva una decina di cifre a vista e «si
+  fa confusione». Una risposta in grande con la sua piastrella («ancora ~76
+  ore»), la barra con «oggi», «dic.» e «soglia» a parole e la zona oltre la
+  soglia a righe rosse, poi una riga per risposta, ognuna con la sua
+  piastrella e un numero solo, nel colore della zona della barra di cui parla
+  (rosso «Se la superi», verde «Ti ridanno»). Soglia in euro, cifre della
+  barra e simulazione del premio stanno in «Dettagli». Il costo del superarla
+  si mostra solo a chi ci è vicino, come BILANCIA: «perdi il tratt.
+  integrativo» contro «ma paghi meno tasse», e il pezzo scoperto è la perdita
+  vera (`costoSoglia()`). «Ti ridanno 90 €» accanto a «700 € da restituire»
+  sembrava una contraddizione; i 700 € (già presi, ridati a dicembre) stanno
+  in «Dettagli». Oltre la soglia, al posto di «Niente da restituire», le due
+  righe della busta di dicembre come due tasselli: tratt. integrativo ripreso
+  (freccia che esce) e tasse rese (freccia che entra), lunghi quanto valgono, e
+  il saldo accanto. Il saldo da solo taceva la trattenuta che poi in busta c'è.
+  Le cifre sono le voci di `stimaConguaglio`.
+  **Quando la stima di dicembre salta da sola, lo si dice**: si ricorda
+  l'ultima stima con l'impronta di turni e impostazioni, e se si sposta di
+  almeno 250 € senza turni nuovi una riga dice di quanto e perché, per una
+  settimana. Novembre 2026: un aggiornamento la spostò di 910 € e il riquadro
+  passò da «ancora ~55 ore» a «oltre la soglia» senza una parola.
+  `confrontaStima()`, → `check-salto-stima.mjs`
+  **Il fondo pensione** (`FondoPensione.jsx`): una riga nel riquadro, «ogni
+  100 € versati, ~23 € tornano», e un cursore «quanto versi, quanto torna col
+  730» che parte da 500 €: chi guadagna 15.000 l'anno non ne versa 5.300. La deduzione
+  abbassa l'imposta, non il reddito: la soglia non si sposta, ma sotto i 15.000
+  troppa deduzione toglie la capienza e il tratt. integrativo sparisce; fra
+  15.000 e 28.000 lo fa crescere. Dalla norma, non da una busta.
+  `versamentoMigliore()`, → `check-fondo-pensione.mjs`
+  **«Ci perdo?» per chi non ha ancora turni** (`CiPerdo.jsx`): una riga accanto
+  a «Turni da un messaggio», niente cifre finché non la si tocca; la finestra
+  chiede il solo lordo dell'anno e risponde con la stessa bilancia del riquadro
+  (`Bilancia.jsx`, condivisa). Coi turni la riga sparisce e risponde il
+  riquadro. Il link `?ciperdo` apre la finestra a chiunque: è quello da mandare
+  a un collega. Dentro l'app e non una pagina a parte, per scelta di chi
+  mantiene il progetto. `ciPerdo()`, → `check-ci-perdo.mjs`
+  **Lavori in corso, in ottica lead**: chi mantiene il progetto la sta
+  costruendo anche come porta verso fondi pensione che pagano un referral.
+  Vincoli già decisi per i lead: la cifra viene dal motore e mai dal partner
+  (nessuna strada per gonfiarla), la strada gratis accanto a quella del
+  partner, il compenso dichiarato accanto al pulsante, nessun dato che esce
+  dall'app senza consenso (la `connect-src` e `check-dati-in-uscita.mjs` non
+  si allargano senza riscrivere l'informativa e i termini, che oggi dicono
+  «senza scopo di lucro»).
 
 - **Il conguaglio di dicembre è una forchetta, mai una cifra** (`motore/conguaglio.js`).
   È la differenza fra quanto il datore trattiene mese per mese (lordo × 12) e
@@ -387,6 +479,15 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   della busta. Ad agosto 2026 la busta tratteneva 8,38 € di IRPEF e non si
   capiva perché: la spiegazione stava in «Come è calcolato?», chiusa. Si dice
   «verificato sulle buste Zucchetti», non «lo fanno tutti i datori».
+  **La detrazione cambia ogni mese, e si disegna** (`GraficoMesi.jsx`, novembre
+  2026, nel «perché?»): chi aveva 251,79 € di detrazione e niente tratt.
+  integrativo credeva che sopra i 15.000 la detrazione fosse più bassa, e non
+  capiva perché cambiasse da un mese all'altro. In alto la stima dell'anno mese
+  per mese contro i 15.000, in basso detrazione e tratt. integrativo del mese,
+  sotto il mese toccato in quattro passi (finora + mese × N, stima, detrazione
+  annua, giorni su 365). Un mese vale almeno la paga da contratto: chi ha solo
+  il montante non sa com'erano i mesi, e il contratto il datore lo deve dare.
+  `detrazioneMesePerMese()`, → `check-mese-per-mese.mjs`
   **E si dice che il mese non è cosa fatta.** Quando l'anno, di questo passo,
   finisce dall'altra parte dei 15.000, la riga aggiunge «A dicembre si
   inverte» e il popup dice cosa succede a QUESTO mese al conguaglio, col saldo
@@ -414,8 +515,14 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   settimana lun-dom, nel giorno in cui si superano; una settimana a cavallo
   resta una e ogni ora va nel mese del suo giorno. Ordinarie: 103,20 h al mese
   (24 × 4,3) comunque distribuite — luglio ne aveva 109,5 lavorate, settembre
-  100,5 con le ferie, e la busta ne paga 103,20 tutte e due le volte. Un mese
-  ancora a metà mostra le ore segnate (`quotaOrdinaria()` in `pay.js`).
+  100,5 con le ferie, e la busta ne paga 103,20 tutte e due le volte. Il mese
+  IN CORSO (lo dice `oggi`, passato da App.jsx) sale coi turni: ordinarie =
+  ore segnate meno supplementari, fino al monte (`quotaOrdinaria()` in
+  `pay.js`). Prima le ore supplementari riempivano anche il monte: a ottobre
+  2026, 39 h supplementari lo davano pieno a metà mese e i turni aggiunti non
+  muovevano il lordo — sembrava un guasto. A mese chiuso vale la busta, e
+  senza `oggi` (verifica busta, riscontri) ogni mese è chiuso.
+  → `check-mese-in-corso.mjs`
   La regola mensile di prima veniva da giugno e luglio letti sulle ore della
   BUSTA: «ore − 103,20 = supplementari» tornava per costruzione. Coi turni,
   settembre dava 11,55 h contro 14,25. → `check-supplementare-settimanale.mjs`
@@ -430,10 +537,34 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   Di notte il Turismo lo paga al 60% fra le 24 e le 6, e assorbe il notturno
   ordinario: è un dato del contratto (`straordinarioNotturno` in `ccnl.json`),
   dal CCNL e non da una busta. → `check-straordinario-notturno.mjs`
-  Nel «Cosa cambia nel mese» del modulo il monte ore si presume pieno (nel
-  mese in corso, con almeno una settimana segnata): un turno vale solo per le
-  ore oltre le 24 della sua settimana, e accanto si dice perché. Le cifre del
-  calendario restano sulle ore segnate. → `check-cosa-cambia.mjs`
+  **Ogni cambiamento nei soldi si vede.** Il «Cosa cambia nel mese» del
+  modulo usa la stessa regola e la stessa data della barra, quindi dice di
+  quanto la barra salirà (prima presumeva il monte pieno e diceva «+0 €»
+  mentre la barra saliva); e la barra fa scorrere la cifra dal valore di
+  prima al nuovo (~0,6 s, rallentando alla fine) e mostra accanto la
+  differenza, che entra ed esce sfumando (`CifraCheCambia.jsx`). Sobrio, non
+  una roulette; con «meno animazioni» del sistema, solo il risultato.
+  Anche un turno che non sposta il lordo (monte ore già pieno) ha il suo
+  riscontro: «+0,00 €» in grigio, perché il silenzio si legge come un guasto.
+  → `check-cosa-cambia.mjs`
+  **E si vede dove vanno le ore** (prova, ottobre 2026): «Dove vanno le ore →»
+  nel riepilogo apre un diagramma a flussi, dalle giornate (feriali,
+  domeniche, festivi, ferie…) alle voci della busta con gli euro, e sotto le
+  maggiorazioni che stanno sopra ore già contate (`FlussoOre.jsx`). Un
+  selettore dà altre tre viste degli stessi numeri: ore contro euro, le
+  settimane con la linea delle ore del contratto (il PERCHÉ del supplementare,
+  con le ore dell'altro mese nelle settimane a cavallo) e un mosaico degli
+  euro. Il monte
+  ore si DISEGNA, non si spiega: nei Flussi la retribuzione è una scatola
+  grande quanto le 103,2 h del contratto, che le ore ordinarie riempiono;
+  quelle che non ci stanno (un mese lungo) escono a righe, «+8,3 h · 0 €», e
+  dove non arrivano resta il bordo tratteggiato. Prima erano due voci a parte
+  con una riga di spiegazione ciascuna («monte ore», «nello stipendio fisso»),
+  e non si capivano: «sono ore di un altro mese?». E sotto le Settimane due
+  barre rispondono a «come fanno a stare sotto le 24 a settimana ed essere più
+  di 103?»: le ore ordinarie settimana per settimana, e lo stipendio da 4,3
+  settimane con l'avanzo a righe rosse (il «+8,3 h · 0 €» dei Flussi ci porta). Riaffetta i campi di
+  `computePayByShift`, non conta niente: `flussoOre()`, → `check-flusso-ore.mjs`
 - **Le assenze riempiono la settimana**, anche quando cadono in coda: in busta
   `4,00 ferie + 99,20 retribuzione = 103,20`. Contarle in ordine cronologico
   faceva perdere ore già maturate a chi andava in ferie a fine periodo.
@@ -461,6 +592,19 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
   il CCNL Turismo le esclude dal computo delle ferie (art. 134
   Fipe/Federalberghi), e in busta sono una festività. `giorniDiRiposo()`,
   → `check-periodo-assenza.mjs`
+- **Permessi ROL ed ex festività** (art. 114): un dodicesimo delle ore annue per
+  ogni mese con almeno 15 giorni in forza, e le ore annue riproporzionate al
+  part-time sulle ore settimanali. Il testo del contratto il part-time non lo
+  diceva: lo dicono le buste di settembre e ottobre 2026, che a un assunto nei
+  primi 24 mesi danno 32 × 60%. Gli scaglioni per anzianità oltre il 24° mese
+  vengono dalla norma, non ancora da una busta. `maturatoPermessi()`,
+  → `check-busta-permessi-2026.mjs`
+  **Conta la scadenza, non il saldo**: nel Turismo si godono «di norma» entro il
+  30 giugno dell'anno dopo, e quelli rimasti a fine settembre si pagano. Le ore
+  si dividono per anno di maturazione (`lottiPermessi()`), le godute consumano
+  prima le più vecchie, e la riga nel riepilogo (`PermessiRol.jsx`) dice quante
+  ore usare entro quale 30 settembre. Il punto di partenza è la riga «Permessi»
+  di una busta, letta dal PDF o copiata a mano come il montante.
 - **Malattia**: la carenza si conta per EVENTO, non per anno. Percentuali e
   giorni NON sono verificati su nessun cedolino, e **le buste che la contengono
   non fanno testo**: due mesi mostrano una scomposizione completa e invitante,
@@ -473,9 +617,15 @@ l'app direbbe di perdere il trattamento a ~13.600 € di reddito, e chi sta fra
 ## L'archivio è il localStorage
 
 Non c'è server né account: quello che il browser tiene **è** l'archivio. Da qui
-due regole sul ripristino di un backup (`utils/backup-contenuto.js`,
+le regole sul ripristino di un backup (`utils/backup-contenuto.js`,
 `check-backup.mjs`).
 
+- **Il browser può svuotare l'archivio da solo**: Safari cancella i dati di un
+  sito non usato per sette giorni se non è in Home, e chiunque lo fa a corto di
+  spazio. Dopo il primo turno salvato si chiede l'archiviazione persistente
+  (`utils/archivio-persistente.js`): mai all'apertura, una volta per sessione.
+  Non è una garanzia, il backup resta la sola copia fuori dal telefono.
+  → `check-archivio-persistente.mjs`
 - **O tutto o niente, e comunque si dice cosa è successo.** Quattro `setItem` in
   fila non sono una sostituzione: se il secondo fallisce per quota — un backup
   grosso su uno storage quasi pieno è il caso tipico — restano i turni nuovi con
@@ -517,6 +667,39 @@ Discendono tutte dalla parola d'ordine qui sopra.
   (`confrontoConSoglia`, → `check-costo-soglia.mjs`); il caso peggiore resta
   solo per chi è sotto e chiede «e se la superassi?». Lo stesso per il conguaglio: «ti riprendono» è cassa (quello che
   le buste hanno dato in più dell'anno), non una perdita, e si dice.
+- **Incolla turni da un messaggio** (`utils/testo-turni.js`) legge il testo
+  IN LOCALE: nessuna rete, nessun modello, ed è per questo che non ha il
+  consenso della foto. «Lun» senza data si risolve sul giorno più vicino a oggi
+  e l'anteprima lo dice con un «Parti da» da correggere: non si indovina in
+  silenzio. Un orario senza giorno non diventa un giorno. → `check-testo-turni.mjs`
+  Ci si arriva anche da «Condividi → Segnaturni» (`share_target` nel manifest, solo
+  Android con l'app installata): il modulo si apre già pieno. La condivisione è
+  una POST e la riceve `public/condividi-sw.js`. → `check-configurazione.mjs`
+- **Il tabellone da un'immagine si legge SUL TELEFONO** (prova, ottobre 2026):
+  Tesseract in WebAssembly, scaricato la prima volta da `/ocr` del sito stesso
+  (~4,5 MB, fuori dal precache), mai da un CDN; per questo la CSP ha
+  `'wasm-unsafe-eval'`. Si legge CELLA PER CELLA: sulla tabella intera il
+  lettore sbaglia quasi tutto. Un formato solo, il tabellone Excel a due celle
+  per giorno; su due settimane vere 183 turni giusti su 184. Il nome è
+  `workerName`: la prima volta si tocca dall'elenco, poi la riga si ritrova da
+  sola, e i turni dei colleghi non vengono nemmeno letti. Il risultato diventa
+  testo di «Incolla turni», quindi la stessa anteprima, con «Turni di X ·
+  cambia» sopra; il nome sta anche in Impostazioni. Per la velocità: due
+  lettori in parallelo, avviati al tocco su «📷» mentre si sceglie l'immagine;
+  col nome noto ci si ferma alla sua riga (gli altri nomi solo su «cambia»);
+  delle date bastano due giorni d'accordo. Da 5,0 a 2,8 s a CPU rallentata ×4. Parte pura in
+  `utils/tabellone.js`, lettore in `services/lettore-immagine.js`.
+  **Una foto senza griglia** (lo schermo di un gestionale) apre il RIGHELLO
+  (`Righello.jsx`): la fascia la posa chi la guarda, le colonne si ricavano
+  dagli orari letti su tutta l'immagine (passo regolare, quelle vuote si
+  ricostruiscono), il giorno della prima colonna è un tocco perché in una
+  foto le date spesso non ci sono. Sulla foto vera: 16 turni giusti su 20.
+  Un turno oltre le 13 ore è rumore (art. 7 D.Lgs. 66/2003, 11 ore di riposo):
+  meglio perso che importato sbagliato.
+  → `check-tabellone.mjs`. Nel frattempo la lettura con l'IA è SOSPESA
+  (`hasImportAI` in `CalendarView.jsx`), non tolta; da novembre 2026 i suoi
+  indirizzi (proxy IA e Turnstile) sono fuori dalla CSP: riaccenderla vuol
+  dire rimetterli lì, nell'informativa e in `check-dati-in-uscita.mjs`.
 - **Non si scrolla se non è assolutamente necessario.** Vale soprattutto per
   ciò che si apre sopra la pagina: una finestra che costa uno scorrimento per
   arrivare al pulsante che la chiude è una finestra scritta troppo lunga, e la
@@ -545,5 +728,18 @@ Discendono tutte dalla parola d'ordine qui sopra.
   settimanali mostrandolo identico a «non l'ho ancora messo», mentre mandava a
   zero la soglia dei supplementari: `?? ''`, e `min="1"` dove lo zero è un dato
   mancante travestito.
+- **Icone, non emoji** (ottobre 2026): gli emoji cambiano disegno da un
+  telefono all'altro, sono deboli dove servono (il 🌡 della malattia quasi non
+  si vedeva) e davano all'app l'aria di un modello fatto in fretta. Le icone
+  sono disegnate in `Icona.jsx`, senza librerie: **duotone** (contorno colorato,
+  interno tenue) per menu, bottoni, avvisi e titoli; **piastrella** (quadratino
+  pieno, disegno bianco) solo per le giornate senza turno, che nel calendario
+  devono saltare all'occhio. Ogni cosa ha il suo colore, uguale ovunque. Gli
+  emoji restano solo nel testo condiviso su WhatsApp. Niente «✓» nei bottoni.
+- **Sotto il netto, il «Totale competenze» della busta** (`NetPillole.jsx`):
+  il lordo non è la cifra in fondo al cedolino, che comprende anche tratt.
+  integrativo e Indennità L. 207/24. La somma si disegna: le caselle che ne
+  fanno parte hanno il bordo azzurro e un filo ciascuna scende al totale.
+  `totaleCompetenze()`, → `check-busta-luglio-2026.mjs`
 - I calcoli fiscali sono marcati BETA e invitano a farsi controllare da un
   professionista. Non togliere quell'avviso.

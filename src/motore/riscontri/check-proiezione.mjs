@@ -22,7 +22,8 @@
 // previsione. Confermano che il netto non e' cambiato, non che la previsione
 // sia giusta.
 
-import { projectAnnualIncome, monthlyBaseGross } from '../net.js';
+import { projectAnnualIncome, monthlyBaseGross, computeAnnualGrossFromShifts } from '../net.js';
+import { computePayByShift } from '../pay.js';
 
 let falliti = 0;
 let totale = 0;
@@ -252,6 +253,40 @@ for (const modo of ['stimato', 'ytd']) {
   const conPremi = projectAnnualIncome(9000, 0, conMontante({ tiProjectionMode: modo, monthlyBonus: spunte }), ANNO, { oggi: OGGI }).value;
   verifica('  e i premi spuntati solo dopo il montante', arr(conPremi - conFisse), 120,
     'febbraio e luglio sono già nel montante');
+}
+
+// ── Ferie già segnate nel resto del mese: contate una volta sola ───────────
+// Il resto dell'anno si contava a giorni di calendario: le ferie già segnate
+// dopo oggi entravano come turni E come «resto del mese da contratto». Sulla
+// busta vera, a fine novembre 2026, ~190 € in più. Ora ogni mese da oggi in
+// poi vale la mensilità, e le ore ordinarie segnate ne coprono una parte.
+console.log('\nFerie segnate dopo oggi: contate una volta sola\n');
+{
+  const SS = { ...S, overtimeSurchargePct: 30 };
+  const turni = [];
+  const giorno = (d) => `2026-11-${String(d).padStart(2, '0')}`;
+  // Tre settimane da 24 ore (lun–sab, 4 ore), poi ferie dal 25 al 28.
+  for (let d = 2; d <= 21; d++) {
+    if (new Date(2026, 10, d).getDay() !== 0) turni.push({ id: `l${d}`, date: giorno(d), startTime: '10:00', endTime: '14:00', breakMinutes: 0 });
+  }
+  const ferie = [25, 26, 27, 28].map((d) => ({ id: `f${d}`, type: 'ferie', durationMinutes: 240, date: giorno(d) }));
+  const stima = (lista, oggi) => {
+    const mappa = computePayByShift(lista, SS, { oggi });
+    const ag = computeAnnualGrossFromShifts(ANNO, lista, SS, mappa, oggi);
+    return projectAnnualIncome(ag.total, ag.extras, SS, ANNO, { oggi, coperto: ag.coperto }).value;
+  };
+  const il24 = stima([...turni, ...ferie], new Date(2026, 10, 24));
+  verifica('il 24 come il 10 novembre', arr(il24), arr(stima([...turni, ...ferie], new Date(2026, 10, 10))),
+    'la stima non dipende dal giorno');
+  verifica('novembre vale almeno la mensilità', arr(il24), arr(stima([], new Date(2026, 10, 24))),
+    'come senza turni: 88 ore stanno sotto il monte');
+  // Una domenica oltre le 24 della settimana: 4 ore supplementari al 130%,
+  // sopra la mensilità.
+  const domenica = { id: 'd8', date: giorno(8), startTime: '10:00', endTime: '14:00', breakMinutes: 0 };
+  verifica('un supplementare la sposta di quanto vale', arr(stima([...turni, ...ferie, domenica], new Date(2026, 10, 24)) - il24),
+    52, '4 h × 10 € × 130%');
+  verifica('ferie sotto il monte: la stima non sale', arr(il24), arr(stima(turni, new Date(2026, 10, 24))),
+    'erano già nelle ore da contratto');
 }
 
 console.log();

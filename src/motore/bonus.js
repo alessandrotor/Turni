@@ -1,17 +1,10 @@
-// "Quanto manca" al limite del trattamento integrativo (bonus in busta paga).
-// Versione essenziale: dato il reddito annuo, dice quanto si può ancora
-// guadagnare prima di superare le soglie che fanno perdere il bonus.
-// Valori 2026.
+// «Quanto manca» al limite del trattamento integrativo (bonus in busta): dato il
+// reddito annuo, quanto si può ancora guadagnare prima delle soglie (valori 2026).
 //
-// Le soglie di legge (15.000 / 28.000) sono definite sul REDDITO COMPLESSIVO,
-// cioè il lordo al netto dei contributi deducibili. Lo STATO si decide lì, con
-// `redditoComplessivo` di net.js — la stessa identica funzione che usa il
-// pannello del netto, così le due schermate non possono contraddirsi.
-// L'utente però ragiona sul LORDO (è quello che somma dai turni), quindi il
-// «quanto manca» resta in lordo: in quella grandezza le soglie valgono circa
-// 16.518 € e 30.834 €, e si spostano col CCNL.
-// Estensione esplicita: senza, Node puro non importa questo modulo e non si
-// puo' scrivere uno script di riscontro — che infatti mancava.
+// Lo STATO si decide sul REDDITO COMPLESSIVO con `redditoComplessivo` di net.js, la
+// stessa funzione del pannello del netto. Il «quanto manca» resta in LORDO, che è
+// ciò che l'utente somma dai turni, e le soglie in lordo si spostano col CCNL.
+// Estensione esplicita: senza, Node puro non importa questo modulo.
 import { redditoComplessivo } from './net.js';
 import { lordoPerReddito } from './soglia-lorda.js';
 
@@ -39,13 +32,8 @@ export const BONUS_STATUS = {
  * @returns margini e soglie espressi in LORDO (coerenti con `income`)
  */
 /**
- * Il margine convertito in ORE, che è l'unità in cui si ragiona davvero.
- *
- * «Ancora 2.400 €» non dice quanto si può lavorare: bisogna dividere a mente
- * per una paga oraria che non è quella base, perché le ore in più sono
- * maggiorate. Qui si usa la maggiorazione dei SUPPLEMENTARI — per un part-time
- * le ore eccedenti sono quelle, non straordinari, ed è la distinzione che il
- * tooltip del riepilogo già spiega all'utente.
+ * Il margine convertito in ORE, l'unità in cui si ragiona davvero, con la
+ * maggiorazione dei SUPPLEMENTARI.
  *
  * Restituisce `null` senza paga oraria: meglio non dire le ore che dirne zero.
  */
@@ -62,33 +50,21 @@ export function margineInOre(margineLordo, settings = {}) {
 export function calcBonusMargin(annualIncome, settings = {}) {
   const C = BONUS_CONST;
   const income = Math.max(0, Number(annualIncome) || 0);
-  // Soglie di legge riportate in lordo, per poterle confrontare con `income`.
-  // Le soglie in lordo dalla stessa ricerca del popup (`lordoPerReddito`): con
-  // `taxableToGross` la barra e il popup dicevano due lordi diversi.
+  // Soglie di legge in lordo, dalla stessa ricerca del popup (`lordoPerReddito`).
   const thresholdFullGross = lordoPerReddito(C.SOGLIA_BONUS_PIENO, settings);
   const thresholdMaxGross = lordoPerReddito(C.SOGLIA_BONUS_MAX, settings);
-  // L'imponibile viene dalla STESSA funzione che usa il pannello del netto:
-  // e' la garanzia che le due schermate non possano contraddirsi.
+  // L'imponibile viene dalla stessa funzione del pannello del netto.
   const base = { income, thresholdFullGross, thresholdMaxGross, taxable: redditoComplessivo(income, settings) };
 
   if (income <= 0) {
     return { ...base, income: 0, taxable: 0, status: BONUS_STATUS.ATTESA, marginToFull: null, marginToMax: null, oreResidue: null, nearThreshold: false };
   }
 
-  // LO STATO SI DECIDE SULL'IMPONIBILE, non sul lordo, ed è l'unico modo per
-  // non contraddire `tiDecision`. Le due strade non sono l'inverso esatto
-  // l'una dell'altra: convertire la soglia in lordo e convertire il reddito in
-  // imponibile arrotondano in punti diversi, e restava una fascia di circa un
-  // euro di lordo in cui questa funzione diceva «hai superato la soglia»
-  // mentre il pannello del netto erogava ancora il bonus pieno. Un euro di
-  // ampiezza, ma centrabile scrivendo il reddito a mano — e due schermate che
-  // si contraddicono non sono più credibili nemmeno quando hanno ragione.
-  // Le soglie in LORDO restano, ma solo per dire quanto manca: quella è la
-  // grandezza che l'utente somma dai turni.
-  //
-  // I confronti seguono il testo alla lettera (D.L. 3/2020 art. 1 c. 1):
-  // pieno se il reddito complessivo «non è superiore a 15.000», fascia ridotta
-  // se «superiore a 15.000 ma non a 28.000», niente oltre.
+  // LO STATO SI DECIDE SULL'IMPONIBILE, non sul lordo, per non contraddire
+  // `tiDecision`: convertire soglia e reddito arrotonda in punti diversi. Le soglie in
+  // LORDO servono solo per dire quanto manca.
+  // Confronti alla lettera del D.L. 3/2020 art. 1 c. 1: pieno se «non superiore a
+  // 15.000», ridotto se «superiore a 15.000 ma non a 28.000», niente oltre.
   if (base.taxable > C.SOGLIA_BONUS_MAX) {
     return { ...base, status: BONUS_STATUS.OLTRE, marginToFull: null, marginToMax: null, oreResidue: null, nearThreshold: false };
   }
@@ -105,9 +81,7 @@ export function calcBonusMargin(annualIncome, settings = {}) {
     };
   }
 
-  // Il margine non può essere negativo: nella fascia di scarto fra le due
-  // conversioni il lordo può aver già passato la soglia tradotta mentre
-  // l'imponibile no.
+  // Il margine non può essere negativo (scarto fra le due conversioni).
   const marginToFull = Math.max(0, thresholdFullGross - income);
   return {
     ...base,

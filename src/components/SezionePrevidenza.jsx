@@ -6,6 +6,7 @@
 
 import { parseNum } from '../motore/pay';
 import { TETTO_FONDO_PENSIONE } from '../motore/previdenza';
+import Icona from './Icona';
 
 const comeTesto = (n) => (Number(n) ? String(Number(n)).replace('.', ',') : '');
 
@@ -38,7 +39,7 @@ export function PremioRisultato({ form, setCheck }) {
 export default function SezionePrevidenza({ form, set }) {
   return (
     <details className="settings-section">
-      <summary className="settings-section-title">🏦 Fondo pensione e cassa sanitaria</summary>
+      <summary className="settings-section-title"><Icona nome="banca" /> Fondo pensione e cassa sanitaria</summary>
       <p className="settings-section-desc">
         Solo se te li <strong>trattengono in busta</strong>. Escono dal reddito come i contributi
         INPS: paghi meno IRPEF e la tua soglia lorda dei 15.000 € sale. Non metterli fra le
@@ -82,7 +83,7 @@ export default function SezionePrevidenza({ form, set }) {
         non conta. Cassa sanitaria (es. Fondo Est): la quota al mese.
       </p>
       <p className="form-hint">
-        ⚠️ Dalla norma (art. 51 TUIR), <strong>non ancora riscontrato su una busta</strong>.
+        <Icona nome="avviso" /> Dalla norma (art. 51 TUIR), <strong>non ancora riscontrato su una busta</strong>.
       </p>
     </details>
   );

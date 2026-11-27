@@ -1,28 +1,14 @@
 // Cosa manca perché i conti siano attendibili, e quanto costa che manchi.
 //
-// PERCHÉ UN MODULO A PARTE
-// La stessa risposta serve in quattro posti — il blocco al primo turno, l'avviso
-// del contratto sotto il totale, l'avviso che compare DOPO aver segnato un turno
-// di domenica o di notte, e il promemoria in Impostazioni. Quattro copie della
-// stessa regola divergono: basta aggiungere un campo e ricordarsene in tre punti
-// su quattro.
+// Un modulo a parte perché la stessa risposta serve in quattro posti (blocco al primo
+// turno, avviso del contratto sotto il totale, avviso dopo un turno di domenica o di
+// notte, promemoria in Impostazioni): quattro copie divergono. Sta in `utils/` per
+// riscontrarsi da Node: `node scripts/check-primo-avvio.mjs`.
 //
-// Sta in `utils/` e non in un componente anche perché così si riscontra con Node
-// puro: `node scripts/check-primo-avvio.mjs`.
-//
-// NIENTE «PRIMO ACCESSO», NIENTE COOKIE
-// Non esiste un contrassegno «l'ho già visto». Ogni domanda nasce da una
-// condizione che si legge nei dati già inseriti — la paga è zero, il contratto è
-// vuoto, questo turno è di domenica e la maggiorazione domenicale vale zero.
-// Sono stati dell'app, non tracce dell'utente: spariscono da soli quando
-// spariscono i dati, e non c'è niente da conservare per riconoscere qualcuno.
-//
-// QUANTO COSTA CHE MANCHI
-// Le cifre nei messaggi sono misurate, non stimate: mese di 25 giornate da 4 h
-// su un part-time da 24 h/settimana con 4 domeniche e 6 turni che toccano la
-// notte, confrontando la configurazione completa con quella a cui manca un
-// pezzo. Servono a rendere la richiesta ragionevole invece che burocratica: «ti
-// conto 45 € in più del vero» si capisce, «configura il CCNL» no.
+// Niente «primo accesso» né contrassegni: ogni domanda nasce da una condizione che si
+// legge nei dati già inseriti (paga zero, contratto vuoto, turno di domenica con
+// maggiorazione zero). Le cifre nei messaggi sono misurate su una configurazione
+// completa contro una a cui manca un pezzo.
 
 import { isSunday } from '../motore/pay.js';
 import { isHoliday } from '../motore/holidays.js';
@@ -34,18 +20,13 @@ const num = (v) => (Number.isFinite(Number(v)) ? Number(v) : 0);
 /**
  * I due dati senza cui non ha senso segnare un turno.
  *
- * - `hourlyRate`: senza, `calcTotalPay` ritorna `null` — non un importo
- *   sbagliato, proprio nessun importo in tutta l'app.
- * - le ore: reggono la soglia degli straordinari E quanto vale una giornata di
- *   ferie. La seconda è l'unica cosa che NON si recupera dopo: la durata di
- *   un'assenza viene scritta dentro il giorno quando lo si crea, quindi
- *   correggere le ore più tardi non aggiorna le ferie già segnate. Tutto il
- *   resto è retroattivo, perché i turni di lavoro salvano gli orari e non gli
- *   importi.
+ * - `hourlyRate`: senza, `calcTotalPay` ritorna `null` (nessun importo in tutta l'app).
+ * - le ore: reggono la soglia degli straordinari E il valore di una giornata di ferie,
+ *   che si scrive dentro il giorno alla creazione e correggendo le ore dopo non si
+ *   aggiorna: l'unica cosa che NON si recupera. Il resto è retroattivo.
  *
- * Chi lavora a chiamata non ha ore settimanali: al loro posto vale la soglia
- * giornaliera, e se non è impostata non c'è niente da chiedere — senza contratto
- * a ore non esiste una soglia «giusta» da indovinare.
+ * Chi lavora a chiamata non ha ore settimanali: vale la soglia giornaliera, e se non è
+ * impostata non c'è niente da chiedere.
  */
 export function datiMinimiMancanti(settings = {}) {
   const mancano = [];
@@ -62,29 +43,19 @@ export function haDatiMinimi(settings = {}) {
  * Il contratto manca. Non blocca niente: diventa un avviso sotto il totale del
  * mese, dove c'è un importo da qualificare.
  *
- * È il parametro che sposta di più, ed è l'unico che sbaglia verso l'ALTO:
- * senza, il motore perde la mensilizzazione (la soglia del supplementare torna
- * settimanale invece che mensile), il divisore orario del contratto e i
- * contributi minori. Misurato: +45,04 € di lordo e +39,39 € di netto al mese.
+ * È il parametro che sposta di più e l'unico che sbaglia verso l'ALTO: senza, il motore
+ * perde la mensilizzazione, il divisore orario e i contributi minori.
  */
 export function contrattoMancante(settings = {}) {
   return !settings.ccnl;
 }
 
-// ── Le maggiorazioni, chieste sul turno che le attiva ───────────────────────
+// ── Le maggiorazioni, chieste sul turno che le attiva ──
 //
-// Il rilevamento NON è scritto qui: sono le stesse funzioni che usa il motore
-// per pagarle. Se un giorno cambia la regola del notturno, l'avviso la segue
-// senza che nessuno se ne ricordi — mentre una copia della condizione
-// resterebbe indietro e comparirebbe quando il motore non è d'accordo.
-//
-// L'unica differenza voluta è la fascia notturna quando NON la si conosce: lì
-// l'avviso guarda più largo del motore e lo dice («potrebbe»). Il perché sta in
-// `fasciaNotturnaPossibile`.
-//
-// E si chiede DOPO, mai durante. Il modulo del turno serve a segnare il turno:
-// mentre lo si compila non deve comparire altro. La domanda arriva quando il
-// turno è già salvato, in un avviso che non copre niente e si chiude — vedi
+// Il rilevamento usa le stesse funzioni con cui il motore le paga, così l'avviso ne
+// segue le regole. Unica differenza voluta: la fascia notturna NON nota, dove si guarda
+// più largo e si dice «potrebbe» (`fasciaNotturnaPossibile`).
+// Si chiede DOPO, mai durante: la domanda arriva a turno salvato, vedi
 // AvvisoMaggiorazione.jsx.
 const TIPI_MAGGIORAZIONE = [
   {
@@ -106,12 +77,8 @@ const TIPI_MAGGIORAZIONE = [
     tipico: 20,
   },
   {
-    // La NOTTE è l'unico caso in cui non basta guardare la data: dipende da una
-    // fascia oraria che il contratto decide, e che chi non ha ancora scelto il
-    // contratto non ci ha detto. Vedi `fasciaNotturnaPossibile`: finché non è
-    // nota si guarda la più larga fra quelle che esistono, e si dice
-    // «potrebbe». È l'unico punto in cui l'avviso è più largo del motore, ed è
-    // voluto: chiedere di troppo costa un tocco, non chiedere costa soldi.
+    // La NOTTE dipende da una fascia che il contratto decide: finché non è nota si guarda
+    // la più larga e si dice «potrebbe» (`fasciaNotturnaPossibile`).
     tipo: 'notte',
     chiave: 'nightSurchargePct',
     attiva: (shift, settings) => toccaFasciaNotturnaPossibile(shift, settings),
@@ -125,9 +92,8 @@ const TIPI_MAGGIORAZIONE = [
         ? `La notte del tuo contratto va dalle ${f.inizio} alle ${f.fine}. È la maggiorazione che pesa di più: circa 38 € al mese.`
         : `Senza contratto non so da che ora conta la notte, quindi guardo la fascia più larga (${f.inizio}–${f.fine}). Se ce l'hai, è la maggiorazione che pesa di più: circa 38 € al mese.`;
     },
-    // Quando la fascia non è dichiarata da nessuno, impostare la percentuale
-    // non basta a rendere il conto giusto: il motore userà 22:00–06:00, che è
-    // legge e non contratto. Va detto lì, una riga, non un altro passaggio.
+    // Se la fascia non è dichiarata da nessuno, il motore userà 22:00–06:00 (legge, non
+    // contratto): va detto lì, in una riga.
     dopo: (settings) => (fasciaNotturnaPossibile(settings).certa
       ? null
       : 'Conterò la notte dalle 22:00 alle 06:00 (la legge). Se il tuo contratto dice un altro orario, cambialo in Impostazioni.'),
@@ -138,16 +104,10 @@ const TIPI_MAGGIORAZIONE = [
 /**
  * La maggiorazione che questo turno attiva e che vale ancora zero — o `null`.
  *
- * Ne restituisce UNA sola anche quando il turno ne attiverebbe due (una domenica
- * di notte): due avvisi impilati dentro il form del turno diventano un muro, e
- * chi li vede insieme li chiude tutti senza leggerli. L'altra tornerà da sé al
- * turno successivo che la attiva.
- *
- * Le assenze non attivano niente: una domenica di ferie non prende il
- * domenicale, non ci si è andati — è la stessa regola del motore.
- *
- * `maggiorazioniNonDovute` è la memoria del «non ne ho»: una scelta dell'utente,
- * non un contrassegno per riconoscerlo. Sta nei settings come tutto il resto.
+ * Ne restituisce UNA sola anche se il turno ne attiverebbe due (domenica di notte):
+ * due avvisi impilati sono un muro. L'altra tornerà al turno successivo che la attiva.
+ * Le assenze non attivano niente, come nel motore. `maggiorazioniNonDovute` è la
+ * memoria del «non ne ho»: una scelta dell'utente, nei settings.
  */
 export function maggiorazioneDaChiedere(shift, settings = {}) {
   if (!shift || isAssenza(shift)) return null;
@@ -179,11 +139,9 @@ export function maggiorazioneDaChiedere(shift, settings = {}) {
   return null;
 }
 
-// ── Il resto, che si può sistemare quando si vuole ──────────────────────────
+// ── Il resto, che si può sistemare quando si vuole ──
 //
-// Ogni voce porta la DIREZIONE dell'errore, che è l'informazione che rende la
-// segnalazione utile invece che ansiogena: sapere se l'app ti sta contando di
-// più o di meno cambia cosa te ne fai del numero che vedi.
+// Ogni voce porta la DIREZIONE dell'errore (l'app conta di più o di meno?).
 const CONSIGLIATI = [
   {
     chiave: 'overtimeSurchargePct',
@@ -233,11 +191,8 @@ const CONSIGLIATI = [
 /**
  * Le voci non indispensabili che mancano ancora.
  *
- * Non è un elenco di tutto ciò che è a zero: uno zero può essere la verità (chi
- * non lavora mai di notte non ha una maggiorazione notturna). Per questo si
- * rispetta `maggiorazioniNonDovute`, e per questo il posto giusto dove chiederle
- * resta il turno che le attiva — qui servono solo a dire «guarda che c'è
- * dell'altro», non a mettere fretta.
+ * Non tutto ciò che è a zero: uno zero può essere la verità, per questo si rispetta
+ * `maggiorazioniNonDovute`. Il posto giusto per chiederle resta il turno che le attiva.
  */
 export function consigliatiMancanti(settings = {}) {
   const rifiutate = Array.isArray(settings.maggiorazioniNonDovute) ? settings.maggiorazioniNonDovute : [];
@@ -256,12 +211,9 @@ export const KEY_PROMEMORIA_CHIUSO = 'turni_setup_dismissed';
 /**
  * Il promemoria in alto («Manca ancora una cosa») ha qualcosa da dire?
  *
- * Sta qui e non dentro `SetupPrompt` perché App deve saperlo PRIMA di decidere
- * chi parla in alto: finché lo sapeva solo il componente, su Chrome per Android
- * il promemoria e il banner di installazione comparivano uno sopra l'altro.
- *
- * Tace a chi non ha ancora segnato niente (all'apertura non si chiede niente) e
- * a chi non ha i dati minimi (quelli li chiede il blocco al primo turno).
+ * Sta qui e non in `SetupPrompt` perché App deve saperlo PRIMA di decidere chi parla
+ * in alto. Tace a chi non ha ancora segnato niente e a chi non ha i dati minimi
+ * (quelli li chiede il blocco al primo turno).
  */
 export function promemoriaHaDaDire({ settings = {}, turni = 0, chiuso = false } = {}) {
   return turni > 0 && !chiuso && haDatiMinimi(settings) && consigliatiMancanti(settings).length > 0;

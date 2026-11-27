@@ -117,11 +117,52 @@ if (!existsSync('dist')) {
     if (c) falliti++;
     console.log(`${c ? 'FAIL' : '  ok'}  ${frammento.padEnd(42)} ${perche}`);
   }
-  // Il proxy invece DEVE esserci: un pacchetto senza proxy ha l'import spento,
-  // ed e' un guasto che si nota solo provando a importare una foto.
-  const proxy = /turni-ai-proxy(-test)?\.magnaopa\.workers\.dev/.test(pacchetto);
-  if (!proxy) falliti++;
-  console.log(`${proxy ? '  ok' : 'FAIL'}  ${'proxy AI presente'.padEnd(42)} senza, l import da foto e spento`);
+}
+
+// ── 3. La lista che il browser fa rispettare ──────────────────────────────
+// `connect-src` della CSP (public/_headers): gli unici indirizzi a cui la
+// pagina può mandare dati. È la garanzia che l'informativa invita a verificare
+// con uno strumento terzo, quindi si tiene ferma qui. Novembre 2026: la lettura
+// con l'IA è sospesa e i suoi indirizzi sono usciti dalla lista. Prima qui si
+// pretendeva il proxy AI nel pacchetto, e una build locale senza
+// VITE_AI_PROXY_URL falliva senza niente di rotto.
+console.log('\nDove il browser lascia andare i dati (connect-src)\n');
+const CONNETTE = {
+  "'self'": 'il sito stesso: aggiornamenti dell app',
+  'https://cloudflareinsights.com': 'Cloudflare Web Analytics: conteggio delle visite',
+  'https://static.cloudflareinsights.com': 'idem, il file che lo conta',
+};
+const cspRiga = readFileSync('public/_headers', 'utf8').match(/Content-Security-Policy:\s*(.+)/)?.[1] ?? '';
+const connect = (cspRiga.match(/connect-src([^;]*)/)?.[1] ?? '').trim().split(/\s+/).filter(Boolean);
+for (const v of connect) {
+  const ok = v in CONNETTE;
+  if (!ok) falliti++;
+  console.log(`${ok ? '  ok' : 'FAIL'}  ${v.padEnd(42)} ${CONNETTE[v] ?? 'NON DICHIARATO: va nell informativa prima che qui'}`);
+}
+for (const v of Object.keys(CONNETTE).filter((k) => !connect.includes(k))) {
+  falliti++;
+  console.log(`FAIL  ${v.padEnd(42)} dichiarato e non nella CSP: l elenco qui non dice il vero`);
+}
+
+// Ma «tutti e soli» vale per ogni via, non per la sola connect-src: un pixel in
+// img-src o un form verso fuori porterebbero dati lo stesso. Ogni indirizzo
+// esterno, in qualunque direttiva, è dichiarato qui; un jolly (`*`, `https:`)
+// non lo è mai.
+console.log('\nOgni altra via verso fuori, direttiva per direttiva\n');
+const ESTERNI = {
+  'script-src https://static.cloudflareinsights.com': 'il file del contatore visite',
+};
+for (const direttiva of cspRiga.split(';').map((d) => d.trim()).filter(Boolean)) {
+  const [nome, ...fonti] = direttiva.split(/\s+/);
+  if (nome === 'connect-src') continue;
+  for (const f of fonti) {
+    const esterna = /^(https?:|wss?:)?\/\//.test(f) || /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(f);
+    const jolly = f === '*' || /^(https?|wss?|data|blob):$/.test(f) && !['img-src', 'worker-src'].includes(nome);
+    if (!esterna && !jolly) continue;
+    const ok = !jolly && `${nome} ${f}` in ESTERNI;
+    if (!ok) falliti++;
+    console.log(`${ok ? '  ok' : 'FAIL'}  ${`${nome} ${f}`.padEnd(42)} ${ok ? ESTERNI[`${nome} ${f}`] : 'una via verso fuori non dichiarata'}`);
+  }
 }
 
 console.log();
