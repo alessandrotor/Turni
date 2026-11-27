@@ -235,7 +235,12 @@ rosso finché qualcuno non lo rilegge e aggiorna il conto.
   su iPhone non è verificato; non lo si dà per funzionante.
 - *Mockup:* no per il promemoria, sì se cambia l'invito a installare.
 
-**A6. Farsi riconoscere da fuori**
+**A6. Farsi riconoscere da fuori** — IN CORSO (novembre 2026). Il nome
+pubblico è **Segnaturni**, già in app, manifest, informativa, termini e
+anteprima dei link; c'è una vetrina `/benvenuto` sul sito di prova. Mancano il
+dominio (lo compra chi mantiene il progetto) e il testo definitivo della
+vetrina. Tutte le decisioni su nome, vetrina, concorrente, misura
+dell'interesse e piano di lancio sono in `docs/strategia/lancio-dicembre-2026.md`.
 - *Cosa:* dominio proprio (lo compra chi mantiene il progetto), titolo,
   descrizione, immagine di anteprima, in modo che un link condiviso dica cos'è.
 - *Mockup:* no.

@@ -20,7 +20,9 @@ dire «è online» va guardato il sito, non il codice.
 
 **Cosa va fatto e in che ordine** sta in `docs/piano-per-agenti.md`: obiettivo,
 scelte già prese, elenco dei lavori per stadio, cosa si decide da soli e cosa
-si chiede. Chi prende in mano il progetto lo legge dopo questo file.
+si chiede. Chi prende in mano il progetto lo legge dopo questo file. Il lancio
+di dicembre 2026 (nome, vetrina, concorrente, misura dell'interesse, piano)
+sta in `docs/strategia/lancio-dicembre-2026.md`.
 
 ## Quale modello per cosa (per risparmiare token)
 
