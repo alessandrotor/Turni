@@ -18,7 +18,7 @@
     'Due turni nello stesso giorno.',
     'Il primo maggio al lavoro.',
   ];
-  var VISIBILE = 4000;   // quanto resta ferma una frase
+  var VISIBILE = 8000;   // quanto resta ferma una frase
   var USCITA = 450;      // deve coincidere con la transizione di .esce nel CSS
 
   document.documentElement.classList.add('js');
