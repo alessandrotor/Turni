@@ -155,7 +155,7 @@ input, select, textarea { font: inherit; }
   display: flex;
   align-items: center;
   gap: .35rem;
-  background: #e3edff; /* senza scheda bianca: il totale fa da titolo */
+  background: #e1ecff; /* lo stesso azzurro della pagina in alto: la fascia non si vede, il totale sta nella sua striscia */
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   padding: .4rem .25rem .6rem;
   box-shadow: none;
@@ -169,15 +169,14 @@ input, select, textarea { font: inherit; }
    sotto trenta schede: si poteva usare l'app per mezz'ora senza incontrarlo. */
 .cal-header-soldi {
   flex: 1 0 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-top: .6rem;
-  padding: 0 .5rem;
+  display: flex; align-items: baseline; gap: .6rem;
+  background: #fff; border-radius: 14px; box-shadow: 0 6px 16px rgba(28,63,158,.06);
+  margin-top: .5rem;
+  padding: .75rem .9rem;
 }
 
 .cal-header-soldi-val {
-  font-size: 2.6rem;
+  font-size: 2.1rem;
   font-weight: 800;
   color: var(--c-text);
   letter-spacing: -.04em;
@@ -192,14 +191,14 @@ input, select, textarea { font: inherit; }
 /* «lordo stimato» a destra: è la parola che impedisce di scambiare questo
    numero per il netto che arriva sul conto. Piccola ma sempre presente. */
 .cal-header-soldi-eti {
-  order: -1; font-weight: 600;
+  margin-left: auto; font-weight: 500;
   font-size: .85rem;
-  color: var(--c-primary-dark);
-  text-align: left;
+  color: var(--c-text-2);
+  text-align: right;
 }
 .cal-header-soldi-extra { display: block; }
-/* Scorrendo, il totale grande si riduce a una riga: resta in vista, ma non copre mezzo schermo. */
-.cal-header--compatto .cal-header-soldi { flex-direction: row; align-items: baseline; gap: .5rem; margin-top: .2rem; } .cal-header--compatto .cal-header-soldi-val { font-size: 1.35rem; } .cal-header--compatto .cal-header-soldi-eti { order: 0; margin-left: auto; }
+/* Scorrendo, la striscia del totale si stringe: resta in vista, ma non copre mezzo schermo. */
+.cal-header--compatto .cal-header-soldi { margin-top: .3rem; padding: .4rem .8rem; } .cal-header--compatto .cal-header-soldi-val { font-size: 1.35rem; }
 
 .cal-header-mese {
   flex: 1;
