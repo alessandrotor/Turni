@@ -132,7 +132,7 @@ export default function CalendarView({
   const [showShareModal, setShowShareModal] = useState(false);
   const [contiBonusAperti, setContiBonusAperti] = useState(false);
   const [conguaglioAperto, setConguaglioAperto] = useState(false);
-  const [meseSpiegato, setMeseSpiegato] = useState(false); const compatto = useScorrimento(140);
+  const [meseSpiegato, setMeseSpiegato] = useState(false); const compatto = useScorrimento(160, 40);
   // Il bonus dei mesi del montante copiato dalle buste: campo facoltativo nel
   // popup, scritto in `settings` solo quando si lascia il campo.
   const [busteBozza, setBusteBozza] = useState({});
