@@ -1,14 +1,14 @@
-# Termini d'uso — Turni
+# Termini d'uso — Segnaturni
 
 **Ultimo aggiornamento:** 19 ottobre 2026
 
-Questi termini dicono cos'è Turni, cosa puoi aspettarti e cosa no. Non c'è
+Questi termini dicono cos'è Segnaturni, cosa puoi aspettarti e cosa no. Non c'è
 niente da firmare né da accettare con un clic: valgono per chi usa l'app, e
 sono scritti per essere letti.
 
-## Cos'è Turni
+## Cos'è Segnaturni
 
-Turni è un'app gratuita per segnare i propri turni di lavoro e stimare quanto
+Segnaturni è un'app gratuita per segnare i propri turni di lavoro e stimare quanto
 si guadagna: ore, maggiorazioni, lordo e netto secondo le regole della busta
 paga italiana. La sviluppa e la pubblica **Alessandro Torreggiani**, a titolo
 personale e senza scopo di lucro. Contatto: **g.asriel@gmail.com**.
@@ -28,7 +28,7 @@ parziale. Possono essere diverse dalla tua busta paga, ad esempio perché:
   che l'app non conosce;
 - le norme cambiano, o l'app contiene un errore.
 
-Turni **non è una consulenza** del lavoro, fiscale o legale, e non sostituisce
+Segnaturni **non è una consulenza** del lavoro, fiscale o legale, e non sostituisce
 la busta paga, la Certificazione Unica né un professionista (consulente del
 lavoro, CAF, sindacato). Prima di contestare qualcosa al datore di lavoro o di
 prendere decisioni che contano, fai verificare i conti a chi è abilitato a
@@ -36,7 +36,7 @@ farlo.
 
 ## I tuoi dati sono tuoi
 
-Turni salva tutto **solo sul tuo dispositivo**, come spiega
+Segnaturni salva tutto **solo sul tuo dispositivo**, come spiega
 [l'informativa sulla privacy](/privacy/). La
 conseguenza è che conservarli è compito tuo: se cancelli i dati del sito,
 disinstalli l'app o perdi il telefono, i turni non si recuperano. Per questo
@@ -44,13 +44,13 @@ c'è il backup in Impostazioni.
 
 ## Uso personale
 
-Turni serve a segnare **i tuoi** turni. Se leggi un tabellone con i nomi dei
+Segnaturni serve a segnare **i tuoi** turni. Se leggi un tabellone con i nomi dei
 colleghi, l'app lo legge sul telefono e ne tiene solo la tua riga; non usarla
 per raccogliere o diffondere i dati degli altri.
 
 ## Responsabilità
 
-Nei limiti consentiti dalla legge, chi sviluppa Turni non risponde delle
+Nei limiti consentiti dalla legge, chi sviluppa Segnaturni non risponde delle
 conseguenze di decisioni prese sulla base delle stime dell'app, né della
 perdita di dati salvati sul dispositivo. Restano in ogni caso salvi la
 responsabilità per dolo o colpa grave e i diritti che la legge riconosce ai

@@ -23,9 +23,9 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
 const PAGINE = [
-  { sorgente: 'docs/privacy.md', cartella: 'public/privacy', titolo: 'Informativa sulla privacy — Turni',
+  { sorgente: 'docs/privacy.md', cartella: 'public/privacy', titolo: 'Informativa sulla privacy — Segnaturni',
     descrizione: 'Quali dati escono dal tuo dispositivo usando Turni, dove vanno e perche.' },
-  { sorgente: 'docs/termini.md', cartella: 'public/termini', titolo: "Termini d'uso — Turni",
+  { sorgente: 'docs/termini.md', cartella: 'public/termini', titolo: "Termini d'uso — Segnaturni",
     descrizione: "Cos'e Turni, cosa aspettarsi dalle sue stime e cosa no." },
 ];
 
@@ -142,7 +142,7 @@ const html = `<!doctype html>
 </head>
 <body>
 <main>
-<a class="torna" href="/">← Torna a Turni</a>
+<a class="torna" href="/">← Torna a Segnaturni</a>
 ${out.join('\n')}
 </main>
 </body>

@@ -6,7 +6,7 @@ export default function NavBar({ view, onNavigate }) {
     <nav className="navbar">
       <div className="navbar-brand">
         <span className="navbar-icon"><Icona nome="orologio" /></span>
-        <span className="navbar-title">Turni</span>
+        <span className="navbar-title">Segnaturni</span>
       </div>
       <div className="navbar-links">
         <button

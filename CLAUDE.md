@@ -1,7 +1,11 @@
 # Turni — note per Claude
 
 PWA (React 18 + Vite) che segna i turni e stima lordo e
-netto secondo le regole della busta paga italiana. Codice, commenti e interfaccia
+netto secondo le regole della busta paga italiana. **Il nome pubblico è
+Segnaturni** (novembre 2026, «per cambiare c'è tempo»): si usa in tutto ciò che
+si legge — app, manifest, vetrina `/benvenuto`, informativa e termini. Il
+repository, il codice e le chiavi del localStorage (`turni_…`) restano «turni»:
+cambiarle farebbe perdere i dati a chi usa già l'app. Codice, commenti e interfaccia
 sono in italiano: scrivere nella stessa lingua.
 
 Branch di lavoro: `experimental`. **`Beta`** è experimental congelato, da
@@ -666,7 +670,7 @@ Discendono tutte dalla parola d'ordine qui sopra.
   consenso della foto. «Lun» senza data si risolve sul giorno più vicino a oggi
   e l'anteprima lo dice con un «Parti da» da correggere: non si indovina in
   silenzio. Un orario senza giorno non diventa un giorno. → `check-testo-turni.mjs`
-  Ci si arriva anche da «Condividi → Turni» (`share_target` nel manifest, solo
+  Ci si arriva anche da «Condividi → Segnaturni» (`share_target` nel manifest, solo
   Android con l'app installata): il modulo si apre già pieno. La condivisione è
   una POST e la riceve `public/condividi-sw.js`. → `check-configurazione.mjs`
 - **Il tabellone da un'immagine si legge SUL TELEFONO** (prova, ottobre 2026):

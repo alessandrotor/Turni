@@ -80,10 +80,10 @@ const BACKUP = {
 };
 
 // ── 1. La busta ────────────────────────────────────────────────────────────
-console.log('\nIl file è davvero un backup di Turni\n');
+console.log('\nIl file è davvero un backup di Segnaturni\n');
 
 verifica('un backup buono passa', controllaBusta(BACKUP), null);
-verifica('un JSON qualunque no', controllaBusta({ ciao: 1 }), 'Questo file non è un backup di Turni.');
+verifica('un JSON qualunque no', controllaBusta({ ciao: 1 }), 'Questo file non è un backup di Segnaturni.');
 verifica('un array no', controllaBusta([BACKUP]), 'Il file non contiene un backup valido.');
 verifica('null no', controllaBusta(null), 'Il file non contiene un backup valido.');
 verifica('senza elenco turni',

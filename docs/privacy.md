@@ -1,8 +1,8 @@
-# Informativa sulla privacy — Turni
+# Informativa sulla privacy — Segnaturni
 
 **Ultimo aggiornamento:** 19 ottobre 2026
 
-Turni serve a tenere traccia dei propri turni di lavoro e a stimare quanto si
+Segnaturni serve a tenere traccia dei propri turni di lavoro e a stimare quanto si
 guadagna. Questa informativa dice quali dati escono dal tuo dispositivo, dove
 vanno e perché. È scritta per essere letta, non per essere firmata: non c'è
 niente da accettare.
@@ -25,7 +25,7 @@ restano dove li hai messi.
 ## Chi è il titolare
 
 Il titolare del trattamento è **Alessandro Torreggiani**, che sviluppa e
-pubblica Turni a titolo personale e gratuito. Contatto:
+pubblica Segnaturni a titolo personale e gratuito. Contatto:
 **g.asriel@gmail.com**.
 
 ## Dati che restano sul tuo dispositivo
@@ -42,19 +42,19 @@ te, non viene inviato da nessuna parte.
 
 ## Turni letti da un'immagine
 
-L'immagine del tabellone che scegli o condividi con Turni **si legge sul
+L'immagine del tabellone che scegli o condividi con Segnaturni **si legge sul
 telefono**: non viene inviata a nessun servizio. Il programma che la legge si
-scarica la prima volta che usi la funzione, dal sito di Turni stesso e non da
+scarica la prima volta che usi la funzione, dal sito di Segnaturni stesso e non da
 servizi esterni, e resta nella memoria del telefono.
 
-Se il tabellone contiene i nomi dei colleghi, Turni li legge sul telefono solo
+Se il tabellone contiene i nomi dei colleghi, Segnaturni li legge sul telefono solo
 per mostrarti l'elenco da cui scegliere il tuo, poi legge soltanto la tua riga.
 L'immagine non viene conservata: un'immagine condivisa con l'app viene
 cancellata appena letta.
 
 ## Lettura con l'intelligenza artificiale (spenta)
 
-Nel codice di Turni esiste anche una lettura delle foto con Google Gemini, che
+Nel codice di Segnaturni esiste anche una lettura delle foto con Google Gemini, che
 manda la foto e il nome da cercare a un servizio esterno. **Oggi è spenta.** Se
 dovesse tornare attiva, questa informativa verrà aggiornata prima, e la prima
 volta che la usi un avviso ti dirà, prima dell'invio, che la foto esce
@@ -74,7 +74,7 @@ https://www.cloudflare.com/privacypolicy/
 
 ## Cookie e memoria del browser
 
-Turni **non usa cookie**, né di profilazione né pubblicitari. Usa soltanto la
+Segnaturni **non usa cookie**, né di profilazione né pubblicitari. Usa soltanto la
 memoria locale del browser (dove stanno i tuoi dati) e la cache dell'app (che
 la fa funzionare anche senza rete). Sono strumenti tecnici strettamente
 necessari, per i quali la legge non chiede consenso (art. 122 del Codice
@@ -88,7 +88,7 @@ nelle versioni di prova è stato tolto il 12 ottobre 2026.
 
 ## Verificalo da solo
 
-Non serve fidarsi di quello che scriviamo. Il tuo browser riceve da Turni una
+Non serve fidarsi di quello che scriviamo. Il tuo browser riceve da Segnaturni una
 regola che dice **a quali indirizzi la pagina può mandare dati**, e la fa
 rispettare lui: un invio verso un indirizzo che non è in lista viene bloccato,
 qualunque cosa faccia il codice.
@@ -113,8 +113,8 @@ visite non arrivino i tuoi turni lo dice il codice dell'app.
 Per vedere coi tuoi occhi ogni collegamento c'è **PCAPdroid**, un'app gratuita
 e open source (F-Droid, Play Store); non serve il root.
 
-- Installala e premi **Avvia**, scegliendo il browser che usi per Turni.
-- Apri Turni e usalo: segna un turno, guarda il netto, esporta il mese.
+- Installala e premi **Avvia**, scegliendo il browser che usi per Segnaturni.
+- Apri Segnaturni e usalo: segna un turno, guarda il netto, esporta il mese.
 - Torna su PCAPdroid, scheda **Connessioni**: trovi solo gli indirizzi della
   tabella qui sopra.
 

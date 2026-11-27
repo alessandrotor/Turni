@@ -81,7 +81,7 @@ export default function InstallPrompt({ installaIOS = false, sospeso = false, on
       <div className="install-banner install-banner--ios" role="status">
         <img className="install-banner-icon" src="/pwa-192x192.png" alt="" width="40" height="40" />
         <div className="install-banner-text">
-          <strong>Aggiungi Turni alla Home</strong>
+          <strong>Aggiungi Segnaturni alla Home</strong>
           <span>
             Su iPhone, se resta solo in Safari, dopo 7 giorni senza aprirla Safari può
             cancellare i tuoi turni. Tocca <span aria-label="Condividi">Condividi ⬆️</span>
@@ -124,7 +124,7 @@ export default function InstallPrompt({ installaIOS = false, sospeso = false, on
     <div className="install-banner">
       <img className="install-banner-icon" src="/pwa-192x192.png" alt="" width="40" height="40" />
       <div className="install-banner-text">
-        <strong>Installa Turni</strong>
+        <strong>Installa Segnaturni</strong>
         {firefoxHint ? (
           <span>Tocca il menu ⋮ in alto e poi «Aggiungi a schermata Home» (o «Installa»).</span>
         ) : firefoxDesktopHint ? (

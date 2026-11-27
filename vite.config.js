@@ -82,9 +82,9 @@ export default defineConfig({
       },
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Turni',
-        short_name: 'Turni',
-        description: 'Turni di lavoro: calendario, ore e stima dello stipendio netto.',
+        name: 'Segnaturni',
+        short_name: 'Segnaturni',
+        description: 'Segni i turni di lavoro e vedi ore, lordo e stima dello stipendio netto.',
         lang: 'it',
         theme_color: '#2563eb',
         background_color: '#f1f5f9',
@@ -107,7 +107,7 @@ export default defineConfig({
         // Apre il modulo, NON salva niente: un turno scritto senza che nessuno
         // lo veda è un dato che tocca i soldi senza uno sguardo.
         //
-        // «Condividi → Turni» da WhatsApp, Galleria, Lens: testo o immagine
+        // «Condividi → Segnaturni» da WhatsApp, Galleria, Lens: testo o immagine
         // arrivano a «Incolla turni» (ImportTesto.jsx) e si leggono sul
         // telefono. POST perché un'immagine in un indirizzo non ci sta: la
         // riceve public/condividi-sw.js. Solo Android con l'app installata;

@@ -119,7 +119,7 @@ export function controllaBusta(dati) {
     return 'Il file non contiene un backup valido.';
   }
   if (dati.app !== APP_TAG) {
-    return 'Questo file non è un backup di Turni.';
+    return 'Questo file non è un backup di Segnaturni.';
   }
   // `undefined > 1` è false: senza questa riga un file senza `formato` passava
   // e veniva letto come formato 1.
@@ -127,7 +127,7 @@ export function controllaBusta(dati) {
     return 'Il backup è danneggiato: manca il numero di formato.';
   }
   if (dati.formato > FORMATO) {
-    return `Backup creato da una versione più recente dell'app (formato ${dati.formato}). Aggiorna Turni e riprova.`;
+    return `Backup creato da una versione più recente dell'app (formato ${dati.formato}). Aggiorna Segnaturni e riprova.`;
   }
   if (typeof dati.turni !== 'object' || dati.turni === null || Array.isArray(dati.turni)) {
     return 'Il backup è danneggiato: manca l\'elenco dei turni.';

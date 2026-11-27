@@ -354,7 +354,7 @@ export function scartoScritto(r) {
  */
 export function testoDaCondividere(esito, { versione = '', settings = {}, partTimePct = null } = {}) {
   const intestazione = [
-    `Turni ${versione}`.trim(),
+    `Segnaturni ${versione}`.trim(),
     esito.periodo ? `verifica busta ${MESI[esito.periodo.mese]} ${esito.periodo.anno}` : 'verifica busta',
     getContratto(settings.ccnl)?.label ? `CCNL ${getContratto(settings.ccnl).label}` : null,
     partTimePct ? `part-time ${String(partTimePct).replace('.', ',')}%` : null,
