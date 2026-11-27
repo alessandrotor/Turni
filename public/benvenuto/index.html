@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <!-- Vetrina di prova (novembre 2026, terza versione). Nessun modulo; un solo
-     script nostro, frasi.js, che sceglie la prima riga del titolo. «Mi interessa» porta a /benvenuto/grazie/, che il contatore
+     script nostro, frasi.js, che fa girare la prima riga del titolo. «Mi interessa» porta a /benvenuto/grazie/, che il contatore
      visite conta come pagina: è tutta la misura dell'interesse, senza un dato
      in più. Lo screenshot è l'app vera, con turni inventati. -->
 <title>Turni — quanto hai guadagnato questo mese</title>
@@ -30,8 +30,9 @@ header .w{display:flex;justify-content:space-between;align-items:center;height:6
 header a.app{font-weight:700;font-size:15px;text-decoration:none;color:var(--blu-scuro)}
 .apertura .w{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding-top:20px;padding-bottom:64px}
 h1{font-weight:800;font-size:52px;line-height:1.06;letter-spacing:-1.2px;margin:0 0 20px}
-h1 .frase{display:block;color:var(--blu)}
+h1 .frase{display:flex;align-items:flex-end;min-height:2.2em;color:var(--blu)} /* due righe tenute: la frase che gira non sposta la pagina */
 .js h1 .frase{opacity:0;transform:translateY(.3em);filter:blur(4px)}
+.js h1 .frase.esce{opacity:0;transform:translateY(-.3em);filter:blur(4px);transition:opacity .45s ease,transform .45s ease,filter .45s ease}
 .js h1 .frase.entra{opacity:1;transform:none;filter:none;transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1),filter .7s ease}
 @media (prefers-reduced-motion:reduce){.js h1 .frase,.js h1 .frase.entra{opacity:1;transform:none;filter:none;transition:none}}
 .apertura p{font-size:19px;color:var(--grigio);max-width:500px;margin:0 0 26px}
@@ -99,6 +100,7 @@ footer .w{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   .apertura .btn{display:none}
   .fisso{display:block;position:fixed;left:16px;right:16px;bottom:14px;text-align:center;z-index:5}
 }
+@media (max-width:380px){h1{font-size:33px}}
 </style></head><body>
 
 <div class="testa">
