@@ -11,7 +11,7 @@ import { isMensilizzato } from '../motore/ccnl';
 import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../motore/bonus';
 import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../motore/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
-import AvvisoContratto from './AvvisoContratto'; import CiPerdo from './CiPerdo'; import PermessiRol from './PermessiRol'; import BarraSelezione from './BarraSelezione'; import useSelezioneGiorni from '../hooks/useSelezioneGiorni'; // import CopiaSettimana from './CopiaSettimana'; — sospesa, vedi il file
+import AvvisoContratto from './AvvisoContratto'; import CiPerdo from './CiPerdo'; /* import PermessiRol from './PermessiRol'; — sospesa su Beta, vedi sotto */ import BarraSelezione from './BarraSelezione'; import useSelezioneGiorni from '../hooks/useSelezioneGiorni'; // import CopiaSettimana from './CopiaSettimana'; — sospesa, vedi il file
 import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../motore/assenze';
@@ -1027,7 +1027,7 @@ export default function CalendarView({
             l'ALTO — senza, il motore perde la mensilizzazione, il divisore
             orario e i contributi minori — quindi la cifra sta nel messaggio:
             «45 € in più del vero» si capisce, «configura il CCNL» no. */}
-        <PermessiRol settings={settings} turni={allShifts} oggi={oggi} onUpdateSettings={onUpdateSettings} />{pay !== null && <AvvisoContratto settings={settings} onNavigate={onNavigate} />}
+        {/* Permessi ROL sospesi su Beta (27/11/2026): <PermessiRol settings={settings} turni={allShifts} oggi={oggi} onUpdateSettings={onUpdateSettings} /> */}{pay !== null && <AvvisoContratto settings={settings} onNavigate={onNavigate} />}
 
 
         {/* Netto stimato del mese — beta (gated dal feature flag) */}
