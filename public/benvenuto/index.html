@@ -61,6 +61,15 @@ h2{font-weight:800;font-size:34px;line-height:1.15;letter-spacing:-.6px;margin:0
 .fa .el b{display:block;font-size:18px;margin-bottom:4px}
 .fa .el span{color:var(--grigio);font-size:16px}
 
+/* installa */
+.ins .griglia{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:34px}
+.ins .el{background:var(--azzurro);border-radius:18px;padding:22px 24px}
+.ins .el b{display:block;font-size:18px;margin-bottom:10px}
+.ins ol{margin:0;padding-left:22px;color:var(--inchiostro)}
+.ins li{margin:4px 0}
+.ins .nota{display:block;color:var(--grigio);font-size:14.5px;margin-top:12px}
+.tasto{display:inline-block;font-weight:700;background:#fff;border:1px solid var(--linea);border-radius:7px;padding:0 7px;white-space:nowrap}
+
 /* dicembre */
 .dic .w{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
 .dic p{color:var(--grigio);margin:0 0 18px}
@@ -94,7 +103,7 @@ footer .w{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   section{padding:52px 0}
   h2{font-size:27px}
   .sub{font-size:16px}
-  .fa .griglia{grid-template-columns:1fr}
+  .fa .griglia,.ins .griglia{grid-template-columns:1fr}
   .riga span{width:110px;font-size:13.5px}
   footer{padding-bottom:96px}
   .apertura .btn{display:none}
@@ -146,7 +155,24 @@ footer .w{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   </div>
 </div></section>
 
-<section class="dic" id="dicembre"><div class="w">
+<section class="ins" id="installa"><div class="w">
+  <h2>Mettila sul telefono come un'app.</h2>
+  <p class="sub">Non serve lo store: si aggiunge dal browser in tre passi, e poi si apre dall'icona come le altre app.</p>
+  <div class="griglia">
+    <div class="el"><b>Android</b><ol>
+      <li>Apri questo sito con <strong>Chrome</strong>.</li>
+      <li>Tocca il menu <span class="tasto">⋮</span> in alto a destra.</li>
+      <li>Tocca <span class="tasto">Installa app</span> (o <span class="tasto">Aggiungi a schermata Home</span>).</li>
+    </ol></div>
+    <div class="el"><b>iPhone</b><ol>
+      <li>Apri questo sito con <strong>Safari</strong>.</li>
+      <li>Tocca il tasto Condividi <span class="tasto">⬆︎</span> in basso.</li>
+      <li>Tocca <span class="tasto">Aggiungi alla schermata Home</span>, poi <span class="tasto">Aggiungi</span>.</li>
+    </ol><span class="nota">Su iPhone conta: se resta solo in Safari e non la apri per sette giorni, Safari può cancellare i turni segnati. Dall'icona no.</span></div>
+  </div>
+</div></section>
+
+<section class="dic azz" id="dicembre"><div class="w">
   <div>
     <h2>A dicembre ti riprendono il trattamento integrativo?</h2>
     <p>Sembra una perdita. Ma sopra i 15.000 di reddito, mentre il trattamento integrativo sparisce, la detrazione sale: quasi sempre quello che esce da una parte rientra dall'altra.</p>
@@ -161,7 +187,7 @@ footer .w{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   </div>
 </div></section>
 
-<section class="int azz"><div class="w">
+<section class="int"><div class="w">
   <div>
     <h2 style="margin-bottom:8px">Ti sembra utile?</h2>
     <p>Diccelo con un tocco: ci aiuta a capire se e dove migliorarla.</p>
