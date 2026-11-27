@@ -14,7 +14,10 @@ piccoli — un testo più grande o più piccolo, una riga tolta o aggiunta, una
 parola, un colore. Non ci vanno funzioni nuove, comportamenti nuovi né cambi al
 motore: quelli su `experimental`. Ogni modifica fatta su `Beta` si riporta anche
 su `experimental`. I riscontri
-girano anche su `Beta` (`riscontri-beta.yml`), senza deploy. La produzione è un
+girano anche su `Beta` (`riscontri-beta.yml`), e se tornano Beta va su
+`https://beta.turni-9vr.pages.dev`, dove chi mantiene il progetto la prova a
+mano prima del rilascio; a pochi giorni dalla produzione diventa il ramo
+congelato. La produzione è un
 deploy manuale e può essere molto indietro rispetto al repository — prima di
 dire «è online» va guardato il sito, non il codice.
 
