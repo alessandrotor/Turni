@@ -208,7 +208,11 @@ rosso finché qualcuno non lo rilegge e aggiorna il conto.
   trattamento può essere zero per due motivi opposti. Serve il riscontro.
 - *Mockup:* no, è una riga; sì se diventa più di una riga.
 
-**A4. Il messaggio per l'ufficio paghe**
+**A4. Il messaggio per l'ufficio paghe** — TOLTO (27 novembre 2026), non
+rimandato. Decisione di chi mantiene il progetto: **l'app non suggerisce MAI
+cose da fare di legale o di ufficiale** (scrivere al datore, all'ufficio paghe,
+contestare una busta); al massimo, in alcuni casi, invita a controllare. Non
+riproporlo. Il testo qui sotto resta solo per spiegare cosa era stato pensato.
 - *Perché:* il confronto con la busta trova uno scarto e poi lascia solo chi
   l'ha trovato. I servizi concorrenti spiegano; nessuno aiuta a chiedere.
 - *Cosa:* dallo scarto scomposto, un testo breve e cortese da mandare a chi fa
