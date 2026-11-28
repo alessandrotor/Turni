@@ -80,6 +80,7 @@ jobs:
           sparse-checkout: |
             scripts/genera-htaccess.mjs
             scripts/apri-ai-motori.mjs
+            scripts/verifica-sito.mjs
           sparse-checkout-cone-mode: false
 
       - uses: actions/setup-node@v4
@@ -112,7 +113,6 @@ jobs:
             node .strumenti/scripts/apri-ai-motori.mjs dist "$SITO"
             printf 'User-agent: *\nAllow: /\nSitemap: %s/sitemap.xml\n' "${SITO%/}" > dist/robots.txt
           fi
-          rm -rf .strumenti
           # `_headers` qui non serve a niente: non lo si pubblica.
           rm -f dist/_headers
 
@@ -124,7 +124,7 @@ jobs:
         run: |
           if [ -z "$HOST" ] || [ -z "$UTENTE" ] || [ -z "$LFTP_PASSWORD" ]; then
             echo "Mancano i segreti IONOS_SFTP_HOST, IONOS_SFTP_USER o IONOS_SFTP_PASSWORD." | tee -a "$GITHUB_STEP_SUMMARY"
-            if [ "$PROVA" = true ]; then exit 0; else exit 1; fi
+            if [ "$PROVA" = true ]; then echo "SALTATO=true" >> "$GITHUB_ENV"; exit 0; else exit 1; fi
           fi
           sudo apt-get update -qq && sudo apt-get install -y -qq lftp
           lftp --env-password -u "$UTENTE" "sftp://$HOST" -e "
@@ -134,6 +134,20 @@ jobs:
             mirror -R --verbose=1 --exclude-glob *.html --exclude-glob sw.js --exclude-glob manifest.webmanifest dist $CARTELLA;
             mirror -R --verbose=1 --delete dist $CARTELLA;
             bye"
+
+      # Cosa risponde DAVVERO il server: header, compressione, ripieghi, HTTPS.
+      # check-htaccess.mjs controlla il testo, questo il risultato.
+      # VERIFICA_PROVA è l'indirizzo che punta alla cartella di prova; finché
+      # prova.segnaturni.it non è collegato si usa nettochiaro.it (novembre 2026).
+      - name: Verifica dal vivo
+        if: env.SALTATO != 'true'
+        env:
+          INDIRIZZO: ${{ github.event_name == 'push' && (vars.SITO_PROVA || 'https://nettochiaro.it') || vars.SITO_PRODUZIONE }}
+        run: |
+          if [ -z "$INDIRIZZO" ]; then echo "Nessun indirizzo da verificare."; exit 0; fi
+          sleep 5
+          node .strumenti/scripts/verifica-sito.mjs "$INDIRIZZO" | tee -a "$GITHUB_STEP_SUMMARY"
+          exit ${PIPESTATUS[0]}
 
       - name: Riepilogo
         run: |
