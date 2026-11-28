@@ -202,6 +202,13 @@ oggi il sito e il contatore visite. È la garanzia che l'informativa invita a
 verificare con uno strumento terzo, quindi non si allarga senza riscriverla.
 La telemetria non c'è più (12/10/2026): nessun dato d'uso esce dall'app.
 
+**La produzione può stare su un hosting Apache europeo** (IONOS da dicembre
+2026, chi mantiene il progetto vuole server solo in UE): la pubblica a mano
+`pubblica-produzione.yml` via SFTP. Apache non legge `_headers`, quindi il
+`.htaccess` si GENERA da lì (`scripts/genera-htaccess.mjs`), con in più ciò che
+Pages faceva da sé: ripiego su `index.html`, HTTPS, compressione, `robots.txt`.
+Gli header si cambiano solo in `_headers`. → `check-htaccess.mjs`
+
 `COSE-NUOVE.md` è l'inventario dei difetti noti, e invecchia in silenzio se
 nessuno lo tocca: quando una voce si chiude va marcata lì, col riscontro che la
 tiene chiusa. Il testo del difetto resta sotto, perché spiega perché era un

@@ -1,0 +1,116 @@
+# Pubblicazione della PRODUZIONE su un hosting Apache europeo (oggi IONOS,
+# da gennaio 2027 forse Aruba o simili), via SFTP. Parte SOLO a mano:
+# GitHub → Actions → «Pubblica in produzione» → Run workflow. Così i tester e
+# gli utenti non vedono cambiamenti a sorpresa, come col deploy manuale di prima.
+#
+# PERCHÉ UN HOSTING EUROPEO (novembre 2026): chi mantiene il progetto vuole i
+# server solo in UE e un canone fisso. Cloudflare resta per il sito di prova
+# (deploy-test.yml) e per Beta, dove non ci sono utenti veri.
+#
+# Richiede, in Settings → Secrets and variables → Actions:
+#   - Secret   IONOS_SFTP_HOST       → l'host SFTP del pannello (access-….webspace-host.com)
+#   - Secret   IONOS_SFTP_USER       → l'utente SFTP
+#   - Secret   IONOS_SFTP_PASSWORD   → la sua password (la mette solo chi mantiene il progetto)
+#   - Variable IONOS_CARTELLA        → la cartella del sito sul server (default: segnaturni);
+#                                      è quella a cui punta il dominio nel pannello
+#   - Variable SITO_PRODUZIONE       → l'indirizzo pubblico, es. https://segnaturni.it
+#                                      (serve all'anteprima dei link condivisi)
+# Cambiare hosting vuol dire cambiare questi valori, non questo file: i nomi
+# dicono IONOS per storia, valgono per qualunque SFTP.
+#
+# GLI HEADER: Apache non legge `_headers` ma `.htaccess`, che qui si GENERA da
+# `_headers` (scripts/genera-htaccess.mjs). Una fonte sola: chi cambia la CSP
+# la cambia per tutti e due. → check-htaccess.mjs
+#
+# L'ORDINE DEL CARICAMENTO: prima tutto tranne le pagine e il service worker,
+# poi quelli. Un `index.html` nuovo che arriva prima dei suoi file in
+# /assets/ è una pagina bianca per chi apre il sito in quel momento.
+# `--delete` toglie i file della versione prima, come fa Pages: chi ha
+# l'app installata li ha già nel precache.
+
+name: Pubblica in produzione (SFTP)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ramo:
+        description: 'Ramo da pubblicare'
+        required: true
+        default: Beta
+
+permissions:
+  contents: read
+
+concurrency:
+  group: produzione-sftp
+  cancel-in-progress: false
+
+jobs:
+  pubblica:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ramo }}
+
+      # Il generatore del .htaccess si prende dal ramo che contiene QUESTO
+      # file (il ramo predefinito), non da quello da pubblicare: così si può
+      # pubblicare anche un ramo che non lo ha ancora. Gli header invece
+      # vengono dal `_headers` del ramo pubblicato.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: .strumenti
+          sparse-checkout: scripts/genera-htaccess.mjs
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build (come in produzione)
+        run: npm run build
+        env:
+          VITE_SITE_URL: ${{ vars.SITO_PRODUZIONE }}
+
+      - name: Riscontri (bloccano la pubblicazione se uno fallisce)
+        run: |
+          if [ -f scripts/riscontri.mjs ]; then npm run riscontri
+          else echo "Il ramo non ha scripts/riscontri.mjs: riscontri saltati." | tee -a "$GITHUB_STEP_SUMMARY"; fi
+
+      - name: File che su Pages arrivavano da sé
+        run: |
+          node .strumenti/scripts/genera-htaccess.mjs dist
+          rm -rf .strumenti
+          # Su Pages robots.txt è una Function (functions/robots.txt.js).
+          printf 'User-agent: *\nAllow: /\n' > dist/robots.txt
+          # `_headers` qui non serve a niente: non lo si pubblica.
+          rm -f dist/_headers
+
+      - name: Caricamento via SFTP
+        env:
+          HOST: ${{ secrets.IONOS_SFTP_HOST }}
+          UTENTE: ${{ secrets.IONOS_SFTP_USER }}
+          LFTP_PASSWORD: ${{ secrets.IONOS_SFTP_PASSWORD }}
+          CARTELLA: ${{ vars.IONOS_CARTELLA || 'segnaturni' }}
+        run: |
+          if [ -z "$HOST" ] || [ -z "$UTENTE" ] || [ -z "$LFTP_PASSWORD" ]; then
+            echo "Mancano i segreti IONOS_SFTP_HOST, IONOS_SFTP_USER o IONOS_SFTP_PASSWORD."
+            exit 1
+          fi
+          sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+          lftp --env-password -u "$UTENTE" "sftp://$HOST" -e "
+            set sftp:auto-confirm yes;
+            set net:max-retries 3;
+            mkdir -p -f $CARTELLA;
+            mirror -R --verbose=1 --exclude-glob *.html --exclude-glob sw.js --exclude-glob manifest.webmanifest dist $CARTELLA;
+            mirror -R --verbose=1 --delete dist $CARTELLA;
+            bye"
+
+      - name: Riepilogo
+        run: |
+          echo "Pubblicato il ramo ${{ inputs.ramo }} nella cartella ${{ vars.IONOS_CARTELLA || 'segnaturni' }}." >> "$GITHUB_STEP_SUMMARY"
+          echo "Indirizzo: ${{ vars.SITO_PRODUZIONE || '(SITO_PRODUZIONE non impostata)' }}" >> "$GITHUB_STEP_SUMMARY"
