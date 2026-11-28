@@ -77,7 +77,9 @@ jobs:
         with:
           ref: ${{ github.sha }}
           path: .strumenti
-          sparse-checkout: scripts/genera-htaccess.mjs
+          sparse-checkout: |
+            scripts/genera-htaccess.mjs
+            scripts/apri-ai-motori.mjs
           sparse-checkout-cone-mode: false
 
       - uses: actions/setup-node@v4
@@ -102,15 +104,15 @@ jobs:
       - name: File che su Pages arrivavano da sé
         run: |
           node .strumenti/scripts/genera-htaccess.mjs dist
-          rm -rf .strumenti
           # Su Pages robots.txt è una Function (functions/robots.txt.js).
           if [ "$PROVA" = true ]; then printf 'User-agent: *\nDisallow: /\n' > dist/robots.txt
           else
             # Solo la produzione si apre ai motori: via il noindex dalle pagine
             # pubbliche, canonical e sitemap sul dominio (apri-ai-motori.mjs).
-            node scripts/apri-ai-motori.mjs dist "$SITO"
+            node .strumenti/scripts/apri-ai-motori.mjs dist "$SITO"
             printf 'User-agent: *\nAllow: /\nSitemap: %s/sitemap.xml\n' "${SITO%/}" > dist/robots.txt
           fi
+          rm -rf .strumenti
           # `_headers` qui non serve a niente: non lo si pubblica.
           rm -f dist/_headers
 
