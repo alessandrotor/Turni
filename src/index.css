@@ -707,7 +707,7 @@ input, select, textarea { font: inherit; }
    colonne uguali: è quello che l'occhio si aspetta da un calendario. */
 .cal-grid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr)) 2.4rem; /* l'ultima: le ore della settimana */
   gap: 0; border: 1px solid var(--c-border);
   background: #fff;
   border-radius: var(--radius-lg);
@@ -744,6 +744,8 @@ input, select, textarea { font: inherit; }
   min-height: 72px;
 }
 .cal-cell--today { background: #eef4ff; }
+.cal-settimana { background: #f4f8ff; border-bottom: 1px solid #f0f4fb; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: .8rem; color: var(--c-text); text-transform: none; }
+.cal-settimana-oltre { font-size: .72rem; font-weight: 700; color: var(--c-warning-text); } .cal-settimana-testa { text-transform: none; }
 .cal-cell--today:hover { background: #e0e7ff; }
 
 /* Giorno raggiunto dal calendarietto di Statistiche. L'anello è `inset`: la
@@ -3523,6 +3525,7 @@ input, select, textarea { font: inherit; }
   }
   .nav-icon { font-size: 1.15rem; }
 }
+@media (max-width: 400px) { .cal-month-name { font-size: 1.1rem; } .cal-header-soldi-eti { white-space: nowrap; } }
 
 /* ── «Cosa manca», in cima a Impostazioni ────────────────────────────
    Non è un avviso: è un indice di quello che resta, nella pagina dove si va
