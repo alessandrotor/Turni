@@ -73,7 +73,7 @@ export default defineConfig({
         // installata il link «Come vengono trattati i tuoi dati» aprirebbe il
         // calendario, e l'informativa risulterebbe pubblicata pur non essendo
         // raggiungibile. È il caso in cui un 200 mente.
-        navigateFallbackDenylist: [/^\/privacy/, /^\/termini/, /^\/benvenuto/, /^\/ci-perdo/],
+        navigateFallbackDenylist: [/^\/privacy/, /^\/termini/, /^\/benvenuto/, /^\/ci-perdo/, /^\/guide/],
         // Il lettore delle immagini (~4,5 MB) NON va nel precache: lo scarica
         // solo chi lo usa, la prima volta. E il gestore della condivisione
         // deve rispondere prima delle regole di Workbox.
