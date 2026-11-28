@@ -72,6 +72,13 @@ foglio.
 Cloudflare tratta questi dati per conto del titolare, secondo le sue condizioni:
 https://www.cloudflare.com/privacypolicy/
 
+**Fuori dall'Unione Europea.** Cloudflare è una società statunitense, quindi questi
+dati tecnici possono essere trattati anche negli Stati Uniti. Il trasferimento si basa
+sulla decisione di adeguatezza della Commissione europea per le società aderenti al
+*EU-U.S. Data Privacy Framework*, a cui Cloudflare aderisce, e sulle clausole
+contrattuali tipo previste dalle sue condizioni (art. 45 e 46 GDPR). I tuoi turni e la
+tua busta non fanno questo viaggio: non escono dal telefono.
+
 ## Cookie e memoria del browser
 
 Segnaturni **non usa cookie**, né di profilazione né pubblicitari. Usa soltanto la
