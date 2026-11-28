@@ -11,7 +11,7 @@ import { isMensilizzato } from '../motore/ccnl';
 import { calcBonusMargin, BONUS_STATUS, margineInOre } from '../motore/bonus';
 import { rischioRestituzione, quotaPotenziale, dataDiRiferimento, costoSoglia, posizioneRispettoSoglia, mancaAlPareggio, POSIZIONE, confrontoConSoglia } from '../motore/restituzione';
 import { festivitaSenzaTurno, giornateFestive } from '../utils/festivita-non-lavorate';
-import AvvisoContratto from './AvvisoContratto'; import AvvisoFisco from './AvvisoFisco'; import CiPerdo from './CiPerdo'; import PermessiRol from './PermessiRol'; import BarraSelezione from './BarraSelezione'; import useSelezioneGiorni from '../hooks/useSelezioneGiorni'; import useScorrimento from '../hooks/useScorrimento'; // import CopiaSettimana from './CopiaSettimana'; — sospesa, vedi il file
+import AvvisoContratto from './AvvisoContratto'; import AvvisoFisco from './AvvisoFisco'; import CiPerdo from './CiPerdo'; import PermessiRol from './PermessiRol'; import BarraSelezione from './BarraSelezione'; import useSelezioneGiorni from '../hooks/useSelezioneGiorni'; import useScorrimento from '../hooks/useScorrimento'; import SettimaneOre from './SettimaneOre'; // import CopiaSettimana from './CopiaSettimana'; — sospesa, vedi il file
 import { ENABLE_MESE_PAGA } from '../config/features';
 import { accettatoInvioFoto, accettaInvioFoto } from '../services/gemini';
 import { minutiGiornoAssenza } from '../motore/assenze';
@@ -796,11 +796,10 @@ export default function CalendarView({
         // contenitore senza altezza): altrimenti una pill a capo allunga una sola settimana.
         <div
           className="cal-grid"
-          style={{ gridTemplateRows: `auto repeat(${Math.ceil(cells.length / 7)}, minmax(4.5rem, 1fr))` }}
+          style={{ gridTemplateRows: `auto repeat(${Math.ceil(cells.length / 7)}, minmax(4.5rem, 1fr) auto)` }}
         >
-          {DAY_HEADERS.map(d => (
-            <div key={d} className="cal-day-header">{d}</div>
-          ))}
+          {DAY_HEADERS.map(d => <div key={d} className="cal-day-header">{d}</div>)}
+          <SettimaneOre anno={year} mese={month} turni={allShifts} mappa={payByShift} />
 
           {cells.map((dayNum, i) => {
             if (!dayNum) return <div key={`e${i}`} className="cal-cell cal-cell--empty" />;

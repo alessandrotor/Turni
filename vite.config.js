@@ -73,7 +73,7 @@ export default defineConfig({
         // installata il link «Come vengono trattati i tuoi dati» aprirebbe il
         // calendario, e l'informativa risulterebbe pubblicata pur non essendo
         // raggiungibile. È il caso in cui un 200 mente.
-        navigateFallbackDenylist: [/^\/privacy/, /^\/termini/, /^\/benvenuto/],
+        navigateFallbackDenylist: [/^\/privacy/, /^\/termini/, /^\/benvenuto/, /^\/ci-perdo/],
         // Il lettore delle immagini (~4,5 MB) NON va nel precache: lo scarica
         // solo chi lo usa, la prima volta. E il gestore della condivisione
         // deve rispondere prima delle regole di Workbox.
@@ -129,6 +129,13 @@ export default defineConfig({
       },
     }),
   ],
+  // Due pagine HTML: l'app e la pagina d'ingresso «Ci perdo?» (ci-perdo/index.html),
+  // che usa il motore e quindi passa dalla build invece di stare in public/.
+  build: {
+    rollupOptions: {
+      input: { index: 'index.html', ciPerdo: 'ci-perdo/index.html' },
+    },
+  },
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
