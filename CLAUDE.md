@@ -204,7 +204,8 @@ La telemetria non c'è più (12/10/2026): nessun dato d'uso esce dall'app.
 
 **La produzione può stare su un hosting Apache europeo** (IONOS da dicembre
 2026, chi mantiene il progetto vuole server solo in UE): la pubblica a mano
-`pubblica-produzione.yml` via SFTP. Apache non legge `_headers`, quindi il
+`pubblica-produzione.yml` via SFTP, che a ogni push su experimental carica
+anche la prova in un'altra cartella. Apache non legge `_headers`, quindi il
 `.htaccess` si GENERA da lì (`scripts/genera-htaccess.mjs`), con in più ciò che
 Pages faceva da sé: ripiego su `index.html`, HTTPS, compressione, `robots.txt`.
 Gli header si cambiano solo in `_headers`. → `check-htaccess.mjs`

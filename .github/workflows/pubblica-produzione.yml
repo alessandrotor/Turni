@@ -1,6 +1,6 @@
 # Pubblicazione della PRODUZIONE su un hosting Apache europeo (oggi IONOS,
-# da gennaio 2027 forse Aruba o simili), via SFTP. Parte SOLO a mano:
-# GitHub → Actions → «Pubblica in produzione» → Run workflow. Così i tester e
+# da gennaio 2027 forse Aruba o simili), via SFTP. La produzione parte SOLO a
+# mano: GitHub → Actions → «Pubblica su hosting europeo» → Run workflow. Così
 # gli utenti non vedono cambiamenti a sorpresa, come col deploy manuale di prima.
 #
 # PERCHÉ UN HOSTING EUROPEO (novembre 2026): chi mantiene il progetto vuole i
@@ -28,9 +28,19 @@
 # `--delete` toglie i file della versione prima, come fa Pages: chi ha
 # l'app installata li ha già nel precache.
 
-name: Pubblica in produzione (SFTP)
+name: Pubblica su hosting europeo (SFTP)
+
+# DUE USI. Premuto a mano (workflow_dispatch) pubblica la PRODUZIONE nella
+# cartella IONOS_CARTELLA. A ogni push su `experimental` pubblica invece la
+# PROVA in IONOS_CARTELLA_PROVA (default: segnaturni-prova), come
+# deploy-test.yml fa su Cloudflare: serve a provare l'hosting europeo con la
+# versione più recente, con robots.txt che chiude la porta ai motori di
+# ricerca. Finché i segreti non ci sono, il push salta il caricamento senza
+# diventare rosso: il pulsante a mano invece fallisce e lo dice.
 
 on:
+  push:
+    branches: [experimental]
   workflow_dispatch:
     inputs:
       ramo:
@@ -42,8 +52,14 @@ permissions:
   contents: read
 
 concurrency:
-  group: produzione-sftp
+  group: sftp-${{ github.event_name }}
   cancel-in-progress: false
+
+env:
+  PROVA: ${{ github.event_name == 'push' }}
+  RAMO: ${{ inputs.ramo || github.ref_name }}
+  CARTELLA: ${{ github.event_name == 'push' && (vars.IONOS_CARTELLA_PROVA || 'segnaturni-prova') || (vars.IONOS_CARTELLA || 'segnaturni') }}
+  SITO: ${{ github.event_name == 'push' && vars.SITO_PROVA || vars.SITO_PRODUZIONE }}
 
 jobs:
   pubblica:
@@ -51,7 +67,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ramo }}
+          ref: ${{ inputs.ramo || github.ref_name }}
 
       # Il generatore del .htaccess si prende dal ramo che contiene QUESTO
       # file (il ramo predefinito), non da quello da pubblicare: così si può
@@ -71,10 +87,12 @@ jobs:
 
       - run: npm ci
 
-      - name: Build (come in produzione)
+      - name: Build
         run: npm run build
         env:
-          VITE_SITE_URL: ${{ vars.SITO_PRODUZIONE }}
+          VITE_SITE_URL: ${{ env.SITO }}
+          # Come sul sito di prova Cloudflare: la pagina Statistiche la vedono i tester.
+          VITE_BETA_STATS: ${{ env.PROVA == 'true' && 'true' || '' }}
 
       - name: Riscontri (bloccano la pubblicazione se uno fallisce)
         run: |
@@ -86,7 +104,8 @@ jobs:
           node .strumenti/scripts/genera-htaccess.mjs dist
           rm -rf .strumenti
           # Su Pages robots.txt è una Function (functions/robots.txt.js).
-          printf 'User-agent: *\nAllow: /\n' > dist/robots.txt
+          if [ "$PROVA" = true ]; then printf 'User-agent: *\nDisallow: /\n' > dist/robots.txt
+          else printf 'User-agent: *\nAllow: /\n' > dist/robots.txt; fi
           # `_headers` qui non serve a niente: non lo si pubblica.
           rm -f dist/_headers
 
@@ -95,11 +114,10 @@ jobs:
           HOST: ${{ secrets.IONOS_SFTP_HOST }}
           UTENTE: ${{ secrets.IONOS_SFTP_USER }}
           LFTP_PASSWORD: ${{ secrets.IONOS_SFTP_PASSWORD }}
-          CARTELLA: ${{ vars.IONOS_CARTELLA || 'segnaturni' }}
         run: |
           if [ -z "$HOST" ] || [ -z "$UTENTE" ] || [ -z "$LFTP_PASSWORD" ]; then
-            echo "Mancano i segreti IONOS_SFTP_HOST, IONOS_SFTP_USER o IONOS_SFTP_PASSWORD."
-            exit 1
+            echo "Mancano i segreti IONOS_SFTP_HOST, IONOS_SFTP_USER o IONOS_SFTP_PASSWORD." | tee -a "$GITHUB_STEP_SUMMARY"
+            if [ "$PROVA" = true ]; then exit 0; else exit 1; fi
           fi
           sudo apt-get update -qq && sudo apt-get install -y -qq lftp
           lftp --env-password -u "$UTENTE" "sftp://$HOST" -e "
@@ -112,5 +130,4 @@ jobs:
 
       - name: Riepilogo
         run: |
-          echo "Pubblicato il ramo ${{ inputs.ramo }} nella cartella ${{ vars.IONOS_CARTELLA || 'segnaturni' }}." >> "$GITHUB_STEP_SUMMARY"
-          echo "Indirizzo: ${{ vars.SITO_PRODUZIONE || '(SITO_PRODUZIONE non impostata)' }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Ramo $RAMO → cartella $CARTELLA. Indirizzo: ${SITO:-(non impostato)}" >> "$GITHUB_STEP_SUMMARY"
