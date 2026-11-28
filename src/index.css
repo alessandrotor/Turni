@@ -744,7 +744,7 @@ input, select, textarea { font: inherit; }
   min-height: 72px;
 }
 .cal-cell--today { background: #eef4ff; }
-.cal-settimana { display: flex; justify-content: flex-end; align-items: baseline; gap: .4rem; padding: 0 8px 2px; line-height: 1.2; background: var(--c-card); border-bottom: 1px solid #e6eefb; font-size: .7rem; color: #8a96ad; }
+.cal-settimana { display: flex; justify-content: flex-end; align-items: baseline; gap: .4rem; padding: 0 8px 2px; line-height: 1.2; background: var(--c-card); border-bottom: 1px solid #e6eefb; font-size: .72rem; color: #8a96ad; }
 .cal-settimana b { color: var(--c-text-2); font-size: .75rem; } .cal-settimana-oltre { font-weight: 700; color: var(--c-warning-text); }
 .cal-cell--today:hover { background: #e0e7ff; }
 
