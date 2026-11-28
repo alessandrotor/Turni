@@ -97,6 +97,14 @@ export function generaHtaccess(testoHeaders) {
     '</IfModule>',
     '',
     '<IfModule mod_headers.c>',
+    '',
+    '  # Solo su Apache: le immagini fuori da /assets/ non hanno l\'impronta nel nome',
+    '  # e senza questa riga IONOS le serve senza durata, cioè riscaricate a ogni',
+    '  # visita (PageSpeed, 28/11/2026: 110 KiB della vetrina). Un giorno, non un',
+    '  # anno: lo screenshot della vetrina cambia, e chi torna deve vederlo nuovo.',
+    '  <FilesMatch "\\.(jpe?g|png|webp|svg|ico)$">',
+    '    Header set Cache-Control "public, max-age=86400"',
+    '  </FilesMatch>',
   ];
   for (const b of blocchi) {
     const cond = condizione(b.percorso);

@@ -69,6 +69,8 @@ check(/RewriteCond %\{HTTPS\} off\n\s+RewriteCond %\{HTTP:X-Forwarded-Proto\} !h
 check(/RewriteCond %\{HTTP_HOST\} \^\(www\\\.\)\?segnaturni\\\.app\$ \[NC,OR\]\n\s+RewriteCond %\{HTTP_HOST\} \^www\\\.segnaturni\\\.it\$ \[NC\]\n\s+RewriteRule \^ https:\/\/segnaturni\.it%\{REQUEST_URI\} \[L,R=301\]/.test(ht),
   'un indirizzo solo: .app e www portano a segnaturni.it (i dati sono legati all\'indirizzo)');
 check(ht.includes('AddType application/manifest+json .webmanifest'), 'il manifest ha il suo tipo');
+check(/<FilesMatch "\\\.\(jpe\?g\|png\|webp\|svg\|ico\)\$">\n\s+Header set Cache-Control "public, max-age=86400"/.test(ht),
+  'immagini fuori da /assets/ in cache per un giorno');
 check(ht.includes('Options -Indexes'), 'niente elenco dei file nelle cartelle');
 
 // 4. Nessun valore va a capo: in `.htaccess` una riga spezzata è un errore 500

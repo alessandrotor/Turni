@@ -63,6 +63,11 @@ if (asset) {
   check(/javascript/.test(a.headers.get('content-type') ?? ''), 'JavaScript col tipo giusto', a.headers.get('content-type') ?? '');
 } else check(false, 'trovato un asset nella pagina');
 
+// 3b. Le immagini fuori da /assets/ hanno una durata (senza, si riscaricano a ogni visita).
+const { r: img } = await prendi('/apple-touch-icon.png');
+check(/max-age=[1-9]/.test(img.headers.get('cache-control') ?? ''), 'immagini fuori da /assets/ con una durata in cache',
+  img.headers.get('cache-control') ?? 'assente');
+
 // 4. Il manifest col suo tipo (senza, l'app non si installa bene).
 const { r: man } = await prendi('/manifest.webmanifest');
 check(man.status === 200 && /manifest\+json|json/.test(man.headers.get('content-type') ?? ''), 'manifest servito come JSON',
