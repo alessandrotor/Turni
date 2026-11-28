@@ -658,11 +658,10 @@ Discendono tutte dalla parola d'ordine qui sopra.
 - Quando i conteggi non coprono il mese visualizzato (mese di paga), il periodo
   si **dichiara sopra i numeri**. Non si allunga il calendario per farceli stare:
   provato, era brutto e si perdeva di vista che mese si stava guardando.
-- **Ogni settimana del calendario è alta quanto le serve** (novembre 2026).
-  Prima erano tutte alte come la più alta, perché un doppio turno non
-  allungasse una sola settimana; ma con la riga delle ore sotto ogni settimana
-  un giorno con due turni allungava il mese intero, e la griglia sembrava
-  affollata. Scelta di chi mantiene il progetto.
+- **Le righe del calendario hanno tutte la stessa altezza**: quella della più
+  alta (`grid-template-rows` con `1fr`). Lasciarle sul contenuto allungava una
+  sola settimana per un doppio turno o una pill a capo, e il calendario perdeva
+  la proporzione.
 - **Un totale che vale per un caso non si scrive come se valesse per chi legge.**
   «Ci perdi −129 €» è il punto peggiore della fascia dei 15.000, e sotto una
   riga che diceva «oltre la fascia, non perdi niente» sembrava una

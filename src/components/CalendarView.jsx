@@ -792,11 +792,11 @@ export default function CalendarView({
           mostraEuro={mostraEuro}
         />
       ) : (
-        // Ogni settimana alta quanto le serve (novembre 2026): tutte alte come la più alta, un
-        // giorno con due turni allungava il mese intero e la griglia sembrava affollata.
+        // Le righe dei giorni hanno TUTTE la stessa altezza, quella della più alta (`1fr` con un
+        // contenitore senza altezza): altrimenti una pill a capo allunga una sola settimana.
         <div
           className="cal-grid"
-          style={{ gridTemplateRows: `auto repeat(${Math.ceil(cells.length / 7)}, minmax(4.5rem, auto) auto)` }}
+          style={{ gridTemplateRows: `auto repeat(${Math.ceil(cells.length / 7)}, minmax(4.5rem, 1fr) auto)` }}
         >
           {DAY_HEADERS.map(d => <div key={d} className="cal-day-header">{d}</div>)}
           <SettimaneOre anno={year} mese={month} turni={allShifts} mappa={payByShift} />
