@@ -19,10 +19,11 @@ import { formatDate } from './date.js';
  * @param {number} anno @param {number} mese indice 0-11
  * @param {Array<any>} turni tutti i turni (servono i giorni dell'altro mese)
  * @param {Record<string, any>|null} mappa uscita di `computePayByShift`
- * @returns {Array<{ dal: string, al: string, minuti: number, oltreMinuti: number }>}
+ * @returns {Array<{ dal: string, al: string, minuti: number, oltreMinuti: number, fuoriMinuti: number }>}
  *   `minuti`: turni e assenze pagate della settimana, senza le festività non
  *   lavorate (non riempiono le ore del contratto); `oltreMinuti`: supplementari
- *   più straordinarie.
+ *   più straordinarie; `fuoriMinuti`: quanti di quei `minuti` cadono nei giorni
+ *   dell'altro mese (la riga li somma ma la griglia non li mostra).
  */
 export function settimaneDelMese(anno, mese, turni = [], mappa = null) {
   const primo = new Date(anno, mese, 1);
@@ -37,13 +38,15 @@ export function settimaneDelMese(anno, mese, turni = [], mappa = null) {
     const al = formatDate(domenica);
     let minuti = 0;
     let oltreMinuti = 0;
+    let fuoriMinuti = 0;
     for (const t of turni) {
       if (t.date < dal || t.date > al || tipoTurno(t) === TIPO.FESTIVITA) continue;
       minuti += calcShiftMinutes(t);
+      if (Number(t.date.slice(5, 7)) !== mese + 1) fuoriMinuti += calcShiftMinutes(t);
       const v = mappa?.[t.id];
       if (v) oltreMinuti += (v.overtimeMinutes || 0) + (v.straordinarioMinutes || 0);
     }
-    esito.push({ dal, al, minuti, oltreMinuti });
+    esito.push({ dal, al, minuti, oltreMinuti, fuoriMinuti });
   }
   return esito;
 }

@@ -802,7 +802,7 @@ export default function CalendarView({
           <SettimaneOre anno={year} mese={month} turni={allShifts} mappa={payByShift} />
 
           {cells.map((dayNum, i) => {
-            if (!dayNum) return <div key={`e${i}`} className="cal-cell cal-cell--empty" />;
+            if (!dayNum) return null; // i giorni dell'altro mese li disegna SettimaneOre
 
             const date = new Date(year, month, dayNum);
             const dateStr = formatDate(date);
