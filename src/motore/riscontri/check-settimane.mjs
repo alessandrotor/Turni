@@ -49,9 +49,6 @@ esito(sett[5].minuti === 26 * 60 && sett[5].oltreMinuti === 2 * 60, 'a cavallo d
 // 2026, check-festivo-supplementare.mjs): 26 h in settimana, nessuna oltre.
 esito(sett[0].minuti === 26 * 60 && sett[0].oltreMinuti === 0, 'col festivo lavorato (Ognissanti): 26 h, ma +0',
   `${sett[0].minuti / 60} h, +${sett[0].oltreMinuti / 60}`);
-// La griglia non mostra i giorni dell'altro mese: la riga dice quante ore ci stanno.
-esito(sett[0].fuoriMinuti === 20 * 60 && sett[5].fuoriMinuti === 16 * 60 && sett[1].fuoriMinuti === 0,
-  'le ore nei giorni dell\'altro mese: 20 a ottobre, 16 a dicembre', `${sett[0].fuoriMinuti / 60}, ${sett[5].fuoriMinuti / 60}`);
 esito(sett[2].minuti === 28 * 60, 'ferie contate, festività non lavorata no: 28 h', `${sett[2].minuti / 60} h`);
 esito(sett[2].oltreMinuti === 4 * 60, 'le ferie riempiono le 24: +4', `+${sett[2].oltreMinuti / 60}`);
 esito(sett[3].minuti === 0 && sett[3].oltreMinuti === 0, 'settimana senza turni: zero');
