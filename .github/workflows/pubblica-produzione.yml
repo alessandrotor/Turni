@@ -105,7 +105,12 @@ jobs:
           rm -rf .strumenti
           # Su Pages robots.txt è una Function (functions/robots.txt.js).
           if [ "$PROVA" = true ]; then printf 'User-agent: *\nDisallow: /\n' > dist/robots.txt
-          else printf 'User-agent: *\nAllow: /\n' > dist/robots.txt; fi
+          else
+            # Solo la produzione si apre ai motori: via il noindex dalle pagine
+            # pubbliche, canonical e sitemap sul dominio (apri-ai-motori.mjs).
+            node scripts/apri-ai-motori.mjs dist "$SITO"
+            printf 'User-agent: *\nAllow: /\nSitemap: %s/sitemap.xml\n' "${SITO%/}" > dist/robots.txt
+          fi
           # `_headers` qui non serve a niente: non lo si pubblica.
           rm -f dist/_headers
 
