@@ -1,0 +1,51 @@
+# Carica Matomo (il contatore visite, vedi matomo/LEGGIMI.md) sull'hosting
+# IONOS, nella cartella `statistiche`, via SFTP. Parte quando cambia
+# matomo/LEGGIMI.md su experimental, oppure a mano.
+#
+# Il pacchetto viene dal sito ufficiale (builds.matomo.org, ultima versione).
+# NIENTE --delete: sul server Matomo scrive config/config.ini.php (con la
+# password del database), tmp/ e i plugin installati dal pannello. Un
+# caricamento che cancellasse ciò che non è nel pacchetto li perderebbe.
+# Gli aggiornamenti successivi si fanno dal pannello di Matomo, non da qui.
+
+name: Installa Matomo (SFTP)
+
+on:
+  push:
+    branches: [experimental]
+    paths: [matomo/LEGGIMI.md, .github/workflows/installa-matomo.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sftp-matomo
+  cancel-in-progress: false
+
+jobs:
+  installa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Scarica Matomo dal sito ufficiale
+        run: |
+          curl -fsSL -o matomo.zip https://builds.matomo.org/matomo.zip
+          unzip -q matomo.zip
+          test -f matomo/index.php
+          grep -m1 "VERSION = " matomo/core/Version.php | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Caricamento via SFTP (senza cancellare niente)
+        env:
+          HOST: ${{ secrets.IONOS_SFTP_HOST }}
+          UTENTE: ${{ secrets.IONOS_SFTP_USER }}
+          LFTP_PASSWORD: ${{ secrets.IONOS_SFTP_PASSWORD }}
+          CARTELLA: ${{ vars.MATOMO_CARTELLA || 'statistiche' }}
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq lftp
+          lftp --env-password -u "$UTENTE" "sftp://$HOST" -e "
+            set sftp:auto-confirm yes;
+            set net:max-retries 3;
+            mkdir -p -f $CARTELLA;
+            mirror -R --parallel=4 --verbose=1 matomo $CARTELLA;
+            bye"
+          echo "Matomo caricato nella cartella $CARTELLA." >> "$GITHUB_STEP_SUMMARY"
