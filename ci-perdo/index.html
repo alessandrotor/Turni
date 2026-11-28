@@ -63,13 +63,36 @@ section p{color:var(--grigio);margin:0 0 20px}
 footer{font-size:13px;color:var(--grigio);padding:18px 0 28px}
 footer .w{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 @media (max-width:820px){
-  .ap .w{grid-template-columns:minmax(0,1fr);gap:18px;padding-top:6px;padding-bottom:36px}
-  h1{font-size:32px;letter-spacing:-.6px;margin-bottom:18px}
+  /* Al telefono tutto in una schermata: apri, scrivi, leggi, vai. Il pulsante
+     verso l'app deve stare sopra la piega anche su un Android piccolo
+     (360×640 utili, provato a mano a novembre 2026). */
+  body{font-size:15px;line-height:1.45}
+  header .w{height:50px}
+  .marchio{font-size:17px}.marchio svg{width:22px;height:22px}
+  header a.app{font-size:14px}
+  .ap .w{grid-template-columns:minmax(0,1fr);gap:12px;padding-top:2px;padding-bottom:16px}
+  h1{font-size:26px;letter-spacing:-.5px;margin-bottom:12px}
+  .campo{padding:10px 12px;border-radius:14px}
+  .campo label{font-size:13.5px;margin-bottom:4px}
+  .in input{font-size:22px;padding:6px 0}.in span{font-size:20px}
+  .ccnl{margin-top:6px;font-size:13px}
+  .punti{display:none}
+  .busta{padding:12px 14px;border-radius:14px}
+  .busta .tit{font-size:13px;margin-bottom:4px}
+  .riga{margin:6px 0;gap:8px}
+  .riga span{width:96px;font-size:13px}
+  .riga div{height:32px;font-size:16px;padding:0 10px;max-width:calc(100% - 104px)}
+  .saldo{margin-top:8px;padding-top:6px;font-size:17px}
+  .saldo b{font-size:26px}
+  .busta small{font-size:12.5px;margin-top:2px}
+  .no{font-size:23px;margin-bottom:2px}
+  .attesa{padding:16px;font-size:14px}
+  .cta{margin-top:10px}
+  .cta .btn{padding:12px 16px;font-size:16px}
+  .cta small{font-size:12px;margin-top:5px}
+  section{padding:32px 0}
   section .w{grid-template-columns:minmax(0,1fr)}
-  h2{font-size:26px}
-  .riga span{width:96px;font-size:14px}
-  .riga div{max-width:calc(100% - 108px)}
-  .busta{padding:18px}
+  h2{font-size:22px}
 }
 </style></head><body>
 <div class="testa">
@@ -82,7 +105,7 @@ footer .w{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
     <h1><span>Mi riprendono il trattamento integrativo?</span>Ci perdo?</h1>
     <div class="campo">
       <label for="lordo">Il tuo lordo dell'anno</label>
-      <div class="in"><input id="lordo" inputmode="decimal" autocomplete="off" placeholder="es. 16.700"><span>€</span></div>
+      <div class="in"><input id="lordo" inputmode="decimal" enterkeyhint="done" autocomplete="off" placeholder="es. 16.700"><span>€</span></div>
       <div class="ccnl"><label for="ccnl">Contratto:</label> <select id="ccnl"></select></div>
     </div>
     <div class="punti"><span>Nessun account</span><span>Il conto resta sul telefono</span><span>Gratis</span></div>

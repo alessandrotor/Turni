@@ -48,7 +48,7 @@ function chiamata() {
   const c = el('div', 'cta');
   const a = el('a', 'btn', 'Segna i turni: lo sai prima di dicembre');
   a.href = '/';
-  c.append(a, el('small', null, 'Apre Segnaturni. Gratis, senza account.'));
+  c.append(a, el('small', null, 'Gratis, senza account. Il conto resta sul telefono.'));
   return c;
 }
 
@@ -95,5 +95,7 @@ for (const c of [{ codice: '', nome: 'non lo so' }, ...Object.values(CONTRATTI)]
 }
 scelta.value = CONTRATTO_INIZIALE in CONTRATTI ? CONTRATTO_INIZIALE : '';
 campo.addEventListener('input', disegna);
+// Al telefono la tastiera copre la risposta: «Fine» la chiude, e la risposta è lì.
+campo.addEventListener('keydown', (e) => { if (e.key === 'Enter') campo.blur(); });
 scelta.addEventListener('change', disegna);
 disegna();
