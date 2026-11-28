@@ -8,9 +8,10 @@
 // giorni, «troppo compatto». Ora ogni riga ha la sua fila della griglia (le
 // file pari dopo l'intestazione, `gridRow` esplicito): la griglia piazza prima
 // queste e poi fa scorrere i giorni nelle file rimaste, quindi i giorni non
-// vanno toccati. La riga c'è solo per le settimane OLTRE il contratto (novembre
-// 2026: con una riga sotto ogni settimana il calendario era «troppo
-// affollato»); le altre hanno una fila vuota, alta zero.
+// vanno toccati. Una settimana senza turni ha una fila vuota, alta zero.
+// La riga è sommessa (testo piccolo, nessuna fascia): una fascia colorata
+// sotto ogni settimana faceva il calendario «troppo affollato». Solo
+// l'«oltre il contratto» ha colore, perché è lì che la settimana paga di più.
 
 import { useMemo } from 'react';
 import { settimaneDelMese } from '../motore/settimane';
@@ -26,7 +27,7 @@ export default function SettimaneOre({ anno, mese, turni, mappa }) {
   // Ogni settimana occupa la sua fila anche vuota: senza, la griglia ci farebbe
   // scivolare dentro i giorni della settimana dopo, e le righe finivano tutte
   // sotto la settimana sbagliata.
-  return settimane.map((s, r) => (s.oltreMinuti === 0
+  return settimane.map((s, r) => (s.minuti === 0
     ? <div key={s.dal} aria-hidden="true" style={{ gridColumn: '1 / -1', gridRow: 3 + r * 2 }} />
     : <div
       key={s.dal}
