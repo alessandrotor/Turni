@@ -66,6 +66,8 @@ check(/<If "%\{REQUEST_URI\} =~ m#\^\/assets\/#">\n\s+Header always set Cache-Co
 check(ht.includes('FallbackResource /index.html'), 'le rotte dell\'app ripiegano su index.html');
 check(/RewriteCond %\{HTTPS\} off\n\s+RewriteCond %\{HTTP:X-Forwarded-Proto\} !https\n\s+RewriteRule \^ https:/.test(ht),
   'passaggio a HTTPS, senza giro infinito dietro un proxy');
+check(/RewriteCond %\{HTTP_HOST\} \^\(www\\\.\)\?segnaturni\\\.app\$ \[NC,OR\]\n\s+RewriteCond %\{HTTP_HOST\} \^www\\\.segnaturni\\\.it\$ \[NC\]\n\s+RewriteRule \^ https:\/\/segnaturni\.it%\{REQUEST_URI\} \[L,R=301\]/.test(ht),
+  'un indirizzo solo: .app e www portano a segnaturni.it (i dati sono legati all\'indirizzo)');
 check(ht.includes('AddType application/manifest+json .webmanifest'), 'il manifest ha il suo tipo');
 check(ht.includes('Options -Indexes'), 'niente elenco dei file nelle cartelle');
 
